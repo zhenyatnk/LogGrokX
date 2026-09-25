@@ -22,7 +22,7 @@ namespace LogGrokX.Data
             _cancellationTokenSource = new CancellationTokenSource();
             
             Trace.TraceInformation($"Start loading {logFile.FilePath}.");
-            var timeStamp = DateTime.Now;
+            var startTimestamp = Stopwatch.GetTimestamp();
             _loadingTask = Task.Factory.StartNew(
                 () =>
                 {
@@ -30,13 +30,13 @@ namespace LogGrokX.Data
                     loaderImpl.Load(stream,
                         encoding.GetBytes("\r"), encoding.GetBytes("\n"),
                         _cancellationTokenSource.Token);
-                })
+                }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default)
                 .ContinueWith(t =>
                 {
                     switch(t.Status)
                     {
                         case TaskStatus.RanToCompletion: 
-                            Trace.TraceInformation($"Loaded {logFile.FilePath}, time spent: {DateTime.Now - timeStamp}.");
+                            Trace.TraceInformation($"Loaded {logFile.FilePath}, time spent: {Stopwatch.GetElapsedTime(startTimestamp)}.");
                             break; 
                         case TaskStatus.Canceled: logger.LogInformation($"Loading of {logFile.FilePath} was cancelled.");
                             break;

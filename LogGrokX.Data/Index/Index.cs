@@ -18,12 +18,18 @@ namespace LogGrokX.Data.Index
     public class Index : IIndex<int>, IDisposable
     {
         private const int DefaultStartChunkSize = 1024;
+
+        // Arrays come from ArrayPool and may be larger than requested, so the
+        // number of valid items has to be stored explicitly - otherwise
+        // enumeration walks the rented tail and yields garbage.
+        private readonly record struct Chunk(int MaxValue, int[] Data, int Count);
+
         private int _chunkSize;
         private int[]? _currentChunk;
         private int _currentIndexInChunk;
         private readonly ReaderWriterLockSlim _chunksLock = new();
-        
-        private readonly List<(int, int[])> _chunks = new(16);
+
+        private readonly List<Chunk> _chunks = new(16);
 
         public Index(int chunkSize)
         {
@@ -35,8 +41,8 @@ namespace LogGrokX.Data.Index
         {
         }
 
-        public bool IsEmpty => _currentChunk == null;
-        
+        public bool IsEmpty => Volatile.Read(ref _currentChunk) == null;
+
         public void Add(int value)
         {
             if (_currentChunk == null || _currentIndexInChunk + 1 > _currentChunk.Length)
@@ -45,28 +51,36 @@ namespace LogGrokX.Data.Index
             }
 
             _currentChunk![_currentIndexInChunk] = value;
-            _currentIndexInChunk++;
-            Count++;
+            // Single writer, many readers: publish the new length with a volatile
+            // write so readers never observe a half-written item.
+            Volatile.Write(ref _currentIndexInChunk, _currentIndexInChunk + 1);
+            Volatile.Write(ref _count, _count + 1);
         }
 
-        public int Count { get; private set; }
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
 
         public IEnumerable<int> GetEnumerableFromValue(int from)
         {
-            int chunksCount;
+            Chunk[] chunks;
             int[] lastChunk;
             int lastChunkCount;
             int lastChunkMaxValue;
+
+            _chunksLock.EnterReadLock();
             try
             {
-                _chunksLock.EnterReadLock();
-                if (_currentChunk == null)
-                    yield break;
-                
-                chunksCount = _chunks.Count;
-                lastChunk = _currentChunk;
-                lastChunkCount = _currentIndexInChunk;
-                lastChunkMaxValue = lastChunk[_currentIndexInChunk - 1];
+                if (_currentChunk == null || Volatile.Read(ref _currentIndexInChunk) == 0)
+                {
+                    if (_chunks.Count == 0)
+                        yield break;
+                }
+
+                chunks = _chunks.ToArray();
+                lastChunk = _currentChunk ?? Array.Empty<int>();
+                lastChunkCount = Volatile.Read(ref _currentIndexInChunk);
+                lastChunkMaxValue = lastChunkCount > 0 ? lastChunk[lastChunkCount - 1] : int.MinValue;
             }
             finally
             {
@@ -74,52 +88,55 @@ namespace LogGrokX.Data.Index
             }
 
             var (foundChunkIndex, foundIndex) =
-                FindStart(from, _chunks, chunksCount, lastChunk, 
-                    lastChunkMaxValue, lastChunkCount);
+                FindStart(from, chunks, lastChunk, lastChunkMaxValue, lastChunkCount);
+
+            if (foundChunkIndex < 0)
+                yield break;
 
             var chunkIndex = foundChunkIndex;
             var chunkStartIndex = foundIndex;
-            while (chunkIndex < chunksCount)
+            while (chunkIndex < chunks.Length)
             {
-                var (_, chunk) = _chunks[chunkIndex];
-                for (var idx = chunkStartIndex; idx < chunk.Length; idx++)
-                    yield return chunk[idx];
+                var chunk = chunks[chunkIndex];
+                for (var idx = chunkStartIndex; idx < chunk.Count; idx++)
+                    yield return chunk.Data[idx];
                 chunkIndex++;
                 chunkStartIndex = 0;
             }
 
-            var startIndex = foundChunkIndex == chunksCount ? foundIndex : 0;
+            var startIndex = foundChunkIndex == chunks.Length ? foundIndex : 0;
             for (var idx = startIndex; idx < lastChunkCount; idx++)
                 yield return lastChunk[idx];
         }
         
         // Find index of smallest stored value which is greater or equals then argument
         private static (int chunk, int index) FindStart(int value,
-            List<(int, int[])> chunks,
-            int chunksCount,
-            int [] currentChunk,
+            Chunk[] chunks,
+            int[] currentChunk,
             int currentChunkMaxValue,
             int currentIndexInChunk)
         {
             int GetChunkIndex(int val)
             {
-                for (var i = 0; i < chunksCount; i++)
+                for (var i = 0; i < chunks.Length; i++)
                 {
-                    var (key, _) = chunks[i];
-                    if (key >= val)
+                    if (chunks[i].MaxValue >= val)
                         return i;
                 }
 
-                if (currentChunkMaxValue >= val)
-                    return chunksCount;
+                if (currentIndexInChunk > 0 && currentChunkMaxValue >= val)
+                    return chunks.Length;
                 return -1;
             }
 
             var chunkIndex = GetChunkIndex(value);
+            if (chunkIndex < 0)
+                return (-1, 0);
+
             var spanToSearch =
-                chunkIndex == chunksCount
+                chunkIndex == chunks.Length
                     ? new Span<int>(currentChunk, 0, currentIndexInChunk)
-                    : new Span<int>(chunks[chunkIndex].Item2);
+                    : new Span<int>(chunks[chunkIndex].Data, 0, chunks[chunkIndex].Count);
 
             var foundIndex = spanToSearch.BinarySearch(value);
             return (chunkIndex, foundIndex >= 0 ? foundIndex : ~foundIndex);
@@ -132,7 +149,8 @@ namespace LogGrokX.Data.Index
             {
                 if (_currentChunk != null)
                 {
-                    _chunks.Add((_currentChunk[^1], _currentChunk));
+                    _chunks.Add(new Chunk(_currentChunk[_currentIndexInChunk - 1], _currentChunk,
+                        _currentIndexInChunk));
                 }
 
                 _currentChunk = ArrayPool<int>.Shared.Rent(_chunkSize);
@@ -147,11 +165,27 @@ namespace LogGrokX.Data.Index
 
         public void Dispose()
         {
-#pragma warning disable CS8619
-            foreach (var (_, chunk) in _chunks)
-#pragma warning restore CS8619
+            _chunksLock.EnterWriteLock();
+            try
             {
-                ArrayPool<int>.Shared.Return(chunk);
+                foreach (var chunk in _chunks)
+                {
+                    ArrayPool<int>.Shared.Return(chunk.Data);
+                }
+
+                _chunks.Clear();
+
+                if (_currentChunk != null)
+                {
+                    ArrayPool<int>.Shared.Return(_currentChunk);
+                    _currentChunk = null;
+                }
+
+                _currentIndexInChunk = 0;
+            }
+            finally
+            {
+                _chunksLock.ExitWriteLock();
             }
         }
     }

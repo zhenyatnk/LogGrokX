@@ -26,16 +26,66 @@ public class SubIndexer : IndexerBase
 
 public class Indexer : IndexerBase, IComponentIndexer
 {
-    private readonly object _componentsLocker = new();
+    /// <summary>
+    /// Per-component registry: component value -> keys containing that value.
+    /// Maintained incrementally when a new index key appears (rare), so that
+    /// neither <see cref="GetAllComponents"/> nor
+    /// <see cref="IndexerBase.GetIndexCountForComponent"/> has to walk all keys.
+    /// </summary>
+    private sealed class ComponentRegistry
+    {
+        private readonly object _locker = new();
+        private readonly Dictionary<string, List<IndexKeyNum>> _valuesToKeys = new(StringComparer.Ordinal);
+        private List<string>? _cachedValues;
 
-    private readonly ConcurrentDictionary<int, HashSet<IndexKey>> _components = new();
+        public bool TryAdd(ReadOnlySpan<char> value, IndexKeyNum keyNumber)
+        {
+            lock (_locker)
+            {
+                var lookup = _valuesToKeys.GetAlternateLookup<ReadOnlySpan<char>>();
+                if (lookup.TryGetValue(value, out var keys))
+                {
+                    if (!keys.Contains(keyNumber))
+                        keys.Add(keyNumber);
+                    return false;
+                }
+
+                _valuesToKeys.Add(value.ToString(), new List<IndexKeyNum> { keyNumber });
+                _cachedValues = null;
+                return true;
+            }
+        }
+
+        public IReadOnlyList<string> Values
+        {
+            get
+            {
+                lock (_locker)
+                {
+                    return _cachedValues ??= _valuesToKeys.Keys.ToList();
+                }
+            }
+        }
+
+        public IndexKeyNum[] GetKeys(string value)
+        {
+            lock (_locker)
+            {
+                return _valuesToKeys.TryGetValue(value, out var keys)
+                    ? keys.ToArray()
+                    : Array.Empty<IndexKeyNum>();
+            }
+        }
+    }
+
+    private readonly ConcurrentDictionary<int, ComponentRegistry> _components = new();
 
     private readonly ChunkedList<IndexKeyNum> _lineAndKeyIndex = new(16384);
 
     private int _currentCount = 0;
     public Indexer() 
-        : base(new ConcurrentDictionary<IndexKey, IndexKeyNum>(), 
-            new ConcurrentDictionary<IndexKeyNum, IndexKey>())
+        : base(new ConcurrentDictionary<IndexKey, IndexKeyNum>(Environment.ProcessorCount, 1024), 
+            new ConcurrentDictionary<IndexKeyNum, IndexKey>(Environment.ProcessorCount, 1024))
     {
     }
 
@@ -46,25 +96,55 @@ public class Indexer : IndexerBase, IComponentIndexer
 
     public void Add(IndexKey key, int lineNumber)
     {
-        if (!KeysToNumbers.TryGetValue(key, out var keyNumber))
-            keyNumber = AddNewKey(key);
+        var (keyNumber, index) = ResolveKey(key, null);
+        Append(keyNumber, index, lineNumber);
+    }
 
-        _lineAndKeyIndex.Add(keyNumber);
-            
+    /// <summary>
+    /// Resolves a key to its number and index tree. Thread-safe: this is the
+    /// expensive, order-independent part of indexing (hashing the key, dictionary
+    /// lookups, registering new components) and is done by parallel workers.
+    /// <para>
+    /// When <paramref name="pendingNotifications"/> is provided, new-component
+    /// notifications are collected instead of being raised, so that the merge
+    /// thread can raise them in line order, from a single thread.
+    /// </para>
+    /// </summary>
+    internal (IndexKeyNum KeyNumber, IndexTree<int, SimpleLeaf<int>> Index) ResolveKey(IndexKey key,
+        List<(int componentNumber, IndexKey key)>? pendingNotifications)
+    {
+        if (!KeysToNumbers.TryGetValue(key, out var keyNumber))
+            keyNumber = AddNewKey(key, pendingNotifications);
+
         var index = Indices.GetOrAdd(keyNumber, static _ => CreateIndexTree());
-            
+        return (keyNumber, index);
+    }
+
+    /// <summary>
+    /// Appends one line to the index. Must be called in line order, from a single
+    /// thread (the merge thread of the loading pipeline).
+    /// </summary>
+    internal void Append(IndexKeyNum keyNumber, IndexTree<int, SimpleLeaf<int>> index, int lineNumber)
+    {
+        _lineAndKeyIndex.Add(keyNumber);
         index.Add(lineNumber);
         CountIndex.Add(lineNumber, Indices);
     }
 
-    private IndexKeyNum AddNewKey(IndexKey key)
+    internal void RaiseComponentNotifications(List<(int componentNumber, IndexKey key)> notifications)
+    {
+        foreach (var (componentNumber, key) in notifications)
+            NewComponentAdded?.Invoke((componentNumber, key));
+    }
+
+    private IndexKeyNum AddNewKey(IndexKey key, List<(int componentNumber, IndexKey key)>? pendingNotifications)
     {
         var localKey = key.MakeLocalCopy();
         var keyNumber = new IndexKeyNum { KeyNum = Interlocked.Increment(ref _currentCount) };
         if (KeysToNumbers.TryAdd(localKey, keyNumber))
         {
             NumbersToKeys.TryAdd(keyNumber, localKey);
-            UpdateComponents(localKey);
+            UpdateComponents(localKey, keyNumber, pendingNotifications);
             return keyNumber;
         }
 
@@ -75,46 +155,43 @@ public class Indexer : IndexerBase, IComponentIndexer
         return keyNumber;
     }
 
-    private class ComponentComparer : IEqualityComparer<IndexKey>
-    {
-        private readonly int _index;
-
-        public ComponentComparer(int index) => _index = index;
-
-        public bool Equals(IndexKey x, IndexKey y) =>
-            x.GetComponent(_index).SequenceEqual(y.GetComponent(_index));
-
-        public int GetHashCode(IndexKey obj) => string.GetHashCode(obj.GetComponent(_index));
-    }
-    
-    private void UpdateComponents(IndexKey key)
+    private void UpdateComponents(IndexKey key, IndexKeyNum keyNumber,
+        List<(int componentNumber, IndexKey key)>? pendingNotifications)
     {
         for (var componentIndex = 0; componentIndex < key.ComponentCount; componentIndex++)
         {
-            var componentSet = _components.GetOrAdd(componentIndex,
-                static index => new HashSet<IndexKey>(new ComponentComparer(index)));
+            var registry = _components.GetOrAdd(componentIndex, static _ => new ComponentRegistry());
 
-            bool isAdded;
-            lock (_componentsLocker)
-            {
-                isAdded = componentSet.Add(key);
-            }
+            if (!registry.TryAdd(key.GetComponent(componentIndex), keyNumber))
+                continue;
 
-            if (isAdded)
+            if (pendingNotifications != null)
+                pendingNotifications.Add((componentIndex, key));
+            else
                 NewComponentAdded?.Invoke((componentIndex, key));
         }
     }
 
     public IEnumerable<string> GetAllComponents(int componentNumber)
     {
-        if (!_components.TryGetValue(componentNumber, out var componentSet))
-            return Enumerable.Empty<string>();
+        return _components.TryGetValue(componentNumber, out var registry)
+            ? registry.Values
+            : Enumerable.Empty<string>();
+    }
 
-        lock (_componentsLocker)
+    public override int GetIndexCountForComponent(int componentIndex, string componentValue)
+    {
+        if (!_components.TryGetValue(componentIndex, out var registry))
+            return 0;
+
+        var count = 0;
+        foreach (var keyNumber in registry.GetKeys(componentValue))
         {
-            return componentSet
-                .Select(key => key.GetComponent(componentNumber).ToString()).ToList();
+            if (Indices.TryGetValue(keyNumber, out var index))
+                count += index.Count;
         }
+
+        return count;
     }
 
     public event Action<(int compnentNumber, IndexKey key)>? NewComponentAdded;

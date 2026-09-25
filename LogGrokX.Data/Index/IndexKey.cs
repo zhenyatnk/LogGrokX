@@ -12,20 +12,27 @@ namespace LogGrokX.Data.Index
         private readonly int _componentCount;
         private readonly bool _hasLocalBuffer;
 
+        // Hash is computed once, at construction time: the key is looked up in
+        // several dictionaries (and component sets) per log line, and hashing all
+        // components again on every lookup used to dominate indexing time.
+        private readonly int _hash;
+
         public IndexKey(string buffer, int start, int componentCount)
         {
             _buffer = buffer;
             _start = start;
             _componentCount = componentCount;
             _hasLocalBuffer = false;
+            _hash = ComputeHash(buffer, start, componentCount);
         }
 
-        private IndexKey(string buffer, int componentCount, bool hasLocalBuffer)
+        private IndexKey(string buffer, int componentCount, bool hasLocalBuffer, int hash)
         {
             _buffer = buffer;
             _start = 0;
             _componentCount = componentCount;
             _hasLocalBuffer = hasLocalBuffer;
+            _hash = hash;
         }
 
         public int ComponentCount => _componentCount;
@@ -43,7 +50,7 @@ namespace LogGrokX.Data.Index
                 local = new string(start, 0, size);
             }
 
-            return new IndexKey(local, _componentCount, true);
+            return new IndexKey(local, _componentCount, true, _hash);
         }
 
         public ReadOnlySpan<char> GetComponent(int index)
@@ -78,17 +85,22 @@ namespace LogGrokX.Data.Index
             return obj is IndexKey other && Equals(other);
         }
 
-        public override int GetHashCode()
+        public override int GetHashCode() => _hash;
+
+        private static unsafe int ComputeHash(string buffer, int start, int componentCount)
         {
             unchecked
             {
-                var meta = GetComponentsMeta();
-                var dataSpan = GetDataSpan();
+                var bufferSpan = buffer.AsSpan(start);
+                var dataSpan = buffer.AsSpan(start + LineMetaInformation.GetSizeChars(componentCount));
                 var result = 17;
-
-                for (var i = 0; i < _componentCount; i++)
+                fixed (char* pointer = bufferSpan)
                 {
-                    result = result * 31 + string.GetHashCode(meta.GetComponent(dataSpan, i));
+                    var meta = LineMetaInformation.Get(pointer, componentCount).ParsedLineComponents;
+                    for (var i = 0; i < componentCount; i++)
+                    {
+                        result = result * 31 + string.GetHashCode(meta.GetComponent(dataSpan, i));
+                    }
                 }
 
                 return result;

@@ -9,7 +9,9 @@ namespace LogGrokX.Data.Index;
 public abstract class IndexerBase : IDisposable
 {
     protected readonly ConcurrentDictionary<IndexKeyNum, IndexTree<int, SimpleLeaf<int>>> Indices =
-        new(1, 16384);
+        // concurrencyLevel = 1 serialized every write on a single lock;
+        // indexing now happens from several threads.
+        new(Environment.ProcessorCount, 16384);
 
     protected readonly CountIndex<IndexTree<int, SimpleLeaf<int>>> CountIndex;
 
@@ -38,7 +40,7 @@ public abstract class IndexerBase : IDisposable
     public IndexTree<int, SimpleLeaf<int>> GetIndex(IndexKeyNum key) => Indices[key];
     
     
-    public int GetIndexCountForComponent(int componentIndex, string componentValue)
+    public virtual int GetIndexCountForComponent(int componentIndex, string componentValue)
     {
         return Indices
             .Where(keyValuePair =>

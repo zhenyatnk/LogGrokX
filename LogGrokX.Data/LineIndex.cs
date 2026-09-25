@@ -88,17 +88,35 @@ namespace LogGrokX.Data
             }
         }
 
+        // Count is polled in tight loops (search progress, UI virtualization),
+        // so it is served from a volatile counter instead of taking the lock.
         public int Count
         {
             get
             {
-                lock (_lineStarts)
-                    return (_lastLineLength, _lineStarts.Count) switch
-                        {
-                            (_, 0) => 0,
-                            (null, var count) => count - 1,    
-                            var (_, count) => count
-                        };
+                var lineStartCount = Volatile.Read(ref _lineStartCount);
+                if (lineStartCount == 0)
+                    return 0;
+                return Volatile.Read(ref _lastLineLengthValue) >= 0 ? lineStartCount : lineStartCount - 1;
+            }
+        }
+
+        /// <summary>
+        /// Appends a batch of line starts under a single lock and returns the line
+        /// number of the first appended line.
+        /// </summary>
+        public int AddRange(ReadOnlySpan<long> lineStarts)
+        {
+            if (lineStarts.IsEmpty)
+                return Count;
+
+            lock (_lineStarts)
+            {
+                var firstLineNum = _lineStarts.Count;
+                foreach (var lineStart in lineStarts)
+                    _lineStarts.Add(lineStart);
+                Volatile.Write(ref _lineStartCount, _lineStarts.Count);
+                return firstLineNum;
             }
         }
 
@@ -108,6 +126,7 @@ namespace LogGrokX.Data
             {
                 var lineNum = _lineStarts.Count;
                 _lineStarts.Add(lineStart);
+                Volatile.Write(ref _lineStartCount, _lineStarts.Count);
                 return lineNum;
             }
         }
@@ -115,12 +134,15 @@ namespace LogGrokX.Data
         public void Finish(int lastLength)
         {
             _lastLineLength = lastLength;
+            Volatile.Write(ref _lastLineLengthValue, lastLength);
         }
         
-        public bool IsFinished => _lastLineLength.HasValue;
+        public bool IsFinished => Volatile.Read(ref _lastLineLengthValue) >= 0;
 
         private readonly IndexTree<long, LongsLeaf> _lineStarts 
             = new(16, l => new LongsLeaf(l, 0));
         private int? _lastLineLength;
+        private int _lineStartCount;
+        private int _lastLineLengthValue = -1;
     }
 }

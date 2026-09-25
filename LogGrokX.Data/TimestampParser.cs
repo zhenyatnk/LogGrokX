@@ -3,52 +3,106 @@ using System.Globalization;
 
 namespace LogGrokX.Data
 {
+    /// <summary>
+    /// Pre-analyzed timestamp format. Parsing the format string is done once
+    /// (usually in a parser constructor) instead of once per log line.
+    /// </summary>
+    public sealed class TimestampFormat
+    {
+        internal enum FastPath
+        {
+            None,
+            DateTimeMillis,
+            DateTimeSeconds,
+            TimeMillis,
+            TimeSeconds
+        }
+
+        public static readonly TimestampFormat Empty = new(null);
+
+        private TimestampFormat(string? format)
+        {
+            Raw = format;
+            HasFormat = !string.IsNullOrWhiteSpace(format);
+            if (!HasFormat)
+            {
+                Path = FastPath.None;
+                IsTimeOnly = false;
+                return;
+            }
+
+            Path = format switch
+            {
+                TimestampParser.DateHourFormat => FastPath.DateTimeMillis,
+                TimestampParser.DateTimeShortFormat => FastPath.DateTimeSeconds,
+                TimestampParser.TimeOnlyFormat => FastPath.TimeMillis,
+                TimestampParser.TimeOnlyShortFormat => FastPath.TimeSeconds,
+                _ => FastPath.None
+            };
+
+            IsTimeOnly = format!.IndexOf('y') < 0 && format.IndexOf('M') < 0 && format.IndexOf('d') < 0;
+        }
+
+        public static TimestampFormat Create(string? format) =>
+            string.IsNullOrWhiteSpace(format) ? Empty : new TimestampFormat(format);
+
+        internal string? Raw { get; }
+
+        internal bool HasFormat { get; }
+
+        internal FastPath Path { get; }
+
+        internal bool IsTimeOnly { get; }
+    }
+
     public static class TimestampParser
     {
-        private const string DateHourFormat = "yyyy-MM-dd HH:mm:ss.fff";
-        private const string DateTimeShortFormat = "yyyy-MM-dd HH:mm:ss";
-        private const string TimeOnlyFormat = "HH:mm:ss.fff";
-        private const string TimeOnlyShortFormat = "HH:mm:ss";
+        internal const string DateHourFormat = "yyyy-MM-dd HH:mm:ss.fff";
+        internal const string DateTimeShortFormat = "yyyy-MM-dd HH:mm:ss";
+        internal const string TimeOnlyFormat = "HH:mm:ss.fff";
+        internal const string TimeOnlyShortFormat = "HH:mm:ss";
 
-        public static bool TryGetTicks(ReadOnlySpan<char> text, string? format, out long ticks)
+        public static bool TryGetTicks(ReadOnlySpan<char> text, string? format, out long ticks) =>
+            TryGetTicks(text, TimestampFormat.Create(format), out ticks);
+
+        public static bool TryGetTicks(ReadOnlySpan<char> text, TimestampFormat format, out long ticks)
         {
             ticks = -1;
             if (text.IsEmpty)
                 return false;
 
-            var hasFormat = !string.IsNullOrWhiteSpace(format);
-            if (hasFormat && TryParseFast(text, format!, out ticks))
+            if (TryParseFast(text, format.Path, out ticks))
                 return true;
 
             DateTime timestamp;
-            var parsed = hasFormat
-                ? DateTime.TryParseExact(text, format!, CultureInfo.InvariantCulture, DateTimeStyles.None,
+            var parsed = format.HasFormat
+                ? DateTime.TryParseExact(text, format.Raw!, CultureInfo.InvariantCulture, DateTimeStyles.None,
                     out timestamp)
                 : DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
 
             if (!parsed)
                 return false;
 
-            ticks = hasFormat && IsTimeOnly(format!)
+            ticks = format.HasFormat && format.IsTimeOnly
                 ? timestamp.TimeOfDay.Ticks
                 : timestamp.Ticks;
 
             return true;
         }
 
-        private static bool TryParseFast(ReadOnlySpan<char> text, string format, out long ticks)
+        private static bool TryParseFast(ReadOnlySpan<char> text, TimestampFormat.FastPath path, out long ticks)
         {
             ticks = -1;
 
-            switch (format)
+            switch (path)
             {
-                case DateHourFormat:
+                case TimestampFormat.FastPath.DateTimeMillis:
                     return TryParseDate(text, 3, out ticks);
-                case DateTimeShortFormat:
+                case TimestampFormat.FastPath.DateTimeSeconds:
                     return TryParseDate(text, 0, out ticks);
-                case TimeOnlyFormat:
+                case TimestampFormat.FastPath.TimeMillis:
                     return TryParseTime(text, 3, out ticks);
-                case TimeOnlyShortFormat:
+                case TimestampFormat.FastPath.TimeSeconds:
                     return TryParseTime(text, 0, out ticks);
                 default:
                     return false;
@@ -154,7 +208,5 @@ namespace LogGrokX.Data
                 : timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture);
         }
 
-        private static bool IsTimeOnly(string format) =>
-            format.IndexOf('y') < 0 && format.IndexOf('M') < 0 && format.IndexOf('d') < 0;
     }
 }

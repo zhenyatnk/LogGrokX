@@ -33,7 +33,7 @@ public static class Search
             {
                 
                 _isFinished = value;
-                _progressCompletionSource.SetResult();
+                _progressCompletionSource.TrySetResult();
             }
         }
 

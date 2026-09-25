@@ -41,7 +41,7 @@ namespace LogGrokX
                 var logFile = new LogFile(file, xorMask);
                 using var fileStream =  logFile.OpenForSequentialRead();
                 var buffer = ArrayPool<byte>.Shared.Rent(ProbeSizeBytes);
-                var bytesRead = fileStream.Read(buffer.AsSpan());
+                var bytesRead = fileStream.ReadFull(buffer.AsSpan());
                 using var memoryStream = new MemoryStream(buffer, 0, bytesRead);
                 using var streamReader = new StreamReader(memoryStream);
                 while (!streamReader.EndOfStream)

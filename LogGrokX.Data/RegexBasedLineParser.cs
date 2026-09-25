@@ -11,7 +11,7 @@ namespace LogGrokX.Data
         private readonly int _componentCount;
         private readonly int[] _fieldsToStore;
         private readonly int _timeGroupNumber;
-        private readonly string _timeFormat;
+        private readonly TimestampFormat _timeFormat;
 
         public RegexBasedLineParser(LogMetaInformation logMetaInformation, 
             bool onlyIndexed = false)
@@ -23,7 +23,7 @@ namespace LogGrokX.Data
                 ? logMetaInformation.IndexedFieldNumbers
                 : Enumerable.Range(0, _componentCount).ToArray();
             _timeGroupNumber = logMetaInformation.HasTime ? logMetaInformation.TimeGroupNumber : -1;
-            _timeFormat = logMetaInformation.TimeFormat;
+            _timeFormat = TimestampFormat.Create(logMetaInformation.TimeFormat);
         }
 
         public ParseResult Parse(string input)

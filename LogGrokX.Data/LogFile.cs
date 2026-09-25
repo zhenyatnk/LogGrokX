@@ -41,7 +41,7 @@ namespace LogGrokX.Data
             var buffer = new byte[8192];
             int length;
             using (var stream = OpenForSequentialRead())
-                length = stream.Read(buffer, 0, buffer.Length);
+                length = stream.ReadFull(buffer.AsSpan());
             var span = buffer.AsSpan(0, length);
 
             // try to find BOM

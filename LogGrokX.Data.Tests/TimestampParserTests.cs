@@ -23,7 +23,7 @@ public class TimestampParserTests
     {
         var expected = new DateTime(2024, 1, 2, 3, 4, 5, 678).Ticks;
 
-        var parsed = TimestampParser.TryGetTicks("2024-01-02 03:04:05.678", null, out var ticks);
+        var parsed = TimestampParser.TryGetTicks("2024-01-02 03:04:05.678", (string?)null, out var ticks);
 
         Assert.IsTrue(parsed);
         Assert.AreEqual(expected, ticks);

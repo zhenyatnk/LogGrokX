@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -17,9 +18,10 @@ public class Pipeline
     private readonly Regex _regex;
     private readonly LogModelFacade _logModelFacade;
     private readonly (int StartLine, int EndLine)? _lineRange;
-    private const int MaxSearchSizeLines = 1024;
+    private const int MaxSearchSizeLines = 4096;
     private readonly int _searchWorkersCount = Math.Max(Environment.ProcessorCount - 1, 1);
     private readonly StringPool _stringPool = new();
+    private SearchPrefilter? _prefilter;
 
     private uint? _id;
     
@@ -31,6 +33,8 @@ public class Pipeline
         _logModelFacade = logModelFacade;
         _lineRange = lineRange;
     }
+
+    private static bool IsTraceEnabled => System.Diagnostics.Trace.Listeners.Count > 0;
 
     private void Trace(string message)
     {
@@ -64,11 +68,13 @@ public class Pipeline
         Search.Progress progress,
         CancellationToken cancellationToken)
     {
-        var timestamp = DateTime.Now;
+        var startTimestamp = Stopwatch.GetTimestamp();
 
-        Trace($"Search started.");
-        
+        if (IsTraceEnabled)
+            Trace("Search started.");
+
         var encoding = _logModelFacade.LogFile.Encoding;
+        _prefilter = SearchPrefilter.TryCreate(_regex, encoding);
         var sourceLineIndex = _logModelFacade.LineIndex;
         var sourceIndexer = _logModelFacade.Indexer;
 
@@ -105,11 +111,12 @@ public class Pipeline
 
         await searchTasksChannel.StartConsumers(async reader =>
             await SearchInBufferWorker(_regex, sourceLineIndex, encoding, reader, cancellationToken),
-            Environment.ProcessorCount);
+            _searchWorkersCount);
         
         await Task.WhenAll(workers.ToArray());
         await processSearchResultsCompletionSource.Task;
-        Trace($"Search finished, spent: {DateTime.Now-timestamp}");
+        if (IsTraceEnabled)
+            Trace($"Search finished, spent: {Stopwatch.GetElapsedTime(startTimestamp)}");
     }
 
     private async Task LoadBuffersWorker(LogModelFacade logModelFacade, Search.Progress progress,
@@ -145,7 +152,9 @@ public class Pipeline
                 var memoryOwner = MemoryPool<byte>.Shared.Rent((int) size);
 
                 _ = stream.Seek(firstLineOffset, SeekOrigin.Begin);
-                _ = stream.Read(memoryOwner.Memory.Span);
+                // Stream.Read may return less than requested; a partial read used to
+                // silently truncate the searched data.
+                _ = stream.ReadFull(memoryOwner.Memory.Span[..(int)size]);
   
                 var source = new ValueTaskSource<PooledList<int>>();
                 var resultTask = new ValueTask<PooledList<int>>(source, 0);
@@ -177,7 +186,7 @@ public class Pipeline
         await foreach (var (memory, startLine, endLine, resultTaskSource) in searchTasksChannelReader.ReadAllAsync(
                            cancellationToken))
         {
-            if (counter == 0)
+            if (counter == 0 && IsTraceEnabled)
             {
                 Trace("SearchInBufferWorker: processing first data");
             }
@@ -208,6 +217,12 @@ public class Pipeline
         var currentLineLength = firstLineLength;
         var index = start;
         var memorySpan = memory.Span;
+        var prefilter = _prefilter;
+        var searchedSpan = memorySpan[..(int)(offsets[lineCount - 1].offset + offsets[lineCount - 1].length
+                                              - firstLineOffset)];
+        if (prefilter != null && !prefilter.MayContainMatch(searchedSpan))
+            return result;
+
         do {
             var charCount = encoding.GetMaxCharCount(currentLineLength);
 
@@ -219,7 +234,16 @@ public class Pipeline
 
             var bytes =
                 memorySpan.Slice((int) (currentLineOffset - firstLineOffset), currentLineLength);
-                   
+
+            if (prefilter != null && !prefilter.MayContainMatch(bytes))
+            {
+                index++;
+                if (index > end)
+                    break;
+                (currentLineOffset, currentLineLength) = offsets[index - start];
+                continue;
+            }
+
             int stringLength;
             unsafe
             {

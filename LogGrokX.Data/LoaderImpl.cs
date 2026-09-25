@@ -42,7 +42,7 @@ namespace LogGrokX.Data
                     bufferStartPosition = streamPosition - dataOffsetFromBufferStart;
                     var data = buffer.AsSpan(dataOffsetFromBufferStart,
                         bufferSize - dataOffsetFromBufferStart);
-                    var bytesRead = stream.Read(data);
+                    var bytesRead = stream.ReadFull(data);
                     streamPosition += bytesRead;
 
                     while (true)
@@ -135,7 +135,7 @@ namespace LogGrokX.Data
                             lineOffsetFromBufferStart_ - dataOffsetFromBufferStart;
 
                         data = newBuffer.AsSpan(dataOffsetFromBufferStart, bufferSize);
-                        bytesRead = stream.Read(data);
+                        bytesRead = stream.ReadFull(data);
                         streamPosition += bytesRead;
 
                         bufferSize *= 2;

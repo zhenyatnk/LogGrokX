@@ -13,6 +13,12 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Version>2.1</Version>
     <GitVersion>false</GitVersion>
+    <!-- Throughput-oriented runtime settings: the app streams and indexes
+         multi-gigabyte files on background threads. -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <TieredPGO>true</TieredPGO>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <!-- <PublishTrimmed>true</PublishTrimmed> -->
   </PropertyGroup>
 
@@ -31,9 +37,6 @@
   <ItemGroup>
     <None Remove="Controls\GridView\LogGridViewCell.xaml" />
     <None Remove="Controls\GridView\LogGridViewHeader.xaml" />
-    <None Update="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 
@@ -51,7 +54,6 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
     <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.158" />
     <PackageReference Include="NetEscapades.Configuration.Yaml" Version="3.1.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="NLog" Version="6.2.0" />
     <PackageReference Include="NLog.Extensions.Logging" Version="6.2.0" />
     <PackageReference Include="Splat.DryIoc" Version="21.0.0" />

@@ -9,3 +9,5 @@
 /artifacts/
 /installer/publish*/
 BenchmarkDotNet.Artifacts/
+tools/**/bin/
+tools/**/obj/
