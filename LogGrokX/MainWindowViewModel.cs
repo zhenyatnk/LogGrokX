@@ -28,6 +28,7 @@ namespace LogGrokX
         private readonly TextZoomService _textZoomService;
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly MergedFilesViewService _mergedFilesViewService;
+        private readonly UpdateCheckService _updateCheckService;
 
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
@@ -54,6 +55,7 @@ namespace LogGrokX
             TextZoomService textZoomService,
             ThreadGroupingService threadGroupingService,
             MergedFilesViewService mergedFilesViewService,
+            UpdateCheckService updateCheckService,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
         {
             _applicationSettings = applicationSettings;
@@ -64,6 +66,7 @@ namespace LogGrokX
             _textZoomService = textZoomService;
             _threadGroupingService = threadGroupingService;
             _mergedFilesViewService = mergedFilesViewService;
+            _updateCheckService = updateCheckService;
             _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             _threadGroupingService.Changed += OnThreadGroupingChanged;
             _mergedFilesViewService.Changed += OnMergedFilesViewChanged;
@@ -163,9 +166,9 @@ namespace LogGrokX
 
         public AvalonDock.Themes.Theme DockTheme => _themeService.IsDark ? DarkDockTheme : LightDockTheme;
 
-        private static void OpenSupport()
+        private void OpenSupport()
         {
-            var window = new SupportWindow();
+            var window = new SupportWindow(_updateCheckService);
             if (Application.Current?.MainWindow is { } owner)
                 window.Owner = owner;
             window.ShowDialog();
