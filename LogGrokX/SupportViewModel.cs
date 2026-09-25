@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Windows;
 using System.Windows.Input;
 
 namespace LogGrokX
@@ -10,8 +11,14 @@ namespace LogGrokX
     {
         private const string RepositoryUrl = "https://github.com/zhenyatnk/LogGrokX";
 
-        public SupportViewModel()
+        private readonly UpdateCheckService? _updateCheckService;
+        private bool _isCheckingForUpdates;
+        private string _updateStatus = string.Empty;
+
+        public SupportViewModel(UpdateCheckService? updateCheckService = null)
         {
+            _updateCheckService = updateCheckService;
+            CheckForUpdatesCommand = new DelegateCommand(CheckForUpdates);
             OpenReleasesCommand = new DelegateCommand(() => OpenUrl($"{RepositoryUrl}/releases/latest"));
             OpenIssuesCommand = new DelegateCommand(() => OpenUrl($"{RepositoryUrl}/issues/new"));
             OpenRepositoryCommand = new DelegateCommand(() => OpenUrl(RepositoryUrl));
@@ -38,6 +45,22 @@ namespace LogGrokX
             $"OS: {OsVersion}{Environment.NewLine}" +
             $"Architecture: {Architecture}";
 
+        public ICommand CheckForUpdatesCommand { get; }
+
+        public bool CanCheckForUpdates => _updateCheckService != null && !_isCheckingForUpdates;
+
+        public string UpdateStatus
+        {
+            get => _updateStatus;
+            private set
+            {
+                _updateStatus = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public Window? Owner { get; set; }
+
         public ICommand OpenReleasesCommand { get; }
 
         public ICommand OpenIssuesCommand { get; }
@@ -47,6 +70,37 @@ namespace LogGrokX
         public ICommand OpenLogsFolderCommand { get; }
 
         public ICommand CopyDiagnosticsCommand { get; }
+
+        private async void CheckForUpdates()
+        {
+            if (_updateCheckService == null || _isCheckingForUpdates)
+                return;
+
+            _isCheckingForUpdates = true;
+            InvokePropertyChanged(nameof(CanCheckForUpdates));
+            UpdateStatus = "Checking for updates...";
+            try
+            {
+                var owner = Owner ?? Application.Current?.MainWindow;
+                if (owner == null)
+                    return;
+                var release = await _updateCheckService.CheckNowAsync(owner);
+                UpdateStatus = release == null
+                    ? "Could not get release information."
+                    : UpdateVersion.IsNewer(release.Tag, Version)
+                        ? $"Version {release.Tag} is available."
+                        : "You have the latest version.";
+            }
+            catch (Exception e)
+            {
+                UpdateStatus = $"Update check failed: {e.Message}";
+            }
+            finally
+            {
+                _isCheckingForUpdates = false;
+                InvokePropertyChanged(nameof(CanCheckForUpdates));
+            }
+        }
 
         private static string ShortCommit(string commit)
         {

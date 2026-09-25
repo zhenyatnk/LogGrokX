@@ -29,6 +29,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🛟 Support window](#-support-window)
 - [📑 Multiple documents](#-multiple-documents)
 - [🧬 Merged files view](#-merged-files-view)
+- [🔄 Automatic updates](#-automatic-updates)
 
 ## ⚡ Large file support
 
@@ -388,7 +389,7 @@ the WER `LocalDumps` registry key on startup and cleans it up when disabled.
 
 **Business value.** When users report a problem, diagnostics are the slow part.
 The Support window collects version, git commit and branch, .NET runtime, OS and
-CPU architecture, and offers one-click links to the latest release, the issue
+CPU architecture, lets you check for updates manually, and offers one-click links to the latest release, the issue
 tracker and the source, plus "copy diagnostics" and "open logs folder".
 
 ![Demo](assets/images/feature-6.png)
@@ -458,6 +459,32 @@ if (timeline.FindLineRange(fromTicks, toTicks) is { } window)
 is proportional to the number of lines rather than the number of sources. The
 view is toggled by `MergedFilesViewService` and persisted as
 `ViewSettings.MergedFilesView`.
+
+## 🔄 Automatic updates
+
+**Business value.** Users stay on the latest fixes without visiting GitHub. LogGrokX
+checks for a newer release at most once a day and, with one click, installs it
+silently when the application is closed.
+
+- On startup (and hourly while running) the app asks the GitHub
+  `releases/latest` API for the newest version, but no more than once every
+  24 hours.
+- If a newer version exists, the **Update available** dialog shows the release
+  notes with **Update**, **Later** and **Skip this version**.
+- **Update** downloads the installer for the current architecture, verifies it
+  against `SHA256SUMS.txt`, and runs it in silent mode after LogGrokX exits.
+  Program Files installs ask for UAC elevation.
+- Portable builds cannot self-update: the button opens the release page instead.
+- **Check for updates** in the Support window runs a check right away, ignoring
+  the daily limit and skipped versions.
+- Turn it on or off in **Settings → View → Automatic updates**, with the
+  **Automatically check for updates** option in the installer, or in
+  `appsettings.yaml`:
+
+```yaml
+  ViewSettings:
+    CheckForUpdates: true
+```
 
 ## Missing a feature?
 

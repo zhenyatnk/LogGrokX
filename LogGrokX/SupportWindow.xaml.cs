@@ -6,7 +6,7 @@ namespace LogGrokX
     {
         public SupportWindow()
         {
-            DataContext = new SupportViewModel();
+            DataContext = new SupportViewModel(Splat.Locator.Current.GetService(typeof(UpdateCheckService)) as UpdateCheckService) { Owner = this };
             InitializeComponent();
         }
 

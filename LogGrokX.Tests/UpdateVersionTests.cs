@@ -29,6 +29,17 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void CheckIsDueAtMostOncePerDay()
+        {
+            var now = new System.DateTime(2026, 9, 25, 12, 0, 0, System.DateTimeKind.Utc);
+
+            Assert.IsTrue(UpdateCheckService.IsCheckDue(null, now));
+            Assert.IsFalse(UpdateCheckService.IsCheckDue(now.AddHours(-23), now));
+            Assert.IsTrue(UpdateCheckService.IsCheckDue(now.AddHours(-24), now));
+            Assert.IsTrue(UpdateCheckService.IsCheckDue(now.AddHours(1), now));
+        }
+
+        [TestMethod]
         public void FindChecksumMatchesFileName()
         {
             var sums = "AAA111  LogGrokX-1.3.0-x64-portable.zip\r\nBBB222  LogGrokX-1.3.0-x64-setup.exe\r\n";

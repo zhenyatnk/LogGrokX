@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -10,6 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace LogGrokX;
 
@@ -22,6 +24,7 @@ public class UpdateCheckService
 
     private readonly ApplicationSettings _settings;
     private string? _pendingInstallerPath;
+    private bool _isWindowOpen;
 
     public UpdateCheckService(ApplicationSettings settings)
     {
@@ -33,25 +36,97 @@ public class UpdateCheckService
 
     public bool HasPendingInstall => _pendingInstallerPath != null;
 
+    public static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
+
     public async void CheckOnStartup(Window owner)
     {
-        if (!_settings.ViewSettings.CheckForUpdates)
+        await CheckAutomaticallyAsync(owner);
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+        timer.Tick += async (_, _) => await CheckAutomaticallyAsync(owner);
+        timer.Start();
+    }
+
+    public async Task<ReleaseInfo?> CheckNowAsync(Window owner)
+    {
+        var release = await GetLatestReleaseAsync();
+        WriteLastCheck(DateTime.UtcNow);
+        if (release == null || !UpdateVersion.IsNewer(release.Tag, BuildInfo.Version))
+            return release;
+
+        ShowUpdateWindow(owner, release);
+        return release;
+    }
+
+    public static bool IsCheckDue(DateTime? lastCheckUtc, DateTime nowUtc) =>
+        lastCheckUtc == null || nowUtc - lastCheckUtc.Value >= CheckInterval || lastCheckUtc.Value > nowUtc;
+
+    private async Task CheckAutomaticallyAsync(Window owner)
+    {
+        if (!_settings.ViewSettings.CheckForUpdates || _isWindowOpen || HasPendingInstall)
+            return;
+        if (!IsCheckDue(ReadLastCheck(), DateTime.UtcNow))
             return;
 
         try
         {
             var release = await GetLatestReleaseAsync();
+            WriteLastCheck(DateTime.UtcNow);
             if (release == null || !UpdateVersion.IsNewer(release.Tag, BuildInfo.Version))
                 return;
             if (string.Equals(ReadSkippedVersion(), release.Tag, StringComparison.OrdinalIgnoreCase))
                 return;
 
-            var window = new UpdateWindow(new UpdateViewModel(this, release)) { Owner = owner };
-            window.Show();
+            ShowUpdateWindow(owner, release);
         }
         catch (Exception e)
         {
             Trace.TraceWarning($"Update check failed: {e.Message}");
+        }
+    }
+
+    private void ShowUpdateWindow(Window owner, ReleaseInfo release)
+    {
+        if (_isWindowOpen)
+            return;
+
+        var window = new UpdateWindow(new UpdateViewModel(this, release));
+        if (owner.IsVisible)
+            window.Owner = owner;
+        _isWindowOpen = true;
+        window.Closed += (_, _) => _isWindowOpen = false;
+        window.Show();
+        window.Activate();
+    }
+
+    private static string LastCheckFileName => HomeDirectoryPathProvider.GetDataFileFullPath("last-update-check.settings");
+
+    private static DateTime? ReadLastCheck()
+    {
+        try
+        {
+            if (!File.Exists(LastCheckFileName))
+                return null;
+            return DateTime.TryParse(File.ReadAllText(LastCheckFileName).Trim(), CultureInfo.InvariantCulture,
+                DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal, out var value)
+                ? value
+                : null;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    private static void WriteLastCheck(DateTime nowUtc)
+    {
+        try
+        {
+            File.WriteAllText(LastCheckFileName, nowUtc.ToString("O", CultureInfo.InvariantCulture));
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to save last update check time: {e.Message}");
         }
     }
 
@@ -192,8 +267,7 @@ public class UpdateCheckService
         client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
         using var response = await client.GetAsync(LatestReleaseApiUrl);
-        if (!response.IsSuccessStatusCode)
-            return null;
+        response.EnsureSuccessStatusCode();
 
         await using var stream = await response.Content.ReadAsStreamAsync();
         using var document = await JsonDocument.ParseAsync(stream);

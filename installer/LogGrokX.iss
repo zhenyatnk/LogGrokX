@@ -126,43 +126,40 @@ end;
 
 procedure SetViewSetting(const FileName, Key, Value: String);
 var
-  Lines, Updated: TArrayOfString;
-  I, J, SectionIndex: Integer;
-  Line: String;
+  S: AnsiString;
+  P, E, LineStart: Integer;
+  Indent: String;
 begin
-  if not LoadStringsFromUTF8File(FileName, Lines) then
+  if not LoadStringFromFile(FileName, S) then
     Exit;
 
-  SectionIndex := -1;
-  for I := 0 to GetArrayLength(Lines) - 1 do
+  P := Pos(Key + ':', S);
+  if P > 0 then
   begin
-    Line := Trim(Lines[I]);
-    if Pos(Key + ':', Line) = 1 then
-    begin
-      Lines[I] := Copy(Lines[I], 1, Pos(Key, Lines[I]) - 1) + Key + ': ' + Value;
-      SaveStringsToUTF8FileWithoutBOM(FileName, Lines, False);
+    E := P;
+    while (E <= Length(S)) and (S[E] <> #13) and (S[E] <> #10) do
+      E := E + 1;
+    Delete(S, P, E - P);
+    Insert(Key + ': ' + Value, S, P);
+  end
+  else
+  begin
+    P := Pos('ViewSettings:', S);
+    if P = 0 then
       Exit;
-    end;
-    if (SectionIndex < 0) and (Line = 'ViewSettings:') then
-      SectionIndex := I;
+    LineStart := P;
+    while (LineStart > 1) and (S[LineStart - 1] = ' ') do
+      LineStart := LineStart - 1;
+    Indent := Copy(S, LineStart, P - LineStart);
+    E := P;
+    while (E <= Length(S)) and (S[E] <> #10) do
+      E := E + 1;
+    if E > Length(S) then
+      S := S + #13#10;
+    Insert(Indent + '  ' + Key + ': ' + Value + #13#10, S, E + 1);
   end;
 
-  if SectionIndex < 0 then
-    Exit;
-
-  SetArrayLength(Updated, GetArrayLength(Lines) + 1);
-  J := 0;
-  for I := 0 to GetArrayLength(Lines) - 1 do
-  begin
-    Updated[J] := Lines[I];
-    J := J + 1;
-    if I = SectionIndex then
-    begin
-      Updated[J] := Copy(Lines[I], 1, Pos('ViewSettings', Lines[I]) - 1) + '  ' + Key + ': ' + Value;
-      J := J + 1;
-    end;
-  end;
-  SaveStringsToUTF8FileWithoutBOM(FileName, Updated, False);
+  SaveStringToFile(FileName, S, False);
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);

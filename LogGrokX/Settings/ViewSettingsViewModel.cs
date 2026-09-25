@@ -102,7 +102,6 @@ namespace LogGrokX.Settings
                 InvokePropertyChanged();
             }
         }
-   }
 
         public bool CheckForUpdates
         {
