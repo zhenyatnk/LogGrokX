@@ -67,6 +67,7 @@ namespace LogGrokX.Bootstrap
 
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();
+            _container.Resolve<UpdateCheckService>().CheckOnStartup(mainWindow);
             
             ProcessCommandLine(e.Args.Where(item => item != null));
         }
@@ -89,6 +90,7 @@ namespace LogGrokX.Bootstrap
             container.Register<TextZoomService>(Reuse.Singleton);
             container.Register<ThreadGroupingService>(Reuse.Singleton);
             container.Register<MergedFilesViewService>(Reuse.Singleton);
+            container.Register<UpdateCheckService>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>();
             container.Register<MainWindow>();
         }

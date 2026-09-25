@@ -127,6 +127,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   Deriving the axis from the filtered buffer makes
   `MergedTimeRangeFilterViewModel.Refresh` clamp the handles to the shrunken
   bounds and silently reset the time range.
+- **Update check**: on startup `UpdateCheckService` queries the GitHub
+  `releases/latest` API and, if the tag is newer than `BuildInfo.Version`
+  (compared by `UpdateVersion`), offers to open the release page, remind later
+  or skip the version (`Data\skipped-update.settings`). Disabled by
+  `ViewSettings.CheckForUpdates: false`. Local builds default to `2.1`, so they
+  never prompt.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

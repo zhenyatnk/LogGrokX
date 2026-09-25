@@ -40,6 +40,8 @@ Settings:
     LogFontSize: 12
     # Group consecutive log lines with the same Thread field
     GroupByThread: false
+    # Check GitHub for a newer release on startup and offer to update
+    CheckForUpdates: true
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
       IndexedFields:

@@ -19,5 +19,7 @@ namespace LogGrokX
         public bool GroupByThread { get; set; }
 
         public bool MergedFilesView { get; set; }
+
+        public bool CheckForUpdates { get; set; } = true;
     }
 }
