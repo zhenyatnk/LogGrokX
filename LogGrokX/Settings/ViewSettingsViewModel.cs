@@ -12,6 +12,7 @@ namespace LogGrokX.Settings
         private double _logFontSize;
         private bool _groupByThread;
         private bool _mergedFilesView;
+        private bool _checkForUpdates;
 
         public ViewSettingsViewModel(ViewSettings settings)
         {
@@ -21,6 +22,7 @@ namespace LogGrokX.Settings
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _mergedFilesView = settings.MergedFilesView;
+            _checkForUpdates = settings.CheckForUpdates;
         }
 
         public IReadOnlyList<ViewSettings.ViewBigLine> BigLineOptions { get; } =
@@ -97,6 +99,19 @@ namespace LogGrokX.Settings
                 if (_mergedFilesView == value)
                     return;
                 _mergedFilesView = value;
+                InvokePropertyChanged();
+            }
+        }
+   }
+
+        public bool CheckForUpdates
+        {
+            get => _checkForUpdates;
+            set
+            {
+                if (_checkForUpdates == value)
+                    return;
+                _checkForUpdates = value;
                 InvokePropertyChanged();
             }
         }

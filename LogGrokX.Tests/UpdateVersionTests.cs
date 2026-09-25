@@ -27,5 +27,14 @@ namespace LogGrokX.Tests
         {
             Assert.AreEqual(new System.Version(1, 2, 3, 0), UpdateVersion.Parse("v1.2.3-rc1"));
         }
+
+        [TestMethod]
+        public void FindChecksumMatchesFileName()
+        {
+            var sums = "AAA111  LogGrokX-1.3.0-x64-portable.zip\r\nBBB222  LogGrokX-1.3.0-x64-setup.exe\r\n";
+
+            Assert.AreEqual("BBB222", UpdateCheckService.FindChecksum(sums, "LogGrokX-1.3.0-x64-setup.exe"));
+            Assert.IsNull(UpdateCheckService.FindChecksum(sums, "LogGrokX-1.3.0-x86-setup.exe"));
+        }
     }
 }

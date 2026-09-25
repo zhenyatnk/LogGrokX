@@ -128,11 +128,15 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `MergedTimeRangeFilterViewModel.Refresh` clamp the handles to the shrunken
   bounds and silently reset the time range.
 - **Update check**: on startup `UpdateCheckService` queries the GitHub
-  `releases/latest` API and, if the tag is newer than `BuildInfo.Version`
-  (compared by `UpdateVersion`), offers to open the release page, remind later
-  or skip the version (`Data\skipped-update.settings`). Disabled by
-  `ViewSettings.CheckForUpdates: false`. Local builds default to `2.1`, so they
-  never prompt.
+  `releases/latest` API; if the tag is newer than `BuildInfo.Version`
+  (`UpdateVersion`) it shows `UpdateWindow` / `UpdateViewModel`. "Update"
+  downloads `LogGrokX-<ver>-<arch>-setup.exe` to `%TEMP%\LogGrokX\Update`,
+  verifies it against `SHA256SUMS.txt`, and `App.OnExit` starts it silently
+  (`/VERYSILENT /AUTOUPDATE=1`, `/ALLUSERS` + UAC for Program Files installs)
+  after the process exits. Portable builds (no `unins000.exe`) only open the
+  release page. The toggle is `ViewSettings.CheckForUpdates` (Settings -> View);
+  the installer task `autoupdate` writes it to `appsettings.yaml` except during
+  `/AUTOUPDATE=1` runs. Local builds default to `2.1`, so they never prompt.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

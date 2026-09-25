@@ -46,6 +46,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
@@ -122,6 +123,18 @@
                                   IsChecked="{Binding View.MergedFilesView, Mode=TwoWay}" />
 
                         <TextBlock Grid.Row="6"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,10"
+                                   VerticalAlignment="Center"
+                                   Text="Automatic updates" />
+                        <CheckBox Grid.Row="6"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  VerticalAlignment="Center"
+                                  Content="Check for new versions on startup"
+                                  IsChecked="{Binding View.CheckForUpdates, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="7"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="2"
                                    Margin="0,6,0,0"

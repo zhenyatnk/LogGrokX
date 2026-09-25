@@ -61,3 +61,24 @@ jobs:
     # Validate that the benchmarks build and run; real measurements happen in the nightly workflow
     - name: Run benchmarks smoke test
       run: dotnet run --project LogGrokX.Benchmarks -c Release -- --filter "*" --job Dry
+
+  installer_compile:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Inno Setup
+      shell: pwsh
+      run: choco install innosetup --version=6.7.1 -y --no-progress
+
+    - name: Compile installer script
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path ./installer/publish-x64 | Out-Null
+        Copy-Item ./LogGrokX/appsettings.yaml ./installer/publish-x64/
+        Set-Content ./installer/publish-x64/LogGrokX.exe "stub"
+        & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=0.0.0 /O"./artifacts" "./installer/LogGrokX.iss"
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

@@ -56,6 +56,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "fileassoc_log"; Description: "{cm:AssocLog}"; GroupDescription: "{cm:FileAssoc}"
+Name: "autoupdate"; Description: "{cm:AutoUpdate}"; GroupDescription: "{cm:Updates}"
 
 [Dirs]
 ; Logs and crash dumps go under %ProgramData%\LogGrokX\Users\<user>. Grant the Users group
@@ -100,3 +101,80 @@ polish.FileAssoc=Skojarzenia plików:
 polish.AssocLog=Skojarz z plikami .log
 brazilianportuguese.FileAssoc=Associações de arquivos:
 brazilianportuguese.AssocLog=Associar a arquivos .log
+english.Updates=Updates:
+english.AutoUpdate=Automatically check for updates
+russian.Updates=Обновления:
+russian.AutoUpdate=Автоматически проверять обновления
+german.Updates=Aktualisierungen:
+german.AutoUpdate=Automatisch nach Updates suchen
+french.Updates=Mises à jour :
+french.AutoUpdate=Rechercher automatiquement les mises à jour
+spanish.Updates=Actualizaciones:
+spanish.AutoUpdate=Buscar actualizaciones automáticamente
+japanese.Updates=更新:
+japanese.AutoUpdate=更新を自動的に確認する
+polish.Updates=Aktualizacje:
+polish.AutoUpdate=Automatycznie sprawdzaj aktualizacje
+brazilianportuguese.Updates=Atualizações:
+brazilianportuguese.AutoUpdate=Verificar atualizações automaticamente
+
+[Code]
+function IsAutoUpdateRun: Boolean;
+begin
+  Result := ExpandConstant('{param:AUTOUPDATE|0}') = '1';
+end;
+
+procedure SetViewSetting(const FileName, Key, Value: String);
+var
+  Lines, Updated: TArrayOfString;
+  I, J, SectionIndex: Integer;
+  Line: String;
+begin
+  if not LoadStringsFromUTF8File(FileName, Lines) then
+    Exit;
+
+  SectionIndex := -1;
+  for I := 0 to GetArrayLength(Lines) - 1 do
+  begin
+    Line := Trim(Lines[I]);
+    if Pos(Key + ':', Line) = 1 then
+    begin
+      Lines[I] := Copy(Lines[I], 1, Pos(Key, Lines[I]) - 1) + Key + ': ' + Value;
+      SaveStringsToUTF8FileWithoutBOM(FileName, Lines, False);
+      Exit;
+    end;
+    if (SectionIndex < 0) and (Line = 'ViewSettings:') then
+      SectionIndex := I;
+  end;
+
+  if SectionIndex < 0 then
+    Exit;
+
+  SetArrayLength(Updated, GetArrayLength(Lines) + 1);
+  J := 0;
+  for I := 0 to GetArrayLength(Lines) - 1 do
+  begin
+    Updated[J] := Lines[I];
+    J := J + 1;
+    if I = SectionIndex then
+    begin
+      Updated[J] := Copy(Lines[I], 1, Pos('ViewSettings', Lines[I]) - 1) + '  ' + Key + ': ' + Value;
+      J := J + 1;
+    end;
+  end;
+  SaveStringsToUTF8FileWithoutBOM(FileName, Updated, False);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Value: String;
+begin
+  if (CurStep <> ssPostInstall) or IsAutoUpdateRun then
+    Exit;
+
+  if WizardIsTaskSelected('autoupdate') then
+    Value := 'true'
+  else
+    Value := 'false';
+  SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'CheckForUpdates', Value);
+end;

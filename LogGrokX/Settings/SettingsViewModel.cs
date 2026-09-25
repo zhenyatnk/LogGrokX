@@ -119,6 +119,7 @@ namespace LogGrokX.Settings
 
             _applicationSettings.ViewSettings.BigLine = View.BigLine;
             _applicationSettings.ViewSettings.BigLineSize = bigLineSize;
+            _applicationSettings.ViewSettings.CheckForUpdates = View.CheckForUpdates;
             _applicationSettings.DebugSettings.EnableCrashDumps = Debug.EnableCrashDumps;
             _applicationSettings.DebugSettings.MaxDumpsCount = maxDumpsCount;
 
@@ -136,6 +137,7 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
             file.SetScalar("ViewSettings", "MergedFilesView", View.MergedFilesView ? "true" : "false");
+            file.SetScalar("ViewSettings", "CheckForUpdates", View.CheckForUpdates ? "true" : "false");
 
             var colorRules = ColorRules.Select(rule => rule.ToData()).ToList();
             if (!AreColorRulesEqual(_savedColorRules, colorRules))
