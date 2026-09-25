@@ -12,7 +12,7 @@ namespace LogGrokX.Settings
         private double _logFontSize;
         private bool _groupByThread;
         private bool _mergedFilesView;
-        private bool _checkForUpdates;
+        private ViewSettings.UpdateModeKind _updateMode;
 
         public ViewSettingsViewModel(ViewSettings settings)
         {
@@ -22,7 +22,7 @@ namespace LogGrokX.Settings
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _mergedFilesView = settings.MergedFilesView;
-            _checkForUpdates = settings.CheckForUpdates;
+            _updateMode = settings.UpdateMode;
         }
 
         public IReadOnlyList<ViewSettings.ViewBigLine> BigLineOptions { get; } =
@@ -103,16 +103,26 @@ namespace LogGrokX.Settings
             }
         }
 
-        public bool CheckForUpdates
+        public IReadOnlyList<UpdateModeOption> UpdateModeOptions { get; } =
+            new[]
+            {
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Disabled, "Do not check for updates"),
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Check, "Check for updates"),
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Install, "Install updates automatically")
+            };
+
+        public ViewSettings.UpdateModeKind UpdateMode
         {
-            get => _checkForUpdates;
+            get => _updateMode;
             set
             {
-                if (_checkForUpdates == value)
+                if (_updateMode == value)
                     return;
-                _checkForUpdates = value;
+                _updateMode = value;
                 InvokePropertyChanged();
             }
         }
     }
+
+    public sealed record UpdateModeOption(ViewSettings.UpdateModeKind Value, string Title);
 }

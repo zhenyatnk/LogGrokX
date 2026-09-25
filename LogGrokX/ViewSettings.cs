@@ -20,6 +20,13 @@ namespace LogGrokX
 
         public bool MergedFilesView { get; set; }
 
-        public bool CheckForUpdates { get; set; } = true;
+        public enum UpdateModeKind
+        {
+            Disabled = 0,
+            Check,
+            Install
+        }
+
+        public UpdateModeKind UpdateMode { get; set; } = UpdateModeKind.Check;
     }
 }

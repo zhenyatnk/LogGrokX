@@ -127,12 +127,13 @@
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
                                    Text="Automatic updates" />
-                        <CheckBox Grid.Row="6"
+                        <ComboBox Grid.Row="6"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
-                                  VerticalAlignment="Center"
-                                  Content="Check for new versions on startup"
-                                  IsChecked="{Binding View.CheckForUpdates, Mode=TwoWay}" />
+                                  ItemsSource="{Binding View.UpdateModeOptions}"
+                                  DisplayMemberPath="Title"
+                                  SelectedValuePath="Value"
+                                  SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
                         <TextBlock Grid.Row="7"
                                    Grid.Column="0"

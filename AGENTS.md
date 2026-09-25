@@ -134,8 +134,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   verifies it against `SHA256SUMS.txt`, and `App.OnExit` starts it silently
   (`/VERYSILENT /AUTOUPDATE=1`, `/ALLUSERS` + UAC for Program Files installs)
   after the process exits. Portable builds (no `unins000.exe`) only open the
-  release page. The toggle is `ViewSettings.CheckForUpdates` (Settings -> View);
-  the installer task `autoupdate` writes it to `appsettings.yaml` except during
+  release page. The mode is `ViewSettings.UpdateMode` (`disabled`/`check`/`install`,
+  Settings -> View); `install` downloads without a dialog. The installer task
+  `autoinstallupdates` writes `install`/`check` to `appsettings.yaml` except during
   `/AUTOUPDATE=1` runs. Local builds default to `2.1`, so they never prompt.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),

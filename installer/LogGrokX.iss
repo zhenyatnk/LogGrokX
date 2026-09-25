@@ -56,7 +56,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "fileassoc_log"; Description: "{cm:AssocLog}"; GroupDescription: "{cm:FileAssoc}"
-Name: "autoupdate"; Description: "{cm:AutoUpdate}"; GroupDescription: "{cm:Updates}"
+Name: "autoinstallupdates"; Description: "{cm:AutoInstallUpdates}"; GroupDescription: "{cm:Updates}"
 
 [Dirs]
 ; Logs and crash dumps go under %ProgramData%\LogGrokX\Users\<user>. Grant the Users group
@@ -102,21 +102,21 @@ polish.AssocLog=Skojarz z plikami .log
 brazilianportuguese.FileAssoc=Associações de arquivos:
 brazilianportuguese.AssocLog=Associar a arquivos .log
 english.Updates=Updates:
-english.AutoUpdate=Automatically check for updates
+english.AutoInstallUpdates=Install updates automatically
 russian.Updates=Обновления:
-russian.AutoUpdate=Автоматически проверять обновления
+russian.AutoInstallUpdates=Устанавливать обновления автоматически
 german.Updates=Aktualisierungen:
-german.AutoUpdate=Automatisch nach Updates suchen
+german.AutoInstallUpdates=Updates automatisch installieren
 french.Updates=Mises à jour :
-french.AutoUpdate=Rechercher automatiquement les mises à jour
+french.AutoInstallUpdates=Installer automatiquement les mises à jour
 spanish.Updates=Actualizaciones:
-spanish.AutoUpdate=Buscar actualizaciones automáticamente
+spanish.AutoInstallUpdates=Instalar actualizaciones automáticamente
 japanese.Updates=更新:
-japanese.AutoUpdate=更新を自動的に確認する
+japanese.AutoInstallUpdates=更新を自動的にインストールする
 polish.Updates=Aktualizacje:
-polish.AutoUpdate=Automatycznie sprawdzaj aktualizacje
+polish.AutoInstallUpdates=Automatycznie instaluj aktualizacje
 brazilianportuguese.Updates=Atualizações:
-brazilianportuguese.AutoUpdate=Verificar atualizações automaticamente
+brazilianportuguese.AutoInstallUpdates=Instalar atualizações automaticamente
 
 [Code]
 function IsAutoUpdateRun: Boolean;
@@ -169,9 +169,9 @@ begin
   if (CurStep <> ssPostInstall) or IsAutoUpdateRun then
     Exit;
 
-  if WizardIsTaskSelected('autoupdate') then
-    Value := 'true'
+  if WizardIsTaskSelected('autoinstallupdates') then
+    Value := 'install'
   else
-    Value := 'false';
-  SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'CheckForUpdates', Value);
+    Value := 'check';
+  SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'UpdateMode', Value);
 end;

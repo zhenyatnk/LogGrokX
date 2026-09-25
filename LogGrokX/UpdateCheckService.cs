@@ -25,6 +25,7 @@ public class UpdateCheckService
     private readonly ApplicationSettings _settings;
     private string? _pendingInstallerPath;
     private bool _isWindowOpen;
+    private bool _isDownloading;
 
     public UpdateCheckService(ApplicationSettings settings)
     {
@@ -63,7 +64,8 @@ public class UpdateCheckService
 
     private async Task CheckAutomaticallyAsync(Window owner)
     {
-        if (!_settings.ViewSettings.CheckForUpdates || _isWindowOpen || HasPendingInstall)
+        var mode = _settings.ViewSettings.UpdateMode;
+        if (mode == ViewSettings.UpdateModeKind.Disabled || _isWindowOpen || HasPendingInstall || _isDownloading)
             return;
         if (!IsCheckDue(ReadLastCheck(), DateTime.UtcNow))
             return;
@@ -77,11 +79,31 @@ public class UpdateCheckService
             if (string.Equals(ReadSkippedVersion(), release.Tag, StringComparison.OrdinalIgnoreCase))
                 return;
 
+            if (mode == ViewSettings.UpdateModeKind.Install && IsInstalled && GetInstallerAssetName(release) != null)
+            {
+                await DownloadInBackgroundAsync(release);
+                return;
+            }
+
             ShowUpdateWindow(owner, release);
         }
         catch (Exception e)
         {
             Trace.TraceWarning($"Update check failed: {e.Message}");
+        }
+    }
+
+    private async Task DownloadInBackgroundAsync(ReleaseInfo release)
+    {
+        _isDownloading = true;
+        try
+        {
+            await DownloadInstallerAsync(release, new Progress<double>(), CancellationToken.None);
+            Trace.TraceInformation($"Update {release.Tag} downloaded and will be installed on exit.");
+        }
+        finally
+        {
+            _isDownloading = false;
         }
     }
 

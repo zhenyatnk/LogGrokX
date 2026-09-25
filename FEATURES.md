@@ -477,13 +477,17 @@ silently when the application is closed.
 - Portable builds cannot self-update: the button opens the release page instead.
 - **Check for updates** in the Support window runs a check right away, ignoring
   the daily limit and skipped versions.
-- Turn it on or off in **Settings → View → Automatic updates**, with the
-  **Automatically check for updates** option in the installer, or in
-  `appsettings.yaml`:
+- Choose the mode in **Settings → View → Automatic updates**:
+  - **Do not check for updates** — no automatic checks (manual check still works);
+  - **Check for updates** — show the dialog when a new version is found;
+  - **Install updates automatically** — download the new version in the
+    background without a dialog and install it silently on exit.
+- The installer has one option, **Install updates automatically**: checked sets
+  `install`, unchecked sets `check`. Silent auto-update runs keep the user's choice.
 
 ```yaml
   ViewSettings:
-    CheckForUpdates: true
+    UpdateMode: check   # disabled | check | install
 ```
 
 ## Missing a feature?

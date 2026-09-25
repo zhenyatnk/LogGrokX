@@ -54,7 +54,7 @@ remaining responsive even on multi-gigabyte files.
   (`?` button in the title bar).
 - **Automatic updates** — checks GitHub for a new release at most once a day,
   shows a dialog with release notes and installs the update silently when the
-  app is closed. Can be turned off in Settings or the installer; a manual check
+  app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
   is available in the Support window.
 - **Multiple documents** — dockable tabs powered by AvalonDock.
 - **Merged files view** — combine several opened logs into one time-ordered grid.
@@ -202,8 +202,8 @@ Settings:
     GroupByThread: false
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
-    # Check for a new release at most once a day and offer to install it
-    CheckForUpdates: true
+    # Updates: disabled | check (notify about a new version) | install (install silently on exit)
+    UpdateMode: check
 
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
@@ -232,5 +232,5 @@ tags (or manually via `workflow_dispatch` with a version input). It runs the
 tests, publishes self-contained and framework-dependent builds for x64 and x86,
 builds Inno Setup installers, optionally signs them, and attaches the installers,
 portable ZIPs and `SHA256SUMS.txt` to a GitHub Release. Installed copies use
-these assets for automatic updates; the installer's **Automatically check for
-updates** option sets `CheckForUpdates` in `appsettings.yaml`.
+these assets for automatic updates; the installer's **Install updates
+automatically** option sets `UpdateMode: install` (unchecked — `UpdateMode: check`).
