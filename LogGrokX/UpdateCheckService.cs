@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -322,10 +323,18 @@ public class UpdateCheckService
 
     private static HttpClient CreateClient(TimeSpan timeout)
     {
-        var client = new HttpClient { Timeout = timeout };
+        var client = new HttpClient(CreateHandler(), disposeHandler: true) { Timeout = timeout };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("LogGrokX");
         return client;
     }
+
+    // Corporate proxies often require NTLM/Kerberos authentication (HTTP 407).
+    // Use the system proxy and pass the current Windows user's credentials to it.
+    internal static SocketsHttpHandler CreateHandler() => new()
+    {
+        UseProxy = true,
+        DefaultProxyCredentials = CredentialCache.DefaultCredentials
+    };
 
     private static async Task<ReleaseInfo?> GetLatestReleaseAsync()
     {
