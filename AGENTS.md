@@ -66,6 +66,14 @@ properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Styles/ListViewItemStyle.xaml`. The support window is `SupportWindow.xaml` /
 `SupportViewModel` (opened through `OpenSupportCommand`).
 
+The timeline/minimap strip is `Controls/LogMinimapControl.cs` (a
+`FrameworkElement` that draws the time-range handles, markers, search matches and
+a hover readout). Hovering shows a vertical guide line plus the timestamp under
+the cursor (or `Line N` in line-number mode) drawn directly in the canvas via
+`DrawHoverTime`/`GetHoverText`, so it does not use a WPF `ToolTip`. Placement is
+controlled by `TimelinePlacementService` and persisted as
+`ViewSettings.TimelineAtTop`.
+
 The **merged files view** combines several opened documents into one
 time-ordered grid and lives in `MergedView/`: `MergedViewModel` owns the merge,
 filtering, timeline and navigation; `MergedDocumentItem` holds one document's
