@@ -55,7 +55,8 @@ remaining responsive even on multi-gigabyte files.
 - **Automatic updates** — checks GitHub for a new release at most once a day,
   shows a dialog with release notes and installs the update silently when the
   app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
-  is available in the Support window.
+  is available in the Support window. After an update is applied, a **What's new**
+  window shows the release notes on the next launch.
 - **Multiple documents** — dockable tabs powered by AvalonDock.
 - **Merged files view** — combine several opened logs into one time-ordered grid.
   Columns are aligned across different log formats, rows are tinted per source,

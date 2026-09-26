@@ -138,6 +138,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   Settings -> View); `install` downloads without a dialog. The installer task
   `autoinstallupdates` writes `install`/`check` to `appsettings.yaml` except during
   `/AUTOUPDATE=1` runs. Local builds default to `2.1`, so they never prompt.
+  When an installer is downloaded, its release notes are saved to
+  `%LOCALAPPDATA%\LogGrokX\Data\pending-update.json`; on the next launch
+  `App.OnStartup` calls `UpdateCheckService.TakePendingReleaseForCurrentVersion`,
+  which returns the notes only if the stored version matches `BuildInfo.Version`
+  (a `v`-prefix is ignored), deletes the file either way, and `WhatsNewWindow` /
+  `WhatsNewViewModel` shows them.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

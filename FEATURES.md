@@ -482,6 +482,11 @@ silently when the application is closed.
   - **Check for updates** — show the dialog when a new version is found;
   - **Install updates automatically** — download the new version in the
     background without a dialog and install it silently on exit.
+- After the update is applied, the next launch shows a **What's new** window with
+  the release notes of the installed version and a link to the release page. The
+  notes are captured when the installer is downloaded, stored in
+  `%LOCALAPPDATA%\LogGrokX\Data\pending-update.json`, shown once the running
+  version matches the release, and then removed.
 - The installer has one option, **Install updates automatically**: checked sets
   `install`, unchecked sets `check`. Silent auto-update runs keep the user's choice.
 
