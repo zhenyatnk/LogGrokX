@@ -148,6 +148,7 @@ namespace LogGrokX.Controls
         private int _dragStartLine;
         private int _dragEndLine;
         private double _dragStartX;
+        private double _hoverX = -1;
 
         public IEnumerable? Markers
         {
@@ -357,6 +358,54 @@ namespace LogGrokX.Controls
             DrawScrollIndicator(drawingContext, width, height);
             DrawMatchLine(drawingContext, width, height);
             DrawRangeLabels(drawingContext, width, height, rangeActive, lowerX, upperX);
+            DrawHoverTime(drawingContext, width, height);
+        }
+
+        private void DrawHoverTime(DrawingContext drawingContext, double width, double height)
+        {
+            var count = ItemCount;
+            if (_hoverX < 0 || _hoverX > width || count <= 0)
+                return;
+
+            var line = Math.Clamp(XToValueIndex(_hoverX), 0, count - 1);
+            var text = GetHoverText(line);
+            if (string.IsNullOrEmpty(text))
+                return;
+
+            var foreground = DurationForeground;
+            var guideBrush = foreground ?? Brushes.Gray;
+            var guideLeft = Math.Clamp(_hoverX - 0.5, 0, Math.Max(0, width - 1));
+            drawingContext.PushOpacity(0.6);
+            drawingContext.DrawRectangle(guideBrush, null, new Rect(guideLeft, 0, 1, height));
+            drawingContext.Pop();
+
+            var formatted = CreateText(text, foreground ?? Brushes.White);
+            if (formatted == null)
+                return;
+
+            const double gap = 6.0;
+            var left = _hoverX + gap;
+            if (left + formatted.Width + 2 > width)
+                left = _hoverX - gap - formatted.Width;
+            left = Math.Clamp(left, 2, Math.Max(2, width - formatted.Width - 2));
+
+            var top = Math.Max(0, (height - formatted.Height) / 2);
+            var background = MinimapBackground ?? Brushes.Black;
+            var rect = new Rect(left - 3, top - 1, formatted.Width + 6, formatted.Height + 2);
+            drawingContext.DrawRoundedRectangle(background, new Pen(guideBrush, 1), rect, 2, 2);
+            drawingContext.DrawText(formatted, new Point(left, top));
+        }
+
+        private string GetHoverText(int line)
+        {
+            var timeIndex = TimeIndex;
+            if (!UseLineNumbers && timeIndex is { HasTime: true } && timeIndex.Count > 0)
+            {
+                var ticks = timeIndex.GetTicksAt(Math.Clamp(line, 0, timeIndex.Count - 1));
+                return TimestampParser.Format(ticks);
+            }
+
+            return $"Line {(line + 1).ToString(CultureInfo.InvariantCulture)}";
         }
 
         private void DrawMatchLine(DrawingContext drawingContext, double width, double height)
@@ -684,6 +733,12 @@ namespace LogGrokX.Controls
 
             var positionX = e.GetPosition(this).X;
 
+            if (Math.Abs(_hoverX - positionX) >= 0.5)
+            {
+                _hoverX = positionX;
+                InvalidateVisual();
+            }
+
             if (_dragHandle == DragHandle.None)
             {
                 if (IsRangeActive())
@@ -799,6 +854,12 @@ namespace LogGrokX.Controls
         protected override void OnMouseLeave(MouseEventArgs e)
         {
             base.OnMouseLeave(e);
+
+            if (_hoverX >= 0)
+            {
+                _hoverX = -1;
+                InvalidateVisual();
+            }
 
             if (_dragHandle == DragHandle.None)
                 Cursor = Cursors.Arrow;

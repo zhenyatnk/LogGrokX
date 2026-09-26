@@ -107,8 +107,7 @@
                                              HandleBrush="#FF007ACC"
                                              DurationForeground="{DynamicResource TextFillColorPrimaryBrush}"
                                              DurationBackground="Transparent"
-                                             NavigateCommand="{Binding NavigateToMarkerCommand}"
-                                             ToolTip="Timeline: drag the handles to filter by time (or line numbers when no time is available); Ctrl+drag the selection to move it; click to navigate" />
+                                             NavigateCommand="{Binding NavigateToMarkerCommand}" />
             <Grid>
             <listControls:ListView ItemsSource="{Binding Lines}"
                                     Background="{DynamicResource ApplicationBackgroundBrush}"

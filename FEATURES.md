@@ -175,7 +175,10 @@ excluded values, so filtering a multi-gigabyte file stays interactive.
 (top or bottom) is a minimap of the whole file that lets you select a time range
 with draggable handles — or line ranges when no timestamps are available — and
 jump through marked lines. Narrowing to the interesting window turns a wall of
-text into a readable sequence.
+text into a readable sequence. Hovering the strip draws a vertical guide line
+and the timestamp under the cursor (or `Line N` in line-number mode) directly in
+the canvas, so the exact moment of a marker or match can be read without leaving
+the strip.
 
 ![Demo](assets/images/feature-9.png)
 
@@ -192,7 +195,9 @@ if (timeline.FindLineRange(fromTicks, toTicks) is { } window)
 
 `TimeIndex` normalizes day-less timestamps (rolling them over midnight) and uses
 binary search for `FindLineRange`; it is shared by the single-log and merged
-timelines. The placement is persisted as `ViewSettings.TimelineAtTop`.
+timelines. The placement is persisted as `ViewSettings.TimelineAtTop`. The hover
+readout is drawn in `Controls/LogMinimapControl.cs` (`DrawHoverTime` /
+`GetHoverText`) using `TimeIndex.GetTicksAt` and `TimestampParser.Format`.
 
 ## 📦 JSON folding
 
