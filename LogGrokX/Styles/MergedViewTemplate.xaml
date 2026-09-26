@@ -192,8 +192,7 @@
                                                      HandleBrush="#FF007ACC"
                                                      DurationForeground="{DynamicResource TextFillColorPrimaryBrush}"
                                                      DurationBackground="Transparent"
-                                                     NavigateCommand="{Binding NavigateToMarkerCommand}"
-                                                     ToolTip="Timeline: colors show which file each region comes from; drag the handles to filter by time" />
+                                                     NavigateCommand="{Binding NavigateToMarkerCommand}" />
                     <listControls:ListView ItemsSource="{Binding Lines}"
                                             Background="{DynamicResource ApplicationBackgroundBrush}"
                                             BorderThickness="0"
