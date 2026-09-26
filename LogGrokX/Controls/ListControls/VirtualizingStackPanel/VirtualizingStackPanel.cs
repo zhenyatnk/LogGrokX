@@ -408,6 +408,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                     _ => offset
                 };
             _offset.X = fixedOffset;
+            ScrollOwner?.InvalidateScrollInfo();
             InvalidateArrange();
         }
 

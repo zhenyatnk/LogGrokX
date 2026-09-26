@@ -66,6 +66,8 @@ namespace LogGrokX
             Closing += OnClosing;
             Loaded += OnLoaded;
             PreviewMouseWheel += OnPreviewMouseWheel;
+            HorizontalMouseWheel.Enable();
+            Closed += (_, _) => HorizontalMouseWheel.Disable();
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
 
             InitializeComponent();
