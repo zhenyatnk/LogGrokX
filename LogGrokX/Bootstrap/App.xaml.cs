@@ -67,9 +67,22 @@ namespace LogGrokX.Bootstrap
 
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();
+            ShowWhatsNewIfAny(mainWindow);
             _container.Resolve<UpdateCheckService>().CheckOnStartup(mainWindow);
             
             ProcessCommandLine(e.Args.Where(item => item != null));
+        }
+
+        private static void ShowWhatsNewIfAny(Window owner)
+        {
+            var pending = UpdateCheckService.TakePendingReleaseForCurrentVersion();
+            if (pending == null)
+                return;
+
+            var window = new WhatsNewWindow(new WhatsNewViewModel(pending.Version, pending.Notes, pending.PageUrl));
+            if (owner.IsVisible)
+                window.Owner = owner;
+            window.Show();
         }
 
         protected override void OnExit(ExitEventArgs e)

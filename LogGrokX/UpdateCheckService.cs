@@ -17,6 +17,8 @@ namespace LogGrokX;
 
 public sealed record ReleaseInfo(string Tag, string PageUrl, string Notes, IReadOnlyDictionary<string, string> Assets);
 
+public sealed record PendingRelease(string Version, string Notes, string PageUrl);
+
 public class UpdateCheckService
 {
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/zhenyatnk/LogGrokX/releases/latest";
@@ -152,6 +154,47 @@ public class UpdateCheckService
         }
     }
 
+    private static string PendingReleaseFileName => HomeDirectoryPathProvider.GetDataFileFullPath("pending-update.json");
+
+    private static void SavePendingRelease(ReleaseInfo release)
+    {
+        try
+        {
+            var pending = new PendingRelease(release.Tag, release.Notes, release.PageUrl);
+            File.WriteAllText(PendingReleaseFileName, JsonSerializer.Serialize(pending));
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to save pending release notes: {e.Message}");
+        }
+    }
+
+    public static PendingRelease? TakePendingReleaseForCurrentVersion()
+    {
+        try
+        {
+            if (!File.Exists(PendingReleaseFileName))
+                return null;
+
+            var json = File.ReadAllText(PendingReleaseFileName);
+            File.Delete(PendingReleaseFileName);
+
+            var pending = JsonSerializer.Deserialize<PendingRelease>(json);
+            return pending != null &&
+                   string.Equals(NormalizeVersion(pending.Version), NormalizeVersion(BuildInfo.Version),
+                       StringComparison.OrdinalIgnoreCase)
+                ? pending
+                : null;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to read pending release notes: {e.Message}");
+            return null;
+        }
+    }
+
+    private static string NormalizeVersion(string version) => version.Trim().TrimStart('v', 'V');
+
     public static string? GetInstallerAssetName(ReleaseInfo release)
     {
         var arch = RuntimeInformation.ProcessArchitecture == Architecture.X86 ? "x86" : "x64";
@@ -203,6 +246,7 @@ public class UpdateCheckService
         }
 
         _pendingInstallerPath = path;
+        SavePendingRelease(release);
     }
 
     public void LaunchPendingInstaller()
