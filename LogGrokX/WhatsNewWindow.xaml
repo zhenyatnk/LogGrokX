@@ -1,0 +1,65 @@
+<ui:FluentWindow x:Class="LogGrokX.WhatsNewWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="What's new"
+                 Width="480"
+                 SizeToContent="Height"
+                 Icon="pack://application:,,,/app.ico"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterOwner"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0"
+                     Title="What's new"
+                     ShowMinimize="False"
+                     ShowMaximize="False">
+            <ui:TitleBar.Icon>
+                <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <StackPanel Grid.Row="1" Margin="16,4,16,16">
+            <StackPanel Orientation="Horizontal">
+                <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
+                <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock FontSize="18" FontWeight="SemiBold">
+                        <Run Text="Updated to LogGrokX" />
+                        <Run Text="{Binding Version, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="Here is what changed in this version." />
+                </StackPanel>
+            </StackPanel>
+
+            <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="What's new" />
+            <Border MaxHeight="280"
+                    Padding="8"
+                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="{Binding ReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" />
+                </ScrollViewer>
+            </Border>
+            <ui:HyperlinkButton Margin="0,4,0,0"
+                                Padding="0"
+                                Command="{Binding OpenReleasePageCommand}"
+                                Content="Open release page" />
+
+            <ui:Button Margin="0,16,0,0"
+                       HorizontalAlignment="Right"
+                       Appearance="Primary"
+                       Command="{Binding CloseCommand}"
+                       Content="OK" />
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>

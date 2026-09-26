@@ -51,8 +51,13 @@ remaining responsive even on multi-gigabyte files.
   AvalonDock's auto-hide flyout.
 - **Crash dumps** — optional Windows Error Reporting local dumps for diagnostics.
 - **Support window** — version, commit, runtime/OS info and links to releases,
-  issues and source, plus "copy diagnostics" and "open logs folder"
+  issues and source, a manual update check, plus "copy diagnostics" and "open logs folder"
   (`?` button in the title bar).
+- **Automatic updates** — checks GitHub for a new release at most once a day,
+  shows a dialog with release notes and installs the update silently when the
+  app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
+  is available in the Support window. After an update is applied, a **What's new**
+  window shows the release notes on the next launch.
 - **Multiple documents** — dockable tabs powered by AvalonDock.
 - **Merged files view** — combine several opened logs into one time-ordered grid.
   Columns are aligned across different log formats, rows are tinted per source,
@@ -84,6 +89,7 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🛟 Support window](./FEATURES.md#-support-window)
 - [📑 Multiple documents](./FEATURES.md#-multiple-documents)
 - [🧬 Merged files view](./FEATURES.md#-merged-files-view)
+- [🔄 Automatic updates](./FEATURES.md#-automatic-updates)
 
 ## Requirements
 
@@ -138,7 +144,7 @@ successful run, and uploads the reports as a build artifact.
 
 The **Support** window (the `?` button in the title bar) shows the application
 version, git commit and branch, .NET runtime, OS and CPU architecture. From
-there you can open the latest release, report an issue, view the source, copy
+there you can check for updates, open the latest release, report an issue, view the source, copy
 the diagnostics block to the clipboard, or open the log folder at
 `%LOCALAPPDATA%\LogGrokX\`.
 
@@ -198,6 +204,8 @@ Settings:
     GroupByThread: false
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
+    # Updates: disabled | check (notify about a new version) | install (install silently on exit)
+    UpdateMode: check
 
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
@@ -225,4 +233,6 @@ Tagged releases are published by the **Release** workflow, which runs on `v*`
 tags (or manually via `workflow_dispatch` with a version input). It runs the
 tests, publishes self-contained and framework-dependent builds for x64 and x86,
 builds Inno Setup installers, optionally signs them, and attaches the installers,
-portable ZIPs and `SHA256SUMS.txt` to a GitHub Release.
+portable ZIPs and `SHA256SUMS.txt` to a GitHub Release. Installed copies use
+these assets for automatic updates; the installer's **Install updates
+automatically** option sets `UpdateMode: install` (unchecked — `UpdateMode: check`).

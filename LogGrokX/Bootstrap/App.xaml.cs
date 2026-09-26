@@ -67,12 +67,27 @@ namespace LogGrokX.Bootstrap
 
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();
+            ShowWhatsNewIfAny(mainWindow);
+            _container.Resolve<UpdateCheckService>().CheckOnStartup(mainWindow);
             
             ProcessCommandLine(e.Args.Where(item => item != null));
         }
 
+        private static void ShowWhatsNewIfAny(Window owner)
+        {
+            var pending = UpdateCheckService.TakePendingReleaseForCurrentVersion();
+            if (pending == null)
+                return;
+
+            var window = new WhatsNewWindow(new WhatsNewViewModel(pending.Version, pending.Notes, pending.PageUrl));
+            if (owner.IsVisible)
+                window.Owner = owner;
+            window.Show();
+        }
+
         protected override void OnExit(ExitEventArgs e)
         {
+            _container.Resolve<UpdateCheckService>().LaunchPendingInstaller();
             _container.Resolve<SearchAutocompleteCache>().Save();
             _container.Resolve<SavedSearchPatternStore>().Save();
             _container.Dispose();
@@ -89,6 +104,7 @@ namespace LogGrokX.Bootstrap
             container.Register<TextZoomService>(Reuse.Singleton);
             container.Register<ThreadGroupingService>(Reuse.Singleton);
             container.Register<MergedFilesViewService>(Reuse.Singleton);
+            container.Register<UpdateCheckService>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>();
             container.Register<MainWindow>();
         }

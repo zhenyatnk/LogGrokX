@@ -19,5 +19,14 @@ namespace LogGrokX
         public bool GroupByThread { get; set; }
 
         public bool MergedFilesView { get; set; }
+
+        public enum UpdateModeKind
+        {
+            Disabled = 0,
+            Check,
+            Install
+        }
+
+        public UpdateModeKind UpdateMode { get; set; } = UpdateModeKind.Check;
     }
 }

@@ -40,6 +40,8 @@ Settings:
     LogFontSize: 12
     # Group consecutive log lines with the same Thread field
     GroupByThread: false
+    # Updates: disabled - do not check, check - notify about a new version, install - download and install silently on exit
+    UpdateMode: check
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
       IndexedFields:

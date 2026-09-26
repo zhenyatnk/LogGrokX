@@ -56,6 +56,7 @@ Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortugue
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 Name: "fileassoc_log"; Description: "{cm:AssocLog}"; GroupDescription: "{cm:FileAssoc}"
+Name: "autoinstallupdates"; Description: "{cm:AutoInstallUpdates}"; GroupDescription: "{cm:Updates}"
 
 [Dirs]
 ; Logs and crash dumps go under %ProgramData%\LogGrokX\Users\<user>. Grant the Users group
@@ -100,3 +101,77 @@ polish.FileAssoc=Skojarzenia plików:
 polish.AssocLog=Skojarz z plikami .log
 brazilianportuguese.FileAssoc=Associações de arquivos:
 brazilianportuguese.AssocLog=Associar a arquivos .log
+english.Updates=Updates:
+english.AutoInstallUpdates=Install updates automatically
+russian.Updates=Обновления:
+russian.AutoInstallUpdates=Устанавливать обновления автоматически
+german.Updates=Aktualisierungen:
+german.AutoInstallUpdates=Updates automatisch installieren
+french.Updates=Mises à jour :
+french.AutoInstallUpdates=Installer automatiquement les mises à jour
+spanish.Updates=Actualizaciones:
+spanish.AutoInstallUpdates=Instalar actualizaciones automáticamente
+japanese.Updates=更新:
+japanese.AutoInstallUpdates=更新を自動的にインストールする
+polish.Updates=Aktualizacje:
+polish.AutoInstallUpdates=Automatycznie instaluj aktualizacje
+brazilianportuguese.Updates=Atualizações:
+brazilianportuguese.AutoInstallUpdates=Instalar atualizações automaticamente
+
+[Code]
+function IsAutoUpdateRun: Boolean;
+begin
+  Result := ExpandConstant('{param:AUTOUPDATE|0}') = '1';
+end;
+
+procedure SetViewSetting(const FileName, Key, Value: String);
+var
+  S: AnsiString;
+  P, E, LineStart: Integer;
+  Indent: String;
+begin
+  if not LoadStringFromFile(FileName, S) then
+    Exit;
+
+  P := Pos(Key + ':', S);
+  if P > 0 then
+  begin
+    E := P;
+    while (E <= Length(S)) and (S[E] <> #13) and (S[E] <> #10) do
+      E := E + 1;
+    Delete(S, P, E - P);
+    Insert(Key + ': ' + Value, S, P);
+  end
+  else
+  begin
+    P := Pos('ViewSettings:', S);
+    if P = 0 then
+      Exit;
+    LineStart := P;
+    while (LineStart > 1) and (S[LineStart - 1] = ' ') do
+      LineStart := LineStart - 1;
+    Indent := Copy(S, LineStart, P - LineStart);
+    E := P;
+    while (E <= Length(S)) and (S[E] <> #10) do
+      E := E + 1;
+    if E > Length(S) then
+      S := S + #13#10;
+    Insert(Indent + '  ' + Key + ': ' + Value + #13#10, S, E + 1);
+  end;
+
+  SaveStringToFile(FileName, S, False);
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  Value: String;
+begin
+  if (CurStep <> ssPostInstall) or IsAutoUpdateRun then
+    Exit;
+
+  if WizardIsTaskSelected('autoinstallupdates') then
+    Value := 'install'
+  else
+    Value := 'check';
+  SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'UpdateMode', Value);
+end;

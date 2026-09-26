@@ -4,9 +4,9 @@ namespace LogGrokX
 {
     public partial class SupportWindow
     {
-        public SupportWindow()
+        public SupportWindow(UpdateCheckService? updateCheckService = null)
         {
-            DataContext = new SupportViewModel();
+            DataContext = new SupportViewModel(updateCheckService) { Owner = this };
             InitializeComponent();
         }
 

@@ -29,6 +29,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🛟 Support window](#-support-window)
 - [📑 Multiple documents](#-multiple-documents)
 - [🧬 Merged files view](#-merged-files-view)
+- [🔄 Automatic updates](#-automatic-updates)
 
 ## ⚡ Large file support
 
@@ -393,7 +394,7 @@ the WER `LocalDumps` registry key on startup and cleans it up when disabled.
 
 **Business value.** When users report a problem, diagnostics are the slow part.
 The Support window collects version, git commit and branch, .NET runtime, OS and
-CPU architecture, and offers one-click links to the latest release, the issue
+CPU architecture, lets you check for updates manually, and offers one-click links to the latest release, the issue
 tracker and the source, plus "copy diagnostics" and "open logs folder".
 
 ![Demo](assets/images/feature-6.png)
@@ -463,6 +464,41 @@ if (timeline.FindLineRange(fromTicks, toTicks) is { } window)
 is proportional to the number of lines rather than the number of sources. The
 view is toggled by `MergedFilesViewService` and persisted as
 `ViewSettings.MergedFilesView`.
+
+## 🔄 Automatic updates
+
+**Business value.** Users stay on the latest fixes without visiting GitHub. LogGrokX
+checks for a newer release at most once a day and, with one click, installs it
+silently when the application is closed.
+
+- On startup (and hourly while running) the app asks the GitHub
+  `releases/latest` API for the newest version, but no more than once every
+  24 hours.
+- If a newer version exists, the **Update available** dialog shows the release
+  notes with **Update**, **Later** and **Skip this version**.
+- **Update** downloads the installer for the current architecture, verifies it
+  against `SHA256SUMS.txt`, and runs it in silent mode after LogGrokX exits.
+  Program Files installs ask for UAC elevation.
+- Portable builds cannot self-update: the button opens the release page instead.
+- **Check for updates** in the Support window runs a check right away, ignoring
+  the daily limit and skipped versions.
+- Choose the mode in **Settings → View → Automatic updates**:
+  - **Do not check for updates** — no automatic checks (manual check still works);
+  - **Check for updates** — show the dialog when a new version is found;
+  - **Install updates automatically** — download the new version in the
+    background without a dialog and install it silently on exit.
+- After the update is applied, the next launch shows a **What's new** window with
+  the release notes of the installed version and a link to the release page. The
+  notes are captured when the installer is downloaded, stored in
+  `%LOCALAPPDATA%\LogGrokX\Data\pending-update.json`, shown once the running
+  version matches the release, and then removed.
+- The installer has one option, **Install updates automatically**: checked sets
+  `install`, unchecked sets `check`. Silent auto-update runs keep the user's choice.
+
+```yaml
+  ViewSettings:
+    UpdateMode: check   # disabled | check | install
+```
 
 ## Missing a feature?
 
