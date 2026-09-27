@@ -29,14 +29,16 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void CheckIsDueAtMostOncePerDay()
+        public void CheckIsDueOnFirstRunInNewDay()
         {
             var now = new System.DateTime(2026, 9, 25, 12, 0, 0, System.DateTimeKind.Utc);
-
             Assert.IsTrue(UpdateCheckService.IsCheckDue(null, now));
-            Assert.IsFalse(UpdateCheckService.IsCheckDue(now.AddHours(-23), now));
-            Assert.IsTrue(UpdateCheckService.IsCheckDue(now.AddHours(-24), now));
-            Assert.IsTrue(UpdateCheckService.IsCheckDue(now.AddHours(1), now));
+
+            var morning = new System.DateTime(2026, 9, 25, 9, 0, 0);
+            Assert.IsFalse(UpdateCheckService.IsCheckDueLocal(morning, morning.AddHours(14)));
+            Assert.IsTrue(UpdateCheckService.IsCheckDueLocal(morning.AddHours(14), morning.AddHours(15)));
+            Assert.IsTrue(UpdateCheckService.IsCheckDueLocal(morning, morning.AddDays(1).AddHours(-8)));
+            Assert.IsTrue(UpdateCheckService.IsCheckDueLocal(morning.AddDays(1), morning));
         }
 
         [TestMethod]

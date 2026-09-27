@@ -40,8 +40,6 @@ public class UpdateCheckService
 
     public bool HasPendingInstall => _pendingInstallerPath != null;
 
-    public static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
-
     public async void CheckOnStartup(Window owner)
     {
         await CheckAutomaticallyAsync(owner);
@@ -62,8 +60,13 @@ public class UpdateCheckService
         return release;
     }
 
+    // Проверка выполняется при первом запуске (или тике таймера) в новом календарном дне
+    // по локальному времени, а не через 24 часа после предыдущей проверки.
     public static bool IsCheckDue(DateTime? lastCheckUtc, DateTime nowUtc) =>
-        lastCheckUtc == null || nowUtc - lastCheckUtc.Value >= CheckInterval || lastCheckUtc.Value > nowUtc;
+        lastCheckUtc == null || IsCheckDueLocal(lastCheckUtc.Value.ToLocalTime(), nowUtc.ToLocalTime());
+
+    public static bool IsCheckDueLocal(DateTime lastCheckLocal, DateTime nowLocal) =>
+        lastCheckLocal.Date != nowLocal.Date;
 
     private async Task CheckAutomaticallyAsync(Window owner)
     {
