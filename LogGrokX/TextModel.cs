@@ -15,6 +15,9 @@ public class TextModel : IReadOnlyList<StringRange>
     
     private readonly List<StringRange>? _textLines;
     private readonly StringRange? _sourceText;
+    // Full (not truncated by BigLineSize) text used for copying to clipboard.
+    private readonly List<string>? _fullTextLines;
+    private readonly string? _fullSourceText;
     private readonly Dictionary<int, StringRange>? _substitutions;
     private Dictionary<int, (int start, int length)>? _indexedCollapsibleRanges;
 
@@ -94,6 +97,7 @@ public class TextModel : IReadOnlyList<StringRange>
             if (textLines.Count > 1)
             {
                 _textLines = textLines.Select(c => TextOperations.Normalize(c, viewSettings)).ToList();
+                _fullTextLines = textLines.Select(c => TrimLine(c.ToString())).ToList();
             }
 
             if (textLines.Count > CollapseToLines + 1)
@@ -113,6 +117,7 @@ public class TextModel : IReadOnlyList<StringRange>
             
             _sourceText = StringRange.FromString(TextOperations.Normalize(source,
                 ApplicationSettings.Instance().ViewSettings));
+            _fullSourceText = TrimLine(source);
         }
     }
 
@@ -232,7 +237,7 @@ public class TextModel : IReadOnlyList<StringRange>
     public string GetDisplayedText(IReadOnlySet<int>? collapsedLines)
     {
         if (_textLines == null)
-            return (_sourceText?.ToString() ?? string.Empty).TrimEnd();
+            return (_fullSourceText ?? _sourceText?.ToString() ?? string.Empty).TrimEnd();
 
         var collapsedRanges = CollapsibleRanges == null || collapsedLines == null
             ? null
@@ -252,7 +257,9 @@ public class TextModel : IReadOnlyList<StringRange>
             }
             else
             {
-                builder.Append(_textLines[i].ToString());
+                builder.Append(_fullTextLines != null && i < _fullTextLines.Count
+                    ? _fullTextLines[i]
+                    : _textLines[i].ToString());
             }
 
             if (i < _textLines.Count - 1)
@@ -261,6 +268,8 @@ public class TextModel : IReadOnlyList<StringRange>
 
         return builder.ToString().TrimEnd();
     }
+
+    private static string TrimLine(string line) => line.TrimEnd('\0').TrimEnd();
 
     public override string ToString()
     {
