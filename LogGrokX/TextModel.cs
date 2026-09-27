@@ -240,7 +240,11 @@ public class TextModel : IReadOnlyList<StringRange>
                 ? TrimLine(_plainSource)
                 : (_sourceText?.ToString() ?? string.Empty).TrimEnd();
 
-        var fullLines = _plainSource?.Tokenize().ToList();
+        // Plain multi-line text: the only collapsible range is the "More N lines >>>" tail,
+        // which must not affect copying, so the whole original text is returned.
+        if (_plainSource != null)
+            return string.Join(Environment.NewLine,
+                _plainSource.Tokenize().Select(l => TrimLine(l.ToString()))).TrimEnd();
 
         var collapsedRanges = CollapsibleRanges == null || collapsedLines == null
             ? null
@@ -260,10 +264,7 @@ public class TextModel : IReadOnlyList<StringRange>
             }
             else
             {
-                if (fullLines != null && i < fullLines.Count)
-                    builder.Append(TrimLine(fullLines[i].ToString()));
-                else
-                    builder.Append(_textLines[i].ToString());
+                builder.Append(_textLines[i].ToString());
             }
 
             if (i < _textLines.Count - 1)

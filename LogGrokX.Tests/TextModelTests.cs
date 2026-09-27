@@ -10,6 +10,21 @@ namespace LogGrokX.Tests
         private const string Json = "{\"a\":1,\"b\":[1,2]}";
 
         [TestMethod]
+        public void CollapsedTailOfManyLinesIsCopiedFully()
+        {
+            var lines = Enumerable.Range(0, 50).Select(i => $"line {i}").ToArray();
+            var model = new TextModel(1, string.Join("\n", lines));
+            Assert.IsNotNull(model.CollapsibleRanges);
+
+            var collapsed = model.CollapsibleRanges!.Select(r => r.start).ToHashSet();
+            var displayed = model.GetDisplayedText(collapsed);
+
+            Assert.IsFalse(displayed.Contains(">>>"), displayed);
+            StringAssert.Contains(displayed, "line 49");
+            StringAssert.Contains(displayed, "line 25");
+        }
+
+        [TestMethod]
         public void DisplayedTextOfLongSingleLineIsNotTruncated()
         {
             var source = new string('x', 200_000);
