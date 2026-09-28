@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -24,6 +25,20 @@ public class UpdateCheckService
 {
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/zhenyatnk/LogGrokX/releases/latest";
     private const string LatestReleasePageUrl = "https://github.com/zhenyatnk/LogGrokX/releases/latest";
+    private const string ReleaseApiUrlPrefix = "https://api.github.com/repos/zhenyatnk/LogGrokX/releases/tags/";
+    private const string ReleasePageUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/tag/";
+    private const string ReleaseDownloadUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/download/";
+    private const string ChecksumsAssetName = "SHA256SUMS.txt";
+
+    internal const string FallbackReleaseNotes =
+        "Release notes could not be loaded from GitHub right now. Open the release page to read them.";
+
+    // Unauthenticated GitHub API allows only 60 requests per hour per IP address, and users behind
+    // a corporate NAT/proxy share that quota (#40). The latest tag is therefore resolved through the
+    // redirect of the releases/latest web page, which does not consume the API quota; the API is
+    // called only when a newer version is found, to get release notes and assets.
+    private readonly Dictionary<string, ReleaseInfo> _releaseCache = new(StringComparer.OrdinalIgnoreCase);
+    private DateTime _apiRateLimitedUntilUtc = DateTime.MinValue;
 
     private readonly ApplicationSettings _settings;
     private string? _pendingInstallerPath;
@@ -51,11 +66,14 @@ public class UpdateCheckService
 
     public async Task<ReleaseInfo?> CheckNowAsync(Window owner)
     {
-        var release = await GetLatestReleaseAsync();
+        var tag = await GetLatestTagAsync();
         WriteLastCheck(DateTime.UtcNow);
-        if (release == null || !UpdateVersion.IsNewer(release.Tag, BuildInfo.Version))
-            return release;
+        if (tag == null)
+            return null;
+        if (!UpdateVersion.IsNewer(tag, BuildInfo.Version))
+            return new ReleaseInfo(tag, GetReleasePageUrl(tag), string.Empty, new Dictionary<string, string>());
 
+        var release = await GetReleaseDetailsAsync(tag);
         ShowUpdateWindow(owner, release);
         return release;
     }
@@ -78,12 +96,14 @@ public class UpdateCheckService
 
         try
         {
-            var release = await GetLatestReleaseAsync();
+            var tag = await GetLatestTagAsync();
             WriteLastCheck(DateTime.UtcNow);
-            if (release == null || !UpdateVersion.IsNewer(release.Tag, BuildInfo.Version))
+            if (tag == null || !UpdateVersion.IsNewer(tag, BuildInfo.Version))
                 return;
-            if (string.Equals(ReadSkippedVersion(), release.Tag, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(ReadSkippedVersion(), tag, StringComparison.OrdinalIgnoreCase))
                 return;
+
+            var release = await GetReleaseDetailsAsync(tag);
 
             if (mode == ViewSettings.UpdateModeKind.Install && IsInstalled && GetInstallerAssetName(release) != null)
             {
@@ -233,7 +253,7 @@ public class UpdateCheckService
             }
         }
 
-        if (release.Assets.TryGetValue("SHA256SUMS.txt", out var sumsUrl))
+        if (release.Assets.TryGetValue(ChecksumsAssetName, out var sumsUrl))
         {
             var sums = await client.GetStringAsync(sumsUrl, cancellationToken);
             var expected = FindChecksum(sums, assetName);
@@ -324,9 +344,11 @@ public class UpdateCheckService
             .Any(folder => baseDirectory.StartsWith(folder, StringComparison.OrdinalIgnoreCase));
     }
 
-    private static HttpClient CreateClient(TimeSpan timeout)
+    private static HttpClient CreateClient(TimeSpan timeout, bool allowAutoRedirect = true)
     {
-        var client = new HttpClient(CreateHandler(), disposeHandler: true) { Timeout = timeout };
+        var handler = CreateHandler();
+        handler.AllowAutoRedirect = allowAutoRedirect;
+        var client = new HttpClient(handler, disposeHandler: true) { Timeout = timeout };
         client.DefaultRequestHeaders.UserAgent.ParseAdd("LogGrokX");
         return client;
     }
@@ -339,18 +361,143 @@ public class UpdateCheckService
         DefaultProxyCredentials = CredentialCache.DefaultCredentials
     };
 
-    private static async Task<ReleaseInfo?> GetLatestReleaseAsync()
+    // Resolves the latest release tag from the redirect of https://github.com/.../releases/latest
+    // (-> .../releases/tag/<tag>). Falls back to the API only if the redirect cannot be parsed.
+    private async Task<string?> GetLatestTagAsync()
     {
-        using var client = CreateClient(TimeSpan.FromSeconds(10));
-        client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+        using (var client = CreateClient(TimeSpan.FromSeconds(10), allowAutoRedirect: false))
+        using (var response = await client.GetAsync(LatestReleasePageUrl, HttpCompletionOption.ResponseHeadersRead))
+        {
+            var location = response.Headers.Location;
+            if (location != null && !location.IsAbsoluteUri)
+                location = new Uri(new Uri(LatestReleasePageUrl), location);
 
-        using var response = await client.GetAsync(LatestReleaseApiUrl);
-        response.EnsureSuccessStatusCode();
+            var tag = ParseTagFromReleaseUrl(location);
+            if (tag != null)
+                return tag;
 
-        await using var stream = await response.Content.ReadAsStreamAsync();
-        using var document = await JsonDocument.ParseAsync(stream);
-        var root = document.RootElement;
+            Trace.TraceWarning(
+                $"Could not resolve the latest release from {LatestReleasePageUrl} (status {(int)response.StatusCode}), falling back to GitHub API.");
+        }
 
+        var release = await GetReleaseFromApiAsync(LatestReleaseApiUrl);
+        return release?.Tag;
+    }
+
+    internal static string? ParseTagFromReleaseUrl(Uri? url)
+    {
+        if (url == null || !url.IsAbsoluteUri)
+            return null;
+
+        var segments = url.AbsolutePath.Trim('/').Split('/');
+        if (segments.Length < 2 || !string.Equals(segments[^2], "tag", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var tag = Uri.UnescapeDataString(segments[^1]).Trim();
+        return tag.Length == 0 ? null : tag;
+    }
+
+    // Gets release notes and assets for a tag. If the API is unavailable (e.g. rate limit exceeded),
+    // returns a release with the well-known asset URLs published by the release workflow.
+    private async Task<ReleaseInfo> GetReleaseDetailsAsync(string tag)
+    {
+        if (_releaseCache.TryGetValue(tag, out var cached))
+            return cached;
+
+        var release = await GetReleaseFromApiAsync(ReleaseApiUrlPrefix + Uri.EscapeDataString(tag));
+        if (release != null && string.Equals(release.Tag, tag, StringComparison.OrdinalIgnoreCase))
+            return release;
+
+        return CreateFallbackRelease(tag);
+    }
+
+    private async Task<ReleaseInfo?> GetReleaseFromApiAsync(string url)
+    {
+        var nowUtc = DateTime.UtcNow;
+        if (nowUtc < _apiRateLimitedUntilUtc)
+        {
+            Trace.TraceInformation($"GitHub API rate limit is exceeded until {_apiRateLimitedUntilUtc:O}, skipping request.");
+            return null;
+        }
+
+        try
+        {
+            using var client = CreateClient(TimeSpan.FromSeconds(10));
+            client.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
+
+            using var response = await client.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                // Status is checked without EnsureSuccessStatusCode to avoid first-chance exceptions in the log.
+                var resetUtc = GetRateLimitResetUtc(response.StatusCode, response.Headers, nowUtc);
+                if (resetUtc != null)
+                {
+                    _apiRateLimitedUntilUtc = resetUtc.Value;
+                    Trace.TraceWarning($"GitHub API rate limit exceeded, next request after {resetUtc.Value:O}.");
+                }
+                else
+                {
+                    Trace.TraceWarning($"GitHub API request failed: {(int)response.StatusCode} ({response.ReasonPhrase}).");
+                }
+
+                return null;
+            }
+
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            using var document = await JsonDocument.ParseAsync(stream);
+            var release = ParseRelease(document.RootElement);
+            if (release != null)
+                _releaseCache[release.Tag] = release;
+            return release;
+        }
+        catch (Exception e) when (e is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            Trace.TraceWarning($"GitHub API request failed: {e.Message}");
+            return null;
+        }
+    }
+
+    // Returns the time until which GitHub API requests should not be made, or null if the response
+    // is not a rate limit error. See https://docs.github.com/rest/using-the-rest-api/rate-limits-for-the-rest-api
+    internal static DateTime? GetRateLimitResetUtc(HttpStatusCode statusCode, HttpResponseHeaders headers, DateTime nowUtc)
+    {
+        if (statusCode != HttpStatusCode.Forbidden && statusCode != HttpStatusCode.TooManyRequests)
+            return null;
+
+        var retryAfter = headers.RetryAfter;
+        if (retryAfter?.Delta is { } delta)
+            return nowUtc + delta;
+        if (retryAfter?.Date is { } date)
+            return date.UtcDateTime;
+
+        if (TryGetHeader(headers, "X-RateLimit-Remaining") == "0" &&
+            long.TryParse(TryGetHeader(headers, "X-RateLimit-Reset"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var reset))
+            return DateTimeOffset.FromUnixTimeSeconds(reset).UtcDateTime;
+
+        // Secondary rate limit without explicit reset time: wait at least a minute.
+        return statusCode == HttpStatusCode.TooManyRequests || TryGetHeader(headers, "X-RateLimit-Remaining") == "0"
+            ? nowUtc.AddMinutes(1)
+            : null;
+    }
+
+    private static string? TryGetHeader(HttpResponseHeaders headers, string name) =>
+        headers.TryGetValues(name, out var values) ? values.FirstOrDefault()?.Trim() : null;
+
+    internal static ReleaseInfo CreateFallbackRelease(string tag)
+    {
+        var version = tag.TrimStart('v', 'V');
+        var downloadPrefix = ReleaseDownloadUrlPrefix + Uri.EscapeDataString(tag) + "/";
+        var assets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var name in new[] { $"LogGrokX-{version}-x64-setup.exe", $"LogGrokX-{version}-x86-setup.exe", ChecksumsAssetName })
+            assets[name] = downloadPrefix + Uri.EscapeDataString(name);
+
+        return new ReleaseInfo(tag, GetReleasePageUrl(tag), FallbackReleaseNotes, assets);
+    }
+
+    private static string GetReleasePageUrl(string tag) => ReleasePageUrlPrefix + Uri.EscapeDataString(tag);
+
+    private static ReleaseInfo? ParseRelease(JsonElement root)
+    {
         var tag = root.TryGetProperty("tag_name", out var tagElement) ? tagElement.GetString() : null;
         if (string.IsNullOrWhiteSpace(tag))
             return null;
@@ -370,7 +517,7 @@ public class UpdateCheckService
             }
         }
 
-        return new ReleaseInfo(tag, string.IsNullOrWhiteSpace(url) ? LatestReleasePageUrl : url, notes ?? string.Empty, assets);
+        return new ReleaseInfo(tag, string.IsNullOrWhiteSpace(url) ? GetReleasePageUrl(tag) : url, notes ?? string.Empty, assets);
     }
 
     private static string SkippedVersionFileName => HomeDirectoryPathProvider.GetDataFileFullPath("skipped-update.settings");

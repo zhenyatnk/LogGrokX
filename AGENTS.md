@@ -141,9 +141,14 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   Deriving the axis from the filtered buffer makes
   `MergedTimeRangeFilterViewModel.Refresh` clamp the handles to the shrunken
   bounds and silently reset the time range.
-- **Update check**: on startup `UpdateCheckService` queries the GitHub
-  `releases/latest` API; if the tag is newer than `BuildInfo.Version`
-  (`UpdateVersion`) it shows `UpdateWindow` / `UpdateViewModel`. "Update"
+- **Update check**: on startup `UpdateCheckService` resolves the latest tag from
+  the redirect of the `https://github.com/.../releases/latest` web page (not the
+  API: unauthenticated API allows 60 requests/hour per IP, shared behind corporate
+  NAT, #40). Only if the tag is newer than `BuildInfo.Version` (`UpdateVersion`)
+  and not skipped, it calls the `releases/tags/<tag>` API for notes and assets; on
+  403/429 it remembers the reset time (`X-RateLimit-Reset` / `Retry-After`) and uses
+  `CreateFallbackRelease` (well-known asset URLs, no notes). Then it shows
+  `UpdateWindow` / `UpdateViewModel`. "Update"
   downloads `LogGrokX-<ver>-<arch>-setup.exe` to `%TEMP%\LogGrokX\Update`,
   verifies it against `SHA256SUMS.txt`, and `App.OnExit` starts it silently
   (`/VERYSILENT /AUTOUPDATE=1`, `/ALLUSERS` + UAC for Program Files installs)
