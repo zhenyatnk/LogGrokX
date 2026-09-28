@@ -23,25 +23,37 @@ public class TextView : Control, IClippingRectChangesAware
             Func<HashSet<int>?> collapsedLineIndicesGetter)
         {
             CollapsibleRegionsMachine = new CollapsibleRegionsMachine(lineCount, collapsibleRegions, collapsedLineIndicesGetter);
-            
+            CollapsibleLines = new bool[lineCount];
+
+            var depthDelta = new int[lineCount + 1];
             foreach (var (start, length) in collapsibleRegions)
             {
-                foreach (var index in Enumerable.Range(start, length))
-                {
-                    CollapsibleLineIndices.Add(index);
-                }
+                var from = Math.Clamp(start, 0, lineCount);
+                var to = Math.Clamp(start + length, 0, lineCount);
+                if (from >= to) continue;
+                depthDelta[from]++;
+                depthDelta[to]--;
+            }
+
+            var depth = 0;
+            for (var i = 0; i < lineCount; i++)
+            {
+                depth += depthDelta[i];
+                CollapsibleLines[i] = depth > 0;
             }
         }
         
         public readonly CollapsibleRegionsMachine CollapsibleRegionsMachine;
-        public readonly HashSet<int> CollapsibleLineIndices = new();
+        public readonly bool[] CollapsibleLines;
+        public bool IsCollapsible(int index) => (uint)index < (uint)CollapsibleLines.Length && CollapsibleLines[index];
         public readonly Dictionary<int, Rect> ChildrenRectangles = new();
         public Dictionary<int, OutlineExpander> ChildrenByPosition = new();
     }
 
     private OutlineData? _outlineData;
 
-    private PooledList<GlyphLine>? _textLines;
+    private GlyphLine?[]? _textLines;
+    private bool[]? _textLineCollapsedStates;
     private readonly Lazy<GlyphTypeface> _glyphTypeface;
     private const double ExpanderSize = 8;
     public const double ExpanderMargin = 12;
@@ -177,6 +189,8 @@ public class TextView : Control, IClippingRectChangesAware
             FoldingManager = null;
             return;
         }
+
+        InvalidateMeasure();
 
         FoldingManager = new FoldingManager(
             _outlineData.CollapsibleRegionsMachine,
@@ -398,8 +412,17 @@ public class TextView : Control, IClippingRectChangesAware
         if (_textLines == null || _cachedTextModel != text || _cachedWidth < constraint.Width ||
             _isCollapsibleStateDirty || Math.Abs(_cachedFontSize - FontSize) > 0.001)
         { 
-            ResetText();
-            _textLines = CreateTextLines(text, constraint.Width);
+            var canReuseTextLines = _textLines != null && _cachedTextModel == text &&
+                                    _cachedWidth.Equals(constraint.Width) &&
+                                    Math.Abs(_cachedFontSize - FontSize) <= 0.001 &&
+                                    _textLines.Length == text.Count;
+            if (!canReuseTextLines)
+            {
+                ResetText();
+                _textLines = new GlyphLine?[text.Count];
+                _textLineCollapsedStates = new bool[text.Count];
+            }
+
             _cachedWidth = constraint.Width;
             _cachedFontSize = FontSize;
             _cachedTextModel = text;
@@ -417,15 +440,7 @@ public class TextView : Control, IClippingRectChangesAware
                 Children.Add(_guideLinesControl);
             }
 
-            var outlineData = _outlineData;
-            var visibleLineIndices = 
-                outlineData == null || outlineData.CollapsibleRegionsMachine.LineCount == _textLines.Count
-                ? Enumerable.Range(0, _textLines.Count)
-                : outlineData.CollapsibleRegionsMachine.Select((oi) => oi.index).ToList();
-
-            _textControl.TextLines = visibleLineIndices.Select(idx => (
-                textLine: _textLines[idx],
-                isCollapsible: outlineData?.CollapsibleLineIndices.Contains(idx) ?? false)).ToList();
+            _textControl.TextLines = CreateVisibleTextLines(text);
         }
 
         _textControl.Measure(constraint);
@@ -487,11 +502,9 @@ public class TextView : Control, IClippingRectChangesAware
             _children?.Add(outlineExpander);
         }
 
-        for (var i = 0; i < outlineData.ChildrenByPosition.Count; i++)
+        foreach (var (index, expander) in outlineData.ChildrenByPosition)
         {
-            var (index, expander) = outlineData.ChildrenByPosition.ElementAt(i);
-            var rect = outlineData.ChildrenRectangles[index];
-            expander.Arrange(rect);
+            expander.Arrange(outlineData.ChildrenRectangles[index]);
         }
 
         var childrenRectangles = _outlineData?.ChildrenRectangles;
@@ -525,7 +538,7 @@ public class TextView : Control, IClippingRectChangesAware
     private (HashSet<OutlineExpander> newChildren, 
         Dictionary<int, OutlineExpander> newChildrenByPosition) UpdateChildren(Rect? clippingRect, OutlineData outlineData)
     {
-        if (_textLines == null)
+        if (_textLines == null || TextModel is not { } textModel)
             throw new InvalidOperationException();
         
         double verticalPosition = 0;
@@ -538,7 +551,9 @@ public class TextView : Control, IClippingRectChangesAware
         for (var i = 0; i < outlineData.CollapsibleRegionsMachine.LineCount; i++)
         {
             var (outline, index) = outlineData.CollapsibleRegionsMachine[i];
-            var textLine = _textLines[index];
+            if ((uint)index >= (uint)_textLines.Length)
+                break;
+            var textLine = _textLines[index] ?? GetOrCreateTextLine(textModel, index, pixelsPerDip);
             var yCenter = Math.Round((verticalPosition + textLine.Size.Height / 2) * pixelsPerDip,
                 MidpointRounding.ToEven) / pixelsPerDip;
 
@@ -578,50 +593,68 @@ public class TextView : Control, IClippingRectChangesAware
         {
             foreach (var textLine in _textLines)
             {
-                textLine.Dispose();
+                textLine?.Dispose();
             }
-
-            _textLines.Dispose();
         }
 
         _textLines = null;
+        _textLineCollapsedStates = null;
     }
 
-    private PooledList<GlyphLine> CreateTextLines(TextModel newText, double constraintWidth)
+    private List<(GlyphLine glyphLine, bool isCollapsible)> CreateVisibleTextLines(TextModel text)
     {
-        var list = new PooledList<GlyphLine>(16);
-        var glyphTypeFace = _glyphTypeface.Value;
         var pixelsPerDip = (float)VisualTreeHelper.GetDpi(this).PixelsPerDip;
-        var lineIndex = 0;
-        var textModel = TextModel;
-        
-        StringRange ApplyCollapsedPostfix(StringRange stringRange)
+        var outlineData = _outlineData;
+
+        if (outlineData == null)
         {
-            if (!(_outlineData?.CollapsibleRegionsMachine.IsCollapsed(lineIndex) ?? false)) 
-                return stringRange;
-            
-            if (textModel?.GetCollapsedTextSubstitution(lineIndex) is { IsEmpty: false } substitution)
-            {
-                return substitution;
-            }
-            return StringRange.FromString(stringRange.ToString().TrimEnd().TrimEnd('{') + "{...}");
+            var allLines = new List<(GlyphLine glyphLine, bool isCollapsible)>(text.Count);
+            for (var i = 0; i < text.Count; i++)
+                allLines.Add((GetOrCreateTextLine(text, i, pixelsPerDip), false));
+            return allLines;
         }
 
-        StringRange TrimVeryLongLine(StringRange stringRange)
+        var machine = outlineData.CollapsibleRegionsMachine;
+        var visibleLines = new List<(GlyphLine glyphLine, bool isCollapsible)>(machine.LineCount);
+        for (var i = 0; i < machine.LineCount; i++)
         {
-            return stringRange.Length <= MaxLineLength ? stringRange : 
-                StringRange.FromString(stringRange.Span[..MaxLineLength].ToString() + "...");
+            var (_, index) = machine[i];
+            visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), outlineData.IsCollapsible(index)));
         }
 
-        foreach (var stringRange in newText)
-        {
-            var lineWithPostfix = TrimVeryLongLine(ApplyCollapsedPostfix(stringRange));
-            
-            list.Add(new GlyphLine(lineWithPostfix, glyphTypeFace, FontSize, pixelsPerDip, constraintWidth));
-            lineIndex++;
-        }
+        return visibleLines;
+    }
 
-        return list;
+    private GlyphLine GetOrCreateTextLine(TextModel text, int index, float pixelsPerDip)
+    {
+        if (_textLines is not { } textLines || _textLineCollapsedStates is not { } collapsedStates)
+            throw new InvalidOperationException();
+
+        var isCollapsed = _outlineData?.CollapsibleRegionsMachine.IsCollapsed(index) ?? false;
+        if (textLines[index] is { } cached && collapsedStates[index] == isCollapsed)
+            return cached;
+
+        textLines[index]?.Dispose();
+
+        var lineText = TrimVeryLongLine(isCollapsed ? GetCollapsedLineText(text, index) : text[index]);
+        var glyphLine = new GlyphLine(lineText, _glyphTypeface.Value, FontSize, pixelsPerDip, _cachedWidth);
+        textLines[index] = glyphLine;
+        collapsedStates[index] = isCollapsed;
+        return glyphLine;
+    }
+
+    private static StringRange GetCollapsedLineText(TextModel text, int index)
+    {
+        if (text.GetCollapsedTextSubstitution(index) is { IsEmpty: false } substitution)
+            return substitution;
+
+        return StringRange.FromString(text[index].ToString().TrimEnd().TrimEnd('{') + "{...}");
+    }
+
+    private static StringRange TrimVeryLongLine(StringRange stringRange)
+    {
+        return stringRange.Length <= MaxLineLength ? stringRange : 
+            StringRange.FromString(stringRange.Span[..MaxLineLength].ToString() + "...");
     }
 
     private GlyphTypeface CreateGlyphTypeface()

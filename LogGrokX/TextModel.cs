@@ -20,6 +20,7 @@ public class TextModel : IReadOnlyList<StringRange>
     private readonly string? _plainSource;
     private readonly Dictionary<int, StringRange>? _substitutions;
     private Dictionary<int, (int start, int length)>? _indexedCollapsibleRanges;
+    private Dictionary<int, StringRange>? _collapsedTextCache;
 
     public int UniqueId { get; }
 
@@ -37,15 +38,27 @@ public class TextModel : IReadOnlyList<StringRange>
             return result;
         }
 
+        if (_collapsedTextCache?.TryGetValue(index, out var cached) ?? false)
+        {
+            return cached;
+        }
+
         _indexedCollapsibleRanges ??= collapsibleRanges.ToDictionary(
             static kv => kv.start, static kv => kv);
 
-        var collapsibleRange = _indexedCollapsibleRanges[index];
-        var collapsedText = string.Concat(_textLines.Skip(collapsibleRange.start)
-            .Take(collapsibleRange.length).Select(
-                (s, i) => i == 0 ? s.ToString().TrimEnd() : s.ToString().Trim()));
+        var (start, length) = _indexedCollapsibleRanges[index];
+        var end = Math.Min(start + length, textLines.Count);
+        var builder = new StringBuilder();
+        for (var i = start; i < end; i++)
+        {
+            var line = textLines[i].Span;
+            builder.Append(i == start ? line.TrimEnd() : line.Trim());
+        }
 
-        return StringRange.FromString(collapsedText);
+        var collapsedText = StringRange.FromString(builder.ToString());
+        _collapsedTextCache ??= new Dictionary<int, StringRange>();
+        _collapsedTextCache[index] = collapsedText;
+        return collapsedText;
     }
 
     public IEnumerator<StringRange> GetEnumerator()

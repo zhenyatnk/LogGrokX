@@ -127,6 +127,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   templates bind it via `textRender:TextView.SharedFoldingState`. The marked-lines
   view must use `Document.FoldingState` and the same `TextModel.UniqueId` as the
   grid's JSON component, otherwise expansion falls out of sync.
+- **JSON folding performance**: `TextView` keeps one cached `GlyphLine` per
+  source line (`_textLines`, plus its collapsed state) and builds glyphs only
+  for lines visible under the current folding, so toggling a region re-creates
+  just the affected lines. `TextModel.GetCollapsedTextSubstitution` memoizes the
+  inlined text of collapsed regions. Avoid reintroducing full re-creation of all
+  lines on every folding change — it makes expanding large JSON sluggish (#38).
 - **Merged timeline range**: `MergedViewModel` keeps the **full** merged buffer
   (`_mergedBuffer`) and derives the timeline axis (`Minimum`/`Maximum`,
   `TotalLineCount`, `TimelineSegments`, `TimeRangeFilter.Refresh`) from it, while
