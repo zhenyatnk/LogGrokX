@@ -70,6 +70,7 @@ jobs:
           --runtime win-x64 `
           --self-contained true `
           -p:PublishSingleFile=true `
+          -p:CopyOutputSymbolsToPublishDirectory=false `
           -p:IncludeNativeLibrariesForSelfExtract=true `
           -p:EnableCompressionInSingleFile=true `
           -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
@@ -93,6 +94,7 @@ jobs:
           --runtime win-x86 `
           --self-contained true `
           -p:PublishSingleFile=true `
+          -p:CopyOutputSymbolsToPublishDirectory=false `
           -p:IncludeNativeLibrariesForSelfExtract=true `
           -p:EnableCompressionInSingleFile=true `
           -p:Version=${{ steps.version.outputs.RELEASE_VERSION }} `
