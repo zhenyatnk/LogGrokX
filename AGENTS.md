@@ -163,6 +163,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   which returns the notes only if the stored version matches `BuildInfo.Version`
   (a `v`-prefix is ignored), deletes the file either way, and `WhatsNewWindow` /
   `WhatsNewViewModel` shows them.
+- **Search results selection**: the search pane's `VirtualizingStackPanel` sets
+  `ReplaceSelectionOnCurrentPosition="True"` so F3/next/previous replace the
+  selection. Mouse and Shift+arrow selection must change `CurrentPosition`
+  through `SetCurrentPositionKeepingSelection`, otherwise Ctrl/Shift+click
+  multi-selection collapses to a single line (#43).
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

@@ -41,7 +41,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                 newValue = itemCount - 1;
             if (newValue < 0)
                 panel._selection.Clear();
-            else if (panel.ReplaceSelectionOnCurrentPosition)
+            else if (panel.ReplaceSelectionOnCurrentPosition && !panel._keepSelectionOnCurrentPositionChange)
                 panel._selection.Set(newValue);
             else
                 panel._selection.Add(newValue);
@@ -66,6 +66,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
         }
         
         private readonly Selection _selection = new();
+        private bool _keepSelectionOnCurrentPositionChange;
         private ScrollContentPresenter? _scrollContentPresenter;
 
         public IEnumerable<int> SelectedIndices => _selection;
@@ -121,6 +122,8 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                     item.IsSelected = false;
                     return true;
                 }
+
+                _selection.Add(index);
             } 
             else  if (Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
             {
@@ -131,12 +134,26 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                 _selection.Set(index);
             }
 
-            CurrentPosition = index;
+            SetCurrentPositionKeepingSelection(index);
+            UpdateSelection();
 
             FocusManager.SetFocusedElement(item, item);
             return true;
         }
         
+        private void SetCurrentPositionKeepingSelection(int index)
+        {
+            _keepSelectionOnCurrentPositionChange = true;
+            try
+            {
+                CurrentPosition = index;
+            }
+            finally
+            {
+                _keepSelectionOnCurrentPositionChange = false;
+            }
+        }
+
         private Point? GetMousePosition()
         {
             if (ScrollContentPresenter != null)
@@ -253,12 +270,12 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
             {
                 case <=0: return;
                 case {} pos when pos == min: 
-                    CurrentPosition--;
+                    SetCurrentPositionKeepingSelection(CurrentPosition - 1);
                     _selection.Add(CurrentPosition);
                     break;
                 case {} pos when pos == max:
                     _selection.Remove(CurrentPosition);
-                    CurrentPosition = _selection.Bounds.Value.max;
+                    SetCurrentPositionKeepingSelection(_selection.Bounds.Value.max);
                     break;
             }
     
@@ -275,12 +292,12 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                 case {} pos when pos >= Items.Count - 1:
                     return;
                 case {} pos when pos == max:
-                    CurrentPosition++;
+                    SetCurrentPositionKeepingSelection(CurrentPosition + 1);
                     _selection.Add(CurrentPosition);
                     break;
                 case {} pos when pos ==min:
                     _selection.Remove(CurrentPosition);
-                    CurrentPosition = _selection.Bounds.Value.min;
+                    SetCurrentPositionKeepingSelection(_selection.Bounds.Value.min);
                     break;
             }
 
