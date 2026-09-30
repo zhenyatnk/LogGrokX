@@ -97,6 +97,7 @@
                                              ScrollPosition="{Binding ScrollPosition}"
                                              ScrollIndicatorBrush="#FF00C853"
                                              MatchLine="{Binding SearchMatchLine}"
+                                             MatchLines="{Binding SearchSelectedLines}"
                                              MatchLineBrush="#FFFF00FF"
                                              MarkerBrush="#FFE81123"
                                              MatchBrush="#A0F2A900"

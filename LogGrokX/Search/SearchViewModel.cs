@@ -100,6 +100,7 @@ namespace LogGrokX.Search
                 InvokePropertyChanged(nameof(MatchCounterText));
                 InvokePropertyChanged(nameof(CurrentMatchBuckets));
                 InvokePropertyChanged(nameof(CurrentMatchLine));
+                InvokePropertyChanged(nameof(CurrentSelectedMatchLines));
             }
         }
 
@@ -113,6 +114,9 @@ namespace LogGrokX.Search
 
             if (e.PropertyName == nameof(ISearchDocument.CurrentMatchLine))
                 InvokePropertyChanged(nameof(CurrentMatchLine));
+
+            if (e.PropertyName == nameof(ISearchDocument.SelectedMatchLines))
+                InvokePropertyChanged(nameof(CurrentSelectedMatchLines));
         }
 
         public string MatchCounterText => CurrentDocument?.MatchCounterText ?? string.Empty;
@@ -120,6 +124,9 @@ namespace LogGrokX.Search
         public bool[] CurrentMatchBuckets => CurrentDocument?.MatchBuckets ?? Array.Empty<bool>();
 
         public int CurrentMatchLine => CurrentDocument?.CurrentMatchLine ?? -1;
+
+        public IReadOnlyList<int> CurrentSelectedMatchLines =>
+            CurrentDocument?.SelectedMatchLines ?? Array.Empty<int>();
 
         public Regex? HighlightRegex
         {

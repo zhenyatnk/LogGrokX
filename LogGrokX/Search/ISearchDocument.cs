@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 
 namespace LogGrokX.Search
@@ -14,6 +15,8 @@ namespace LogGrokX.Search
         bool[] MatchBuckets { get; }
 
         int CurrentMatchLine { get; }
+
+        IReadOnlyList<int> SelectedMatchLines { get; }
 
         Action<int>? NavigateToIndexRequested { get; set; }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Windows;
@@ -125,6 +126,10 @@ namespace LogGrokX.Controls
             nameof(MatchLine), typeof(int), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(-1, FrameworkPropertyMetadataOptions.AffectsRender));
 
+        public static readonly DependencyProperty MatchLinesProperty = DependencyProperty.Register(
+            nameof(MatchLines), typeof(IReadOnlyList<int>), typeof(LogMinimapControl),
+            new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
+
         public static readonly DependencyProperty MatchLineBrushProperty = DependencyProperty.Register(
             nameof(MatchLineBrush), typeof(Brush), typeof(LogMinimapControl),
             new FrameworkPropertyMetadata(Brushes.Magenta, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -137,6 +142,7 @@ namespace LogGrokX.Controls
         private const double LabelFontSize = 11.0;
         private const double HandleHitTolerance = 6.0;
         private const double HandleWidth = 5.0;
+        private const double SelectedMatchLineOpacity = 0.35;
         private const double EdgeLabelPadding = 8.0;
 
         private INotifyCollectionChanged? _observableMarkers;
@@ -306,6 +312,12 @@ namespace LogGrokX.Controls
             set => SetValue(MatchLineProperty, value);
         }
 
+        public IReadOnlyList<int>? MatchLines
+        {
+            get => (IReadOnlyList<int>?)GetValue(MatchLinesProperty);
+            set => SetValue(MatchLinesProperty, value);
+        }
+
         public Brush MatchLineBrush
         {
             get => (Brush)GetValue(MatchLineBrushProperty);
@@ -411,15 +423,39 @@ namespace LogGrokX.Controls
         private void DrawMatchLine(DrawingContext drawingContext, double width, double height)
         {
             var count = ItemCount;
-            var line = MatchLine;
-            if (count <= 0 || line < 0 || line >= count)
+            if (count <= 0)
                 return;
 
             var brush = MatchLineBrush;
             if (brush == null)
                 return;
 
+            var currentLine = MatchLine;
+            var drawnPixels = new HashSet<long>();
+            if (currentLine >= 0 && currentLine < count)
+                drawnPixels.Add((long)Math.Round(CenterOf(currentLine, count, width)));
+
+            if (MatchLines is { Count: > 0 } lines)
+            {
+                drawingContext.PushOpacity(SelectedMatchLineOpacity);
+                foreach (var line in lines)
+                    DrawMatchLineAt(drawingContext, brush, line, count, width, height, drawnPixels);
+                drawingContext.Pop();
+            }
+
+            DrawMatchLineAt(drawingContext, brush, currentLine, count, width, height, null);
+        }
+
+        private void DrawMatchLineAt(DrawingContext drawingContext, Brush brush, int line, int count,
+            double width, double height, HashSet<long>? drawnPixels)
+        {
+            if (line < 0 || line >= count)
+                return;
+
             var center = CenterOf(line, count, width);
+            if (drawnPixels != null && !drawnPixels.Add((long)Math.Round(center)))
+                return;
+
             var indicatorWidth = 2.0;
             var left = Math.Clamp(center - indicatorWidth / 2, 0, Math.Max(0, width - indicatorWidth));
             drawingContext.DrawRectangle(brush, null, new Rect(left, 0, indicatorWidth, height));

@@ -147,6 +147,15 @@ namespace LogGrokX
 
         public void SetSearchMatchLine(int line) => SearchMatchLine = line;
 
+        private IReadOnlyList<int> _searchSelectedLines = Array.Empty<int>();
+        public IReadOnlyList<int> SearchSelectedLines
+        {
+            get => _searchSelectedLines;
+            private set => SetAndRaiseIfChanged(ref _searchSelectedLines, value);
+        }
+
+        public void SetSearchSelectedLines(IReadOnlyList<int> lines) => SearchSelectedLines = lines;
+
         private int _firstVisibleIndex = -1;
         public int FirstVisibleIndex
         {

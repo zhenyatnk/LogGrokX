@@ -46,11 +46,11 @@ namespace LogGrokX.Controls
                     index <= Math.Max(valueFrom, selectedValue);
                     index++)
                 {
-                    Add(index);
+                    _indices.Add(index);
                 }
-            }
 
-            RaiseChanged();
+                RaiseChanged();
+            }
         }
 
         public void Clear()

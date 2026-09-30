@@ -2,6 +2,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,8 @@ namespace LogGrokX.Search
      
         private SubIndexer? _currentSearchIndexer;
         private int? _currentItemIndex;
+        private IEnumerable<object>? _selectedItems;
+        private IReadOnlyList<int> _selectedMatchLines = Array.Empty<int>();
         private readonly LogModelFacade _logModelFacade;
         private readonly TimeIndex _timeIndex;
         private SearchLineIndex? _currentSearchLineIndex;
@@ -223,6 +226,28 @@ namespace LogGrokX.Search
                 InvokePropertyChanged(nameof(MatchCounterText));
                 InvokePropertyChanged(nameof(CurrentMatchLine));
                 MatchPositionChanged?.Invoke();
+            }
+        }
+
+        public IEnumerable<object>? SelectedItems
+        {
+            get => _selectedItems;
+            set
+            {
+                _selectedItems = value;
+                SelectedMatchLines =
+                    value?.OfType<LineViewModel>().Select(line => line.Index).ToArray() ?? Array.Empty<int>();
+            }
+        }
+
+        public IReadOnlyList<int> SelectedMatchLines
+        {
+            get => _selectedMatchLines;
+            private set
+            {
+                if (_selectedMatchLines.SequenceEqual(value)) return;
+                _selectedMatchLines = value;
+                InvokePropertyChanged();
             }
         }
 

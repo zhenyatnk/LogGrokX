@@ -44,6 +44,7 @@
                                IsTextSearchEnabled="False"
                                ItemContainerStyle="{StaticResource ItemContainerStyle}"
                                ItemsSource="{Binding Lines}"
+                               ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
                                FontFamily="{StaticResource JetBrainsMono}"
                                FontSize="{DynamicResource LogFontSize}"
                                View="{Binding CustomView}"

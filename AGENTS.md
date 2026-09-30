@@ -167,7 +167,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `ReplaceSelectionOnCurrentPosition="True"` so F3/next/previous replace the
   selection. Mouse and Shift+arrow selection must change `CurrentPosition`
   through `SetCurrentPositionKeepingSelection`, otherwise Ctrl/Shift+click
-  multi-selection collapses to a single line (#43).
+  multi-selection collapses to a single line (#43). The selected search lines
+  flow to the timeline as `ISearchDocument.SelectedMatchLines` ->
+  `SearchViewModel.CurrentSelectedMatchLines` -> `LogViewModel.SearchSelectedLines`
+  -> `LogMinimapControl.MatchLines` (merged view binds
+  `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
+  semi-transparent; the current line (`MatchLine`) stays opaque on top.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

@@ -55,6 +55,7 @@ namespace LogGrokX
             SearchViewModel.PropertyChanged += OnSearchViewModelPropertyChanged;
             LogViewModel.SetSearchMatches(SearchViewModel.CurrentMatchBuckets);
             LogViewModel.SetSearchMatchLine(SearchViewModel.CurrentMatchLine);
+            LogViewModel.SetSearchSelectedLines(SearchViewModel.CurrentSelectedMatchLines);
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
@@ -111,6 +112,9 @@ namespace LogGrokX
 
             if (e.PropertyName == nameof(SearchViewModel.CurrentMatchLine))
                 LogViewModel.SetSearchMatchLine(SearchViewModel.CurrentMatchLine);
+
+            if (e.PropertyName == nameof(SearchViewModel.CurrentSelectedMatchLines))
+                LogViewModel.SetSearchSelectedLines(SearchViewModel.CurrentSelectedMatchLines);
         }
         
         public ObservableCollection<(int number, string text)> MarkedLineViewModels
