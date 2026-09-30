@@ -58,6 +58,10 @@
             </ui:TitleBar.Icon>
             <ui:TitleBar.TrailingContent>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <ComboBox Width="150" Margin="4,0,8,0" VerticalAlignment="Center"
+                              ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
+                              SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
+                              ToolTip="Parsing and highlighting profile. Changing it reloads all open files." />
                     <ui:Button Appearance="Transparent"
                                ToolTip="Open log file (Ctrl+O)"
                                Command="{Binding OpenFileCommand}">

@@ -302,5 +302,30 @@ namespace LogGrokX.Tests
         {
             File.WriteAllText(_tempFile, content);
         }
+
+        [TestMethod]
+        public void SetScalarInsertsDirectChildWithoutReplacingNestedProfileValue()
+        {
+            WriteFile("Settings:\n    Profiles:\n        - Name: First\n          SelectedProfile: nested\n");
+            var file = new YamlSettingsFile(_tempFile);
+            file.SetScalar("Settings", "SelectedProfile", "First");
+            file.Save();
+            var configuration = new ConfigurationBuilder().AddYamlFile(_tempFile, false, false).Build();
+            Assert.AreEqual("First", configuration["Settings:SelectedProfile"]);
+            Assert.AreEqual("nested", configuration["Settings:Profiles:0:SelectedProfile"]);
+        }
+
+        [TestMethod]
+        public void ReplaceSequenceExpandsInlineEmptyList()
+        {
+            WriteFile("Settings:\n  LogFormats: []\n  CustomValue: preserved\n");
+            var file = new YamlSettingsFile(_tempFile);
+            file.ReplaceSequence("Settings", "LogFormats", indent => SettingsYamlRenderer.RenderLogFormats(
+                new[] { new LogFormatData { Regex = "^new$" } }, indent));
+            file.Save();
+            var configuration = new ConfigurationBuilder().AddYamlFile(_tempFile, false, false).Build();
+            Assert.AreEqual("^new$", configuration["Settings:LogFormats:0:Regex"]);
+            Assert.AreEqual("preserved", configuration["Settings:CustomValue"]);
+        }
     }
 }
