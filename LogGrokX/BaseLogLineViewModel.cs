@@ -53,6 +53,18 @@ namespace LogGrokX
 
         public bool IsBase64 => DecodableParts.Any(p => p.IsBase64);
 
+        public bool IsDecodable => IsPem || IsBase64;
+
+        public bool IsDecoded
+        {
+            get => DecodableParts.Any(p => p.IsDecoded);
+            set
+            {
+                foreach (var part in DecodableParts.Where(p => p.IsPem || p.IsBase64))
+                    part.IsDecoded = value;
+            }
+        }
+
         public bool IsPemDecoded
         {
             get => DecodableParts.Any(p => p.IsPem && p.IsPemDecoded);
@@ -75,7 +87,9 @@ namespace LogGrokX
 
         private void OnPartPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(LinePartViewModel.IsPemDecoded) or nameof(LinePartViewModel.IsBase64Decoded))
+            if (e.PropertyName is nameof(LinePartViewModel.IsPemDecoded)
+                or nameof(LinePartViewModel.IsBase64Decoded)
+                or nameof(LinePartViewModel.IsDecoded))
                 InvokePropertyChanged(e.PropertyName);
         }
         

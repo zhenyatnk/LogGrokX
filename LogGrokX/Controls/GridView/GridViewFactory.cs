@@ -14,6 +14,7 @@ namespace LogGrokX.Controls.GridView
     public class GridViewFactory
     {
         private const string ThreadFieldName = "Thread";
+        private const string ComponentFieldName = "Component";
         private const string DecodeTogglesTemplateKey = "DecodeTogglesTemplate";
 
         public const double PinColumnMinWidth = 30;
@@ -49,6 +50,8 @@ namespace LogGrokX.Controls.GridView
                 widths = null;
 
             var indexFieldName = "Index";
+            var componentFieldName = _meta.FieldNames
+                .FirstOrDefault(field => field.Equals(ComponentFieldName, StringComparison.OrdinalIgnoreCase));
             var view = new System.Windows.Controls.GridView();
 
             view.Columns.Add(new LogGridViewColumn
@@ -57,7 +60,7 @@ namespace LogGrokX.Controls.GridView
                 {
                     VisualTree = new FrameworkElementFactory(typeof(PinGridViewhHeader))
                 },
-                CellTemplate =  CreatePinCellTemplate(),
+                CellTemplate =  CreatePinCellTemplate(componentFieldName == null),
                 Width = widths == null ? 0 : Math.Max(widths[0], PinColumnMinWidth + PinColumnPadding)
             });
 
@@ -126,11 +129,33 @@ namespace LogGrokX.Controls.GridView
                         };
                         frameworkElementFactory.SetBinding(UIElement.OpacityProperty, opacityBinding);
                     }
-                    var dataTemplate = new DataTemplate(typeof(DependencyObject))
+                    if (fieldHeader != componentFieldName)
                     {
-                        VisualTree = frameworkElementFactory
+                        return new DataTemplate(typeof(DependencyObject))
+                        {
+                            VisualTree = frameworkElementFactory
+                        };
+                    }
+
+                    var grid = new FrameworkElementFactory(typeof(Grid));
+                    var contentColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
+                    contentColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
+                    var togglesColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
+                    togglesColumn.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
+                    grid.AppendChild(contentColumn);
+                    grid.AppendChild(togglesColumn);
+
+                    frameworkElementFactory.SetValue(Grid.ColumnProperty, 0);
+                    grid.AppendChild(frameworkElementFactory);
+
+                    var toggles = CreateDecodeToggles(HorizontalAlignment.Right);
+                    toggles.SetValue(Grid.ColumnProperty, 1);
+                    grid.AppendChild(toggles);
+
+                    return new DataTemplate(typeof(DependencyObject))
+                    {
+                        VisualTree = grid
                     };
-                    return dataTemplate;
                 }
 
                 view.Columns.Add(new LogGridViewColumn
@@ -161,7 +186,7 @@ namespace LogGrokX.Controls.GridView
             };
         }
         
-        private static DataTemplate CreatePinCellTemplate()
+        private static DataTemplate CreatePinCellTemplate(bool includeDecodeToggles)
         {
             var panel = new FrameworkElementFactory(typeof(StackPanel));
             panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
@@ -177,13 +202,21 @@ namespace LogGrokX.Controls.GridView
             });
             panel.AppendChild(pin);
 
-            var toggles = new FrameworkElementFactory(typeof(ContentControl));
-            toggles.SetValue(UIElement.FocusableProperty, false);
-            toggles.SetBinding(ContentControl.ContentProperty, new Binding());
-            toggles.SetResourceReference(ContentControl.ContentTemplateProperty, DecodeTogglesTemplateKey);
-            panel.AppendChild(toggles);
+            if (includeDecodeToggles)
+                panel.AppendChild(CreateDecodeToggles(HorizontalAlignment.Center));
 
             return new DataTemplate {VisualTree = panel};
+        }
+
+        private static FrameworkElementFactory CreateDecodeToggles(HorizontalAlignment horizontalAlignment)
+        {
+            var toggles = new FrameworkElementFactory(typeof(ContentControl));
+            toggles.SetValue(UIElement.FocusableProperty, false);
+            toggles.SetValue(FrameworkElement.HorizontalAlignmentProperty, horizontalAlignment);
+            toggles.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
+            toggles.SetBinding(ContentControl.ContentProperty, new Binding());
+            toggles.SetResourceReference(ContentControl.ContentTemplateProperty, DecodeTogglesTemplateKey);
+            return toggles;
         }
     }
 }

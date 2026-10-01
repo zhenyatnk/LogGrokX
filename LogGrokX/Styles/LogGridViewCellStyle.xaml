@@ -65,20 +65,12 @@
         </Setter>
     </Style>
     <DataTemplate x:Key="DecodeTogglesTemplate" DataType="{x:Type logGrokCore:BaseLogLineViewModel}">
-        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
-            <ToggleButton Content="PEM"
-                          ToolTip="Decode PEM"
-                          Margin="0,2,0,0"
-                          Style="{StaticResource Base64ToggleButtonStyle}"
-                          IsChecked="{Binding IsPemDecoded, Mode=TwoWay}"
-                          Visibility="{Binding IsPem, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <ToggleButton Content="B64"
-                          ToolTip="Decode Base64"
-                          Margin="0,2,0,0"
-                          Style="{StaticResource Base64ToggleButtonStyle}"
-                          IsChecked="{Binding IsBase64Decoded, Mode=TwoWay}"
-                          Visibility="{Binding IsBase64, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-        </StackPanel>
+        <ToggleButton Content="BIN"
+                      ToolTip="Decode binary content"
+                      Style="{StaticResource Base64ToggleButtonStyle}"
+                      HorizontalAlignment="Center"
+                      IsChecked="{Binding IsDecoded, Mode=TwoWay}"
+                      Visibility="{Binding IsDecodable, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
     </DataTemplate>
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
         <textRender:TextView 

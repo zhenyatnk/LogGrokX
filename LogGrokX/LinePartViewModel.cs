@@ -33,7 +33,15 @@ public class LinePartViewModel : ViewModelBase
 
     public bool IsPem => Content.HasFlag(Base64Content.Pem);
 
-    public bool IsDecoded => _decoded != Base64Content.None;
+    public bool IsDecoded
+    {
+        get => _decoded != Base64Content.None;
+        set
+        {
+            SetDecoded(Base64Content.Pem, value);
+            SetDecoded(Base64Content.Base64, value);
+        }
+    }
 
     public bool IsBase64Decoded
     {
