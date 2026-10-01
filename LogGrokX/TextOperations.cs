@@ -4,13 +4,22 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
+using System.Xml.Linq;
 using LogGrokX.Data;
 
 namespace LogGrokX
 {
+    public enum StructuredTextKind
+    {
+        Json,
+        Xml,
+    }
+
     public static class TextOperations
     {
         private const string Ellipsis = "...";
+        private const string XmlDeclarationStart = "<?xml";
 
         public static StringRange Normalize(StringRange stringRange, ViewSettings settings)
         {
@@ -174,6 +183,248 @@ namespace LogGrokX
                 text[(firstStart + firstLength)..], 
                 jsonIntervals[1..], firstStart + firstLength + startOffset, false));
             return stringBuilder.ToString();
+        }
+
+        public static List<(int start, int length, StructuredTextKind kind)> GetStructuredRanges(string source)
+        {
+            var candidates = GetJsonRanges(source)
+                .Select(r => (r.start, r.length, kind: StructuredTextKind.Json))
+                .Concat(GetXmlRanges(source).Select(r => (r.start, r.length, kind: StructuredTextKind.Xml)))
+                .OrderBy(r => r.start)
+                .ThenByDescending(r => r.length);
+
+            var result = new List<(int start, int length, StructuredTextKind kind)>();
+            var end = 0;
+            foreach (var candidate in candidates)
+            {
+                if (candidate.start < end)
+                    continue;
+
+                result.Add(candidate);
+                end = candidate.start + candidate.length;
+            }
+
+            return result;
+        }
+
+        public static (string text, List<(int start, int length, StructuredTextKind kind)> ranges) FormatInlineStructured(
+            string source, IReadOnlyList<(int start, int length, StructuredTextKind kind)> ranges)
+        {
+            var builder = new StringBuilder();
+            var formattedRanges = new List<(int start, int length, StructuredTextKind kind)>(ranges.Count);
+            var position = 0;
+            for (var i = 0; i < ranges.Count; i++)
+            {
+                var (start, length, kind) = ranges[i];
+                builder.Append(source, position, start - position);
+                if (i != 0)
+                    builder.Append(Environment.NewLine);
+
+                var text = source.Substring(start, length);
+                var formatted = kind == StructuredTextKind.Json ? FormatJsonText(text) : FormatXmlText(text);
+                formattedRanges.Add((builder.Length, formatted.Length, kind));
+                builder.Append(formatted);
+                position = start + length;
+            }
+
+            builder.Append(source, position, source.Length - position);
+            return (builder.ToString(), formattedRanges);
+        }
+
+        public static IEnumerable<(int start, int length)> GetXmlRanges(string source)
+        {
+            List<(int start, int length)>? result = null;
+            var position = 0;
+            while (position < source.Length)
+            {
+                var openIndex = source.IndexOf('<', position);
+                if (openIndex < 0)
+                    break;
+
+                var end = TryGetXmlEnd(source.AsSpan(), openIndex);
+                if (end > 0 && TryParseXml(source.Substring(openIndex, end - openIndex)) != null)
+                {
+                    result ??= new List<(int start, int length)>(2);
+                    result.Add((openIndex, end - openIndex));
+                    position = end;
+                }
+                else
+                {
+                    position = openIndex + 1;
+                }
+            }
+
+            return result ?? Enumerable.Empty<(int start, int length)>();
+        }
+
+        public static List<(int open, int close)> GetXmlElementRanges(ReadOnlySpan<char> xml)
+        {
+            var elements = new List<(int open, int close)>();
+            var rootStart = GetXmlRootElementStart(xml, 0);
+            if (rootStart >= 0)
+                ScanXmlElement(xml, rootStart, elements);
+            return elements;
+        }
+
+        public static string FormatInlineXml(string source)
+        {
+            var ranges = GetXmlRanges(source)
+                .Select(r => (r.start, r.length, StructuredTextKind.Xml))
+                .ToList();
+            return ranges.Count == 0 ? source : FormatInlineStructured(source, ranges).text;
+        }
+
+        private static int TryGetXmlEnd(ReadOnlySpan<char> source, int openIndex)
+        {
+            var rootStart = GetXmlRootElementStart(source, openIndex);
+            return rootStart < 0 ? -1 : ScanXmlElement(source, rootStart, null);
+        }
+
+        private static int GetXmlRootElementStart(ReadOnlySpan<char> source, int openIndex)
+        {
+            var position = openIndex;
+            if (source[position..].StartsWith(XmlDeclarationStart, StringComparison.Ordinal))
+            {
+                var declarationEnd = source[position..].IndexOf("?>");
+                if (declarationEnd < 0)
+                    return -1;
+
+                position += declarationEnd + 2;
+                while (position < source.Length && char.IsWhiteSpace(source[position]))
+                    position++;
+            }
+
+            return IsXmlStartTag(source, position) ? position : -1;
+        }
+
+        private static bool IsXmlStartTag(ReadOnlySpan<char> source, int position)
+        {
+            return position + 1 < source.Length
+                   && source[position] == '<'
+                   && (char.IsLetter(source[position + 1]) || source[position + 1] == '_');
+        }
+
+        private static int ScanXmlElement(ReadOnlySpan<char> source, int start, List<(int open, int close)>? elements)
+        {
+            var openTags = new Stack<int>();
+            var position = start;
+            while (position < source.Length)
+            {
+                var next = source[position..].IndexOf('<');
+                if (next < 0)
+                    return -1;
+
+                position += next;
+                var rest = source[position..];
+                if (rest.StartsWith("<!--"))
+                {
+                    position = SkipPast(source, position, "-->");
+                }
+                else if (rest.StartsWith("<![CDATA["))
+                {
+                    position = SkipPast(source, position, "]]>");
+                }
+                else if (rest.StartsWith("<?"))
+                {
+                    position = SkipPast(source, position, "?>");
+                }
+                else if (rest.StartsWith("</"))
+                {
+                    if (openTags.Count == 0)
+                        return -1;
+
+                    var tagEnd = rest.IndexOf('>');
+                    if (tagEnd < 0)
+                        return -1;
+
+                    var openTag = openTags.Pop();
+                    elements?.Add((openTag, position));
+                    position += tagEnd + 1;
+                    if (openTags.Count == 0)
+                        return position;
+                }
+                else if (IsXmlStartTag(source, position))
+                {
+                    var tagEnd = FindXmlTagEnd(source, position);
+                    if (tagEnd < 0)
+                        return -1;
+
+                    if (source[tagEnd - 1] != '/')
+                        openTags.Push(position);
+
+                    position = tagEnd + 1;
+                    if (openTags.Count == 0)
+                        return position;
+                }
+                else
+                {
+                    return -1;
+                }
+
+                if (position < 0)
+                    return -1;
+            }
+
+            return -1;
+        }
+
+        private static int SkipPast(ReadOnlySpan<char> source, int position, string terminator)
+        {
+            var index = source[position..].IndexOf(terminator);
+            return index < 0 ? -1 : position + index + terminator.Length;
+        }
+
+        private static int FindXmlTagEnd(ReadOnlySpan<char> source, int position)
+        {
+            var quote = '\0';
+            for (var i = position + 1; i < source.Length; i++)
+            {
+                var ch = source[i];
+                if (quote != '\0')
+                {
+                    if (ch == quote)
+                        quote = '\0';
+                }
+                else if (ch is '"' or '\'')
+                {
+                    quote = ch;
+                }
+                else if (ch == '<')
+                {
+                    return -1;
+                }
+                else if (ch == '>')
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static XDocument? TryParseXml(string xml)
+        {
+            try
+            {
+                using var reader = XmlReader.Create(new StringReader(xml),
+                    new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
+                var document = XDocument.Load(reader);
+                return document.Root is { HasElements: true } ? document : null;
+            }
+            catch (XmlException)
+            {
+                return null;
+            }
+        }
+
+        private static string FormatXmlText(string xml)
+        {
+            var document = TryParseXml(xml) ?? throw new InvalidOperationException();
+            var parts = new List<string>();
+            if (document.Declaration != null)
+                parts.Add(document.Declaration.ToString());
+            parts.AddRange(document.Nodes().Select(node => node.ToString()));
+            return string.Join(Environment.NewLine, parts);
         }
 
         private static bool IsValidJson(string jsonString)

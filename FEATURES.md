@@ -16,7 +16,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🔍 Search](#-regex-search)
 - [🧾 Filtering](#-filtering)
 - [⏳ Time filter and timeline](#-time-filter-and-timeline)
-- [📦 JSON folding](#-json-folding)
+- [📦 JSON/XML folding](#-jsonxml-folding)
 - [🎨 Color rules](#-color-rules)
 - [📌 Marked lines](#-marked-lines)
 - [🔠 Text zoom](#-text-zoom)
@@ -200,9 +200,9 @@ timelines. The placement is persisted as `ViewSettings.TimelineAtTop`. The hover
 readout is drawn in `Controls/LogMinimapControl.cs` (`DrawHoverTime` /
 `GetHoverText`) using `TimeIndex.GetTicksAt` and `TimestampParser.Format`.
 
-## 📦 JSON folding
+## 📦 JSON/XML folding
 
-**Business value.** Many logs embed structured payloads as multi-line JSON or
+**Business value.** Many logs embed structured payloads as multi-line JSON, XML or
 oversized strings that drown out the surrounding context. LogGrokX formats and
 folds those blobs inline so the default view stays compact, while the folded
 content can be expanded on demand. The folding state is shared across the log
@@ -216,6 +216,10 @@ using LogGrokX.Controls.TextRender;
 // One folding state is registered per opened document and bound by the templates.
 var foldingState = new TextViewSharedFoldingState();
 ```
+
+XML fragments (optionally with an `<?xml ...?>` declaration) are recognized when
+the root element has child elements; they are indented and every multi-line
+element can be folded, just like JSON objects and arrays.
 
 The implementation lives in `Controls/TextRender`
 (`TextView`, `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`,

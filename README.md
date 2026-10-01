@@ -28,8 +28,8 @@ remaining responsive even on multi-gigabyte files.
   filter by time range (or line numbers when no timestamps are available) and to
   navigate through marked lines. Hovering the strip shows the timestamp under the
   cursor (or the line number) with a vertical guide line.
-- **JSON folding** — multi-line JSON blobs and oversized strings are formatted
-  and can be expanded/collapsed inline. The folding state is shared across the
+- **JSON/XML folding** — inline JSON and XML blobs and oversized strings are
+  formatted and can be expanded/collapsed inline. The folding state is shared across the
   log grid, search results and the marked-lines view of the same document.
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.

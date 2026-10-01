@@ -201,7 +201,7 @@ namespace LogGrokX
                     continue;
 
                 var componentText = transformedText.Substring(lineMeta.ComponentStart(i), length);
-                if (TextOperations.GetJsonRanges(componentText).Any())
+                if (TextOperations.GetStructuredRanges(componentText).Count != 0)
                     return i;
             }
 
