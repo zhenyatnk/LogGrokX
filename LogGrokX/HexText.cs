@@ -11,9 +11,8 @@ namespace LogGrokX;
 
 public static partial class HexText
 {
-    private const int MinBytes = 4;
+    private const int MinBytes = 9;
     private const int MinSourceLength = MinBytes * 2;
-    private const int MaxHexNumberDigits = 16;
     // Random bytes read as UTF-16 often look like CJK text, so only alphabets below U+0800
     // (Latin, Cyrillic, Greek, ...) are accepted for UTF-16.
     private const char MaxUtf16Char = '\u07FF';
@@ -25,7 +24,7 @@ public static partial class HexText
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
-    [GeneratedRegex(@"(?<![0-9A-Za-z])(?:0[xX])?[0-9A-Fa-f]{2}(?:(?:[ \-:]|, ?)?(?:0[xX])?[0-9A-Fa-f]{2}){3,}(?![0-9A-Za-z])",
+    [GeneratedRegex(@"(?<![0-9A-Za-z])(?:0[xX])?[0-9A-Fa-f]{2}(?:(?:[ \-:]|, ?)?(?:0[xX])?[0-9A-Fa-f]{2}){8,}(?![0-9A-Za-z])",
         RegexOptions.CultureInvariant)]
     private static partial Regex HexRunRegex();
 
@@ -178,21 +177,10 @@ public static partial class HexText
                (bytes.Length % 2 == 0 && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text));
     }
 
-    // A single contiguous token is treated as a number, not as encoded text: "0x" followed by up to
-    // 16 digits (fits into 64 bits, e.g. 0x80070005, 0x41424344) or digits 0-9 only (e.g. 41424344).
+    // A contiguous token of digits 0-9 only (optionally 0x-prefixed) looks like a number, not like encoded text.
     private static bool IsHexNumber(ReadOnlySpan<char> run)
     {
-        var hasPrefix = run.Length > 2 && run[0] == '0' && run[1] is 'x' or 'X';
-        var digits = hasPrefix ? run[2..] : run;
-        foreach (var ch in digits)
-        {
-            if (!Uri.IsHexDigit(ch))
-                return false;
-        }
-
-        if (hasPrefix && digits.Length <= MaxHexNumberDigits)
-            return true;
-
+        var digits = run.Length > 2 && run[0] == '0' && run[1] is 'x' or 'X' ? run[2..] : run;
         foreach (var ch in digits)
         {
             if (!char.IsAsciiDigit(ch))

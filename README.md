@@ -32,7 +32,8 @@ remaining responsive even on multi-gigabyte files.
   formatted and can be expanded/collapsed inline. The folding state is shared across the
   log grid, search results and the marked-lines view of the same document.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
-  UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`; numbers such as `0x80070005` are ignored) are decoded
+  UTF-16LE, blocks longer than 64 bits, e.g. `48656C6C6F20776F726C64`, `48 65 6C 6C 6F 20 77 …`,
+  `0x48, 0x65, …`; shorter values such as `0x80070005` are treated as numbers) are decoded
   by the same row `BIN` toggle as Base64 (or per cell with "Decode HEX" in the
   context menu), including HEX values inside JSON strings and XML, which keep
   their folding.

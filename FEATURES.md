@@ -241,15 +241,15 @@ cell, HEX can be toggled separately with **Decode HEX** in the context menu.
 ```csharp
 using LogGrokX;
 
-HexText.TryDecode("Received: 48 65 6C 6C 6F", out var text); // "Received: Hello"
+HexText.TryDecode("Received: 48 65 6C 6C 6F 20 77 6F 72 6C 64", out var text); // "Received: Hello world"
 ```
 
-`HexText` finds runs of at least 4 bytes (contiguous, separated by space, `-`,
+`HexText` finds runs longer than 64 bits, i.e. at least 9 bytes (contiguous, separated by space, `-`,
 `:` or `,`, optionally `0x`-prefixed) and decodes them as UTF-8, then as
 UTF-16LE. A run is converted only if the result is printable text with at least
-one letter, so hashes, GUIDs and plain numbers are not treated as HEX. A single
-token that looks like a hex number is never decoded either: `0x` with up to 16
-digits (`0x80070005`, `0x41424344`) or digits `0-9` only (`41424344`). HEX values
+one letter, so hashes, GUIDs and plain numbers are not treated as HEX. Anything up to 64 bits
+(`0x80070005`, `0x4142434445464748`) is a number, and so is a contiguous token of
+digits `0-9` only (`41424344454647484950`). HEX values
 inside JSON strings and XML text/attributes are decoded too: the result is
 escaped (`\"`, `\n`, `&lt;`, `&amp;`, ...), so the payload stays valid and keeps
 its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well. "Copy" copies
