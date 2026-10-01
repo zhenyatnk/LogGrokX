@@ -180,7 +180,10 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
 - **HEX to text** (#48): `HexText` detects and decodes HEX runs (UTF-8, then
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
-  text with a letter only). `LinePartViewModel` exposes `IsHexDetected` /
+  text with a letter only). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
+  only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is
+  XML-escaped. If the fragment is no longer the same valid JSON/XML afterwards, it
+  is kept unchanged, so folding keeps working. `LinePartViewModel` exposes `IsHexDetected` /
   `IsHexDecoded` and swaps `TextModel` to a decoded one (separate `UniqueId`, so
   folding state does not clash). The `0x` toggle is in `NormalTemplate`
   (`Styles/LogGridViewCellStyle.xaml`); the index column passes `detectHex: false`.

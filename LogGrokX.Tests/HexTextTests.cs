@@ -33,6 +33,49 @@ public class HexTextTests
     }
 
     [TestMethod]
+    [DataRow("{\"data\":\"48656C6C6F\",\"id\":1}", "{\"data\":\"Hello\",\"id\":1}")]
+    [DataRow("payload {\"data\":\"48 65 6C 6C 6F\"} sent", "payload {\"data\":\"Hello\"} sent")]
+    [DataRow("{\"data\":\"2248656C6C6F220A\"}", "{\"data\":\"\\\"Hello\\\"\\n\"}")]
+    public void DecodesHexInsideJsonStrings(string source, string expected)
+    {
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+        Assert.AreEqual(expected, decoded);
+        Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+    }
+
+    [TestMethod]
+    public void DoesNotDecodeHexOutsideJsonStrings()
+    {
+        const string source = "{\"a\":41424344}";
+
+        Assert.IsFalse(HexText.TryDecode(source, out var decoded));
+        Assert.AreEqual(source, decoded);
+    }
+
+    [TestMethod]
+    [DataRow("<root><data>48656C6C6F</data></root>", "<root><data>Hello</data></root>")]
+    [DataRow("<root><data value=\"48656C6C6F\"/></root>", "<root><data value=\"Hello\"/></root>")]
+    [DataRow("<root><data>3C613E2026</data></root>", "<root><data>&lt;a&gt; &amp;</data></root>")]
+    public void DecodesHexInsideXml(string source, string expected)
+    {
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+        Assert.AreEqual(expected, decoded);
+        Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+    }
+
+    [TestMethod]
+    public void JsonStaysFoldableAfterHexDecoding()
+    {
+        var part = new LinePartViewModel(1, "{\"data\":\"48656C6C6F\",\"items\":[1,2]}");
+
+        part.IsHexDecoded = true;
+
+        Assert.IsNotNull(part.TextModel.CollapsibleRanges);
+        StringAssert.Contains(part.TextModel.GetDisplayedText(new System.Collections.Generic.HashSet<int>()),
+            "\"data\": \"Hello\"");
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("Hello world")]
     [DataRow("4865")]

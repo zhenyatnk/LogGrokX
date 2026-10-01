@@ -244,7 +244,10 @@ HexText.TryDecode("Received: 48 65 6C 6C 6F", out var text); // "Received: Hello
 `HexText` finds runs of at least 4 bytes (contiguous, separated by space, `-`,
 `:` or `,`, optionally `0x`-prefixed) and decodes them as UTF-8, then as
 UTF-16LE. A run is converted only if the result is printable text with at least
-one letter, so hashes, GUIDs and plain numbers do not get a toggle. "Copy" copies
+one letter, so hashes, GUIDs and plain numbers do not get a toggle. HEX values
+inside JSON strings and XML text/attributes are decoded too: the result is
+escaped (`\"`, `\n`, `&lt;`, `&amp;`, ...), so the payload stays valid and keeps
+its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well. "Copy" copies
 the value as displayed; "Copy as native" keeps the original HEX.
 
 ## 🎨 Color rules

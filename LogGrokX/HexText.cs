@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Security;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace LogGrokX;
@@ -15,16 +19,44 @@ public static partial class HexText
 
     private static readonly Encoding StrictUtf8 = new UTF8Encoding(false, true);
     private static readonly Encoding StrictUtf16 = new UnicodeEncoding(false, false, true);
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     [GeneratedRegex(@"(?<![0-9A-Za-z])(?:0[xX])?[0-9A-Fa-f]{2}(?:(?:[ \-:]|, ?)?(?:0[xX])?[0-9A-Fa-f]{2}){3,}(?![0-9A-Za-z])",
         RegexOptions.CultureInvariant)]
     private static partial Regex HexRunRegex();
 
-    public static bool ContainsDecodableHex(string source)
+    public static bool ContainsDecodableHex(string source) => TryDecode(source, out _);
+
+    public static bool TryDecode(string source, out string decoded)
     {
-        if (source.Length < MinSourceLength)
+        decoded = source;
+        if (source.Length < MinSourceLength || !HasDecodableRun(source))
             return false;
 
+        var structuredRanges = TextOperations.GetStructuredRanges(source);
+        var builder = new StringBuilder(source.Length);
+        var found = false;
+        var position = 0;
+        foreach (var (start, length, kind) in structuredRanges)
+        {
+            found |= AppendDecodedPlain(builder, source, position, start - position);
+            found |= AppendDecodedStructured(builder, source.Substring(start, length), kind);
+            position = start + length;
+        }
+
+        found |= AppendDecodedPlain(builder, source, position, source.Length - position);
+        if (!found)
+            return false;
+
+        decoded = builder.ToString();
+        return true;
+    }
+
+    private static bool HasDecodableRun(string source)
+    {
         foreach (Match match in HexRunRegex().Matches(source))
         {
             if (TryDecodeRun(match.ValueSpan, out _))
@@ -34,27 +66,101 @@ public static partial class HexText
         return false;
     }
 
-    public static bool TryDecode(string source, out string decoded)
+    private static bool AppendDecodedPlain(StringBuilder builder, string source, int start, int length)
     {
-        decoded = source;
-        if (source.Length < MinSourceLength)
+        if (length <= 0)
             return false;
 
+        var text = source.Substring(start, length);
         var found = false;
-        var result = HexRunRegex().Replace(source, match =>
+        builder.Append(HexRunRegex().Replace(text, match =>
         {
+            if (!TryDecodeRun(match.ValueSpan, out var decoded))
+                return match.Value;
+
+            found = true;
+            return decoded;
+        }));
+        return found;
+    }
+
+    private static bool AppendDecodedStructured(StringBuilder builder, string fragment, StructuredTextKind kind)
+    {
+        var jsonStrings = kind == StructuredTextKind.Json ? GetJsonStringContents(fragment) : null;
+        var found = false;
+        var decoded = HexRunRegex().Replace(fragment, match =>
+        {
+            if (jsonStrings != null && !IsInside(jsonStrings, match.Index, match.Length))
+                return match.Value;
+
             if (!TryDecodeRun(match.ValueSpan, out var text))
                 return match.Value;
 
             found = true;
-            return text;
+            return kind == StructuredTextKind.Json ? EscapeJson(text) : SecurityElement.Escape(text);
         });
 
-        if (!found)
-            return false;
+        if (found && IsSameStructure(decoded, kind))
+        {
+            builder.Append(decoded);
+            return true;
+        }
 
-        decoded = result;
-        return true;
+        builder.Append(fragment);
+        return false;
+    }
+
+    private static bool IsSameStructure(string fragment, StructuredTextKind kind)
+    {
+        var ranges = TextOperations.GetStructuredRanges(fragment);
+        return ranges.Count == 1 && ranges[0] == (0, fragment.Length, kind);
+    }
+
+    private static string EscapeJson(string text)
+    {
+        var encoded = JsonSerializer.Serialize(text, JsonOptions);
+        return encoded.Substring(1, encoded.Length - 2);
+    }
+
+    private static List<(int start, int end)> GetJsonStringContents(string json)
+    {
+        var result = new List<(int start, int end)>();
+        var start = -1;
+        for (var i = 0; i < json.Length; i++)
+        {
+            var ch = json[i];
+            if (start >= 0 && ch == '\\')
+            {
+                i++;
+                continue;
+            }
+
+            if (ch != '"')
+                continue;
+
+            if (start < 0)
+            {
+                start = i + 1;
+            }
+            else
+            {
+                result.Add((start, i));
+                start = -1;
+            }
+        }
+
+        return result;
+    }
+
+    private static bool IsInside(List<(int start, int end)> ranges, int start, int length)
+    {
+        foreach (var range in ranges)
+        {
+            if (start >= range.start && start + length <= range.end)
+                return true;
+        }
+
+        return false;
     }
 
     private static bool TryDecodeRun(ReadOnlySpan<char> run, out string text)

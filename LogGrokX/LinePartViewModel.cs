@@ -7,6 +7,7 @@ public class LinePartViewModel : ViewModelBase
     private readonly int _uniqueId;
     private readonly TextModel _sourceTextModel;
     private bool? _isHexDetected;
+    private string? _hexDecodedText;
     private TextModel? _hexDecodedTextModel;
     private bool _isHexDecoded;
 
@@ -25,7 +26,7 @@ public class LinePartViewModel : ViewModelBase
 
     public string OriginalText { get; }
 
-    public bool IsHexDetected => _isHexDetected ??= HexText.ContainsDecodableHex(OriginalText);
+    public bool IsHexDetected => _isHexDetected ??= DetectHex();
 
     public bool IsHexDecoded
     {
@@ -49,11 +50,20 @@ public class LinePartViewModel : ViewModelBase
         if (_hexDecodedTextModel != null)
             return _hexDecodedTextModel;
 
-        if (!HexText.TryDecode(OriginalText, out var decoded))
+        if (!IsHexDetected || _hexDecodedText is not { } decoded)
             return null;
 
         _hexDecodedTextModel = new TextModel(HashCode.Combine(_uniqueId, nameof(HexText)), decoded);
         return _hexDecodedTextModel;
+    }
+
+    private bool DetectHex()
+    {
+        if (!HexText.TryDecode(OriginalText, out var decoded))
+            return false;
+
+        _hexDecodedText = decoded;
+        return true;
     }
 
     public override string ToString() => OriginalText;

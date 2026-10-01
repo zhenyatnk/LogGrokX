@@ -33,7 +33,8 @@ remaining responsive even on multi-gigabyte files.
   log grid, search results and the marked-lines view of the same document.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
   UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`) get a `0x`
-  toggle that shows the decoded string in place.
+  toggle that shows the decoded string in place, including HEX values inside
+  JSON strings and XML, which keep their folding.
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
