@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <ui:TitleBar Grid.Row="0" Title="Settings">
@@ -401,7 +402,16 @@
             </TabItem>
         </TabControl>
 
-        <Grid Grid.Row="2" Margin="12">
+        <ui:InfoBar Grid.Row="2"
+                    Margin="12,0,12,0"
+                    HorizontalAlignment="Stretch"
+                    IsClosable="False"
+                    IsOpen="{Binding RequiresRestart, Mode=OneWay}"
+                    Message="Restart the application (or reopen the log) to apply these settings."
+                    Severity="Warning"
+                    Title="Restart required" />
+
+        <Grid Grid.Row="3" Margin="12">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
