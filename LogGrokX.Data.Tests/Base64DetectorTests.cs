@@ -255,4 +255,30 @@ public class Base64DetectorTests
     {
         Assert.IsFalse(Base64Detector.TryDecode("-----BEGIN CERTIFICATE-----\nMIIB*AAA\n-----END CERTIFICATE-----", out _));
     }
+
+    private const string KsnJwt = "eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9.8V4Y1ruXGUpmAM335npYmA==.";
+    private const string KsnJwtDecoded = "{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"}.8V4Y1ruXGUpmAM335npYmA==.";
+
+    [TestMethod]
+    [DataRow("", "")]
+    [DataRow("Authorization: Bearer ", "")]
+    [DataRow("token: \"", "\"")]
+    [DataRow("GET https://ksn.example/api/v1/", " HTTP/1.1")]
+    [DataRow("X-KSN-", "")]
+    [DataRow("ksn_token_", "")]
+    [DataRow("payload+", "")]
+    public void JwtGluedToSurroundingTextIsDecoded(string prefix, string suffix)
+    {
+        Assert.IsTrue(Base64Detector.TryDecode(prefix + KsnJwt + suffix, out var decoded), prefix + KsnJwt + suffix);
+        Assert.AreEqual(prefix + KsnJwtDecoded + suffix, decoded);
+    }
+
+    [TestMethod]
+    public void TokenGluedToTrailingSuffixIsDecoded()
+    {
+        var token = Encode("{\"user\":\"admin\",\"id\":42}");
+
+        Assert.IsTrue(Base64Detector.TryDecode($"value={token}_v2", out var decoded));
+        Assert.AreEqual("value={\"user\":\"admin\",\"id\":42}_v2", decoded);
+    }
 }

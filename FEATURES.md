@@ -343,7 +343,8 @@ into an external decoder.
 
 When a cell value is Base64 — either the whole value (optionally quoted) or a
 fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
-segments of a JWT — a small `B64` toggle appears to the left of the text. It
+segments of a JWT, also when glued to surrounding text such as
+`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears to the left of the text. It
 switches the cell between the original and the decoded text; the same action is
 available as **Decode Base64** in the cell context menu. Decoded JSON is
 formatted and can be folded like any other JSON block, and **Copy** copies the

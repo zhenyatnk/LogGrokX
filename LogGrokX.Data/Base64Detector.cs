@@ -17,6 +17,7 @@ public static partial class Base64Detector
     public const int MinFragmentLength = 16;
     public const int MaxSourceLength = 1024 * 1024;
     public const int MaxHexDumpBytes = 4096;
+    private const int MaxGluedTokenAttempts = 16;
 
     private const string PemBeginMarker = "-----BEGIN ";
 
@@ -92,7 +93,71 @@ public static partial class Base64Detector
             var index = start + match.Index;
             if (TryDecodeToken(source.AsSpan(index, match.Length), out var text))
                 replacements.Add((index, match.Length, text));
+            else if (TryDecodeGluedToken(source.AsSpan(index, match.Length), out var gluedOffset, out var gluedLength, out text))
+                replacements.Add((index + gluedOffset, gluedLength, text));
         }
+    }
+
+    private static bool TryDecodeGluedToken(ReadOnlySpan<char> candidate, out int offset, out int length,
+        out string decoded)
+    {
+        offset = 0;
+        length = 0;
+        decoded = string.Empty;
+        var bestScore = int.MinValue;
+
+        void Consider(ReadOnlySpan<char> token, int tokenOffset, ref int offset, ref int length, ref string decoded)
+        {
+            if (!TryDecodeToken(token, out var text))
+                return;
+
+            var score = GetTextScore(text);
+            if (score <= bestScore)
+                return;
+
+            bestScore = score;
+            offset = tokenOffset;
+            length = token.Length;
+            decoded = text;
+        }
+
+        var attempts = 0;
+        for (var i = 0; i < candidate.Length - MinFragmentLength && attempts < MaxGluedTokenAttempts; i++)
+        {
+            if (!IsGlueSeparator(candidate[i]))
+                continue;
+
+            attempts++;
+            Consider(candidate[(i + 1)..], i + 1, ref offset, ref length, ref decoded);
+        }
+
+        attempts = 0;
+        var body = candidate.TrimEnd('=');
+        for (var i = body.Length - 1; i >= MinFragmentLength && attempts < MaxGluedTokenAttempts; i--)
+        {
+            if (!IsGlueSeparator(body[i]))
+                continue;
+
+            attempts++;
+            Consider(candidate[..i], 0, ref offset, ref length, ref decoded);
+        }
+
+        return bestScore != int.MinValue;
+    }
+
+    private static bool IsGlueSeparator(char c) => c is '/' or '-' or '_' or '+';
+
+    private static int GetTextScore(string text)
+    {
+        var score = 0;
+        foreach (var c in text)
+        {
+            score += char.IsLetterOrDigit(c) || char.IsWhiteSpace(c) || "\"{}[]:,.-_/=@".Contains(c)
+                ? 1
+                : -2;
+        }
+
+        return score;
     }
 
     private static bool TryDecodePem(Match pem, out string decoded)

@@ -180,7 +180,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   first (`PemRegex`, real or escaped `\n` line breaks, same label in BEGIN/END);
   the markers are kept and the body becomes text, an X.509 summary
   (`X509CertificateLoader`, certificate labels only) or a hex dump capped at
-  `MaxHexDumpBytes`. Fragment search runs only outside PEM blocks.
+  `MaxHexDumpBytes`. Fragment search runs only outside PEM blocks. A candidate glued to
+  surrounding text by `/`, `-`, `_` or `+` (`api/v1/eyJ...`, `X-KSN-eyJ...`,
+  `..._v2`) is retried as its suffixes/prefixes at those separators; the split
+  with the best `GetTextScore` wins (a misaligned split decodes to junk such as
+  `)#~` and loses).
   `LinePartViewModel.IsBase64` is
   computed lazily on first binding; `IsBase64Decoded` swaps `TextModel` to a
   separately cached model with its own `UniqueId` (so folding state of the
