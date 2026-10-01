@@ -21,6 +21,7 @@ public static partial class Base64Detector
     public const int MaxSourceLength = 1024 * 1024;
     public const int MaxHexDumpBytes = 4096;
     private const int MaxGluedTokenAttempts = 16;
+    private const int MinBinaryKeyLength = 64;
 
     private const string PemBeginMarker = "-----BEGIN ";
 
@@ -137,6 +138,14 @@ public static partial class Base64Detector
             return;
         }
 
+        if (TryDescribeBinaryKey(source.AsSpan(start, length), out var key))
+        {
+            found |= Base64Content.Pem;
+            if (decodePem)
+                replacements.Add((start, length, key));
+            return;
+        }
+
         var offset = 0;
         if (source.Contains(PemBeginMarker, StringComparison.Ordinal))
         {
@@ -145,8 +154,7 @@ public static partial class Base64Detector
                 if (!TryDecodePem(pem, out var text))
                     continue;
 
-                found |= AddFragmentReplacements(source, offset, pem.Index - offset,
-                    decodeBase64 ? replacements : null);
+                AddFragmentReplacements(source, offset, pem.Index - offset, decode, replacements, ref found);
                 found |= Base64Content.Pem;
                 if (decodePem)
                     replacements.Add((pem.Index, pem.Length, text));
@@ -154,8 +162,7 @@ public static partial class Base64Detector
             }
         }
 
-        found |= AddFragmentReplacements(source, offset, source.Length - offset,
-            decodeBase64 ? replacements : null);
+        AddFragmentReplacements(source, offset, source.Length - offset, decode, replacements, ref found);
     }
 
     private static string? DecodeValue(string value, Base64Content decode, ref Base64Content found)
@@ -309,35 +316,126 @@ public static partial class Base64Detector
         replacements.Add((start, length, escaped));
     }
 
-    private static Base64Content AddFragmentReplacements(string source, int start, int length,
-        List<(int index, int length, string text)>? replacements)
+    private static void AddFragmentReplacements(string source, int start, int length, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
     {
-        var found = Base64Content.None;
         if (length < MinFragmentLength)
-            return found;
+            return;
 
+        var decodePem = decode.HasFlag(Base64Content.Pem);
+        var decodeBase64 = decode.HasFlag(Base64Content.Base64);
         foreach (var match in CandidateRegex().EnumerateMatches(source.AsSpan(start, length)))
         {
             if (match.Length < MinFragmentLength)
                 continue;
 
             var index = start + match.Index;
-            if (TryDecodeToken(source.AsSpan(index, match.Length), out var text))
+            var token = source.AsSpan(index, match.Length);
+            if (TryDecodeToken(token, out var text))
             {
-                found = Base64Content.Base64;
-                replacements?.Add((index, match.Length, text));
+                found |= Base64Content.Base64;
+                if (decodeBase64)
+                    replacements.Add((index, match.Length, text));
             }
-            else if (TryDecodeGluedToken(source.AsSpan(index, match.Length), out var gluedOffset, out var gluedLength, out text))
+            else if (TryDescribeBinaryKey(token, out text))
             {
-                found = Base64Content.Base64;
-                replacements?.Add((index + gluedOffset, gluedLength, text));
+                found |= Base64Content.Pem;
+                if (decodePem)
+                    replacements.Add((index, match.Length, text));
+            }
+            else if (TryDecodeGluedToken(token, out var gluedOffset, out var gluedLength, out text))
+            {
+                found |= Base64Content.Base64;
+                if (decodeBase64)
+                    replacements.Add((index + gluedOffset, gluedLength, text));
             }
 
-            if (found != Base64Content.None && replacements == null)
-                return found;
+            if (decode == Base64Content.None && found == Base64Content.All)
+                return;
+        }
+    }
+
+    private static bool TryDescribeBinaryKey(ReadOnlySpan<char> token, out string description)
+    {
+        description = string.Empty;
+        if (token.Length < MinBinaryKeyLength || !(token.StartsWith("MI") || token.StartsWith("Bg")))
+            return false;
+        if (!TryDecodeBase64Bytes(token, out var data))
+            return false;
+
+        if (data[0] == 0x30)
+        {
+            if (TryDescribeCertificate(data, out var certificate))
+            {
+                description = "X.509 certificate\n" + certificate.TrimEnd();
+                return true;
+            }
+
+            if (TryDescribeSubjectPublicKeyInfo(data, out var publicKey))
+            {
+                description = publicKey;
+                return true;
+            }
+
+            return false;
         }
 
-        return found;
+        return TryDescribeCryptoApiPublicKey(data, out description);
+    }
+
+    private static bool TryDescribeSubjectPublicKeyInfo(byte[] data, out string description)
+    {
+        description = string.Empty;
+        try
+        {
+            var publicKey = PublicKey.CreateFromSubjectPublicKeyInfo(data, out var read);
+            if (read != data.Length)
+                return false;
+
+            description = "Public key (SubjectPublicKeyInfo): " + DescribePublicKey(publicKey);
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
+
+    private static bool TryDescribeCryptoApiPublicKey(byte[] data, out string description)
+    {
+        const int headerLength = 20;
+        description = string.Empty;
+        if (data.Length < headerLength || data[0] != 0x06 || data[1] != 0x02 ||
+            data[8] != (byte)'R' || data[9] != (byte)'S' || data[10] != (byte)'A' || data[11] != (byte)'1')
+            return false;
+
+        var algorithm = BitConverter.ToUInt32(data, 4);
+        var bitLength = BitConverter.ToInt32(data, 12);
+        var exponent = BitConverter.ToUInt32(data, 16);
+        var modulusLength = bitLength / 8;
+        if (bitLength <= 0 || bitLength % 8 != 0 || data.Length < headerLength + modulusLength)
+            return false;
+
+        var modulus = data.AsSpan(headerLength, modulusLength).ToArray();
+        Array.Reverse(modulus);
+
+        var builder = new StringBuilder();
+        builder.Append("RSA public key (CryptoAPI PUBLICKEYBLOB)\n");
+        builder.Append("Algorithm: ").Append(algorithm switch
+        {
+            0xA400 => "CALG_RSA_KEYX",
+            0x2400 => "CALG_RSA_SIGN",
+            _ => "0x" + algorithm.ToString("X4", CultureInfo.InvariantCulture)
+        }).Append('\n');
+        builder.Append("Key size: ").Append(bitLength).Append(" bits\n");
+        builder.Append("Public exponent: ").Append(exponent).Append('\n');
+        builder.Append("Modulus SHA-1: ").Append(Convert.ToHexString(SHA1.HashData(modulus))).Append('\n');
+        builder.Append("Modulus:");
+        for (var i = 0; i < modulus.Length; i += 32)
+            builder.Append('\n').Append(Convert.ToHexString(modulus, i, Math.Min(32, modulus.Length - i)));
+
+        description = builder.ToString();
+        return true;
     }
 
     private static bool TryDecodeGluedToken(ReadOnlySpan<char> candidate, out int offset, out int length,
@@ -535,6 +633,12 @@ public static partial class Base64Detector
     public static bool TryDecodeToken(ReadOnlySpan<char> token, out string decoded)
     {
         decoded = string.Empty;
+        return TryDecodeBase64Bytes(token, out var data) && TryGetReadableText(data, out decoded);
+    }
+
+    private static bool TryDecodeBase64Bytes(ReadOnlySpan<char> token, out byte[] data)
+    {
+        data = Array.Empty<byte>();
 
         var body = token.TrimEnd('=');
         var padding = token.Length - body.Length;
@@ -550,7 +654,6 @@ public static partial class Base64Detector
 
         var paddedLength = (body.Length + 3) / 4 * 4;
         var chars = ArrayPool<char>.Shared.Rent(paddedLength);
-        var bytes = ArrayPool<byte>.Shared.Rent(paddedLength / 4 * 3);
         try
         {
             for (var i = 0; i < body.Length; i++)
@@ -566,19 +669,16 @@ public static partial class Base64Detector
             for (var i = body.Length; i < paddedLength; i++)
                 chars[i] = '=';
 
+            var bytes = new byte[paddedLength / 4 * 3];
             if (!Convert.TryFromBase64Chars(chars.AsSpan(0, paddedLength), bytes, out var written) || written == 0)
                 return false;
 
-            if (!TryGetReadableText(bytes.AsSpan(0, written), out var text))
-                return false;
-
-            decoded = text;
+            data = written == bytes.Length ? bytes : bytes.AsSpan(0, written).ToArray();
             return true;
         }
         finally
         {
             ArrayPool<char>.Shared.Return(chars);
-            ArrayPool<byte>.Shared.Return(bytes);
         }
     }
 

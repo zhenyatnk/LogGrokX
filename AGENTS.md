@@ -190,6 +190,10 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `..._v2`) is retried as its suffixes/prefixes at those separators; the split
   with the best `GetTextScore` wins (a misaligned split decodes to junk such as
   `)#~` and loses).
+  Binary Base64 without markers is accepted only by `TryDescribeBinaryKey`
+  (token from 64 chars starting with `MI`/`Bg`): DER X.509 certificate, DER
+  SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` (`RSA1`); it is reported as
+  `Base64Content.Pem`.
   Inside JSON/XML the caller passes `StructuredSpan`s (from
   `TextOperations.GetStructuredRanges`, mapped in `LinePartViewModel`):
   `CollectJson` decodes only string values (not keys) after

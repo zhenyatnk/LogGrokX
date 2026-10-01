@@ -145,5 +145,26 @@ namespace LogGrokX.Tests
 
             StringAssert.Contains(part.TextModel.GetDisplayedText(null), "Readable PEM payload text");
         }
+
+        [TestMethod]
+        public void DerCertificatesInMultiLineJsonResponseGetPemToggle()
+        {
+            var source = "Request for discovery service finished with resultCode=0x00000000 (No error); statusCode=200; response={\n" +
+                         "  \"segment\": \"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9.8V4Y1ruXGUpmAM335npYmA==\",\n" +
+                         "  \"serviceBindings\": [\n" +
+                         "    {\"certificates\": [{\"data\": \"MIICUjCCAbSgAwIBAgIQFGnEabbVTpBNa4IBTv+SkTAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwHhcNMjAwNjEyMDk1MjM2WhcNMzUwNjEyMTAwMjM1WjA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwgZswEAYHKoZIzj0CAQYFK4EEACMDgYYABACobUHA+DeovYTLxlLi0QckBTV3YFt+qsn+2gc4T7ewoF/Rp5acBePD3FBjumPZAA0KrkwMkKSedxHGi3/MuVHWRgEdItNnQegL7sfWqs26e5MCqZP9jG5+pgTXkit3n6vNDYPDLl6a1DqfchbzLKQkm2Zl2y0tBslFfxkBCGiup5hLn6NRME8wCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFEUxxSF7nMy7jf9zbROUM1EhPIvcMBAGCSsGAQQBgjcVAQQDAgEAMAoGCCqGSM49BAMDA4GLADCBhwJCAMIoQUBTAL0Clz6UQZmucONRAEwTPf3DWFq6VPhfgpwsocYFbGGfqUk6E4bbostl3Afx6rsAGHAp8kOl/chUc1PNAkF1QtsIotqqjOyTM78CbLDqzYiSOjcuajBG1SsUqpOd+AUKAzxA6IE/r2Z/Z5Zl5GzDiTC63UVDFoSfsnIxI/rWgA==\"}]," +
+                         "\"ksnPublicKey\": {\"data\": \"BgIAAACkAABSU0ExAAgAAAEAAQBnZ7C0i39qekoMzDGj2FsO5IccgwOp2TVK6epf8/P1+jVHG57mFWSL6goJ4t3IJZhBIvRCD2ORHSfQ4ETECsVj6rQQTB8JhdcQ/Z1avNEP37q2XFIg522vRArRC+0vrmNUtTTxuAQ4xW+QFb+6VbcTLRsC+81UnPTuKSq9XShimPvDHY1dCWw6cmFv/FeWoQD0vdKtfkAqAQigni/h78qoHIoGcBPBMucwIFQN9TY6+SouPEdDfBhv1u3DODwFPPU6uWPWN/CWlb+4eW4fiCejtDOA9oPRDRsDMwr3OeA2XRq2sq02PB67Idg56ia/RjhBCan2icTE1TojhzFcz9PY\",\"keyId\": 29}}\n" +
+                         "  ]\n}";
+            var part = new LinePartViewModel(1, source);
+
+            Assert.IsTrue(part.IsPem);
+            Assert.IsTrue(part.IsBase64);
+            part.IsPemDecoded = true;
+
+            Assert.IsNotNull(part.TextModel.CollapsibleRanges);
+            var text = part.TextModel.GetDisplayedText(null);
+            StringAssert.Contains(text, "Subject: CN=KSN Global Root CA, O=Kaspersky, C=RU");
+            StringAssert.Contains(text, "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+        }
     }
 }

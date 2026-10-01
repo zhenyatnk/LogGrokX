@@ -464,4 +464,75 @@ public class Base64DetectorTests
 
         Assert.AreEqual($"auth={KsnJwtDecoded} body={{\"data\":{{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"}}}}", decoded);
     }
+
+    private const string KsnRootCertificate = "MIICUjCCAbSgAwIBAgIQFGnEabbVTpBNa4IBTv+SkTAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwHhcNMjAwNjEyMDk1MjM2WhcNMzUwNjEyMTAwMjM1WjA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwgZswEAYHKoZIzj0CAQYFK4EEACMDgYYABACobUHA+DeovYTLxlLi0QckBTV3YFt+qsn+2gc4T7ewoF/Rp5acBePD3FBjumPZAA0KrkwMkKSedxHGi3/MuVHWRgEdItNnQegL7sfWqs26e5MCqZP9jG5+pgTXkit3n6vNDYPDLl6a1DqfchbzLKQkm2Zl2y0tBslFfxkBCGiup5hLn6NRME8wCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFEUxxSF7nMy7jf9zbROUM1EhPIvcMBAGCSsGAQQBgjcVAQQDAgEAMAoGCCqGSM49BAMDA4GLADCBhwJCAMIoQUBTAL0Clz6UQZmucONRAEwTPf3DWFq6VPhfgpwsocYFbGGfqUk6E4bbostl3Afx6rsAGHAp8kOl/chUc1PNAkF1QtsIotqqjOyTM78CbLDqzYiSOjcuajBG1SsUqpOd+AUKAzxA6IE/r2Z/Z5Zl5GzDiTC63UVDFoSfsnIxI/rWgA==";
+
+    private const string KsnPublicKeyBlob = "BgIAAACkAABSU0ExAAgAAAEAAQBnZ7C0i39qekoMzDGj2FsO5IccgwOp2TVK6epf8/P1+jVHG57mFWSL6goJ4t3IJZhBIvRCD2ORHSfQ4ETECsVj6rQQTB8JhdcQ/Z1avNEP37q2XFIg522vRArRC+0vrmNUtTTxuAQ4xW+QFb+6VbcTLRsC+81UnPTuKSq9XShimPvDHY1dCWw6cmFv/FeWoQD0vdKtfkAqAQigni/h78qoHIoGcBPBMucwIFQN9TY6+SouPEdDfBhv1u3DODwFPPU6uWPWN/CWlb+4eW4fiCejtDOA9oPRDRsDMwr3OeA2XRq2sq02PB67Idg56ia/RjhBCan2icTE1TojhzFcz9PY";
+
+    [TestMethod]
+    public void DerCertificateInJsonIsDetectedAsPem()
+    {
+        var source = $"response={{\"certificates\": [{{\"data\": \"{KsnRootCertificate}\"}}]}}";
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var decoded, out _, Json(source)));
+
+        using var document = JsonDocument.Parse(decoded["response=".Length..]);
+        var lines = document.RootElement.GetProperty("certificates")[0].GetProperty("data")
+            .EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual("X.509 certificate", lines[0]);
+        CollectionAssert.Contains(lines, "Subject: CN=KSN Global Root CA, O=Kaspersky, C=RU");
+        CollectionAssert.Contains(lines, "Not after: 2035-06-12 10:02:35 UTC");
+        CollectionAssert.Contains(lines, "Thumbprint (SHA-1): 7C889985F2A6DFB89943DCA23E7F4B4D1E6CE799");
+        CollectionAssert.Contains(lines, "Public key: ECC 521 bits");
+    }
+
+    [TestMethod]
+    public void DerCertificateInPlainTextIsDetectedAsPem()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"server certificate {Convert.ToBase64String(certificate.RawData)} accepted";
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source));
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.StartsWith(decoded, "server certificate X.509 certificate\nSubject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.EndsWith(decoded, " accepted");
+    }
+
+    [TestMethod]
+    public void CryptoApiPublicKeyBlobIsDescribed()
+    {
+        var source = $"{{\"ksnPublicKey\": {{\"data\": \"{KsnPublicKeyBlob}\",\"keyId\": 29}}}}";
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var lines = document.RootElement.GetProperty("ksnPublicKey").GetProperty("data")
+            .EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual("RSA public key (CryptoAPI PUBLICKEYBLOB)", lines[0]);
+        CollectionAssert.Contains(lines, "Algorithm: CALG_RSA_KEYX");
+        CollectionAssert.Contains(lines, "Key size: 2048 bits");
+        CollectionAssert.Contains(lines, "Public exponent: 65537");
+        Assert.AreEqual(29, document.RootElement.GetProperty("ksnPublicKey").GetProperty("keyId").GetInt32());
+    }
+
+    [TestMethod]
+    public void SubjectPublicKeyInfoIsDescribed()
+    {
+        using var rsa = RSA.Create(2048);
+        var source = Convert.ToBase64String(rsa.ExportSubjectPublicKeyInfo());
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        Assert.AreEqual("Public key (SubjectPublicKeyInfo): RSA 2048 bits", decoded);
+    }
+
+    [TestMethod]
+    public void RandomBinaryStartingLikeDerIsNotDetected()
+    {
+        var data = new byte[300];
+        new Random(42).NextBytes(data);
+        data[0] = 0x30;
+        data[1] = 0x82;
+
+        Assert.AreEqual(Base64Content.None, Base64Detector.Detect(Convert.ToBase64String(data)));
+    }
 }

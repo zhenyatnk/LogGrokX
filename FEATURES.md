@@ -385,6 +385,13 @@ Subject alternative names: loggrokx.test, www.loggrokx.test
 -----END CERTIFICATE-----
 ```
 
+Binary keys that are logged as plain Base64 without PEM markers are treated
+like PEM too and get the same `PEM` toggle: a DER **X.509 certificate**
+(`MII...`, shown with the same summary prefixed by `X.509 certificate`), a DER
+**SubjectPublicKeyInfo** public key, and a Windows **CryptoAPI
+PUBLICKEYBLOB** RSA key (`BgIAAACkAABSU0Ex...`: algorithm, key size, public
+exponent and modulus). Other binary Base64 is not decoded.
+
 Base64 and PEM are also recognized **inside JSON and XML** (the same blocks that
 are formatted and folded). Values are unescaped first — JSON escapes such as
 `\u002B`, `\/`, `\n` and XML entities such as `&#xA;` or `&amp;` — and the
