@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -165,6 +166,64 @@ namespace LogGrokX.Tests
             var text = part.TextModel.GetDisplayedText(null);
             StringAssert.Contains(text, "Subject: CN=KSN Global Root CA, O=Kaspersky, C=RU");
             StringAssert.Contains(text, "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+        }
+
+        private sealed class TestLine : BaseLogLineViewModel
+        {
+            private readonly LinePartViewModel[] _parts;
+
+            public TestLine(params string[] fields) : base(0, new LogGrokX.Controls.Selection())
+            {
+                _parts = fields.Select((f, i) => new LinePartViewModel(i, f)).ToArray();
+            }
+
+            public LinePartViewModel this[int index] => _parts[index];
+
+            protected override IEnumerable<LinePartViewModel> GetDecodableParts() => _parts;
+        }
+
+        [TestMethod]
+        public void RowTogglesDecodeAllMatchingParts()
+        {
+            var line = new TestLine("INFO", Encode("Hello, World!"), Pem, $"x={Encode("second fragment")}");
+
+            Assert.IsTrue(line.IsPem);
+            Assert.IsTrue(line.IsBase64);
+
+            line.IsBase64Decoded = true;
+            Assert.IsTrue(line[1].IsBase64Decoded);
+            Assert.IsTrue(line[3].IsBase64Decoded);
+            Assert.IsFalse(line[2].IsPemDecoded);
+            Assert.IsFalse(line.IsPemDecoded);
+
+            line.IsPemDecoded = true;
+            Assert.IsTrue(line[2].IsPemDecoded);
+            Assert.AreEqual("INFO", line[0].TextModel.GetDisplayedText(null));
+        }
+
+        [TestMethod]
+        public void RowStateFollowsPartToggles()
+        {
+            var line = new TestLine(Pem);
+            var changed = new List<string>();
+            Assert.IsTrue(line.IsPem);
+            ((INotifyPropertyChanged)line).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+            line[0].IsPemDecoded = true;
+
+            Assert.IsTrue(line.IsPemDecoded);
+            CollectionAssert.Contains(changed, nameof(BaseLogLineViewModel.IsPemDecoded));
+        }
+
+        [TestMethod]
+        public void RowWithoutEncodedPartsHasNoToggles()
+        {
+            var line = new TestLine("INFO", "Connection established");
+
+            Assert.IsFalse(line.IsPem);
+            Assert.IsFalse(line.IsBase64);
+            line.IsBase64Decoded = true;
+            Assert.IsFalse(line.IsBase64Decoded);
         }
     }
 }

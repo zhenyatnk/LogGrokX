@@ -207,7 +207,14 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `IsPemDecoded` / `IsBase64Decoded` are independent and swap `TextModel` to a
   model cached per flag combination with its own `UniqueId` (so folding state of
   the decoded JSON does not clash with the original). The `PEM` and `B64`
-  toggles live in `NormalTemplate` (`Styles/LogGridViewCellStyle.xaml`) and the
+  toggles are row-level: `BaseLogLineViewModel.IsPem`/`IsBase64`/`IsPemDecoded`/
+  `IsBase64Decoded` aggregate `GetDecodableParts()` (all fields of
+  `LineViewModel`/`MergedLineViewModel`, `Text` of `MarkedLineViewModel`) and
+  follow part changes. They are rendered by `DecodeTogglesTemplate`
+  (`Styles/LogGridViewCellStyle.xaml`) under the pin in the pin column
+  (`GridViewFactory.CreatePinCellTemplate`, `MarkedLinesViewTemplate.xaml`;
+  `PinColumnMinWidth` keeps the column wide enough), so they never shift the
+  text. The
   "Decode PEM" / "Decode Base64" items in `Styles/LogViewContextMenu.xaml` bind to
   `PlacementTarget.DataContext` (collapsed when it is not a `LinePartViewModel`).
   The index column is created with `detectBase64: false`.

@@ -45,7 +45,8 @@ remaining responsive even on multi-gigabyte files.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
 - **Base64 decoding** — cells whose value (or a fragment of it, e.g. a JWT or
-  `payload=...`) is Base64 with readable UTF-8 text get a `B64` toggle; it shows
+  `payload=...`) is Base64 with readable UTF-8 text get a `B64` toggle in the
+  pin column on the left (so the text does not shift); it shows
   the decoded text in place (decoded JSON is formatted and foldable). Multi-line
   PEM blocks get a separate `PEM` toggle: certificates are shown as a summary,
   other binary payloads as a hex dump. Plain Base64 DER certificates, public

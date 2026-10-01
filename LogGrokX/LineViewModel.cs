@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using LogGrokX.Controls;
 using LogGrokX.Controls.TextRender;
@@ -43,6 +45,9 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         }
 
         public override string GetFieldText(int fieldIndex) => GetComponentSpan(fieldIndex).ToString();
+
+        protected override IEnumerable<LinePartViewModel> GetDecodableParts() =>
+            Enumerable.Range(0, _parseResult.ComponentCount).Select(GetValue);
 
         public bool HasSameThread(IThreadGroupedItem? other, int threadFieldIndex)
         {

@@ -29,7 +29,8 @@
         <Setter Property="Focusable" Value="False"/>
         <Setter Property="Cursor" Value="Hand"/>
         <Setter Property="VerticalAlignment" Value="Top"/>
-        <Setter Property="Margin" Value="0,1,4,0"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
         <Setter Property="Padding" Value="3,0"/>
         <Setter Property="FontSize" Value="10"/>
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
@@ -44,7 +45,8 @@
                             BorderThickness="1"
                             CornerRadius="3"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter TextElement.FontSize="{TemplateBinding FontSize}"
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
                                           TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
@@ -62,25 +64,27 @@
             </Setter.Value>
         </Setter>
     </Style>
-    <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
-        <DockPanel LastChildFill="True">
-            <ToggleButton DockPanel.Dock="Left"
-                          Content="PEM"
+    <DataTemplate x:Key="DecodeTogglesTemplate" DataType="{x:Type logGrokCore:BaseLogLineViewModel}">
+        <StackPanel Orientation="Vertical" HorizontalAlignment="Center">
+            <ToggleButton Content="PEM"
                           ToolTip="Decode PEM"
+                          Margin="0,2,0,0"
                           Style="{StaticResource Base64ToggleButtonStyle}"
                           IsChecked="{Binding IsPemDecoded, Mode=TwoWay}"
                           Visibility="{Binding IsPem, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <ToggleButton DockPanel.Dock="Left"
-                          Content="B64"
+            <ToggleButton Content="B64"
                           ToolTip="Decode Base64"
+                          Margin="0,2,0,0"
                           Style="{StaticResource Base64ToggleButtonStyle}"
                           IsChecked="{Binding IsBase64Decoded, Mode=TwoWay}"
                           Visibility="{Binding IsBase64, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <textRender:TextView 
-                Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
-                FontSize="{DynamicResource LogFontSize}"
-                TextModel="{Binding TextModel, Mode=OneWay}" />
-        </DockPanel>
+        </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
+        <textRender:TextView 
+            Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
+            FontSize="{DynamicResource LogFontSize}"
+            TextModel="{Binding TextModel, Mode=OneWay}" />
     </DataTemplate>
     <Style TargetType="{x:Type ContentControl}" x:Key="LogGridViewCellStyle">
         <Style.Setters>

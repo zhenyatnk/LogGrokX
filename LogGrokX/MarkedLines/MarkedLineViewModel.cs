@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using LogGrokX.Colors;
 using LogGrokX.Controls.TextRender;
 
@@ -19,6 +20,8 @@ namespace LogGrokX.MarkedLines
             Text = new LinePartViewModel(uniqueId, text);
             ColorSettings = document.ColorSettings;
         }
+
+        protected override IEnumerable<LinePartViewModel> GetDecodableParts() => new[] { Text };
 
         public override string ToString() => Text.OriginalText ?? string.Empty;
 

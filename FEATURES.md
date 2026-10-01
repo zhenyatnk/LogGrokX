@@ -348,10 +348,10 @@ into an external decoder.
 When a cell value is Base64 — either the whole value (optionally quoted) or a
 fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
 segments of a JWT, also when glued to surrounding text such as
-`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears
-to the left of the text. It
-switches the cell between the original and the decoded text; the same action is
-available as **Decode Base64** in the cell context menu. Decoded JSON is
+`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears in the pin column on the left, under the mark
+pin, so the log text itself does not shift. It switches the row between the
+original and the decoded text (all Base64 fields of the row at once); the same
+action is available per cell as **Decode Base64** in the cell context menu. Decoded JSON is
 formatted and can be folded like any other JSON block, and **Copy** copies the
 decoded text while it is shown.
 
