@@ -3,6 +3,8 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
+using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Data.Tests;
@@ -317,5 +319,149 @@ public class Base64DetectorTests
 
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source));
         Assert.IsFalse(Base64Detector.TryDecode(source, Base64Content.Base64, out _, out _));
+    }
+
+    private const string KsnJwtHeader = "eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9";
+
+    private static StructuredSpan[] Json(string source) =>
+        new[] { new StructuredSpan(source.IndexOf('{'), source.LastIndexOf('}') - source.IndexOf('{') + 1, false) };
+
+    private static StructuredSpan[] Xml(string source) =>
+        new[] { new StructuredSpan(source.IndexOf('<'), source.LastIndexOf('>') - source.IndexOf('<') + 1, true) };
+
+    private static string DecodeAll(string source, StructuredSpan[] spans)
+    {
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.All, out var decoded, out _, spans), source);
+        return decoded;
+    }
+
+    [TestMethod]
+    public void JsonValueWithEncodedJsonBecomesNestedObject()
+    {
+        var source = $"request {{\"token\":\"{KsnJwtHeader}\",\"n\":1}}";
+
+        var decoded = DecodeAll(source, Json(source));
+
+        Assert.AreEqual("request {\"token\":{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"},\"n\":1}", decoded);
+    }
+
+    [TestMethod]
+    public void JsonValueWithJwtStaysValidJson()
+    {
+        var source = $"{{\"token\":\"{KsnJwt}\"}}";
+
+        var decoded = DecodeAll(source, Json(source));
+
+        using var document = JsonDocument.Parse(decoded);
+        Assert.AreEqual(KsnJwtDecoded, document.RootElement.GetProperty("token").GetString());
+    }
+
+    [TestMethod]
+    public void JsonEscapedBase64IsDetected()
+    {
+        var text = "a>>>b, c>>>d and some more text";
+        var base64 = Encode(text);
+        Assert.IsTrue(base64.Contains('+'), base64);
+        var source = $"{{\"data\":\"{base64.Replace("+", "\\u002B").Replace("/", "\\/")}\"}}";
+
+        Assert.AreEqual(Base64Content.None, Base64Detector.Detect(source));
+        Assert.AreEqual(Base64Content.Base64, Base64Detector.Detect(source, Json(source)));
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        Assert.AreEqual(text, document.RootElement.GetProperty("data").GetString());
+    }
+
+    [TestMethod]
+    public void JsonPemValueBecomesArrayOfLines()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"{{\"certificate\":{JsonSerializer.Serialize(certificate.ExportCertificatePem())},\"id\":7}}";
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
+        var decoded = DecodeAll(source, Json(source));
+
+        using var document = JsonDocument.Parse(decoded);
+        var lines = document.RootElement.GetProperty("certificate").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual("-----BEGIN CERTIFICATE-----", lines[0]);
+        Assert.AreEqual("-----END CERTIFICATE-----", lines[^1]);
+        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+        Assert.AreEqual(7, document.RootElement.GetProperty("id").GetInt32());
+    }
+
+    [TestMethod]
+    public void JsonKeysAreNotDecoded()
+    {
+        var key = Encode("readable key text");
+        var source = $"{{\"{key}\":1}}";
+
+        Assert.AreEqual(Base64Content.None, Base64Detector.Detect(source, Json(source)));
+    }
+
+    [TestMethod]
+    public void JsonDecodesOnlySelectedKinds()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"{{\"jwt\":\"{KsnJwt}\",\"pem\":{JsonSerializer.Serialize(certificate.ExportCertificatePem())}}}";
+
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source, Json(source)));
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Base64, out var decoded, out _, Json(source)));
+
+        using var document = JsonDocument.Parse(decoded);
+        Assert.AreEqual(KsnJwtDecoded, document.RootElement.GetProperty("jwt").GetString());
+        Assert.AreEqual(certificate.ExportCertificatePem(), document.RootElement.GetProperty("pem").GetString());
+    }
+
+    [TestMethod]
+    public void XmlElementTextIsDecodedAndEscaped()
+    {
+        var source = $"<root><data>{Encode("<b>bold</b> & {\"a\":1}")}</data></root>";
+
+        var decoded = DecodeAll(source, Xml(source));
+
+        Assert.AreEqual("<b>bold</b> & {\"a\":1}", XDocument.Parse(decoded).Root!.Element("data")!.Value);
+    }
+
+    [TestMethod]
+    public void XmlAttributeValueIsDecodedAndEscaped()
+    {
+        var source = $"<root><item token=\"{KsnJwt}\" id='{Encode("it's readable")}'/></root>";
+
+        var decoded = DecodeAll(source, Xml(source));
+
+        var item = XDocument.Parse(decoded).Root!.Element("item")!;
+        Assert.AreEqual(KsnJwtDecoded, item.Attribute("token")!.Value);
+        Assert.AreEqual("it's readable", item.Attribute("id")!.Value);
+    }
+
+    [TestMethod]
+    public void XmlPemWithEncodedLineBreaksIsDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var pem = certificate.ExportCertificatePem().Replace("\n", "&#xA;");
+        var source = $"<Signature><Cert>{pem}</Cert><Key>{WrapPem("PRIVATE KEY", new byte[] { 1, 2, 3 }, "&#13;&#10;")}</Key></Signature>";
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Xml(source)));
+        var root = XDocument.Parse(DecodeAll(source, Xml(source))).Root!;
+        StringAssert.Contains(root.Element("Cert")!.Value, "Subject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.Contains(root.Element("Key")!.Value, "00000000  01 02 03");
+    }
+
+    [TestMethod]
+    public void XmlCdataIsDecoded()
+    {
+        var source = $"<root><![CDATA[{Encode("{\"in\":\"cdata\"}")}]]></root>";
+
+        var decoded = DecodeAll(source, Xml(source));
+
+        Assert.AreEqual("{\"in\":\"cdata\"}", XDocument.Parse(decoded).Root!.Value);
+    }
+
+    [TestMethod]
+    public void TextAroundStructuredSpanIsStillDecoded()
+    {
+        var source = $"auth={KsnJwt} body={{\"data\":\"{KsnJwtHeader}\"}}";
+
+        var decoded = DecodeAll(source, Json(source));
+
+        Assert.AreEqual($"auth={KsnJwtDecoded} body={{\"data\":{{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"}}}}", decoded);
     }
 }

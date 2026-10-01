@@ -48,7 +48,9 @@ remaining responsive even on multi-gigabyte files.
   `payload=...`) is Base64 with readable UTF-8 text get a `B64` toggle; it shows
   the decoded text in place (decoded JSON is formatted and foldable). Multi-line
   PEM blocks get a separate `PEM` toggle: certificates are shown as a summary,
-  other binary payloads as a hex dump. Both are also available as
+  other binary payloads as a hex dump. Values inside JSON and XML are
+  unescaped before detection and re-escaped after decoding, so the document
+  stays valid and foldable. Both are also available as
   "Decode Base64" / "Decode PEM" in the cell context menu.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors

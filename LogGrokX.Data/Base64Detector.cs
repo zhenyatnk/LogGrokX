@@ -3,9 +3,12 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
 
@@ -31,39 +34,109 @@ public static partial class Base64Detector
     [GeneratedRegex(@"\s|\\[rn]", RegexOptions.CultureInvariant)]
     private static partial Regex PemBodySeparatorRegex();
 
+    private static readonly JsonSerializerOptions RelaxedJson = new()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
+
     public static bool ContainsBase64(string? source) => Detect(source) != Base64Content.None;
 
-    public static Base64Content Detect(string? source)
+    public static Base64Content Detect(string? source, IReadOnlyList<StructuredSpan>? structuredSpans = null)
     {
-        TryDecode(source, Base64Content.None, out _, out var found);
+        TryDecode(source, Base64Content.None, out _, out var found, structuredSpans);
         return found;
     }
 
     public static bool TryDecode(string? source, out string decoded) =>
         TryDecode(source, Base64Content.All, out decoded, out _);
 
-    public static bool TryDecode(string? source, Base64Content decode, out string decoded, out Base64Content found)
+    public static bool TryDecode(string? source, Base64Content decode, out string decoded, out Base64Content found,
+        IReadOnlyList<StructuredSpan>? structuredSpans = null)
     {
         decoded = string.Empty;
         found = Base64Content.None;
         if (string.IsNullOrEmpty(source) || source.Length > MaxSourceLength)
             return false;
 
+        var replacements = new List<(int index, int length, string text)>();
+        if (structuredSpans is not { Count: > 0 })
+        {
+            CollectPlain(source, decode, replacements, ref found);
+        }
+        else
+        {
+            var position = 0;
+            foreach (var span in structuredSpans.OrderBy(s => s.Start))
+            {
+                if (span.Start < position || span.Length <= 0 || span.Start + span.Length > source.Length)
+                    continue;
+
+                CollectPlain(source, position, span.Start - position, decode, replacements, ref found);
+                if (span.IsXml)
+                    CollectXml(source, span.Start, span.Length, decode, replacements, ref found);
+                else
+                    CollectJson(source, span.Start, span.Length, decode, replacements, ref found);
+                position = span.Start + span.Length;
+            }
+
+            CollectPlain(source, position, source.Length - position, decode, replacements, ref found);
+        }
+
+        if (replacements.Count == 0)
+            return false;
+
+        decoded = Apply(source, replacements);
+        return true;
+    }
+
+    private static string Apply(string source, List<(int index, int length, string text)> replacements)
+    {
+        replacements.Sort(static (x, y) => x.index.CompareTo(y.index));
+        var builder = new StringBuilder(source.Length);
+        var offset = 0;
+        foreach (var (index, replacedLength, text) in replacements)
+        {
+            builder.Append(source, offset, index - offset);
+            builder.Append(text);
+            offset = index + replacedLength;
+        }
+
+        builder.Append(source, offset, source.Length - offset);
+        return builder.ToString();
+    }
+
+    private static void CollectPlain(string source, int start, int length, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
+    {
+        if (length <= 0)
+            return;
+        if (start == 0 && length == source.Length)
+        {
+            CollectPlain(source, decode, replacements, ref found);
+            return;
+        }
+
+        var local = new List<(int index, int length, string text)>();
+        CollectPlain(source.Substring(start, length), decode, local, ref found);
+        foreach (var (index, replacedLength, text) in local)
+            replacements.Add((index + start, replacedLength, text));
+    }
+
+    private static void CollectPlain(string source, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
+    {
         var decodePem = decode.HasFlag(Base64Content.Pem);
         var decodeBase64 = decode.HasFlag(Base64Content.Base64);
 
         var (start, length) = GetWholeTextRange(source);
         if (length >= MinWholeTextLength && TryDecodeToken(source.AsSpan(start, length), out var whole))
         {
-            found = Base64Content.Base64;
-            if (!decodeBase64)
-                return false;
-
-            decoded = string.Concat(source.AsSpan(0, start), whole, source.AsSpan(start + length));
-            return true;
+            found |= Base64Content.Base64;
+            if (decodeBase64)
+                replacements.Add((start, length, whole));
+            return;
         }
 
-        var replacements = new List<(int index, int length, string text)>();
         var offset = 0;
         if (source.Contains(PemBeginMarker, StringComparison.Ordinal))
         {
@@ -83,21 +156,157 @@ public static partial class Base64Detector
 
         found |= AddFragmentReplacements(source, offset, source.Length - offset,
             decodeBase64 ? replacements : null);
-        if (replacements.Count == 0)
-            return false;
+    }
 
-        var builder = new StringBuilder(source.Length);
-        offset = 0;
-        foreach (var (index, replacedLength, text) in replacements)
+    private static string? DecodeValue(string value, Base64Content decode, ref Base64Content found)
+    {
+        var replacements = new List<(int index, int length, string text)>();
+        CollectPlain(value, decode, replacements, ref found);
+        return replacements.Count == 0 ? null : Apply(value, replacements);
+    }
+
+    private static void CollectJson(string source, int start, int length, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
+    {
+        var end = start + length;
+        var position = start;
+        while (position < end)
         {
-            builder.Append(source, offset, index - offset);
-            builder.Append(text);
-            offset = index + replacedLength;
+            var quote = source.IndexOf('"', position, end - position);
+            if (quote < 0)
+                return;
+
+            var close = quote + 1;
+            while (close < end && source[close] != '"')
+                close += source[close] == '\\' ? 2 : 1;
+            if (close >= end)
+                return;
+
+            position = close + 1;
+            var next = position;
+            while (next < end && char.IsWhiteSpace(source[next]))
+                next++;
+            if (next < end && source[next] == ':')
+                continue;
+
+            var literal = source.Substring(quote, close - quote + 1);
+            string? value;
+            try
+            {
+                value = JsonSerializer.Deserialize<string>(literal);
+            }
+            catch (JsonException)
+            {
+                continue;
+            }
+
+            if (string.IsNullOrEmpty(value) || DecodeValue(value, decode, ref found) is not { } decodedValue)
+                continue;
+
+            replacements.Add((quote, literal.Length, EncodeJsonValue(decodedValue)));
+        }
+    }
+
+    private static string EncodeJsonValue(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.Length > 1 && trimmed[0] is '{' or '[')
+        {
+            try
+            {
+                using var _ = JsonDocument.Parse(trimmed);
+                return trimmed;
+            }
+            catch (JsonException)
+            {
+            }
         }
 
-        builder.Append(source, offset, source.Length - offset);
-        decoded = builder.ToString();
-        return true;
+        if (value.Contains('\n'))
+        {
+            var lines = value.Replace("\r\n", "\n").TrimEnd('\n').Split('\n');
+            return JsonSerializer.Serialize(lines, RelaxedJson);
+        }
+
+        return JsonSerializer.Serialize(value, RelaxedJson);
+    }
+
+    private static void CollectXml(string source, int start, int length, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
+    {
+        var end = start + length;
+        var position = start;
+        while (position < end)
+        {
+            var open = source.IndexOf('<', position, end - position);
+            var textEnd = open < 0 ? end : open;
+            if (textEnd > position)
+                CollectXmlValue(source, position, textEnd - position, null, decode, replacements, ref found);
+            if (open < 0)
+                return;
+
+            if (string.CompareOrdinal(source, open, "<![CDATA[", 0, 9) == 0)
+            {
+                var cdataEnd = source.IndexOf("]]>", open + 9, end - open - 9, StringComparison.Ordinal);
+                if (cdataEnd < 0)
+                    return;
+
+                var content = source.Substring(open + 9, cdataEnd - open - 9);
+                if (DecodeValue(content, decode, ref found) is { } decodedContent && !decodedContent.Contains("]]>"))
+                    replacements.Add((open + 9, content.Length, decodedContent));
+                position = cdataEnd + 3;
+                continue;
+            }
+
+            if (string.CompareOrdinal(source, open, "<!--", 0, 4) == 0)
+            {
+                var commentEnd = source.IndexOf("-->", open + 4, end - open - 4, StringComparison.Ordinal);
+                if (commentEnd < 0)
+                    return;
+                position = commentEnd + 3;
+                continue;
+            }
+
+            var tagPosition = open + 1;
+            while (tagPosition < end && source[tagPosition] != '>')
+            {
+                var c = source[tagPosition];
+                if (c is '"' or '\'')
+                {
+                    var valueEnd = source.IndexOf(c, tagPosition + 1, end - tagPosition - 1);
+                    if (valueEnd < 0)
+                        return;
+
+                    CollectXmlValue(source, tagPosition + 1, valueEnd - tagPosition - 1, c, decode,
+                        replacements, ref found);
+                    tagPosition = valueEnd + 1;
+                    continue;
+                }
+
+                tagPosition++;
+            }
+
+            position = tagPosition + 1;
+        }
+    }
+
+    private static void CollectXmlValue(string source, int start, int length, char? quote, Base64Content decode,
+        List<(int index, int length, string text)> replacements, ref Base64Content found)
+    {
+        var raw = source.Substring(start, length);
+        if (string.IsNullOrWhiteSpace(raw))
+            return;
+
+        var value = WebUtility.HtmlDecode(raw);
+        if (DecodeValue(value, decode, ref found) is not { } decodedValue)
+            return;
+
+        var escaped = decodedValue.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;");
+        if (quote == '"')
+            escaped = escaped.Replace("\"", "&quot;");
+        else if (quote == '\'')
+            escaped = escaped.Replace("'", "&apos;");
+        replacements.Add((start, length, escaped));
     }
 
     private static Base64Content AddFragmentReplacements(string source, int start, int length,

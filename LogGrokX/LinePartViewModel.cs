@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using LogGrokX.Data;
 
 namespace LogGrokX;
@@ -10,6 +12,7 @@ public class LinePartViewModel : ViewModelBase
     private readonly TextModel _originalTextModel;
     private readonly TextModel?[] _decodedTextModels = new TextModel?[(int)Base64Content.All + 1];
     private Base64Content? _content;
+    private IReadOnlyList<StructuredSpan>? _structuredSpans;
     private Base64Content _decoded;
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true)
@@ -45,7 +48,12 @@ public class LinePartViewModel : ViewModelBase
     }
 
     private Base64Content Content =>
-        _content ??= _detectBase64 ? Base64Detector.Detect(OriginalText) : Base64Content.None;
+        _content ??= _detectBase64 ? Base64Detector.Detect(OriginalText, StructuredSpans) : Base64Content.None;
+
+    private IReadOnlyList<StructuredSpan> StructuredSpans =>
+        _structuredSpans ??= TextOperations.GetStructuredRanges(OriginalText)
+            .Select(r => new StructuredSpan(r.start, r.length, r.kind == StructuredTextKind.Xml))
+            .ToList();
 
     private void SetDecoded(Base64Content kind, bool value)
     {
@@ -57,7 +65,7 @@ public class LinePartViewModel : ViewModelBase
         var decoded = value ? _decoded | kind : _decoded & ~kind;
         if (decoded != Base64Content.None && _decodedTextModels[(int)decoded] == null)
         {
-            Base64Detector.TryDecode(OriginalText, decoded, out var text, out _);
+            Base64Detector.TryDecode(OriginalText, decoded, out var text, out _, StructuredSpans);
             _decodedTextModels[(int)decoded] = new TextModel(
                 HashCode.Combine(_uniqueId, nameof(Base64Content), (int)decoded), text);
         }

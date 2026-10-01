@@ -121,5 +121,29 @@ namespace LogGrokX.Tests
             Assert.IsFalse(part.IsPemDecoded);
             Assert.IsFalse(part.IsDecoded);
         }
+
+        [TestMethod]
+        public void Base64InsideJsonIsDecodedAndJsonStaysFoldable()
+        {
+            var part = new LinePartViewModel(1,
+                "{\"token\":\"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9\",\"n\":1}");
+
+            Assert.IsTrue(part.IsBase64);
+            part.IsBase64Decoded = true;
+
+            Assert.IsNotNull(part.TextModel.CollapsibleRanges);
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "\"alg\": \"KSN\"");
+        }
+
+        [TestMethod]
+        public void PemInsideXmlIsDetected()
+        {
+            var part = new LinePartViewModel(1, $"<root><cert>{Pem.Replace("\n", "&#xA;")}</cert></root>");
+
+            Assert.IsTrue(part.IsPem);
+            part.IsPemDecoded = true;
+
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "Readable PEM payload text");
+        }
     }
 }

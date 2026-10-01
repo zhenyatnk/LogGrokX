@@ -190,6 +190,13 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `..._v2`) is retried as its suffixes/prefixes at those separators; the split
   with the best `GetTextScore` wins (a misaligned split decodes to junk such as
   `)#~` and loses).
+  Inside JSON/XML the caller passes `StructuredSpan`s (from
+  `TextOperations.GetStructuredRanges`, mapped in `LinePartViewModel`):
+  `CollectJson` decodes only string values (not keys) after
+  `JsonSerializer.Deserialize<string>` and writes back nested JSON / an array of
+  lines / an escaped string (`EncodeJsonValue`); `CollectXml` handles element
+  text, attribute values and CDATA via `WebUtility.HtmlDecode` and re-escapes.
+  Text outside the spans goes through the plain path.
   `Base64Detector.Detect` returns `Base64Content` flags (`Pem`, `Base64`), and
   `TryDecode(source, Base64Content, ...)` decodes only the selected kinds.
   `LinePartViewModel.IsPem` / `IsBase64` are computed lazily on first binding;

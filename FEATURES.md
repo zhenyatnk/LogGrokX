@@ -385,6 +385,22 @@ Subject alternative names: loggrokx.test, www.loggrokx.test
 -----END CERTIFICATE-----
 ```
 
+Base64 and PEM are also recognized **inside JSON and XML** (the same blocks that
+are formatted and folded). Values are unescaped first — JSON escapes such as
+`\u002B`, `\/`, `\n` and XML entities such as `&#xA;` or `&amp;` — and the
+decoded value is written back so the document stays valid and keeps folding:
+
+- JSON: a value that decodes to JSON becomes a nested object/array, a
+  multi-line result (e.g. a PEM certificate summary) becomes an array of lines,
+  anything else stays an escaped string; keys are never decoded;
+- XML: element text, attribute values and CDATA are decoded and re-escaped
+  (`&lt;`, `&amp;`, `&quot;` …).
+
+```text
+{"token":"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9","n":1}
+→ {"token":{"alg":"KSN","typ":"JWT","ser":"empty"},"n":1}
+```
+
 Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or
 without padding. A fragment is decoded only if the result is valid UTF-8
 without control characters, so identifiers, GUIDs, hex strings and binary data
