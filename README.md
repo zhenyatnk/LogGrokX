@@ -31,6 +31,9 @@ remaining responsive even on multi-gigabyte files.
 - **JSON folding** — multi-line JSON blobs and oversized strings are formatted
   and can be expanded/collapsed inline. The folding state is shared across the
   log grid, search results and the marked-lines view of the same document.
+- **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
+  UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`) get a `0x`
+  toggle that shows the decoded string in place.
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
@@ -77,6 +80,7 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🧾 Filtering](./FEATURES.md#-filtering)
 - [⏳ Time filter and timeline](./FEATURES.md#-time-filter-and-timeline)
 - [📦 JSON folding](./FEATURES.md#-json-folding)
+- [🔣 HEX to text](./FEATURES.md#-hex-to-text)
 - [🎨 Color rules](./FEATURES.md#-color-rules)
 - [📌 Marked lines](./FEATURES.md#-marked-lines)
 - [🔠 Text zoom](./FEATURES.md#-text-zoom)

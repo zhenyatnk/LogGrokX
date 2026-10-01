@@ -17,6 +17,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🧾 Filtering](#-filtering)
 - [⏳ Time filter and timeline](#-time-filter-and-timeline)
 - [📦 JSON folding](#-json-folding)
+- [🔣 HEX to text](#-hex-to-text)
 - [🎨 Color rules](#-color-rules)
 - [📌 Marked lines](#-marked-lines)
 - [🔠 Text zoom](#-text-zoom)
@@ -221,6 +222,26 @@ The implementation lives in `Controls/TextRender`
 (`TextView`, `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`,
 `FoldingManager`). Templates bind it via `textRender:TextView.SharedFoldingState`
 using the same `TextModel.UniqueId`, otherwise expansion falls out of sync.
+
+## 🔣 HEX to text
+
+**Business value.** Network, device and protocol logs often dump payloads as HEX
+bytes. Reading `48656C6C6F20776F726C64` as `Hello world` by hand is slow and
+error-prone. When a cell contains HEX that decodes to readable text, LogGrokX
+shows a small `0x` toggle next to it; clicking it replaces the HEX fragments with
+the decoded string, clicking again restores the original value.
+
+```csharp
+using LogGrokX;
+
+HexText.TryDecode("Received: 48 65 6C 6C 6F", out var text); // "Received: Hello"
+```
+
+`HexText` finds runs of at least 4 bytes (contiguous, separated by space, `-`,
+`:` or `,`, optionally `0x`-prefixed) and decodes them as UTF-8, then as
+UTF-16LE. A run is converted only if the result is printable text with at least
+one letter, so hashes, GUIDs and plain numbers do not get a toggle. "Copy" copies
+the value as displayed; "Copy as native" keeps the original HEX.
 
 ## 🎨 Color rules
 

@@ -173,6 +173,15 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   -> `LogMinimapControl.MatchLines` (merged view binds
   `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
+- **HEX to text** (#48): `HexText` detects and decodes HEX runs (UTF-8, then
+  UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
+  text with a letter only). `LinePartViewModel` exposes `IsHexDetected` /
+  `IsHexDecoded` and swaps `TextModel` to a decoded one (separate `UniqueId`, so
+  folding state does not clash). The `0x` toggle is in `NormalTemplate`
+  (`Styles/LogGridViewCellStyle.xaml`); the index column passes `detectHex: false`.
+  `LineViewModel.GetComponentDisplayText` uses the decoded model so "Copy" copies
+  what is shown. The toggle state lives in the view model and resets when the
+  line view model is re-created by virtualization.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

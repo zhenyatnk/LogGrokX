@@ -115,7 +115,9 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         private string GetComponentDisplayText(int componentIndex, string componentText,
             TextViewSharedFoldingState? foldingState)
         {
-            var textModel = new TextModel(HashCode.Combine(Index, componentIndex), componentText);
+            var textModel = componentIndex < _parts.Length && _parts[componentIndex] is { IsHexDecoded: true } part
+                ? part.TextModel
+                : new TextModel(HashCode.Combine(Index, componentIndex), componentText);
 
             if (foldingState == null || textModel.CollapsibleRanges == null)
                 return textModel.GetDisplayedText(null);

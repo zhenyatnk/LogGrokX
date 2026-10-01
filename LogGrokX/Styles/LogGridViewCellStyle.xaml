@@ -7,6 +7,7 @@
     
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
+        <ResourceDictionary Source="ToggleButtonStyle.xaml"/>
     </ResourceDictionary.MergedDictionaries>    
     <SolidColorBrush x:Key="Selection" Color="SteelBlue" Opacity="0.5"></SolidColorBrush>
     <SolidColorBrush x:Key="SearchHighlightBrush" Color="#FFE4B5"></SolidColorBrush>
@@ -25,11 +26,33 @@
             </DataTrigger>
         </Style.Triggers>
     </Style>
+    <BooleanToVisibilityConverter x:Key="HexToggleVisibilityConverter" />
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
-        <textRender:TextView 
-            Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
-            FontSize="{DynamicResource LogFontSize}"
-            TextModel="{Binding TextModel, Mode=OneWay}" />
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <textRender:TextView 
+                Grid.Column="0"
+                Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
+                FontSize="{DynamicResource LogFontSize}"
+                TextModel="{Binding TextModel, Mode=OneWay}" />
+            <ToggleButton
+                Grid.Column="1"
+                Margin="4,0,0,0"
+                VerticalAlignment="Top"
+                Focusable="False"
+                Style="{StaticResource SearchOptionToggleButtonStyle}"
+                ToolTip="Toggle HEX as text"
+                IsChecked="{Binding IsHexDecoded, Mode=TwoWay}"
+                Visibility="{Binding IsHexDetected, Converter={StaticResource HexToggleVisibilityConverter}}">
+                <TextBlock Text="0x"
+                           FontSize="10"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+            </ToggleButton>
+        </Grid>
     </DataTemplate>
     <Style TargetType="{x:Type ContentControl}" x:Key="LogGridViewCellStyle">
         <Style.Setters>
