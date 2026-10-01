@@ -110,5 +110,64 @@ namespace LogGrokX.Tests
 
             StringAssert.Contains(displayed, "\"a\": 1");
         }
+        private const string Xml = "<root><item id=\"1\"><name>a</name></item><item id=\"2\" /></root>";
+
+        [TestMethod]
+        public void ExpandedXmlIsIndented()
+        {
+            var model = new TextModel(1, "request " + Xml);
+
+            var displayed = model.GetDisplayedText(new HashSet<int>());
+
+            StringAssert.StartsWith(displayed, "request <root>");
+            StringAssert.Contains(displayed, "  <item id=\"1\">");
+            StringAssert.Contains(displayed, "    <name>a</name>");
+            StringAssert.Contains(displayed, "  <item id=\"2\" />");
+        }
+
+        [TestMethod]
+        public void XmlHasCollapsibleRangesForElementsWithChildren()
+        {
+            var model = new TextModel(1, Xml);
+            Assert.IsNotNull(model.CollapsibleRanges);
+
+            CollectionAssert.AreEquivalent(
+                new List<(int start, int length)> { (0, 6), (1, 3) },
+                model.CollapsibleRanges);
+        }
+
+        [TestMethod]
+        public void CollapsedOuterXmlIsInlined()
+        {
+            var model = new TextModel(1, Xml);
+            Assert.IsNotNull(model.CollapsibleRanges);
+
+            var root = model.CollapsibleRanges!.OrderByDescending(r => r.length).First();
+
+            var displayed = model.GetDisplayedText(new HashSet<int> { root.start });
+
+            Assert.AreEqual(Xml, displayed);
+        }
+
+        [TestMethod]
+        public void JsonAndXmlInOneLineAreBothFormatted()
+        {
+            var model = new TextModel(1, "{\"a\":{\"b\":1}} " + Xml);
+            Assert.IsNotNull(model.CollapsibleRanges);
+
+            var displayed = model.GetDisplayedText(new HashSet<int>());
+
+            StringAssert.Contains(displayed, "\"b\": 1");
+            StringAssert.Contains(displayed, "    <name>a</name>");
+        }
+
+        [TestMethod]
+        public void TextWithoutXmlStaysPlain()
+        {
+            var model = new TextModel(1, "List<int> a < b");
+
+            Assert.IsNull(model.CollapsibleRanges);
+            Assert.AreEqual("List<int> a < b", model.GetDisplayedText(null));
+        }
     }
 }

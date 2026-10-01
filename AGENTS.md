@@ -58,6 +58,11 @@ The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
 build version: `BuildInfo.Version` (release `-p:Version`, default `2.1`).
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
+JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
+(outer range wins on overlap), formatted by `FormatInlineStructured`, and
+`TextModel` builds collapsible line ranges from braces (JSON) or
+`GetXmlElementRanges` (XML). XML is recognized only when the root element has
+child elements, so text like `List<int>` or `<br/>` stays plain (#49).
 Thread grouping is driven by `ThreadGroupingService` (toggled from the title bar,
 persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
