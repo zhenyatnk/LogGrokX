@@ -13,7 +13,7 @@ namespace LogGrokX
         protected BaseLogLineViewModel(int index, Selection markedLines)
         {
             Index = index;
-            IndexViewModel = new LinePartViewModel(HashCode.Combine(-1, index), Index.ToString());
+            IndexViewModel = new LinePartViewModel(HashCode.Combine(-1, index), Index.ToString(), detectBase64: false);
             _markedLines = markedLines;
             _onMarkedLinesChanged = () => InvokePropertyChanged(nameof(IsMarked));
             _markedLines.SubscribeWeak(_onMarkedLinesChanged);

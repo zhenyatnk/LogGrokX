@@ -25,11 +25,56 @@
             </DataTrigger>
         </Style.Triggers>
     </Style>
+    <Style x:Key="Base64ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="Margin" Value="0,1,4,0"/>
+        <Setter Property="Padding" Value="3,0"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+        <Setter Property="ToolTip" Value="Decode Base64"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="{TemplateBinding Padding}">
+                        <TextBlock Text="B64"
+                                   FontSize="{TemplateBinding FontSize}"
+                                   Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                            <Setter Property="ToolTip" Value="Show original Base64"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
-        <textRender:TextView 
-            Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
-            FontSize="{DynamicResource LogFontSize}"
-            TextModel="{Binding TextModel, Mode=OneWay}" />
+        <DockPanel LastChildFill="True">
+            <ToggleButton DockPanel.Dock="Left"
+                          Style="{StaticResource Base64ToggleButtonStyle}"
+                          IsChecked="{Binding IsBase64Decoded, Mode=TwoWay}"
+                          Visibility="{Binding IsBase64, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <textRender:TextView 
+                Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
+                FontSize="{DynamicResource LogFontSize}"
+                TextModel="{Binding TextModel, Mode=OneWay}" />
+        </DockPanel>
     </DataTemplate>
     <Style TargetType="{x:Type ContentControl}" x:Key="LogGridViewCellStyle">
         <Style.Setters>

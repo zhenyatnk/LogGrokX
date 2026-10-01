@@ -173,6 +173,19 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   -> `LogMinimapControl.MatchLines` (merged view binds
   `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
+- **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
+  cell value (whole value, optionally quoted, from 8 chars; fragments from 16
+  chars; standard or URL-safe alphabet) and accepts it only if it decodes to
+  valid UTF-8 without control characters. `LinePartViewModel.IsBase64` is
+  computed lazily on first binding; `IsBase64Decoded` swaps `TextModel` to a
+  separately cached model with its own `UniqueId` (so folding state of the
+  decoded JSON does not clash with the original). The `B64` toggle lives in
+  `NormalTemplate` (`Styles/LogGridViewCellStyle.xaml`) and the
+  "Decode Base64" item in `Styles/LogViewContextMenu.xaml` binds to
+  `PlacementTarget.DataContext` (collapsed when it is not a `LinePartViewModel`).
+  The index column is created with `detectBase64: false`.
+  `LineViewModel.GetDisplayText` uses the decoded model for decoded parts, so
+  "Copy" copies what is shown.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

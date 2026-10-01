@@ -23,6 +23,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🎯 Centered navigation](#-centered-navigation)
 - [🧵 Thread grouping](#-thread-grouping)
 - [🔁 Text transformations](#-text-transformations)
+- [🔓 Base64 decoding](#-base64-decoding)
 - [🔐 XOR-masked logs](#-xor-masked-logs)
 - [🌗 Light and dark themes](#-light-and-dark-themes)
 - [🩺 Crash dumps](#-crash-dumps)
@@ -332,6 +333,33 @@ Each entry under `Transformations` is itself a named-capture regex: the capture
 name selects the decoder (for example `Base64Decode` or
 `Base64DecodeFormatJson`) and the matched group is replaced with the decoded
 text. Rules run in order.
+
+## 🔓 Base64 decoding
+
+**Business value.** Encoded payloads (request bodies, tokens, tickets) often
+show up in logs without a configured transformation. LogGrokX recognizes them
+on the fly, so a single click reveals the readable value without copying it
+into an external decoder.
+
+When a cell value is Base64 — either the whole value (optionally quoted) or a
+fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
+segments of a JWT — a small `B64` toggle appears to the left of the text. It
+switches the cell between the original and the decoded text; the same action is
+available as **Decode Base64** in the cell context menu. Decoded JSON is
+formatted and can be folded like any other JSON block, and **Copy** copies the
+decoded text while it is shown.
+
+Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or
+without padding. A fragment is decoded only if the result is valid UTF-8
+without control characters, so identifiers, GUIDs, hex strings and binary data
+are left untouched.
+
+```csharp
+using LogGrokX.Data;
+
+if (Base64Detector.TryDecode("payload=eyJpZCI6NDIsIm9rIjp0cnVlfQ== accepted", out var decoded))
+    Console.WriteLine(decoded); // payload={"id":42,"ok":true} accepted
+```
 
 ## 🔐 XOR-masked logs
 
