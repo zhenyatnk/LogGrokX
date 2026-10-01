@@ -98,7 +98,7 @@ public class HexTextTests
         var part = new LinePartViewModel(1, "data 48656C6C6F");
         var original = part.TextModel;
 
-        Assert.IsTrue(part.IsHexDetected);
+        Assert.IsTrue(part.IsHex);
         part.IsHexDecoded = true;
 
         Assert.AreNotSame(original, part.TextModel);
@@ -114,17 +114,47 @@ public class HexTextTests
     {
         var part = new LinePartViewModel(1, "plain message");
 
-        Assert.IsFalse(part.IsHexDetected);
+        Assert.IsFalse(part.IsHex);
         part.IsHexDecoded = true;
 
         Assert.IsFalse(part.IsHexDecoded);
     }
 
     [TestMethod]
+    public void RowBinToggleDecodesHex()
+    {
+        var part = new LinePartViewModel(1, "data 48656C6C6F");
+
+        part.IsDecoded = true;
+
+        Assert.IsTrue(part.IsHexDecoded);
+        Assert.AreEqual("data Hello", part.TextModel.GetDisplayedText(null));
+
+        part.IsDecoded = false;
+
+        Assert.IsFalse(part.IsHexDecoded);
+        Assert.AreEqual("data 48656C6C6F", part.TextModel.GetDisplayedText(null));
+    }
+
+    [TestMethod]
+    public void HexAndBase64AreDecodedTogether()
+    {
+        var part = new LinePartViewModel(1, "hex 48656C6C6F b64 eyJpZCI6NDIsIm9rIjp0cnVlfQ==");
+
+        Assert.IsTrue(part.IsHex);
+        Assert.IsTrue(part.IsBase64);
+        part.IsDecoded = true;
+
+        var displayed = part.TextModel.GetDisplayedText(new System.Collections.Generic.HashSet<int>());
+        StringAssert.Contains(displayed, "hex Hello");
+        StringAssert.Contains(displayed, "\"id\": 42");
+    }
+
+    [TestMethod]
     public void IndexPartDoesNotDetectHex()
     {
-        var part = new LinePartViewModel(1, "41424344", detectHex: false);
+        var part = new LinePartViewModel(1, "41424344", detectBase64: false);
 
-        Assert.IsFalse(part.IsHexDetected);
+        Assert.IsFalse(part.IsHex);
     }
 }

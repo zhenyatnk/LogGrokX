@@ -24,6 +24,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🎯 Centered navigation](#-centered-navigation)
 - [🧵 Thread grouping](#-thread-grouping)
 - [🔁 Text transformations](#-text-transformations)
+- [🔓 Base64 decoding](#-base64-decoding)
 - [🔐 XOR-masked logs](#-xor-masked-logs)
 - [🌗 Light and dark themes](#-light-and-dark-themes)
 - [🩺 Crash dumps](#-crash-dumps)
@@ -231,9 +232,11 @@ using the same `TextModel.UniqueId`, otherwise expansion falls out of sync.
 
 **Business value.** Network, device and protocol logs often dump payloads as HEX
 bytes. Reading `48656C6C6F20776F726C64` as `Hello world` by hand is slow and
-error-prone. When a cell contains HEX that decodes to readable text, LogGrokX
-shows a small `0x` toggle next to it; clicking it replaces the HEX fragments with
-the decoded string, clicking again restores the original value.
+error-prone. When a row contains HEX that decodes to readable text, the same
+`BIN` toggle that decodes Base64/PEM (see [Base64 decoding](#-base64-decoding))
+appears; clicking it replaces the HEX fragments with the decoded string together
+with any Base64/PEM in the row, clicking again restores the original value. Per
+cell, HEX can be toggled separately with **Decode HEX** in the context menu.
 
 ```csharp
 using LogGrokX;
@@ -244,7 +247,7 @@ HexText.TryDecode("Received: 48 65 6C 6C 6F", out var text); // "Received: Hello
 `HexText` finds runs of at least 4 bytes (contiguous, separated by space, `-`,
 `:` or `,`, optionally `0x`-prefixed) and decodes them as UTF-8, then as
 UTF-16LE. A run is converted only if the result is printable text with at least
-one letter, so hashes, GUIDs and plain numbers do not get a toggle. HEX values
+one letter, so hashes, GUIDs and plain numbers are not treated as HEX. HEX values
 inside JSON strings and XML text/attributes are decoded too: the result is
 escaped (`\"`, `\n`, `&lt;`, `&amp;`, ...), so the payload stays valid and keeps
 its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well. "Copy" copies
@@ -360,6 +363,92 @@ Each entry under `Transformations` is itself a named-capture regex: the capture
 name selects the decoder (for example `Base64Decode` or
 `Base64DecodeFormatJson`) and the matched group is replaced with the decoded
 text. Rules run in order.
+
+## 🔓 Base64 decoding
+
+**Business value.** Encoded payloads (request bodies, tokens, tickets) often
+show up in logs without a configured transformation. LogGrokX recognizes them
+on the fly, so a single click reveals the readable value without copying it
+into an external decoder.
+
+When a cell value is Base64 — either the whole value (optionally quoted) or a
+fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
+segments of a JWT, also when glued to surrounding text such as
+`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `BIN` toggle appears
+at the right edge of the `Component` column, so the log text does not shift and
+the row does not grow. If the log format has no `Component` field (and in the
+marked lines view) the toggle is shown under the mark pin instead. It switches
+the whole row between the original and the decoded view and decodes everything
+found in all fields at once: Base64 and PEM (see below). Per cell, the two kinds
+can be toggled separately with **Decode Base64** and **Decode PEM** in the cell
+context menu. Decoded JSON is
+formatted and can be folded like any other JSON block, and **Copy** copies the
+decoded text while it is shown.
+
+Multi-line **PEM** blocks (`-----BEGIN <LABEL>-----` … `-----END <LABEL>-----`)
+are recognized as a whole: line breaks inside the body may be real (`LF`/`CRLF`)
+or escaped (`\n`, `\r\n` inside a JSON string). Such a cell is decoded by
+the same `BIN` toggle, and per cell by the **Decode PEM** context menu item,
+independently of **Decode Base64**. Lines of a PEM body are never treated as
+Base64 fragments. The
+markers are kept and the body is replaced with readable content:
+
+- a certificate (`CERTIFICATE`, `TRUSTED CERTIFICATE`, `X509 CERTIFICATE`) is
+  shown as a summary — subject, issuer, serial number, validity (UTC),
+  SHA-1 thumbprint, signature algorithm, public key and subject alternative
+  names;
+- a text payload is shown as text;
+- any other binary payload (keys, CSRs, …) is shown as a hex dump (the first
+  4 KB).
+
+```text
+-----BEGIN CERTIFICATE-----
+Subject: CN=loggrokx.test, O=LogGrokX
+Issuer: CN=loggrokx.test, O=LogGrokX
+Serial number: 5A1C…
+Not before: 2026-01-02 03:04:05 UTC
+Not after: 2027-01-02 03:04:05 UTC
+Thumbprint (SHA-1): 8F3B…
+Signature algorithm: sha256RSA
+Public key: RSA 2048 bits
+Subject alternative names: loggrokx.test, www.loggrokx.test
+-----END CERTIFICATE-----
+```
+
+Binary keys that are logged as plain Base64 without PEM markers are treated
+like PEM too (`BIN` toggle, **Decode PEM** menu item): a DER **X.509 certificate**
+(`MII...`, shown with the same summary prefixed by `X.509 certificate`), a DER
+**SubjectPublicKeyInfo** public key, and a Windows **CryptoAPI
+PUBLICKEYBLOB** RSA key (`BgIAAACkAABSU0Ex...`: algorithm, key size, public
+exponent and modulus). Other binary Base64 is not decoded.
+
+Base64 and PEM are also recognized **inside JSON and XML** (the same blocks that
+are formatted and folded). Values are unescaped first — JSON escapes such as
+`\u002B`, `\/`, `\n` and XML entities such as `&#xA;` or `&amp;` — and the
+decoded value is written back so the document stays valid and keeps folding:
+
+- JSON: a value that decodes to JSON becomes a nested object/array, a
+  multi-line result (e.g. a PEM certificate summary) becomes an array of lines,
+  anything else stays an escaped string; keys are never decoded;
+- XML: element text, attribute values and CDATA are decoded and re-escaped
+  (`&lt;`, `&amp;`, `&quot;` …).
+
+```text
+{"token":"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9","n":1}
+→ {"token":{"alg":"KSN","typ":"JWT","ser":"empty"},"n":1}
+```
+
+Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or
+without padding. A fragment is decoded only if the result is valid UTF-8
+without control characters, so identifiers, GUIDs, hex strings and binary data
+are left untouched.
+
+```csharp
+using LogGrokX.Data;
+
+if (Base64Detector.TryDecode("payload=eyJpZCI6NDIsIm9rIjp0cnVlfQ== accepted", out var decoded))
+    Console.WriteLine(decoded); // payload={"id":42,"ok":true} accepted
+```
 
 ## 🔐 XOR-masked logs
 

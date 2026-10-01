@@ -7,7 +7,6 @@
     
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
-        <ResourceDictionary Source="ToggleButtonStyle.xaml"/>
     </ResourceDictionary.MergedDictionaries>    
     <SolidColorBrush x:Key="Selection" Color="SteelBlue" Opacity="0.5"></SolidColorBrush>
     <SolidColorBrush x:Key="SearchHighlightBrush" Color="#FFE4B5"></SolidColorBrush>
@@ -26,33 +25,58 @@
             </DataTrigger>
         </Style.Triggers>
     </Style>
-    <BooleanToVisibilityConverter x:Key="HexToggleVisibilityConverter" />
+    <Style x:Key="Base64ToggleButtonStyle" TargetType="{x:Type ToggleButton}">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Cursor" Value="Hand"/>
+        <Setter Property="VerticalAlignment" Value="Top"/>
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="3,0"/>
+        <Setter Property="FontSize" Value="10"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type ToggleButton}">
+                    <Border x:Name="Border"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Padding="{TemplateBinding Padding}">
+                        <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                          TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                            <Setter Property="ToolTip" Value="Show original"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <DataTemplate x:Key="DecodeTogglesTemplate" DataType="{x:Type logGrokCore:BaseLogLineViewModel}">
+        <ToggleButton Content="BIN"
+                      ToolTip="Decode binary content"
+                      Style="{StaticResource Base64ToggleButtonStyle}"
+                      HorizontalAlignment="Center"
+                      IsChecked="{Binding IsDecoded, Mode=TwoWay}"
+                      Visibility="{Binding IsDecodable, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+    </DataTemplate>
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
-        <Grid>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <textRender:TextView 
-                Grid.Column="0"
-                Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
-                FontSize="{DynamicResource LogFontSize}"
-                TextModel="{Binding TextModel, Mode=OneWay}" />
-            <ToggleButton
-                Grid.Column="1"
-                Margin="4,0,0,0"
-                VerticalAlignment="Top"
-                Focusable="False"
-                Style="{StaticResource SearchOptionToggleButtonStyle}"
-                ToolTip="Toggle HEX as text"
-                IsChecked="{Binding IsHexDecoded, Mode=TwoWay}"
-                Visibility="{Binding IsHexDetected, Converter={StaticResource HexToggleVisibilityConverter}}">
-                <TextBlock Text="0x"
-                           FontSize="10"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center" />
-            </ToggleButton>
-        </Grid>
+        <textRender:TextView 
+            Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
+            FontSize="{DynamicResource LogFontSize}"
+            TextModel="{Binding TextModel, Mode=OneWay}" />
     </DataTemplate>
     <Style TargetType="{x:Type ContentControl}" x:Key="LogGridViewCellStyle">
         <Style.Setters>

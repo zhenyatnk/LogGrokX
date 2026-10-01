@@ -59,8 +59,13 @@
                         <GridViewColumn>
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate DataType="markedLines:MarkedLineViewModel">
-                                    <gridView:PinControl VerticalAlignment="Center"
-                                                         IsChecked="{Binding IsMarked}"/>
+                                    <StackPanel VerticalAlignment="Top" MinWidth="{x:Static gridView:GridViewFactory.PinColumnMinWidth}">
+                                        <gridView:PinControl HorizontalAlignment="Center"
+                                                             IsChecked="{Binding IsMarked}"/>
+                                        <ContentControl Content="{Binding}"
+                                                        Focusable="False"
+                                                        ContentTemplate="{StaticResource DecodeTogglesTemplate}"/>
+                                    </StackPanel>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>

@@ -178,18 +178,63 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   -> `LogMinimapControl.MatchLines` (merged view binds
   `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
-- **HEX to text** (#48): `HexText` detects and decodes HEX runs (UTF-8, then
+- **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
+  cell value (whole value, optionally quoted, from 8 chars; fragments from 16
+  chars; standard or URL-safe alphabet) and accepts it only if it decodes to
+  valid UTF-8 without control characters. Multi-line PEM blocks are matched
+  first (`PemRegex`, real or escaped `\n` line breaks, same label in BEGIN/END);
+  the markers are kept and the body becomes text, an X.509 summary
+  (`X509CertificateLoader`, certificate labels only) or a hex dump capped at
+  `MaxHexDumpBytes`. Fragment search runs only outside PEM blocks. A candidate glued to
+  surrounding text by `/`, `-`, `_` or `+` (`api/v1/eyJ...`, `X-KSN-eyJ...`,
+  `..._v2`) is retried as its suffixes/prefixes at those separators; the split
+  with the best `GetTextScore` wins (a misaligned split decodes to junk such as
+  `)#~` and loses).
+  Binary Base64 without markers is accepted only by `TryDescribeBinaryKey`
+  (token from 64 chars starting with `MI`/`Bg`): DER X.509 certificate, DER
+  SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` (`RSA1`); it is reported as
+  `Base64Content.Pem`.
+  Inside JSON/XML the caller passes `StructuredSpan`s (from
+  `TextOperations.GetStructuredRanges`, mapped in `LinePartViewModel`):
+  `CollectJson` decodes only string values (not keys) after
+  `JsonSerializer.Deserialize<string>` and writes back nested JSON / an array of
+  lines / an escaped string (`EncodeJsonValue`); `CollectXml` handles element
+  text, attribute values and CDATA via `WebUtility.HtmlDecode` and re-escapes.
+  Text outside the spans goes through the plain path.
+  `Base64Detector.Detect` returns `Base64Content` flags (`Pem`, `Base64`), and
+  `TryDecode(source, Base64Content, ...)` decodes only the selected kinds.
+  `LinePartViewModel.IsPem` / `IsBase64` are computed lazily on first binding;
+  `IsPemDecoded` / `IsBase64Decoded` are independent and swap `TextModel` to a
+  model cached per flag combination with its own `UniqueId` (so folding state of
+  the decoded JSON does not clash with the original). The single `BIN` toggle
+  is row-level: `BaseLogLineViewModel.IsDecodable` (= `IsPem || IsBase64`) and
+  `IsDecoded` aggregate `GetDecodableParts()` (all fields of
+  `LineViewModel`/`MergedLineViewModel`, `Text` of `MarkedLineViewModel`) and
+  follow part changes; setting `IsDecoded` decodes every available kind. It is
+  rendered by `DecodeTogglesTemplate`
+  (`Styles/LogGridViewCellStyle.xaml`) at the right edge of the `Component`
+  field column (`GridViewFactory.CreateView`); if the format has no `Component`
+  field they fall back under the pin in the pin column
+  (`GridViewFactory.CreatePinCellTemplate`, `MarkedLinesViewTemplate.xaml`;
+  `PinColumnMinWidth` keeps the column wide enough). The
+  "Decode PEM" / "Decode Base64" items in `Styles/LogViewContextMenu.xaml` bind to
+  `PlacementTarget.DataContext` (collapsed when it is not a `LinePartViewModel`).
+  The index column is created with `detectBase64: false`.
+  `LineViewModel.GetDisplayText` uses the decoded model for decoded parts, so
+  "Copy" copies what is shown.
+- **HEX to text** (#48): `HexText` detects and decodes HEX runs (from 4 bytes;
+  contiguous or separated by space/`-`/`:`/`,`, optional `0x`; UTF-8, then
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
   text with a letter only). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
   only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is
   XML-escaped. If the fragment is no longer the same valid JSON/XML afterwards, it
-  is kept unchanged, so folding keeps working. `LinePartViewModel` exposes `IsHexDetected` /
-  `IsHexDecoded` and swaps `TextModel` to a decoded one (separate `UniqueId`, so
-  folding state does not clash). The `0x` toggle is in `NormalTemplate`
-  (`Styles/LogGridViewCellStyle.xaml`); the index column passes `detectHex: false`.
-  `LineViewModel.GetComponentDisplayText` uses the decoded model so "Copy" copies
-  what is shown. The toggle state lives in the view model and resets when the
-  line view model is re-created by virtualization.
+  is kept unchanged, so folding keeps working. HEX is a third kind of the row-level
+  `BIN` toggle: `LinePartViewModel.IsHex` / `IsHexDecoded` (aggregated by
+  `BaseLogLineViewModel.IsHex` / `IsHexDecoded`, included in `IsDecodable` /
+  `IsDecoded`), plus the per-cell "Decode HEX" context menu item. The decoded
+  model is cached per combination of `Base64Content` flags and the HEX flag
+  (`DecodedKey`); Base64/PEM are decoded first, then HEX on the result.
+  `detectBase64: false` (index column) disables HEX detection as well.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

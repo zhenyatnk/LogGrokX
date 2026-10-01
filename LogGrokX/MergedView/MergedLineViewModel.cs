@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Windows.Media;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
@@ -42,6 +44,9 @@ namespace LogGrokX.MergedView
         public string TimeText { get; }
 
         public LinePartViewModel this[int mergedFieldIndex] => GetFieldPart(mergedFieldIndex);
+
+        protected override IEnumerable<LinePartViewModel> GetDecodableParts() =>
+            Enumerable.Range(0, Source.MergedFieldCount).Select(GetFieldPart);
 
         public ReadOnlySpan<char> GetComponentSpan(int mergedFieldIndex)
         {

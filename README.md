@@ -32,9 +32,10 @@ remaining responsive even on multi-gigabyte files.
   formatted and can be expanded/collapsed inline. The folding state is shared across the
   log grid, search results and the marked-lines view of the same document.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
-  UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`) get a `0x`
-  toggle that shows the decoded string in place, including HEX values inside
-  JSON strings and XML, which keep their folding.
+  UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`) are decoded
+  by the same row `BIN` toggle as Base64 (or per cell with "Decode HEX" in the
+  context menu), including HEX values inside JSON strings and XML, which keep
+  their folding.
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
@@ -48,6 +49,17 @@ remaining responsive even on multi-gigabyte files.
   `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
+- **Base64 decoding** — rows with Base64 that decodes to readable UTF-8 text
+  (a whole value or a fragment such as a JWT or `payload=...`), multi-line PEM
+  blocks, or plain Base64 DER certificates, public keys and CryptoAPI RSA key
+  blobs get a single `BIN` toggle at the right edge of the `Component` column
+  (under the pin if there is no `Component` field), so the text does not shift
+  and the row does not grow. It shows the decoded content in place: text,
+  formatted and foldable JSON, a certificate summary or a hex dump. Values
+  inside JSON and XML are unescaped before detection and re-escaped after
+  decoding, so the document stays valid and foldable. Per cell, Base64 and PEM
+  can also be toggled separately with "Decode Base64" / "Decode PEM" in the
+  context menu.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme
