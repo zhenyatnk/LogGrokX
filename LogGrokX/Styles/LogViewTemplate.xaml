@@ -127,6 +127,7 @@
                                     localControls:NavigateToLineBehavior.ChangeCurrentItem="True"
                                     FontFamily="{StaticResource JetBrainsMono}"
                                     FontSize="{DynamicResource LogFontSize}"
+                                    IsLoading="{Binding IsLoading}"
                                     ColumnSettings="{Binding ColumnSettings}"
                                     textRender:TextView.SharedFoldingState="{Binding FoldingState}"
                                     x:Name="ItemsListView">

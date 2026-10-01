@@ -37,6 +37,16 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void GetFieldTextReturnsComponentText()
+        {
+            var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+            var line = CreateLine(meta);
+
+            Assert.AreEqual("ThreadA", line.GetFieldText(Array.IndexOf(meta.FieldNames, "Thread")));
+            Assert.AreEqual("hello world", line.GetFieldText(Array.IndexOf(meta.FieldNames, "Message")));
+        }
+
+        [TestMethod]
         public void GetComponentSpanDistinguishesDifferentThreads()
         {
             var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });

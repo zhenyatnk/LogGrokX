@@ -49,6 +49,24 @@ namespace LogGrokX.Tests
             });
         }
 
+        [TestMethod]
+        public void MeasureWidthMatchesGlyphLineAndScalesWithFontSize()
+        {
+            RunOnSta(() =>
+            {
+                var typeface = new Typeface("Segoe UI");
+                if (!typeface.TryGetGlyphTypeface(out var glyphTypeface))
+                    throw new InvalidOperationException("Segoe UI glyph typeface is not available.");
+
+                const string text = "Wg1j";
+
+                using var line = new GlyphLine(StringRange.FromString(text), glyphTypeface, 12, 1f, double.PositiveInfinity);
+                Assert.AreEqual(line.Size.Width, GlyphLine.MeasureWidth(text.AsSpan(), glyphTypeface, 12), 0.001);
+                Assert.AreEqual(GlyphLine.MeasureWidth(text.AsSpan(), glyphTypeface, 12) * 2,
+                    GlyphLine.MeasureWidth(text.AsSpan(), glyphTypeface, 24), 0.001);
+            });
+        }
+
         private static void RunOnSta(Action action)
         {
             Exception error = null;

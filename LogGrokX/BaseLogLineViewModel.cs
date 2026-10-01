@@ -25,6 +25,8 @@ namespace LogGrokX
 
         public virtual string GetDisplayText(TextViewSharedFoldingState? foldingState) =>
             ToString() ?? string.Empty;
+
+        public virtual string GetFieldText(int fieldIndex) => string.Empty;
         
         public bool IsMarked
         {

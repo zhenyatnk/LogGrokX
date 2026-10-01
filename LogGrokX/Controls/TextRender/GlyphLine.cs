@@ -51,6 +51,40 @@ public class GlyphLine : IDisposable
         return new Rect(start + startPoint.X, startPoint.Y, width, height);
     }
 
+    private static (double advanceWidth, double advanceHeight, ushort glyphIndex) GetGlyphParametersForChar(
+        (GlyphTypeface typeface, double fontSize, char ch) key)
+    {
+        key.typeface.CharacterToGlyphMap.TryGetValue(key.ch, out var glyphIndex);
+        return (key.typeface.AdvanceWidths[glyphIndex] * key.fontSize,
+            key.typeface.AdvanceHeights[glyphIndex] * key.fontSize,
+            glyphIndex);
+    }
+
+    public static double MeasureWidth(ReadOnlySpan<char> text, GlyphTypeface typeface, double fontSize)
+    {
+        if (text.IsEmpty)
+            return 0;
+
+        double totalWidth = 0;
+        var indexOfGlyph = 0;
+        for (var n = 0; n < text.Length; n++, indexOfGlyph++)
+        {
+            if (text[n] == '\t')
+            {
+                var spaceCount = indexOfGlyph % 8 == 0 ? 8 : 8 - indexOfGlyph % 8;
+                var (spaceWidth, _, _) = TypefaceCache.GetOrAdd((typeface, fontSize, ' '), GetGlyphParametersForChar);
+                totalWidth += spaceWidth * spaceCount;
+                indexOfGlyph += spaceCount;
+                continue;
+            }
+
+            var (width, _, _) = TypefaceCache.GetOrAdd((typeface, fontSize, text[n]), GetGlyphParametersForChar);
+            totalWidth += width;
+        }
+
+        return totalWidth;
+    }
+
     public GlyphLine(StringRange text, GlyphTypeface typeface, double fontSize, float pixelsPerDip,
         double constraintWidth)
     {
@@ -69,15 +103,6 @@ public class GlyphLine : IDisposable
 
         var indexOfGlyph = 0;
 
-        (double advanceWidth, double advanceHeight, ushort glyphIndex) GetGlyphParametersForChar(
-            (GlyphTypeface typeface, double fontSize, char ch) key)
-        {
-            key.typeface.CharacterToGlyphMap.TryGetValue(key.ch, out var glyphIndex);
-            return (key.typeface.AdvanceWidths[glyphIndex] * key.fontSize,
-                key.typeface.AdvanceHeights[glyphIndex] * key.fontSize,
-                glyphIndex);
-        }
-            
         for (var n = 0; n < text.Length && totalWidth <= constraintWidth; n++, indexOfGlyph++) 
         {
             ushort glyphIndex;

@@ -192,6 +192,8 @@ namespace LogGrokX.MergedView
 
         public DelegateCommand NavigateToMarkerCommand { get; }
 
+        public bool IsLoading => _rebuildTimer.IsEnabled || IsAnySourceLoading();
+
         public bool IsActive
         {
             get => _isActive;
@@ -355,7 +357,11 @@ namespace LogGrokX.MergedView
             ScheduleRebuild();
         }
 
-        private void OnDocumentGrown(int _) => ScheduleRebuild();
+        private void OnDocumentGrown(int _)
+        {
+            InvokePropertyChanged(nameof(IsLoading));
+            ScheduleRebuild();
+        }
 
         private void SyncDocuments()
         {
@@ -400,6 +406,7 @@ namespace LogGrokX.MergedView
                 ? TimeSpan.FromMilliseconds(1000)
                 : TimeSpan.FromMilliseconds(300);
             _rebuildTimer.Start();
+            InvokePropertyChanged(nameof(IsLoading));
         }
 
         private bool IsAnySourceLoading()
@@ -456,6 +463,7 @@ namespace LogGrokX.MergedView
                 InvokePropertyChanged(nameof(ColumnSettings));
             }
 
+            InvokePropertyChanged(nameof(IsLoading));
             Rebuilt?.Invoke();
         }
 

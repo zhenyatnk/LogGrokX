@@ -56,7 +56,8 @@
                                    localControls:NavigateToLineBehavior.ChangeCurrentItem="False"
                                    listControls:BaseLogListViewItem.OnItemActivatedCommand="{Binding ItemActivatedCommand}"
                                    FontFamily="{StaticResource JetBrainsMono}"
-                                   FontSize="{DynamicResource LogFontSize}">
+                                   FontSize="{DynamicResource LogFontSize}"
+                                   IsLoading="{Binding IsSearching}">
                 <listControls:ListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <virtualizingStackPanel:VirtualizingStackPanel
@@ -210,7 +211,8 @@
                                             localControls:NavigateToLineBehavior.NavigateToLineRequest="{Binding NavigateToLineRequest}"
                                             localControls:NavigateToLineBehavior.ChangeCurrentItem="True"
                                             FontFamily="{StaticResource JetBrainsMono}"
-                                            FontSize="{DynamicResource LogFontSize}">
+                                            FontSize="{DynamicResource LogFontSize}"
+                                            IsLoading="{Binding IsLoading}">
                         <listControls:ListView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <virtualizingStackPanel:VirtualizingStackPanel

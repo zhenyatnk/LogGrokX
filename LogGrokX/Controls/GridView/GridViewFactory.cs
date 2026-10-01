@@ -70,6 +70,17 @@ namespace LogGrokX.Controls.GridView
 
             foreach (var fieldHeader in indexFieldName.Yield().Concat(_meta.FieldNames))
             {
+                var fieldIndex = fieldHeader == indexFieldName
+                    ? -1
+                    : Array.IndexOf(_meta.FieldNames, fieldHeader);
+                var contentTextProvider = fieldHeader == indexFieldName
+                    ? static item => item is BaseLogLineViewModel line
+                        ? line.IndexViewModel.OriginalText
+                        : string.Empty
+                    : new Func<object, string>(item => item is BaseLogLineViewModel line
+                        ? line.GetFieldText(fieldIndex)
+                        : string.Empty);
+
                 DataTemplate BuildHeaderTemplate()
                 {
                     FilterViewModel? filterViewModel = null;
@@ -122,12 +133,18 @@ namespace LogGrokX.Controls.GridView
                 {  
                     HeaderTemplate = BuildHeaderTemplate(),
                     CellTemplate = CreateCellTemplate(),
-                    Width = widths == null ? 0 : widths[columnIndex++]
+                    Width = widths == null ? 0 : widths[columnIndex++],
+                    FitToContent = IsMessageField(fieldHeader),
+                    ContentTextProvider = contentTextProvider
                 });
             }
 
             return view;
         }
+
+        private static bool IsMessageField(string fieldHeader) =>
+            fieldHeader.Equals("Message", StringComparison.OrdinalIgnoreCase) ||
+            fieldHeader.Equals("Text", StringComparison.OrdinalIgnoreCase);
 
         private static DataTemplate CreateHeaderTemplate(string fieldHeader, FilterViewModel? filterViewModel)
         {

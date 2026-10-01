@@ -42,6 +42,8 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             return _transformResult.AsSpan(start, length);
         }
 
+        public override string GetFieldText(int fieldIndex) => GetComponentSpan(fieldIndex).ToString();
+
         public bool HasSameThread(IThreadGroupedItem? other, int threadFieldIndex)
         {
             if (other is not LineViewModel otherLine)
