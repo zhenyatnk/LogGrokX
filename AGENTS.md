@@ -225,7 +225,8 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
 - **HEX to text** (#48): `HexText` detects and decodes HEX runs (from 4 bytes;
   contiguous or separated by space/`-`/`:`/`,`, optional `0x`; UTF-8, then
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
-  text with a letter only). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
+  text with a letter only). `IsHexNumber` skips number-like tokens: a contiguous
+  run with `0x` and up to 16 digits, or digits 0-9 only. Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
   only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is
   XML-escaped. If the fragment is no longer the same valid JSON/XML afterwards, it
   is kept unchanged, so folding keeps working. HEX is a third kind of the row-level
