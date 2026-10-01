@@ -40,6 +40,12 @@ Settings:
     LogFontSize: 12
     # Group consecutive log lines with the same Thread field
     GroupByThread: false
+    # Binary data detection for the BIN toggle: DetectBinary turns it off completely,
+    # DetectPem (PEM blocks and Base64 keys/certificates), DetectBase64 and DetectHex select the kinds
+    DetectBinary: true
+    DetectPem: true
+    DetectBase64: true
+    DetectHex: true
     # Updates: disabled - do not check, check - notify about a new version, install - download and install silently on exit
     UpdateMode: check
   LogFormats:

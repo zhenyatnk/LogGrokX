@@ -455,6 +455,24 @@ if (Base64Detector.TryDecode("payload=eyJpZCI6NDIsIm9rIjp0cnVlfQ== accepted", ou
     Console.WriteLine(decoded); // payload={"id":42,"ok":true} accepted
 ```
 
+### Turning binary detection off
+
+Binary data detection is on by default. In **Settings → View → Binary data
+detection** it can be switched off completely (**Detect binary data (BIN)**) or
+per kind: **PEM blocks, certificates and keys** (PEM blocks plus Base64 DER
+certificates, public keys and CryptoAPI key blobs), **Base64 text** and **HEX**.
+A disabled kind is not detected, so it does not show the `BIN` toggle or its
+**Decode …** context menu item. The choice is applied to lines shown after
+saving; reopen the log to apply it to every line.
+
+```yaml
+  ViewSettings:
+    DetectBinary: true   # false turns off all kinds below
+    DetectPem: true
+    DetectBase64: true
+    DetectHex: true
+```
+
 ## 🔐 XOR-masked logs
 
 **Business value.** Some vendors obfuscate logs with a single-byte XOR key.

@@ -238,6 +238,19 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   model is cached per combination of `Base64Content` flags and the HEX flag
   (`DecodedKey`); Base64/PEM are decoded first, then HEX on the result.
   `detectBase64: false` (index column) disables HEX detection as well.
+- **Binary detection settings** (#53): `ViewSettings.DetectBinary` (master) and
+  `DetectPem` / `DetectBase64` / `DetectHex` (all `true` by default) are turned
+  into `BinaryDetectionOptions` (`FromSettings`) and published as the static
+  `BinaryDetectionOptions.Current` by `ApplicationSettings.Load`, its hot reload
+  and `SetBinaryDetection` (called from Settings -> View on save).
+  `LinePartViewModel` snapshots `Current` in its constructor (after creating the
+  `TextModel`, which loads the settings) unless `detection` is passed
+  explicitly; `detectBase64: false` forces `None`. Disabled Base64 kinds are
+  masked out of `Base64Detector.Detect` (`Base64Kinds`), and HEX detection is
+  skipped, so `IsPem` / `IsBase64` / `IsHex` and therefore `BIN` and the context
+  menu items stay hidden. Parts already created keep their snapshot; the change
+  reaches every line after reopening the log. Covered by
+  `BinaryDetectionOptionsTests`.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

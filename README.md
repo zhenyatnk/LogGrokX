@@ -60,7 +60,8 @@ remaining responsive even on multi-gigabyte files.
   inside JSON and XML are unescaped before detection and re-escaped after
   decoding, so the document stays valid and foldable. Per cell, Base64 and PEM
   can also be toggled separately with "Decode Base64" / "Decode PEM" in the
-  context menu.
+  context menu. Detection is on by default and can be turned off completely or
+  per kind (PEM, Base64, HEX) in Settings → View → Binary data detection.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme
@@ -222,6 +223,12 @@ Settings:
     GroupByThread: false
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
+    # Binary data detection (BIN): DetectBinary turns it off completely,
+    # the other keys select the kinds
+    DetectBinary: true
+    DetectPem: true
+    DetectBase64: true
+    DetectHex: true
     # Updates: disabled | check (notify about a new version) | install (install silently on exit)
     UpdateMode: check
 

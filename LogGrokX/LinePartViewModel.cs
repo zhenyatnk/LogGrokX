@@ -8,7 +8,7 @@ namespace LogGrokX;
 public class LinePartViewModel : ViewModelBase
 {
     private readonly int _uniqueId;
-    private readonly bool _detectBase64;
+    private readonly BinaryDetectionOptions _detection;
     private readonly TextModel _originalTextModel;
     private const int HexDecodedFlag = (int)Base64Content.All + 1;
 
@@ -19,11 +19,12 @@ public class LinePartViewModel : ViewModelBase
     private bool? _isHex;
     private bool _isHexDecoded;
 
-    public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true)
+    public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true,
+        BinaryDetectionOptions? detection = null)
     {
         _uniqueId = uniqueId;
-        _detectBase64 = detectBase64;
         _originalTextModel = new TextModel(uniqueId, source);
+        _detection = detectBase64 ? detection ?? BinaryDetectionOptions.Current : BinaryDetectionOptions.None;
         OriginalText = source;
     }
 
@@ -37,7 +38,7 @@ public class LinePartViewModel : ViewModelBase
 
     public bool IsPem => Content.HasFlag(Base64Content.Pem);
 
-    public bool IsHex => _isHex ??= _detectBase64 && HexText.ContainsDecodableHex(OriginalText);
+    public bool IsHex => _isHex ??= _detection.Hex && HexText.ContainsDecodableHex(OriginalText);
 
     public bool IsDecoded
     {
@@ -81,7 +82,9 @@ public class LinePartViewModel : ViewModelBase
     }
 
     private Base64Content Content =>
-        _content ??= _detectBase64 ? Base64Detector.Detect(OriginalText, StructuredSpans) : Base64Content.None;
+        _content ??= _detection.Base64Kinds != Base64Content.None
+            ? Base64Detector.Detect(OriginalText, StructuredSpans) & _detection.Base64Kinds
+            : Base64Content.None;
 
     private IReadOnlyList<StructuredSpan> StructuredSpans =>
         _structuredSpans ??= TextOperations.GetStructuredRanges(OriginalText)

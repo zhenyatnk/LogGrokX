@@ -127,6 +127,7 @@ namespace LogGrokX.Settings
             _threadGroupingService.SetEnabled(View.GroupByThread);
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
             _textZoomService.SetFontSize(View.LogFontSize);
+            _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
 
             var file = new YamlSettingsFile(ApplicationSettings.SettingsFileName);
             file.SetScalar("DebugSettings", "EnableCrashDumps", Debug.EnableCrashDumps ? "true" : "false");
@@ -137,6 +138,10 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
             file.SetScalar("ViewSettings", "MergedFilesView", View.MergedFilesView ? "true" : "false");
+            file.SetScalar("ViewSettings", "DetectBinary", View.DetectBinary ? "true" : "false");
+            file.SetScalar("ViewSettings", "DetectPem", View.DetectPem ? "true" : "false");
+            file.SetScalar("ViewSettings", "DetectBase64", View.DetectBase64 ? "true" : "false");
+            file.SetScalar("ViewSettings", "DetectHex", View.DetectHex ? "true" : "false");
             file.SetScalar("ViewSettings", "UpdateMode", View.UpdateMode.ToString().ToLowerInvariant());
 
             var colorRules = ColorRules.Select(rule => rule.ToData()).ToList();

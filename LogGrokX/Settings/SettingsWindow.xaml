@@ -47,6 +47,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
@@ -125,9 +126,32 @@
                         <TextBlock Grid.Row="6"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
+                                   VerticalAlignment="Top"
+                                   Text="Binary data detection" />
+                        <StackPanel Grid.Row="6"
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10">
+                            <CheckBox Content="Detect binary data (BIN)"
+                                      IsChecked="{Binding View.DetectBinary, Mode=TwoWay}" />
+                            <StackPanel Margin="24,4,0,0"
+                                        IsEnabled="{Binding View.DetectBinary}">
+                                <CheckBox Content="PEM blocks, certificates and keys"
+                                          IsChecked="{Binding View.DetectPem, Mode=TwoWay}" />
+                                <CheckBox Margin="0,4,0,0"
+                                          Content="Base64 text"
+                                          IsChecked="{Binding View.DetectBase64, Mode=TwoWay}" />
+                                <CheckBox Margin="0,4,0,0"
+                                          Content="HEX"
+                                          IsChecked="{Binding View.DetectHex, Mode=TwoWay}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="7"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,10"
                                    VerticalAlignment="Center"
                                    Text="Automatic updates" />
-                        <ComboBox Grid.Row="6"
+                        <ComboBox Grid.Row="7"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   ItemsSource="{Binding View.UpdateModeOptions}"
@@ -135,13 +159,13 @@
                                   SelectedValuePath="Value"
                                   SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="7"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="2"
                                    Margin="0,6,0,0"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="Big line handling and grouping are applied when a log file is opened. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
+                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection applies to lines shown after saving; reopen the log to apply it to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
                     </Grid>
                 </ScrollViewer>
             </TabItem>

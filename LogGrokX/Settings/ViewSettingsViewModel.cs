@@ -12,6 +12,10 @@ namespace LogGrokX.Settings
         private double _logFontSize;
         private bool _groupByThread;
         private bool _mergedFilesView;
+        private bool _detectBinary;
+        private bool _detectPem;
+        private bool _detectBase64;
+        private bool _detectHex;
         private ViewSettings.UpdateModeKind _updateMode;
 
         public ViewSettingsViewModel(ViewSettings settings)
@@ -22,6 +26,10 @@ namespace LogGrokX.Settings
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _mergedFilesView = settings.MergedFilesView;
+            _detectBinary = settings.DetectBinary;
+            _detectPem = settings.DetectPem;
+            _detectBase64 = settings.DetectBase64;
+            _detectHex = settings.DetectHex;
             _updateMode = settings.UpdateMode;
         }
 
@@ -99,6 +107,54 @@ namespace LogGrokX.Settings
                 if (_mergedFilesView == value)
                     return;
                 _mergedFilesView = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool DetectBinary
+        {
+            get => _detectBinary;
+            set
+            {
+                if (_detectBinary == value)
+                    return;
+                _detectBinary = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool DetectPem
+        {
+            get => _detectPem;
+            set
+            {
+                if (_detectPem == value)
+                    return;
+                _detectPem = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool DetectBase64
+        {
+            get => _detectBase64;
+            set
+            {
+                if (_detectBase64 == value)
+                    return;
+                _detectBase64 = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool DetectHex
+        {
+            get => _detectHex;
+            set
+            {
+                if (_detectHex == value)
+                    return;
+                _detectHex = value;
                 InvokePropertyChanged();
             }
         }

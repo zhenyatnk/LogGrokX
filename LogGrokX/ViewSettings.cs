@@ -20,6 +20,14 @@ namespace LogGrokX
 
         public bool MergedFilesView { get; set; }
 
+        public bool DetectBinary { get; set; } = true;
+
+        public bool DetectPem { get; set; } = true;
+
+        public bool DetectBase64 { get; set; } = true;
+
+        public bool DetectHex { get; set; } = true;
+
         public enum UpdateModeKind
         {
             Disabled = 0,
