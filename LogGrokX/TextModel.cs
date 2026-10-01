@@ -98,11 +98,11 @@ public class TextModel : IReadOnlyList<StringRange>
     public TextModel(int uniqueId, string source)
     {
         UniqueId = uniqueId;
-        var jsonIntervals = TextOperations.GetJsonRanges(source).ToList();
+        var structuredRanges = TextOperations.GetStructuredRanges(source);
         var viewSettings = ApplicationSettings.Instance().ViewSettings;
-        if (jsonIntervals.Count != 0)
+        if (structuredRanges.Count != 0)
         {
-            (_textLines, _substitutions, CollapsibleRanges) = GetJsonProperties(source, jsonIntervals);
+            (_textLines, CollapsibleRanges) = GetStructuredProperties(source, structuredRanges);
         }
         else
         {
@@ -133,58 +133,18 @@ public class TextModel : IReadOnlyList<StringRange>
         }
     }
 
-    private (List<StringRange> textLines,
-        Dictionary<int, StringRange>? substitutions,
-        List<(int start, int length)>?)
-        GetJsonProperties(string source, List<(int start, int length)> jsonIntervals)
+    private static (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)
+        GetStructuredProperties(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
-        var text = TextOperations.FormatInlineJson(source, jsonIntervals.AsSpan());
-
-        static StringRange GetContainingLine(StringRange range)
-        {
-            foreach (var line in range.SourceString.Tokenize())
-            {
-                if (line.Start <= range.Start && line.End >= range.End)
-                    return line;
-            }
-
-            throw new InvalidOperationException();
-        }
-
-        var rootCollapsedLineTextSubstitutions = jsonIntervals.Select(interval
-            =>
-        {
-            var range = new StringRange()
-                { SourceString = source, Start = interval.start, Length = interval.length };
-            return range.IsSingleLine() ? GetContainingLine(range) : StringRange.Empty;
-        }).ToList();
-
-        var (textLines, collapsibleRangesWithSubstitutions) =
-            GetCollapsibleRanges(text, rootCollapsedLineTextSubstitutions);
-
-        var collapsibleRanges = new List<(int start, int length)>();
-        Dictionary<int, StringRange>? substitutions = null;
-        foreach (((int start, int length) range, StringRange substitution) r in collapsibleRangesWithSubstitutions)
-        {
-            collapsibleRanges.Add(r.range);
-            if (r.substitution.IsEmpty) continue;
-            substitutions ??= new Dictionary<int, StringRange>();
-            substitutions[r.range.start] = r.substitution;
-        }
-
-        return (textLines, substitutions, collapsibleRanges);
+        var (text, formattedRanges) = TextOperations.FormatInlineStructured(source, structuredRanges);
+        return GetCollapsibleRanges(text, formattedRanges);
     }
 
-    private (List<StringRange> textLines,
-        List<((int start, int length), StringRange)> ranges) GetCollapsibleRanges(string source,
-            List<StringRange> rootCollapsedLineTextSubstitutions)
+    private static (List<StringRange> textLines, List<(int start, int length)> ranges) GetCollapsibleRanges(
+        string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var lines = source.Tokenize().ToList();
-        List<((int start, int length), StringRange collapsedTextSubstitution)> result = new();
-        var ranges = TextOperations.GetJsonRanges(source).ToList();
-        var rootIntervals = ranges.Select((r, i) => ((start: r.start, length: r.length),
-            rootCollapsedLineTextSubstitutions[i])).ToList();
-        var jsonIntervals = new Stack<((int start, int length), StringRange collapsedTextSubstitution)>(rootIntervals);
+        var result = new List<(int start, int length)>();
 
         int GetLineNumber(int position)
         {
@@ -192,34 +152,38 @@ public class TextModel : IReadOnlyList<StringRange>
             return found >= 0 ? found : ~found - 1;
         }
 
-        void AddInterval(((int start, int length), StringRange collapsedTextSubstitution) interval)
+        void AddInterval(int start, int length)
         {
-            var ((start, length), substitution) = interval;
             var startLine = GetLineNumber(start);
             var endLine = GetLineNumber(start + length);
             var lengthLines = endLine - startLine + 1;
             if (lengthLines > 1)
-                result.Add(((startLine, lengthLines), substitution));
+                result.Add((startLine, lengthLines));
         }
 
         var bracesStack = new Stack<(char brace, int position)>();
 
         int PopChar(char ch)
         {
-            if (!bracesStack!.TryPeek(out var prev) || prev.brace != ch)
+            if (!bracesStack.TryPeek(out var prev) || prev.brace != ch)
                 throw new InvalidOperationException();
 
             bracesStack.Pop();
             return prev.position;
         }
 
-        foreach (var jsonInterval in jsonIntervals)
+        foreach (var (offset, length, kind) in structuredRanges)
         {
-            var ((offset, length), _) = jsonInterval;
-
-            var position = 0;
             var span = source.AsSpan(offset, length);
 
+            if (kind == StructuredTextKind.Xml)
+            {
+                foreach (var (open, close) in TextOperations.GetXmlElementRanges(span))
+                    AddInterval(open + offset, close - open);
+                continue;
+            }
+
+            var position = 0;
             while (position < length)
             {
                 position = span[position..].IndexOfAny("{}[]") + position;
@@ -234,8 +198,7 @@ public class TextModel : IReadOnlyList<StringRange>
                     case '}':
                     case ']':
                         var start = PopChar(span[position] == ']' ? '[' : '{');
-                        var len = position - start;
-                        AddInterval(((start + offset, len), StringRange.Empty));
+                        AddInterval(start + offset, position - start);
                         break;
                 }
 

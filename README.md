@@ -28,8 +28,8 @@ remaining responsive even on multi-gigabyte files.
   filter by time range (or line numbers when no timestamps are available) and to
   navigate through marked lines. Hovering the strip shows the timestamp under the
   cursor (or the line number) with a vertical guide line.
-- **JSON folding** — multi-line JSON blobs and oversized strings are formatted
-  and can be expanded/collapsed inline. The folding state is shared across the
+- **JSON/XML folding** — inline JSON and XML blobs and oversized strings are
+  formatted and can be expanded/collapsed inline. The folding state is shared across the
   log grid, search results and the marked-lines view of the same document.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
   UTF-16LE, e.g. `48656C6C6F`, `48 65 6C 6C 6F`, `0x48, 0x65, ...`) get a `0x`
@@ -79,7 +79,7 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🔍 Search](./FEATURES.md#-regex-search)
 - [🧾 Filtering](./FEATURES.md#-filtering)
 - [⏳ Time filter and timeline](./FEATURES.md#-time-filter-and-timeline)
-- [📦 JSON folding](./FEATURES.md#-json-folding)
+- [📦 JSON/XML folding](./FEATURES.md#-jsonxml-folding)
 - [🔣 HEX to text](./FEATURES.md#-hex-to-text)
 - [🎨 Color rules](./FEATURES.md#-color-rules)
 - [📌 Marked lines](./FEATURES.md#-marked-lines)
