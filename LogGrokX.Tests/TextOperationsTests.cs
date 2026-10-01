@@ -176,5 +176,24 @@ namespace LogGrokX.Tests
             CollectionAssert.Contains(elements, (xml.IndexOf("<b>", StringComparison.Ordinal),
                 xml.IndexOf("</b>", StringComparison.Ordinal)));
         }
+        [TestMethod]
+        public void GetXmlRangesFindsXmlInsideUnclosedTags()
+        {
+            const string xml = "<x a=\"1>2\"><y>1</y></x>";
+            const string source = "<html><body><p>text<br>" + xml;
+
+            var ranges = TextOperations.GetXmlRanges(source).ToList();
+
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(xml, source.Substring(ranges[0].start, ranges[0].length));
+        }
+
+        [TestMethod]
+        public void GetXmlRangesIgnoresManyUnclosedTags()
+        {
+            var source = string.Concat(Enumerable.Repeat("<a>", 5000)) + "</b>";
+
+            Assert.IsFalse(TextOperations.GetXmlRanges(source).Any());
+        }
     }
 }

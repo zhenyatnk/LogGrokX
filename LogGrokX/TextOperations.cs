@@ -20,6 +20,8 @@ namespace LogGrokX
     {
         private const string Ellipsis = "...";
         private const string XmlDeclarationStart = "<?xml";
+        private const int MaxFailedXmlParseAttempts = 8;
+        private const int MaxXmlUnclosedTagsLookup = 64;
 
         public static StringRange Normalize(StringRange stringRange, ViewSettings settings)
         {
@@ -187,6 +189,9 @@ namespace LogGrokX
 
         public static List<(int start, int length, StructuredTextKind kind)> GetStructuredRanges(string source)
         {
+            if (source.AsSpan().IndexOfAny('{', '<') < 0)
+                return new List<(int start, int length, StructuredTextKind kind)>();
+
             var candidates = GetJsonRanges(source)
                 .Select(r => (r.start, r.length, kind: StructuredTextKind.Json))
                 .Concat(GetXmlRanges(source).Select(r => (r.start, r.length, kind: StructuredTextKind.Xml)))
@@ -233,25 +238,35 @@ namespace LogGrokX
 
         public static IEnumerable<(int start, int length)> GetXmlRanges(string source)
         {
-            List<(int start, int length)>? result = null;
-            var position = 0;
-            while (position < source.Length)
-            {
-                var openIndex = source.IndexOf('<', position);
-                if (openIndex < 0)
-                    break;
+            if (source.IndexOf('<') < 0)
+                return Enumerable.Empty<(int start, int length)>();
 
-                var end = TryGetXmlEnd(source.AsSpan(), openIndex);
-                if (end > 0 && TryParseXml(source.Substring(openIndex, end - openIndex)) != null)
+            var declarations = new Dictionary<int, int>();
+            var elements = ScanXmlElements(source.AsSpan(), declarations);
+            if (elements.Count == 0)
+                return Enumerable.Empty<(int start, int length)>();
+
+            elements.Sort(static (x, y) => x.open != y.open ? x.open.CompareTo(y.open) : y.end.CompareTo(x.end));
+
+            List<(int start, int length)>? result = null;
+            var acceptedEnd = 0;
+            var failedAttempts = 0;
+            foreach (var (open, _, end, hasChildren) in elements)
+            {
+                if (!hasChildren || open < acceptedEnd)
+                    continue;
+
+                var start = declarations.TryGetValue(open, out var declarationStart) ? declarationStart : open;
+                if (TryParseXml(source.Substring(start, end - start)) == null)
                 {
-                    result ??= new List<(int start, int length)>(2);
-                    result.Add((openIndex, end - openIndex));
-                    position = end;
+                    if (++failedAttempts >= MaxFailedXmlParseAttempts)
+                        break;
+                    continue;
                 }
-                else
-                {
-                    position = openIndex + 1;
-                }
+
+                result ??= new List<(int start, int length)>(2);
+                result.Add((start, end - start));
+                acceptedEnd = end;
             }
 
             return result ?? Enumerable.Empty<(int start, int length)>();
@@ -259,11 +274,11 @@ namespace LogGrokX
 
         public static List<(int open, int close)> GetXmlElementRanges(ReadOnlySpan<char> xml)
         {
-            var elements = new List<(int open, int close)>();
-            var rootStart = GetXmlRootElementStart(xml, 0);
-            if (rootStart >= 0)
-                ScanXmlElement(xml, rootStart, elements);
-            return elements;
+            var elements = ScanXmlElements(xml, null);
+            var result = new List<(int open, int close)>(elements.Count);
+            foreach (var (open, close, _, _) in elements)
+                result.Add((open, close));
+            return result;
         }
 
         public static string FormatInlineXml(string source)
@@ -274,27 +289,106 @@ namespace LogGrokX
             return ranges.Count == 0 ? source : FormatInlineStructured(source, ranges).text;
         }
 
-        private static int TryGetXmlEnd(ReadOnlySpan<char> source, int openIndex)
+        private static List<(int open, int close, int end, bool hasChildren)> ScanXmlElements(
+            ReadOnlySpan<char> source, Dictionary<int, int>? declarations)
         {
-            var rootStart = GetXmlRootElementStart(source, openIndex);
-            return rootStart < 0 ? -1 : ScanXmlElement(source, rootStart, null);
-        }
-
-        private static int GetXmlRootElementStart(ReadOnlySpan<char> source, int openIndex)
-        {
-            var position = openIndex;
-            if (source[position..].StartsWith(XmlDeclarationStart, StringComparison.Ordinal))
+            var result = new List<(int open, int close, int end, bool hasChildren)>();
+            var openTags = new List<(int open, int nameStart, int nameLength, bool hasChildren)>();
+            var position = 0;
+            while (position < source.Length)
             {
-                var declarationEnd = source[position..].IndexOf("?>");
-                if (declarationEnd < 0)
-                    return -1;
+                var next = source[position..].IndexOf('<');
+                if (next < 0)
+                    break;
 
-                position += declarationEnd + 2;
-                while (position < source.Length && char.IsWhiteSpace(source[position]))
+                position += next;
+                var rest = source[position..];
+                if (rest.StartsWith("<!--") || rest.StartsWith("<![CDATA[") || rest.StartsWith("<?"))
+                {
+                    var terminator = rest[1] == '?' ? "?>" : rest[2] == '-' ? "-->" : "]]>";
+                    var skipped = SkipPast(source, position, terminator);
+                    if (skipped < 0)
+                        break;
+
+                    if (declarations != null && rest.StartsWith(XmlDeclarationStart, StringComparison.Ordinal))
+                    {
+                        var rootStart = skipped;
+                        while (rootStart < source.Length && char.IsWhiteSpace(source[rootStart]))
+                            rootStart++;
+                        declarations[rootStart] = position;
+                    }
+
+                    position = skipped;
+                    continue;
+                }
+
+                var isEndTag = rest.StartsWith("</");
+                if (!isEndTag && !IsXmlStartTag(source, position))
+                {
                     position++;
+                    continue;
+                }
+
+                var tagEnd = FindXmlTagEnd(source, position);
+                if (tagEnd < 0)
+                {
+                    position++;
+                    continue;
+                }
+
+                var nameStart = position + (isEndTag ? 2 : 1);
+                var nameLength = GetXmlNameLength(source, nameStart);
+                if (isEndTag)
+                {
+                    var index = FindOpenTag(source, openTags, source.Slice(nameStart, nameLength));
+                    if (index >= 0)
+                    {
+                        var (open, _, _, hasChildren) = openTags[index];
+                        openTags.RemoveRange(index, openTags.Count - index);
+                        result.Add((open, position, tagEnd + 1, hasChildren));
+                    }
+                }
+                else
+                {
+                    if (openTags.Count != 0)
+                        openTags[^1] = openTags[^1] with { hasChildren = true };
+
+                    if (source[tagEnd - 1] != '/')
+                        openTags.Add((position, nameStart, nameLength, false));
+                }
+
+                position = tagEnd + 1;
             }
 
-            return IsXmlStartTag(source, position) ? position : -1;
+            return result;
+        }
+
+        private static int FindOpenTag(ReadOnlySpan<char> source,
+            List<(int open, int nameStart, int nameLength, bool hasChildren)> openTags, ReadOnlySpan<char> name)
+        {
+            var lowest = Math.Max(0, openTags.Count - MaxXmlUnclosedTagsLookup);
+            for (var i = openTags.Count - 1; i >= lowest; i--)
+            {
+                var (_, nameStart, nameLength, _) = openTags[i];
+                if (source.Slice(nameStart, nameLength).SequenceEqual(name))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int GetXmlNameLength(ReadOnlySpan<char> source, int nameStart)
+        {
+            var length = 0;
+            while (nameStart + length < source.Length)
+            {
+                var ch = source[nameStart + length];
+                if (char.IsWhiteSpace(ch) || ch is '/' or '>')
+                    break;
+                length++;
+            }
+
+            return length;
         }
 
         private static bool IsXmlStartTag(ReadOnlySpan<char> source, int position)
@@ -302,70 +396,6 @@ namespace LogGrokX
             return position + 1 < source.Length
                    && source[position] == '<'
                    && (char.IsLetter(source[position + 1]) || source[position + 1] == '_');
-        }
-
-        private static int ScanXmlElement(ReadOnlySpan<char> source, int start, List<(int open, int close)>? elements)
-        {
-            var openTags = new Stack<int>();
-            var position = start;
-            while (position < source.Length)
-            {
-                var next = source[position..].IndexOf('<');
-                if (next < 0)
-                    return -1;
-
-                position += next;
-                var rest = source[position..];
-                if (rest.StartsWith("<!--"))
-                {
-                    position = SkipPast(source, position, "-->");
-                }
-                else if (rest.StartsWith("<![CDATA["))
-                {
-                    position = SkipPast(source, position, "]]>");
-                }
-                else if (rest.StartsWith("<?"))
-                {
-                    position = SkipPast(source, position, "?>");
-                }
-                else if (rest.StartsWith("</"))
-                {
-                    if (openTags.Count == 0)
-                        return -1;
-
-                    var tagEnd = rest.IndexOf('>');
-                    if (tagEnd < 0)
-                        return -1;
-
-                    var openTag = openTags.Pop();
-                    elements?.Add((openTag, position));
-                    position += tagEnd + 1;
-                    if (openTags.Count == 0)
-                        return position;
-                }
-                else if (IsXmlStartTag(source, position))
-                {
-                    var tagEnd = FindXmlTagEnd(source, position);
-                    if (tagEnd < 0)
-                        return -1;
-
-                    if (source[tagEnd - 1] != '/')
-                        openTags.Push(position);
-
-                    position = tagEnd + 1;
-                    if (openTags.Count == 0)
-                        return position;
-                }
-                else
-                {
-                    return -1;
-                }
-
-                if (position < 0)
-                    return -1;
-            }
-
-            return -1;
         }
 
         private static int SkipPast(ReadOnlySpan<char> source, int position, string terminator)
@@ -380,6 +410,9 @@ namespace LogGrokX
             for (var i = position + 1; i < source.Length; i++)
             {
                 var ch = source[i];
+                if (ch == '<')
+                    return -1;
+
                 if (quote != '\0')
                 {
                     if (ch == quote)
@@ -388,10 +421,6 @@ namespace LogGrokX
                 else if (ch is '"' or '\'')
                 {
                     quote = ch;
-                }
-                else if (ch == '<')
-                {
-                    return -1;
                 }
                 else if (ch == '>')
                 {
