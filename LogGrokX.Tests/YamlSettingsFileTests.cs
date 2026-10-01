@@ -258,7 +258,7 @@ namespace LogGrokX.Tests
             WriteFile(
                 "Settings:\n" +
                 "  LogFormats:\n" +
-                "    # KL logs\n" +
+                "    # Tab-separated logs\n" +
                 "    - Regex: " + regex + "\n" +
                 "      IndexedFields:\n" +
                 "        - Thread\n" +
@@ -267,7 +267,7 @@ namespace LogGrokX.Tests
                 "      TimeFormat: HH:mm:ss.fff\n" +
                 "      Transformations:\n" +
                 "        - " + transformation + "\n" +
-                "    # xor-ed KL logs\n" +
+                "    # xor-ed tab-separated logs\n" +
                 "    - Regex: " + regex + "\n" +
                 "      TimeFormat: HH:mm:ss.fff\n" +
                 "      XorMask : 0xef\n");
@@ -294,8 +294,8 @@ namespace LogGrokX.Tests
 
             Assert.IsFalse(file.HasChanges);
             var text = File.ReadAllText(_tempFile);
-            StringAssert.Contains(text, "# KL logs");
-            StringAssert.Contains(text, "# xor-ed KL logs");
+            StringAssert.Contains(text, "# Tab-separated logs");
+            StringAssert.Contains(text, "# xor-ed tab-separated logs");
         }
 
         private void WriteFile(string content)

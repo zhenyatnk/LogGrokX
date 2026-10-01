@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using LogGrokX.Data;
 
 namespace LogGrokX;
 
@@ -173,8 +174,11 @@ public static partial class HexText
         if (bytes.Length < MinBytes)
             return false;
 
-        return TryGetPrintableText(bytes, StrictUtf8, char.MaxValue, out text) ||
-               (bytes.Length % 2 == 0 && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text));
+        if (TryGetPrintableText(bytes, StrictUtf8, char.MaxValue, out text) ||
+            (bytes.Length % 2 == 0 && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text)))
+            return true;
+
+        return Base64Detector.TryDescribeBinaryKeyFromBytes(bytes, out text);
     }
 
     // A contiguous token of digits 0-9 only (optionally 0x-prefixed) looks like a number, not like encoded text.

@@ -362,6 +362,14 @@ public static partial class Base64Detector
             return false;
         if (!TryDecodeBase64Bytes(token, out var data))
             return false;
+        return TryDescribeBinaryKeyFromBytes(data, out description);
+    }
+
+    public static bool TryDescribeBinaryKeyFromBytes(ReadOnlySpan<byte> data, out string description)
+    {
+        description = string.Empty;
+        if (data.Length < 2)
+            return false;
 
         if (data[0] == 0x30)
         {
@@ -371,7 +379,7 @@ public static partial class Base64Detector
                 return true;
             }
 
-            if (TryDescribeSubjectPublicKeyInfo(data, out var publicKey))
+            if (TryDescribeSubjectPublicKeyInfo(data.ToArray(), out var publicKey))
             {
                 description = publicKey;
                 return true;
@@ -380,7 +388,7 @@ public static partial class Base64Detector
             return false;
         }
 
-        return TryDescribeCryptoApiPublicKey(data, out description);
+        return TryDescribeCryptoApiPublicKey(data.ToArray(), out description);
     }
 
     private static bool TryDescribeSubjectPublicKeyInfo(byte[] data, out string description)

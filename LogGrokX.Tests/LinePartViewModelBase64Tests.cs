@@ -2,6 +2,8 @@ using System;
 using System.ComponentModel;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -126,14 +128,14 @@ namespace LogGrokX.Tests
         [TestMethod]
         public void Base64InsideJsonIsDecodedAndJsonStaysFoldable()
         {
-            var part = new LinePartViewModel(1,
-                "{\"token\":\"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9\",\"n\":1}");
+            var token = Encode("{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"}");
+            var part = new LinePartViewModel(1, $"{{\"token\":\"{token}\",\"n\":1}}");
 
             Assert.IsTrue(part.IsBase64);
             part.IsBase64Decoded = true;
 
             Assert.IsNotNull(part.TextModel.CollapsibleRanges);
-            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "\"alg\": \"KSN\"");
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "\"alg\": \"HS256\"");
         }
 
         [TestMethod]
@@ -150,11 +152,15 @@ namespace LogGrokX.Tests
         [TestMethod]
         public void DerCertificatesInMultiLineJsonResponseGetPemToggle()
         {
+            using var certificate = CreateCertificate();
+            var certificateBase64 = Convert.ToBase64String(certificate.RawData);
+            var publicKeyBlob = Convert.ToBase64String(CreateCryptoApiRsaPublicKeyBlob());
+            var segment = Encode("{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"}");
             var source = "Request for discovery service finished with resultCode=0x00000000 (No error); statusCode=200; response={\n" +
-                         "  \"segment\": \"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9.8V4Y1ruXGUpmAM335npYmA==\",\n" +
+                         $"  \"segment\": \"{segment}\",\n" +
                          "  \"serviceBindings\": [\n" +
-                         "    {\"certificates\": [{\"data\": \"MIICUjCCAbSgAwIBAgIQFGnEabbVTpBNa4IBTv+SkTAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwHhcNMjAwNjEyMDk1MjM2WhcNMzUwNjEyMTAwMjM1WjA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwgZswEAYHKoZIzj0CAQYFK4EEACMDgYYABACobUHA+DeovYTLxlLi0QckBTV3YFt+qsn+2gc4T7ewoF/Rp5acBePD3FBjumPZAA0KrkwMkKSedxHGi3/MuVHWRgEdItNnQegL7sfWqs26e5MCqZP9jG5+pgTXkit3n6vNDYPDLl6a1DqfchbzLKQkm2Zl2y0tBslFfxkBCGiup5hLn6NRME8wCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFEUxxSF7nMy7jf9zbROUM1EhPIvcMBAGCSsGAQQBgjcVAQQDAgEAMAoGCCqGSM49BAMDA4GLADCBhwJCAMIoQUBTAL0Clz6UQZmucONRAEwTPf3DWFq6VPhfgpwsocYFbGGfqUk6E4bbostl3Afx6rsAGHAp8kOl/chUc1PNAkF1QtsIotqqjOyTM78CbLDqzYiSOjcuajBG1SsUqpOd+AUKAzxA6IE/r2Z/Z5Zl5GzDiTC63UVDFoSfsnIxI/rWgA==\"}]," +
-                         "\"ksnPublicKey\": {\"data\": \"BgIAAACkAABSU0ExAAgAAAEAAQBnZ7C0i39qekoMzDGj2FsO5IccgwOp2TVK6epf8/P1+jVHG57mFWSL6goJ4t3IJZhBIvRCD2ORHSfQ4ETECsVj6rQQTB8JhdcQ/Z1avNEP37q2XFIg522vRArRC+0vrmNUtTTxuAQ4xW+QFb+6VbcTLRsC+81UnPTuKSq9XShimPvDHY1dCWw6cmFv/FeWoQD0vdKtfkAqAQigni/h78qoHIoGcBPBMucwIFQN9TY6+SouPEdDfBhv1u3DODwFPPU6uWPWN/CWlb+4eW4fiCejtDOA9oPRDRsDMwr3OeA2XRq2sq02PB67Idg56ia/RjhBCan2icTE1TojhzFcz9PY\",\"keyId\": 29}}\n" +
+                         $"    {{\"certificates\": [{{\"data\": \"{certificateBase64}\"}}]," +
+                         $"\"publicKey\": {{\"data\": \"{publicKeyBlob}\",\"keyId\": 29}}\n" +
                          "  ]\n}";
             var part = new LinePartViewModel(1, source);
 
@@ -164,8 +170,34 @@ namespace LogGrokX.Tests
 
             Assert.IsNotNull(part.TextModel.CollapsibleRanges);
             var text = part.TextModel.GetDisplayedText(null);
-            StringAssert.Contains(text, "Subject: CN=KSN Global Root CA, O=Kaspersky, C=RU");
+            StringAssert.Contains(text, "Subject: CN=loggrokx.test, O=LogGrokX");
             StringAssert.Contains(text, "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+        }
+
+        private static X509Certificate2 CreateCertificate()
+        {
+            using var rsa = RSA.Create(2048);
+            var request = new CertificateRequest("CN=loggrokx.test, O=LogGrokX", rsa,
+                HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            return request.CreateSelfSigned(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero),
+                new DateTimeOffset(2027, 1, 2, 3, 4, 5, TimeSpan.Zero));
+        }
+
+        private static byte[] CreateCryptoApiRsaPublicKeyBlob(int modulusBytes = 256)
+        {
+            var bytes = new byte[20 + modulusBytes];
+            bytes[0] = 0x06;
+            bytes[1] = 0x02;
+            bytes[5] = 0xA4;
+            bytes[8] = (byte)'R';
+            bytes[9] = (byte)'S';
+            bytes[10] = (byte)'A';
+            bytes[11] = (byte)'1';
+            BitConverter.GetBytes(modulusBytes * 8).CopyTo(bytes, 12);
+            BitConverter.GetBytes(65537u).CopyTo(bytes, 16);
+            for (var i = 20; i < bytes.Length; i++)
+                bytes[i] = (byte)(i * 7 + 1);
+            return bytes;
         }
 
         private sealed class TestLine : BaseLogLineViewModel

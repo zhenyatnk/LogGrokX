@@ -1,3 +1,4 @@
+using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -61,6 +62,63 @@ public class HexTextTests
         Assert.IsTrue(HexText.TryDecode(source, out var decoded));
         Assert.AreEqual(expected, decoded);
         Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+    }
+
+    [TestMethod]
+    public void DecodesHexCryptoApiPublicKeyBlob()
+    {
+        var hex = CreateCryptoApiRsaPublicKeyHex();
+
+        Assert.IsTrue(HexText.ContainsDecodableHex(hex));
+        Assert.IsTrue(HexText.TryDecode(hex, out var decoded));
+        StringAssert.Contains(decoded, "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+        StringAssert.Contains(decoded, "Key size: 1024 bits");
+        StringAssert.Contains(decoded, "Public exponent: 65537");
+    }
+
+    [TestMethod]
+    public void DecodesHexCryptoApiPublicKeyBlobInsideXml()
+    {
+        var source = $"<data>{CreateCryptoApiRsaPublicKeyHex()}</data>";
+        var part = new LinePartViewModel(1, source);
+
+        Assert.IsTrue(HexText.ContainsDecodableHex(source));
+        Assert.IsTrue(part.IsHex);
+        part.IsHexDecoded = true;
+
+        StringAssert.Contains(part.TextModel.GetDisplayedText(null),
+            "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+    }
+
+    [TestMethod]
+    public void DecodesHexCryptoApiPublicKeyBlobInsideJson()
+    {
+        var source = $"{{\"data\":\"{CreateCryptoApiRsaPublicKeyHex()}\"}}";
+        var part = new LinePartViewModel(1, source);
+
+        Assert.IsTrue(HexText.ContainsDecodableHex(source));
+        Assert.IsTrue(part.IsHex);
+        part.IsHexDecoded = true;
+
+        StringAssert.Contains(part.TextModel.GetDisplayedText(null),
+            "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+    }
+
+    private static string CreateCryptoApiRsaPublicKeyHex(int modulusBytes = 128)
+    {
+        var bytes = new byte[20 + modulusBytes];
+        bytes[0] = 0x06;
+        bytes[1] = 0x02;
+        bytes[5] = 0xA4;
+        bytes[8] = (byte)'R';
+        bytes[9] = (byte)'S';
+        bytes[10] = (byte)'A';
+        bytes[11] = (byte)'1';
+        System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(bytes.AsSpan(12), modulusBytes * 8);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32LittleEndian(bytes.AsSpan(16), 65537);
+        for (var i = 20; i < bytes.Length; i++)
+            bytes[i] = (byte)(i * 7 + 1);
+        return Convert.ToHexString(bytes);
     }
 
     [TestMethod]

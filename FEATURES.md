@@ -252,7 +252,10 @@ one letter, so hashes, GUIDs and plain numbers are not treated as HEX. Anything 
 digits `0-9` only (`41424344454647484950`). HEX values
 inside JSON strings and XML text/attributes are decoded too: the result is
 escaped (`\"`, `\n`, `&lt;`, `&amp;`, ...), so the payload stays valid and keeps
-its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well. "Copy" copies
+its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well.
+Binary payloads are not decoded to text, but a HEX-encoded X.509 certificate,
+SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` is recognized and shown as a
+key description (like the Base64 path). "Copy" copies
 the value as displayed; "Copy as native" keeps the original HEX.
 
 ## 🎨 Color rules
@@ -436,8 +439,8 @@ decoded value is written back so the document stays valid and keeps folding:
   (`&lt;`, `&amp;`, `&quot;` …).
 
 ```text
-{"token":"eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9","n":1}
-→ {"token":{"alg":"KSN","typ":"JWT","ser":"empty"},"n":1}
+{"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInNlciI6ImVtcHR5In0","n":1}
+→ {"token":{"alg":"HS256","typ":"JWT","ser":"empty"},"n":1}
 ```
 
 Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or

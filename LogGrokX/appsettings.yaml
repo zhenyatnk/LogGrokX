@@ -48,7 +48,7 @@ Settings:
         - Level
         - Thread
         - Component
-    # KL logs
+    # Tab-separated logs
     - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?:(?'Component'[^\t]+)?\t)?(?'Message'.*)
       IndexedFields:
         - Thread
@@ -57,7 +57,7 @@ Settings:
       TimeFormat: HH:mm:ss.fff
       Transformations:
         - lic\t\[.*ContentImp.*\].*"TicketBody"\s+:\s+\{[^}]+"Data"\s+:\s+(?'Base64Decode'"[^"]+")
-    # xor-ed KL logs
+    # xor-ed tab-separated logs
     - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?:(?'Component'[^\t]+)?\t)?(?'Message'.*)
       IndexedFields:
         - Thread
@@ -68,7 +68,7 @@ Settings:
       Transformations:
         - lic\t\[ContentImp\.cpp.*\].*"TicketBody".*"(?'Base64DecodeFormatJson'[\w]+==)"
     # LogGrokX logs
-    # 00:07:08.703	10144	0x1	INF	DocumentContainer	Start loading C:\Traces\producttraces (65)\KAV.21.3.7.290_01.26_15.43_4824.SRV.log
+    # 00:07:08.703	10144	0x1	INF	DocumentContainer	Start loading C:\Traces\producttraces (65)\App.21.3.7.290_01.26_15.43_4824.SRV.log
     - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?'Component'[^\t]+\t)?(?'Message'.*)
       IndexedFields:
         - Process
@@ -77,7 +77,7 @@ Settings:
         - Component
       TimeFormat: HH:mm:ss.fff
     # TestRun logs
-    # 18:14:53.667	[4720-16]	INF	KL.KsnMock.Client.Responses.KsnResponseRegistrator`1+<>c__DisplayClass5_0	"[df42b713] Receive packet for GrpcKsnMock.Ksn_Protocol_FileReputation_ObjectRequest, body: { ""Requests"": [ { ""HashType"": 1, ""ServiceMask"": ""23"", ""FileHash"": ""ooWVtba5z5Yjgv/snVQq+g=="" } ] }"	
+    # 18:14:53.667	[4720-16]	INF	Telemetry.Client.Responses.TelemetryResponseRegistrator`1+<>c__DisplayClass5_0	"[df42b713] Receive packet for GrpcTelemetry.Telemetry_Protocol_FileReputation_ObjectRequest, body: { ""Requests"": [ { ""HashType"": 1, ""ServiceMask"": ""23"", ""FileHash"": ""ooWVtba5z5Yjgv/snVQq+g=="" } ] }"	
     - Regex: ^(?'time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'process_thread'\[\d+-\d+\])\t(?'Severity'\w+)?\t(?:[\w|\d]+\.)*(?'Component'[^-\s]+)\t(?'Message'.*)
       IndexedFields:
         - process_thread

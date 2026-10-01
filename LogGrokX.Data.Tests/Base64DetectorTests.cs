@@ -258,21 +258,24 @@ public class Base64DetectorTests
         Assert.IsFalse(Base64Detector.TryDecode("-----BEGIN CERTIFICATE-----\nMIIB*AAA\n-----END CERTIFICATE-----", out _));
     }
 
-    private const string KsnJwt = "eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9.8V4Y1ruXGUpmAM335npYmA==.";
-    private const string KsnJwtDecoded = "{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"}.8V4Y1ruXGUpmAM335npYmA==.";
+    private const string SampleJwtSignature = "8V4Y1ruXGUpmAM335npYmA==";
+    private static readonly string SampleJwtHeader = Encode("{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"}");
+    private static readonly string SampleJwt = SampleJwtHeader + "." + SampleJwtSignature + ".";
+    private static readonly string SampleJwtDecoded =
+        "{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"}." + SampleJwtSignature + ".";
 
     [TestMethod]
     [DataRow("", "")]
     [DataRow("Authorization: Bearer ", "")]
     [DataRow("token: \"", "\"")]
-    [DataRow("GET https://ksn.example/api/v1/", " HTTP/1.1")]
-    [DataRow("X-KSN-", "")]
-    [DataRow("ksn_token_", "")]
+    [DataRow("GET https://example.com/api/v1/", " HTTP/1.1")]
+    [DataRow("X-Token-", "")]
+    [DataRow("token_", "")]
     [DataRow("payload+", "")]
     public void JwtGluedToSurroundingTextIsDecoded(string prefix, string suffix)
     {
-        Assert.IsTrue(Base64Detector.TryDecode(prefix + KsnJwt + suffix, out var decoded), prefix + KsnJwt + suffix);
-        Assert.AreEqual(prefix + KsnJwtDecoded + suffix, decoded);
+        Assert.IsTrue(Base64Detector.TryDecode(prefix + SampleJwt + suffix, out var decoded), prefix + SampleJwt + suffix);
+        Assert.AreEqual(prefix + SampleJwtDecoded + suffix, decoded);
     }
 
     [TestMethod]
@@ -291,8 +294,8 @@ public class Base64DetectorTests
         var pem = certificate.ExportCertificatePem();
 
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(pem));
-        Assert.AreEqual(Base64Content.Base64, Base64Detector.Detect(KsnJwt));
-        Assert.AreEqual(Base64Content.All, Base64Detector.Detect($"{KsnJwt}\n{pem}"));
+        Assert.AreEqual(Base64Content.Base64, Base64Detector.Detect(SampleJwt));
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect($"{SampleJwt}\n{pem}"));
         Assert.AreEqual(Base64Content.None, Base64Detector.Detect("plain text"));
     }
 
@@ -301,14 +304,14 @@ public class Base64DetectorTests
     {
         using var certificate = CreateCertificate();
         var pem = certificate.ExportCertificatePem();
-        var source = $"{KsnJwt}\n{pem}";
+        var source = $"{SampleJwt}\n{pem}";
 
         Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var pemOnly, out var found));
         Assert.AreEqual(Base64Content.All, found);
-        StringAssert.StartsWith(pemOnly, KsnJwt + "\n-----BEGIN CERTIFICATE-----\nSubject: ");
+        StringAssert.StartsWith(pemOnly, SampleJwt + "\n-----BEGIN CERTIFICATE-----\nSubject: ");
 
         Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Base64, out var base64Only, out _));
-        Assert.AreEqual($"{KsnJwtDecoded}\n{pem}", base64Only);
+        Assert.AreEqual($"{SampleJwtDecoded}\n{pem}", base64Only);
     }
 
     [TestMethod]
@@ -320,8 +323,6 @@ public class Base64DetectorTests
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source));
         Assert.IsFalse(Base64Detector.TryDecode(source, Base64Content.Base64, out _, out _));
     }
-
-    private const string KsnJwtHeader = "eyJhbGciOiJLU04iLCJ0eXAiOiJKV1QiLCJzZXIiOiJlbXB0eSJ9";
 
     private static StructuredSpan[] Json(string source) =>
         new[] { new StructuredSpan(source.IndexOf('{'), source.LastIndexOf('}') - source.IndexOf('{') + 1, false) };
@@ -338,22 +339,22 @@ public class Base64DetectorTests
     [TestMethod]
     public void JsonValueWithEncodedJsonBecomesNestedObject()
     {
-        var source = $"request {{\"token\":\"{KsnJwtHeader}\",\"n\":1}}";
+        var source = $"request {{\"token\":\"{SampleJwtHeader}\",\"n\":1}}";
 
         var decoded = DecodeAll(source, Json(source));
 
-        Assert.AreEqual("request {\"token\":{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"},\"n\":1}", decoded);
+        Assert.AreEqual("request {\"token\":{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"},\"n\":1}", decoded);
     }
 
     [TestMethod]
     public void JsonValueWithJwtStaysValidJson()
     {
-        var source = $"{{\"token\":\"{KsnJwt}\"}}";
+        var source = $"{{\"token\":\"{SampleJwt}\"}}";
 
         var decoded = DecodeAll(source, Json(source));
 
         using var document = JsonDocument.Parse(decoded);
-        Assert.AreEqual(KsnJwtDecoded, document.RootElement.GetProperty("token").GetString());
+        Assert.AreEqual(SampleJwtDecoded, document.RootElement.GetProperty("token").GetString());
     }
 
     [TestMethod]
@@ -400,13 +401,13 @@ public class Base64DetectorTests
     public void JsonDecodesOnlySelectedKinds()
     {
         using var certificate = CreateCertificate();
-        var source = $"{{\"jwt\":\"{KsnJwt}\",\"pem\":{JsonSerializer.Serialize(certificate.ExportCertificatePem())}}}";
+        var source = $"{{\"jwt\":\"{SampleJwt}\",\"pem\":{JsonSerializer.Serialize(certificate.ExportCertificatePem())}}}";
 
         Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source, Json(source)));
         Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Base64, out var decoded, out _, Json(source)));
 
         using var document = JsonDocument.Parse(decoded);
-        Assert.AreEqual(KsnJwtDecoded, document.RootElement.GetProperty("jwt").GetString());
+        Assert.AreEqual(SampleJwtDecoded, document.RootElement.GetProperty("jwt").GetString());
         Assert.AreEqual(certificate.ExportCertificatePem(), document.RootElement.GetProperty("pem").GetString());
     }
 
@@ -423,12 +424,12 @@ public class Base64DetectorTests
     [TestMethod]
     public void XmlAttributeValueIsDecodedAndEscaped()
     {
-        var source = $"<root><item token=\"{KsnJwt}\" id='{Encode("it's readable")}'/></root>";
+        var source = $"<root><item token=\"{SampleJwt}\" id='{Encode("it's readable")}'/></root>";
 
         var decoded = DecodeAll(source, Xml(source));
 
         var item = XDocument.Parse(decoded).Root!.Element("item")!;
-        Assert.AreEqual(KsnJwtDecoded, item.Attribute("token")!.Value);
+        Assert.AreEqual(SampleJwtDecoded, item.Attribute("token")!.Value);
         Assert.AreEqual("it's readable", item.Attribute("id")!.Value);
     }
 
@@ -458,21 +459,35 @@ public class Base64DetectorTests
     [TestMethod]
     public void TextAroundStructuredSpanIsStillDecoded()
     {
-        var source = $"auth={KsnJwt} body={{\"data\":\"{KsnJwtHeader}\"}}";
+        var source = $"auth={SampleJwt} body={{\"data\":\"{SampleJwtHeader}\"}}";
 
         var decoded = DecodeAll(source, Json(source));
 
-        Assert.AreEqual($"auth={KsnJwtDecoded} body={{\"data\":{{\"alg\":\"KSN\",\"typ\":\"JWT\",\"ser\":\"empty\"}}}}", decoded);
+        Assert.AreEqual($"auth={SampleJwtDecoded} body={{\"data\":{{\"alg\":\"HS256\",\"typ\":\"JWT\",\"ser\":\"empty\"}}}}", decoded);
     }
 
-    private const string KsnRootCertificate = "MIICUjCCAbSgAwIBAgIQFGnEabbVTpBNa4IBTv+SkTAKBggqhkjOPQQDAzA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwHhcNMjAwNjEyMDk1MjM2WhcNMzUwNjEyMTAwMjM1WjA+MQswCQYDVQQGEwJSVTESMBAGA1UEChMJS2FzcGVyc2t5MRswGQYDVQQDExJLU04gR2xvYmFsIFJvb3QgQ0EwgZswEAYHKoZIzj0CAQYFK4EEACMDgYYABACobUHA+DeovYTLxlLi0QckBTV3YFt+qsn+2gc4T7ewoF/Rp5acBePD3FBjumPZAA0KrkwMkKSedxHGi3/MuVHWRgEdItNnQegL7sfWqs26e5MCqZP9jG5+pgTXkit3n6vNDYPDLl6a1DqfchbzLKQkm2Zl2y0tBslFfxkBCGiup5hLn6NRME8wCwYDVR0PBAQDAgGGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFEUxxSF7nMy7jf9zbROUM1EhPIvcMBAGCSsGAQQBgjcVAQQDAgEAMAoGCCqGSM49BAMDA4GLADCBhwJCAMIoQUBTAL0Clz6UQZmucONRAEwTPf3DWFq6VPhfgpwsocYFbGGfqUk6E4bbostl3Afx6rsAGHAp8kOl/chUc1PNAkF1QtsIotqqjOyTM78CbLDqzYiSOjcuajBG1SsUqpOd+AUKAzxA6IE/r2Z/Z5Zl5GzDiTC63UVDFoSfsnIxI/rWgA==";
-
-    private const string KsnPublicKeyBlob = "BgIAAACkAABSU0ExAAgAAAEAAQBnZ7C0i39qekoMzDGj2FsO5IccgwOp2TVK6epf8/P1+jVHG57mFWSL6goJ4t3IJZhBIvRCD2ORHSfQ4ETECsVj6rQQTB8JhdcQ/Z1avNEP37q2XFIg522vRArRC+0vrmNUtTTxuAQ4xW+QFb+6VbcTLRsC+81UnPTuKSq9XShimPvDHY1dCWw6cmFv/FeWoQD0vdKtfkAqAQigni/h78qoHIoGcBPBMucwIFQN9TY6+SouPEdDfBhv1u3DODwFPPU6uWPWN/CWlb+4eW4fiCejtDOA9oPRDRsDMwr3OeA2XRq2sq02PB67Idg56ia/RjhBCan2icTE1TojhzFcz9PY";
+    private static byte[] CreateCryptoApiRsaPublicKeyBlob(int modulusBytes = 256)
+    {
+        var bytes = new byte[20 + modulusBytes];
+        bytes[0] = 0x06;
+        bytes[1] = 0x02;
+        bytes[5] = 0xA4;
+        bytes[8] = (byte)'R';
+        bytes[9] = (byte)'S';
+        bytes[10] = (byte)'A';
+        bytes[11] = (byte)'1';
+        BitConverter.GetBytes(modulusBytes * 8).CopyTo(bytes, 12);
+        BitConverter.GetBytes(65537u).CopyTo(bytes, 16);
+        for (var i = 20; i < bytes.Length; i++)
+            bytes[i] = (byte)(i * 7 + 1);
+        return bytes;
+    }
 
     [TestMethod]
     public void DerCertificateInJsonIsDetectedAsPem()
     {
-        var source = $"response={{\"certificates\": [{{\"data\": \"{KsnRootCertificate}\"}}]}}";
+        using var certificate = CreateCertificate();
+        var source = $"response={{\"certificates\": [{{\"data\": \"{Convert.ToBase64String(certificate.RawData)}\"}}]}}";
 
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
         Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var decoded, out _, Json(source)));
@@ -481,10 +496,10 @@ public class Base64DetectorTests
         var lines = document.RootElement.GetProperty("certificates")[0].GetProperty("data")
             .EnumerateArray().Select(e => e.GetString()).ToList();
         Assert.AreEqual("X.509 certificate", lines[0]);
-        CollectionAssert.Contains(lines, "Subject: CN=KSN Global Root CA, O=Kaspersky, C=RU");
-        CollectionAssert.Contains(lines, "Not after: 2035-06-12 10:02:35 UTC");
-        CollectionAssert.Contains(lines, "Thumbprint (SHA-1): 7C889985F2A6DFB89943DCA23E7F4B4D1E6CE799");
-        CollectionAssert.Contains(lines, "Public key: ECC 521 bits");
+        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+        CollectionAssert.Contains(lines, "Not after: 2027-01-02 03:04:05 UTC");
+        CollectionAssert.Contains(lines, "Thumbprint (SHA-1): " + certificate.Thumbprint);
+        CollectionAssert.Contains(lines, "Public key: RSA 2048 bits");
     }
 
     [TestMethod]
@@ -502,17 +517,38 @@ public class Base64DetectorTests
     [TestMethod]
     public void CryptoApiPublicKeyBlobIsDescribed()
     {
-        var source = $"{{\"ksnPublicKey\": {{\"data\": \"{KsnPublicKeyBlob}\",\"keyId\": 29}}}}";
+        var blob = Convert.ToBase64String(CreateCryptoApiRsaPublicKeyBlob());
+        var source = $"{{\"publicKey\": {{\"data\": \"{blob}\",\"keyId\": 29}}}}";
 
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
         using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
-        var lines = document.RootElement.GetProperty("ksnPublicKey").GetProperty("data")
+        var lines = document.RootElement.GetProperty("publicKey").GetProperty("data")
             .EnumerateArray().Select(e => e.GetString()).ToList();
         Assert.AreEqual("RSA public key (CryptoAPI PUBLICKEYBLOB)", lines[0]);
         CollectionAssert.Contains(lines, "Algorithm: CALG_RSA_KEYX");
         CollectionAssert.Contains(lines, "Key size: 2048 bits");
         CollectionAssert.Contains(lines, "Public exponent: 65537");
-        Assert.AreEqual(29, document.RootElement.GetProperty("ksnPublicKey").GetProperty("keyId").GetInt32());
+        Assert.AreEqual(29, document.RootElement.GetProperty("publicKey").GetProperty("keyId").GetInt32());
+    }
+
+    [TestMethod]
+    public void CryptoApiPublicKeyBytesAreDescribed()
+    {
+        var data = CreateCryptoApiRsaPublicKeyBlob();
+
+        Assert.IsTrue(Base64Detector.TryDescribeBinaryKeyFromBytes(data, out var description));
+        StringAssert.StartsWith(description, "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+    }
+
+    [TestMethod]
+    public void RandomBinaryBytesAreNotDescribed()
+    {
+        var data = new byte[256];
+        new Random(7).NextBytes(data);
+        data[0] = 0x99;
+
+        Assert.IsFalse(Base64Detector.TryDescribeBinaryKeyFromBytes(data, out var description));
+        Assert.AreEqual(string.Empty, description);
     }
 
     [TestMethod]

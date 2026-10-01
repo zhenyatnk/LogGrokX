@@ -186,7 +186,7 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   the markers are kept and the body becomes text, an X.509 summary
   (`X509CertificateLoader`, certificate labels only) or a hex dump capped at
   `MaxHexDumpBytes`. Fragment search runs only outside PEM blocks. A candidate glued to
-  surrounding text by `/`, `-`, `_` or `+` (`api/v1/eyJ...`, `X-KSN-eyJ...`,
+  surrounding text by `/`, `-`, `_` or `+` (`api/v1/eyJ...`, `X-Token-eyJ...`,
   `..._v2`) is retried as its suffixes/prefixes at those separators; the split
   with the best `GetTextScore` wins (a misaligned split decodes to junk such as
   `)#~` and loses).
@@ -225,7 +225,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
 - **HEX to text** (#48): `HexText` detects and decodes HEX runs (more than 64 bits, i.e. from 9 bytes, `MinBytes`;
   contiguous or separated by space/`-`/`:`/`,`, optional `0x`; UTF-8, then
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
-  text with a letter only). Shorter runs are numbers; `IsHexNumber` also skips a
+  text with a letter only, or a binary X.509 certificate / SubjectPublicKeyInfo /
+  CryptoAPI `PUBLICKEYBLOB` described by `Base64Detector.TryDescribeBinaryKeyFromBytes`).
+  Shorter runs are numbers; `IsHexNumber` also skips a
   contiguous run of digits 0-9 only (optionally `0x`-prefixed). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
   only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is
   XML-escaped. If the fragment is no longer the same valid JSON/XML afterwards, it
