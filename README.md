@@ -44,16 +44,17 @@ remaining responsive even on multi-gigabyte files.
   `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
-- **Base64 decoding** — cells whose value (or a fragment of it, e.g. a JWT or
-  `payload=...`) is Base64 with readable UTF-8 text get a `B64` toggle in the
-  pin column on the left (so the text does not shift); it shows
-  the decoded text in place (decoded JSON is formatted and foldable). Multi-line
-  PEM blocks get a separate `PEM` toggle: certificates are shown as a summary,
-  other binary payloads as a hex dump. Plain Base64 DER certificates, public
-  keys and CryptoAPI RSA key blobs get the `PEM` toggle too. Values inside JSON and XML are
-  unescaped before detection and re-escaped after decoding, so the document
-  stays valid and foldable. Both are also available as
-  "Decode Base64" / "Decode PEM" in the cell context menu.
+- **Base64 decoding** — rows with Base64 that decodes to readable UTF-8 text
+  (a whole value or a fragment such as a JWT or `payload=...`), multi-line PEM
+  blocks, or plain Base64 DER certificates, public keys and CryptoAPI RSA key
+  blobs get a single `BIN` toggle at the right edge of the `Component` column
+  (under the pin if there is no `Component` field), so the text does not shift
+  and the row does not grow. It shows the decoded content in place: text,
+  formatted and foldable JSON, a certificate summary or a hex dump. Values
+  inside JSON and XML are unescaped before detection and re-escaped after
+  decoding, so the document stays valid and foldable. Per cell, Base64 and PEM
+  can also be toggled separately with "Decode Base64" / "Decode PEM" in the
+  context menu.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme

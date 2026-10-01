@@ -348,19 +348,23 @@ into an external decoder.
 When a cell value is Base64 — either the whole value (optionally quoted) or a
 fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
 segments of a JWT, also when glued to surrounding text such as
-`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears in the pin column on the left, under the mark
-pin, so the log text itself does not shift. It switches the row between the
-original and the decoded text (all Base64 fields of the row at once); the same
-action is available per cell as **Decode Base64** in the cell context menu. Decoded JSON is
+`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `BIN` toggle appears
+at the right edge of the `Component` column, so the log text does not shift and
+the row does not grow. If the log format has no `Component` field (and in the
+marked lines view) the toggle is shown under the mark pin instead. It switches
+the whole row between the original and the decoded view and decodes everything
+found in all fields at once: Base64 and PEM (see below). Per cell, the two kinds
+can be toggled separately with **Decode Base64** and **Decode PEM** in the cell
+context menu. Decoded JSON is
 formatted and can be folded like any other JSON block, and **Copy** copies the
 decoded text while it is shown.
 
 Multi-line **PEM** blocks (`-----BEGIN <LABEL>-----` … `-----END <LABEL>-----`)
 are recognized as a whole: line breaks inside the body may be real (`LF`/`CRLF`)
-or escaped (`\n`, `\r\n` inside a JSON string). Such a cell gets a separate
-`PEM` toggle (and a **Decode PEM** context menu item) instead of `B64`; if the
-cell also contains other Base64 fragments, both toggles are shown and work
-independently. Lines of a PEM body are never treated as `B64` fragments. The
+or escaped (`\n`, `\r\n` inside a JSON string). Such a cell is decoded by
+the same `BIN` toggle, and per cell by the **Decode PEM** context menu item,
+independently of **Decode Base64**. Lines of a PEM body are never treated as
+Base64 fragments. The
 markers are kept and the body is replaced with readable content:
 
 - a certificate (`CERTIFICATE`, `TRUSTED CERTIFICATE`, `X509 CERTIFICATE`) is
@@ -386,7 +390,7 @@ Subject alternative names: loggrokx.test, www.loggrokx.test
 ```
 
 Binary keys that are logged as plain Base64 without PEM markers are treated
-like PEM too and get the same `PEM` toggle: a DER **X.509 certificate**
+like PEM too (`BIN` toggle, **Decode PEM** menu item): a DER **X.509 certificate**
 (`MII...`, shown with the same summary prefixed by `X.509 certificate`), a DER
 **SubjectPublicKeyInfo** public key, and a Windows **CryptoAPI
 PUBLICKEYBLOB** RSA key (`BgIAAACkAABSU0Ex...`: algorithm, key size, public
