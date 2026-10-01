@@ -1,5 +1,10 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Unicode;
@@ -11,9 +16,19 @@ public static partial class Base64Detector
     public const int MinWholeTextLength = 8;
     public const int MinFragmentLength = 16;
     public const int MaxSourceLength = 1024 * 1024;
+    public const int MaxHexDumpBytes = 4096;
+
+    private const string PemBeginMarker = "-----BEGIN ";
 
     [GeneratedRegex(@"(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]+={0,2}(?![A-Za-z0-9+/=_-])", RegexOptions.CultureInvariant)]
     private static partial Regex CandidateRegex();
+
+    [GeneratedRegex(@"-----BEGIN (?<label>[A-Z0-9][A-Z0-9 ]*)-----(?<body>(?:[A-Za-z0-9+/=\s]|\\[rn])+?)-----END \k<label>-----",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex PemRegex();
+
+    [GeneratedRegex(@"\s|\\[rn]", RegexOptions.CultureInvariant)]
+    private static partial Regex PemBodySeparatorRegex();
 
     public static bool ContainsBase64(string? source) => TryDecode(source, out _);
 
@@ -30,29 +45,166 @@ public static partial class Base64Detector
             return true;
         }
 
-        StringBuilder? builder = null;
+        var replacements = new List<(int index, int length, string text)>();
         var offset = 0;
-        foreach (var match in CandidateRegex().EnumerateMatches(source))
+        if (source.Contains(PemBeginMarker, StringComparison.Ordinal))
         {
-            if (match.Length < MinFragmentLength)
-                continue;
+            foreach (Match pem in PemRegex().Matches(source))
+            {
+                if (!TryDecodePem(pem, out var text))
+                    continue;
 
-            var token = source.AsSpan(match.Index, match.Length);
-            if (!TryDecodeToken(token, out var text))
-                continue;
-
-            builder ??= new StringBuilder(source.Length);
-            builder.Append(source, offset, match.Index - offset);
-            builder.Append(text);
-            offset = match.Index + match.Length;
+                AddFragmentReplacements(source, offset, pem.Index - offset, replacements);
+                replacements.Add((pem.Index, pem.Length, text));
+                offset = pem.Index + pem.Length;
+            }
         }
 
-        if (builder == null)
+        AddFragmentReplacements(source, offset, source.Length - offset, replacements);
+        if (replacements.Count == 0)
             return false;
+
+        var builder = new StringBuilder(source.Length);
+        offset = 0;
+        foreach (var (index, replacedLength, text) in replacements)
+        {
+            builder.Append(source, offset, index - offset);
+            builder.Append(text);
+            offset = index + replacedLength;
+        }
 
         builder.Append(source, offset, source.Length - offset);
         decoded = builder.ToString();
         return true;
+    }
+
+    private static void AddFragmentReplacements(string source, int start, int length,
+        List<(int index, int length, string text)> replacements)
+    {
+        if (length < MinFragmentLength)
+            return;
+
+        foreach (var match in CandidateRegex().EnumerateMatches(source.AsSpan(start, length)))
+        {
+            if (match.Length < MinFragmentLength)
+                continue;
+
+            var index = start + match.Index;
+            if (TryDecodeToken(source.AsSpan(index, match.Length), out var text))
+                replacements.Add((index, match.Length, text));
+        }
+    }
+
+    private static bool TryDecodePem(Match pem, out string decoded)
+    {
+        decoded = string.Empty;
+        var label = pem.Groups["label"].Value;
+        var body = PemBodySeparatorRegex().Replace(pem.Groups["body"].Value, string.Empty);
+        if (body.Length == 0 || body.Length % 4 != 0)
+            return false;
+
+        var bytes = new byte[body.Length / 4 * 3];
+        if (!Convert.TryFromBase64String(body, bytes, out var written) || written == 0)
+            return false;
+
+        var data = bytes.AsSpan(0, written);
+        var content = TryGetReadableText(data, out var text) ? text
+            : IsCertificateLabel(label) && TryDescribeCertificate(data, out var description) ? description
+            : FormatHexDump(data);
+
+        decoded = $"{PemBeginMarker}{label}-----\n{content.TrimEnd()}\n-----END {label}-----";
+        return true;
+    }
+
+    private static bool IsCertificateLabel(string label) =>
+        label is "CERTIFICATE" or "TRUSTED CERTIFICATE" or "X509 CERTIFICATE";
+
+    private static bool TryDescribeCertificate(ReadOnlySpan<byte> data, out string description)
+    {
+        description = string.Empty;
+        try
+        {
+            using var certificate = X509CertificateLoader.LoadCertificate(data);
+            var builder = new StringBuilder();
+            builder.Append("Subject: ").Append(certificate.Subject).Append('\n');
+            builder.Append("Issuer: ").Append(certificate.Issuer).Append('\n');
+            builder.Append("Serial number: ").Append(certificate.SerialNumber).Append('\n');
+            builder.Append("Not before: ").Append(FormatDate(certificate.NotBefore)).Append('\n');
+            builder.Append("Not after: ").Append(FormatDate(certificate.NotAfter)).Append('\n');
+            builder.Append("Thumbprint (SHA-1): ").Append(certificate.Thumbprint).Append('\n');
+            builder.Append("Signature algorithm: ")
+                .Append(certificate.SignatureAlgorithm.FriendlyName ?? certificate.SignatureAlgorithm.Value)
+                .Append('\n');
+            builder.Append("Public key: ").Append(DescribePublicKey(certificate.PublicKey)).Append('\n');
+
+            var alternativeNames = certificate.Extensions.OfType<X509SubjectAlternativeNameExtension>()
+                .SelectMany(e => e.EnumerateDnsNames()
+                    .Concat(e.EnumerateIPAddresses().Select(a => a.ToString())))
+                .ToList();
+            if (alternativeNames.Count != 0)
+                builder.Append("Subject alternative names: ").AppendJoin(", ", alternativeNames).Append('\n');
+
+            description = builder.ToString();
+            return true;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
+
+    private static string FormatDate(DateTime date) =>
+        date.ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss 'UTC'", CultureInfo.InvariantCulture);
+
+    private static string DescribePublicKey(PublicKey publicKey)
+    {
+        var algorithm = publicKey.Oid.FriendlyName ?? publicKey.Oid.Value ?? "unknown";
+        int? keySize = null;
+        try
+        {
+            using var rsa = publicKey.GetRSAPublicKey();
+            using var ecdsa = rsa == null ? publicKey.GetECDsaPublicKey() : null;
+            keySize = rsa?.KeySize ?? ecdsa?.KeySize;
+        }
+        catch (CryptographicException)
+        {
+        }
+
+        return keySize is { } size ? $"{algorithm} {size} bits" : algorithm;
+    }
+
+    public static string FormatHexDump(ReadOnlySpan<byte> data)
+    {
+        const int bytesPerLine = 16;
+        var shown = Math.Min(data.Length, MaxHexDumpBytes);
+        var builder = new StringBuilder();
+        for (var line = 0; line < shown; line += bytesPerLine)
+        {
+            var count = Math.Min(bytesPerLine, shown - line);
+            builder.Append(line.ToString("x8", CultureInfo.InvariantCulture)).Append("  ");
+            for (var i = 0; i < bytesPerLine; i++)
+            {
+                if (i == 8)
+                    builder.Append(' ');
+                builder.Append(i < count
+                    ? data[line + i].ToString("x2", CultureInfo.InvariantCulture) + " "
+                    : "   ");
+            }
+
+            builder.Append(" |");
+            for (var i = 0; i < count; i++)
+            {
+                var b = data[line + i];
+                builder.Append(b is >= 0x20 and < 0x7F ? (char)b : '.');
+            }
+
+            builder.Append("|\n");
+        }
+
+        if (data.Length > shown)
+            builder.Append("... ").Append(data.Length - shown).Append(" more bytes\n");
+
+        return builder.ToString();
     }
 
     private static (int start, int length) GetWholeTextRange(string source)
@@ -110,12 +262,7 @@ public static partial class Base64Detector
             if (!Convert.TryFromBase64Chars(chars.AsSpan(0, paddedLength), bytes, out var written) || written == 0)
                 return false;
 
-            var data = bytes.AsSpan(0, written);
-            if (!Utf8.IsValid(data))
-                return false;
-
-            var text = Encoding.UTF8.GetString(data);
-            if (!IsReadableText(text))
+            if (!TryGetReadableText(bytes.AsSpan(0, written), out var text))
                 return false;
 
             decoded = text;
@@ -126,6 +273,20 @@ public static partial class Base64Detector
             ArrayPool<char>.Shared.Return(chars);
             ArrayPool<byte>.Shared.Return(bytes);
         }
+    }
+
+    private static bool TryGetReadableText(ReadOnlySpan<byte> data, out string text)
+    {
+        text = string.Empty;
+        if (!Utf8.IsValid(data))
+            return false;
+
+        var decoded = Encoding.UTF8.GetString(data);
+        if (!IsReadableText(decoded))
+            return false;
+
+        text = decoded;
+        return true;
     }
 
     private static bool IsReadableText(string text)

@@ -1,4 +1,7 @@
 using System;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -128,5 +131,128 @@ public class Base64DetectorTests
         var source = Encode(new string('a', Base64Detector.MaxSourceLength));
 
         Assert.IsFalse(Base64Detector.TryDecode(source, out _));
+    }
+
+    private static string WrapPem(string label, byte[] data, string newLine = "\n")
+    {
+        var body = Convert.ToBase64String(data);
+        var lines = Enumerable.Range(0, (body.Length + 63) / 64)
+            .Select(i => body.Substring(i * 64, Math.Min(64, body.Length - i * 64)));
+        return $"-----BEGIN {label}-----{newLine}{string.Join(newLine, lines)}{newLine}-----END {label}-----";
+    }
+
+    private static X509Certificate2 CreateCertificate()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=loggrokx.test, O=LogGrokX", rsa,
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        var san = new SubjectAlternativeNameBuilder();
+        san.AddDnsName("loggrokx.test");
+        san.AddDnsName("www.loggrokx.test");
+        request.CertificateExtensions.Add(san.Build());
+        return request.CreateSelfSigned(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero),
+            new DateTimeOffset(2027, 1, 2, 3, 4, 5, TimeSpan.Zero));
+    }
+
+    [TestMethod]
+    public void MultiLinePemCertificateIsDescribed()
+    {
+        using var certificate = CreateCertificate();
+        var pem = certificate.ExportCertificatePem();
+        var source = $"TLS handshake, server certificate:\n{pem}\nverified";
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+
+        StringAssert.StartsWith(decoded, "TLS handshake, server certificate:\n-----BEGIN CERTIFICATE-----\n");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE-----\nverified");
+        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.Contains(decoded, "Not before: 2026-01-02 03:04:05 UTC");
+        StringAssert.Contains(decoded, "Not after: 2027-01-02 03:04:05 UTC");
+        StringAssert.Contains(decoded, $"Thumbprint (SHA-1): {certificate.Thumbprint}");
+        StringAssert.Contains(decoded, "Public key: RSA 2048 bits");
+        StringAssert.Contains(decoded, "Subject alternative names: loggrokx.test, www.loggrokx.test");
+        Assert.IsFalse(decoded.Contains(pem.Split('\n')[1]), decoded);
+    }
+
+    [TestMethod]
+    public void PemWithCrLfLineBreaksIsDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = WrapPem("CERTIFICATE", certificate.RawData, "\r\n");
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.Contains(decoded, $"Thumbprint (SHA-1): {certificate.Thumbprint}");
+    }
+
+    [TestMethod]
+    public void PemWithEscapedLineBreaksInJsonIsDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var escaped = WrapPem("CERTIFICATE", certificate.RawData, "\\n");
+        var source = $"{{\"certificate\":\"{escaped}\"}}";
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.StartsWith(decoded, "{\"certificate\":\"-----BEGIN CERTIFICATE-----\n");
+        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE-----\"}");
+    }
+
+    [TestMethod]
+    public void PemWithTextPayloadShowsText()
+    {
+        var text = string.Join("\n", Enumerable.Range(1, 5).Select(i => $"Readable line number {i} of the message"));
+        var source = WrapPem("MESSAGE", Encoding.UTF8.GetBytes(text));
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        Assert.AreEqual($"-----BEGIN MESSAGE-----\n{text}\n-----END MESSAGE-----", decoded);
+    }
+
+    [TestMethod]
+    public void BinaryPemIsShownAsHexDump()
+    {
+        var data = Enumerable.Range(0, 40).Select(i => (byte)i).ToArray();
+        var source = WrapPem("PRIVATE KEY", data);
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        var expected = "-----BEGIN PRIVATE KEY-----\n" +
+                       "00000000  00 01 02 03 04 05 06 07  08 09 0a 0b 0c 0d 0e 0f  |................|\n" +
+                       "00000010  10 11 12 13 14 15 16 17  18 19 1a 1b 1c 1d 1e 1f  |................|\n" +
+                       "00000020  20 21 22 23 24 25 26 27                           | !\"#$%&'|\n" +
+                       "-----END PRIVATE KEY-----";
+        Assert.AreEqual(expected, decoded);
+    }
+
+    [TestMethod]
+    public void HexDumpIsLimited()
+    {
+        var dump = Base64Detector.FormatHexDump(new byte[Base64Detector.MaxHexDumpBytes + 100]);
+
+        StringAssert.EndsWith(dump, "... 100 more bytes\n");
+        Assert.AreEqual(Base64Detector.MaxHexDumpBytes / 16 + 1, dump.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length);
+    }
+
+    [TestMethod]
+    public void PemAndFragmentInSameTextAreDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"token={Encode("first fragment")}\n{certificate.ExportCertificatePem()}";
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.StartsWith(decoded, "token=first fragment\n-----BEGIN CERTIFICATE-----\n");
+        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
+    }
+
+    [TestMethod]
+    public void PemWithMismatchedLabelsIsNotDecoded()
+    {
+        var source = WrapPem("CERTIFICATE", new byte[] { 1, 2, 3 }).Replace("END CERTIFICATE", "END PRIVATE KEY");
+
+        Assert.IsFalse(Base64Detector.TryDecode(source, out _));
+    }
+
+    [TestMethod]
+    public void BrokenPemBodyIsNotDecoded()
+    {
+        Assert.IsFalse(Base64Detector.TryDecode("-----BEGIN CERTIFICATE-----\nMIIB*AAA\n-----END CERTIFICATE-----", out _));
     }
 }

@@ -176,7 +176,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
 - **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
   cell value (whole value, optionally quoted, from 8 chars; fragments from 16
   chars; standard or URL-safe alphabet) and accepts it only if it decodes to
-  valid UTF-8 without control characters. `LinePartViewModel.IsBase64` is
+  valid UTF-8 without control characters. Multi-line PEM blocks are matched
+  first (`PemRegex`, real or escaped `\n` line breaks, same label in BEGIN/END);
+  the markers are kept and the body becomes text, an X.509 summary
+  (`X509CertificateLoader`, certificate labels only) or a hex dump capped at
+  `MaxHexDumpBytes`. Fragment search runs only outside PEM blocks.
+  `LinePartViewModel.IsBase64` is
   computed lazily on first binding; `IsBase64Decoded` swaps `TextModel` to a
   separately cached model with its own `UniqueId` (so folding state of the
   decoded JSON does not clash with the original). The `B64` toggle lives in

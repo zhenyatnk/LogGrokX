@@ -349,6 +349,33 @@ available as **Decode Base64** in the cell context menu. Decoded JSON is
 formatted and can be folded like any other JSON block, and **Copy** copies the
 decoded text while it is shown.
 
+Multi-line **PEM** blocks (`-----BEGIN <LABEL>-----` … `-----END <LABEL>-----`)
+are recognized as a whole: line breaks inside the body may be real (`LF`/`CRLF`)
+or escaped (`\n`, `\r\n` inside a JSON string). The markers are kept and the
+body is replaced with readable content:
+
+- a certificate (`CERTIFICATE`, `TRUSTED CERTIFICATE`, `X509 CERTIFICATE`) is
+  shown as a summary — subject, issuer, serial number, validity (UTC),
+  SHA-1 thumbprint, signature algorithm, public key and subject alternative
+  names;
+- a text payload is shown as text;
+- any other binary payload (keys, CSRs, …) is shown as a hex dump (the first
+  4 KB).
+
+```text
+-----BEGIN CERTIFICATE-----
+Subject: CN=loggrokx.test, O=LogGrokX
+Issuer: CN=loggrokx.test, O=LogGrokX
+Serial number: 5A1C…
+Not before: 2026-01-02 03:04:05 UTC
+Not after: 2027-01-02 03:04:05 UTC
+Thumbprint (SHA-1): 8F3B…
+Signature algorithm: sha256RSA
+Public key: RSA 2048 bits
+Subject alternative names: loggrokx.test, www.loggrokx.test
+-----END CERTIFICATE-----
+```
+
 Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or
 without padding. A fragment is decoded only if the result is valid UTF-8
 without control characters, so identifiers, GUIDs, hex strings and binary data
