@@ -78,6 +78,18 @@
                 <ui:SymbolIcon Symbol="Search24" />
             </MenuItem.Icon>
         </MenuItem>
+        <MenuItem Header="Decode PEM"
+                  IsCheckable="True"
+                  IsChecked="{Binding PlacementTarget.DataContext.IsPemDecoded, Mode=TwoWay,
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                  Visibility="{Binding PlacementTarget.DataContext.IsPem,
+                            Converter={StaticResource BooleanToVisibilityConverter},
+                            FallbackValue={x:Static Visibility.Collapsed},
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Certificate24" />
+            </MenuItem.Icon>
+        </MenuItem>
         <MenuItem Header="Decode Base64"
                   IsCheckable="True"
                   IsChecked="{Binding PlacementTarget.DataContext.IsBase64Decoded, Mode=TwoWay,

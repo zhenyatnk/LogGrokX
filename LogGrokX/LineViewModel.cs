@@ -116,7 +116,7 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             TextViewSharedFoldingState? foldingState)
         {
             var textModel = componentIndex >= 0 && componentIndex < _parts.Length &&
-                            _parts[componentIndex] is { IsBase64Decoded: true } decodedPart
+                            _parts[componentIndex] is { IsDecoded: true } decodedPart
                 ? decodedPart.TextModel
                 : new TextModel(HashCode.Combine(Index, componentIndex), componentText);
 

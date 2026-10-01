@@ -281,4 +281,41 @@ public class Base64DetectorTests
         Assert.IsTrue(Base64Detector.TryDecode($"value={token}_v2", out var decoded));
         Assert.AreEqual("value={\"user\":\"admin\",\"id\":42}_v2", decoded);
     }
+
+    [TestMethod]
+    public void DetectReportsPemAndBase64Separately()
+    {
+        using var certificate = CreateCertificate();
+        var pem = certificate.ExportCertificatePem();
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(pem));
+        Assert.AreEqual(Base64Content.Base64, Base64Detector.Detect(KsnJwt));
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect($"{KsnJwt}\n{pem}"));
+        Assert.AreEqual(Base64Content.None, Base64Detector.Detect("plain text"));
+    }
+
+    [TestMethod]
+    public void OnlySelectedContentIsDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var pem = certificate.ExportCertificatePem();
+        var source = $"{KsnJwt}\n{pem}";
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var pemOnly, out var found));
+        Assert.AreEqual(Base64Content.All, found);
+        StringAssert.StartsWith(pemOnly, KsnJwt + "\n-----BEGIN CERTIFICATE-----\nSubject: ");
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Base64, out var base64Only, out _));
+        Assert.AreEqual($"{KsnJwtDecoded}\n{pem}", base64Only);
+    }
+
+    [TestMethod]
+    public void PemBodyLinesAreNotTreatedAsBase64Fragments()
+    {
+        var text = string.Join("\n", Enumerable.Range(1, 5).Select(i => $"Readable line number {i} of the message"));
+        var source = WrapPem("MESSAGE", Encoding.UTF8.GetBytes(text));
+
+        Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source));
+        Assert.IsFalse(Base64Detector.TryDecode(source, Base64Content.Base64, out _, out _));
+    }
 }

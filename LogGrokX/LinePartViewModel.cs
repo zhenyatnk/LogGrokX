@@ -8,10 +8,9 @@ public class LinePartViewModel : ViewModelBase
     private readonly int _uniqueId;
     private readonly bool _detectBase64;
     private readonly TextModel _originalTextModel;
-    private TextModel? _decodedTextModel;
-    private string? _decodedText;
-    private bool? _isBase64;
-    private bool _isBase64Decoded;
+    private readonly TextModel?[] _decodedTextModels = new TextModel?[(int)Base64Content.All + 1];
+    private Base64Content? _content;
+    private Base64Content _decoded;
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true)
     {
@@ -21,44 +20,52 @@ public class LinePartViewModel : ViewModelBase
         OriginalText = source;
     }
 
-    public TextModel TextModel => _isBase64Decoded && _decodedTextModel is { } decoded
-        ? decoded
-        : _originalTextModel;
+    public TextModel TextModel => _decoded == Base64Content.None
+        ? _originalTextModel
+        : _decodedTextModels[(int)_decoded] ?? _originalTextModel;
 
     public string OriginalText { get; }
 
-    public bool IsBase64
-    {
-        get
-        {
-            if (_isBase64 is { } known)
-                return known;
+    public bool IsBase64 => Content.HasFlag(Base64Content.Base64);
 
-            string? decoded = null;
-            var isBase64 = _detectBase64 && Base64Detector.TryDecode(OriginalText, out decoded);
-            _decodedText = isBase64 ? decoded : null;
-            _isBase64 = isBase64;
-            return isBase64;
-        }
-    }
+    public bool IsPem => Content.HasFlag(Base64Content.Pem);
+
+    public bool IsDecoded => _decoded != Base64Content.None;
 
     public bool IsBase64Decoded
     {
-        get => _isBase64Decoded;
-        set
+        get => _decoded.HasFlag(Base64Content.Base64);
+        set => SetDecoded(Base64Content.Base64, value);
+    }
+
+    public bool IsPemDecoded
+    {
+        get => _decoded.HasFlag(Base64Content.Pem);
+        set => SetDecoded(Base64Content.Pem, value);
+    }
+
+    private Base64Content Content =>
+        _content ??= _detectBase64 ? Base64Detector.Detect(OriginalText) : Base64Content.None;
+
+    private void SetDecoded(Base64Content kind, bool value)
+    {
+        if (value && !Content.HasFlag(kind))
+            value = false;
+        if (_decoded.HasFlag(kind) == value)
+            return;
+
+        var decoded = value ? _decoded | kind : _decoded & ~kind;
+        if (decoded != Base64Content.None && _decodedTextModels[(int)decoded] == null)
         {
-            if (value && !IsBase64)
-                value = false;
-            if (_isBase64Decoded == value)
-                return;
-
-            if (value && _decodedText is { } decodedText)
-                _decodedTextModel ??= new TextModel(HashCode.Combine(_uniqueId, nameof(IsBase64Decoded)), decodedText);
-
-            _isBase64Decoded = value;
-            InvokePropertyChanged();
-            InvokePropertyChanged(nameof(TextModel));
+            Base64Detector.TryDecode(OriginalText, decoded, out var text, out _);
+            _decodedTextModels[(int)decoded] = new TextModel(
+                HashCode.Combine(_uniqueId, nameof(Base64Content), (int)decoded), text);
         }
+
+        _decoded = decoded;
+        InvokePropertyChanged(kind == Base64Content.Pem ? nameof(IsPemDecoded) : nameof(IsBase64Decoded));
+        InvokePropertyChanged(nameof(IsDecoded));
+        InvokePropertyChanged(nameof(TextModel));
     }
 
     public override string ToString() => OriginalText;

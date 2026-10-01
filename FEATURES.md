@@ -344,7 +344,8 @@ into an external decoder.
 When a cell value is Base64 — either the whole value (optionally quoted) or a
 fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
 segments of a JWT, also when glued to surrounding text such as
-`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears to the left of the text. It
+`https://host/api/eyJ...` or `X-Token-eyJ...` — a small `B64` toggle appears
+to the left of the text. It
 switches the cell between the original and the decoded text; the same action is
 available as **Decode Base64** in the cell context menu. Decoded JSON is
 formatted and can be folded like any other JSON block, and **Copy** copies the
@@ -352,8 +353,11 @@ decoded text while it is shown.
 
 Multi-line **PEM** blocks (`-----BEGIN <LABEL>-----` … `-----END <LABEL>-----`)
 are recognized as a whole: line breaks inside the body may be real (`LF`/`CRLF`)
-or escaped (`\n`, `\r\n` inside a JSON string). The markers are kept and the
-body is replaced with readable content:
+or escaped (`\n`, `\r\n` inside a JSON string). Such a cell gets a separate
+`PEM` toggle (and a **Decode PEM** context menu item) instead of `B64`; if the
+cell also contains other Base64 fragments, both toggles are shown and work
+independently. Lines of a PEM body are never treated as `B64` fragments. The
+markers are kept and the body is replaced with readable content:
 
 - a certificate (`CERTIFICATE`, `TRUSTED CERTIFICATE`, `X509 CERTIFICATE`) is
   shown as a summary — subject, issuer, serial number, validity (UTC),

@@ -71,5 +71,55 @@ namespace LogGrokX.Tests
             Assert.IsNotNull(part.TextModel.CollapsibleRanges);
             Assert.IsTrue(part.TextModel.Count > 1);
         }
+
+        private const string Pem = "-----BEGIN MESSAGE-----\nUmVhZGFibGUgUEVNIHBheWxvYWQgdGV4dA==\n-----END MESSAGE-----";
+
+        [TestMethod]
+        public void PemIsDetectedSeparatelyFromBase64()
+        {
+            var pem = new LinePartViewModel(1, Pem);
+            var base64 = new LinePartViewModel(2, Encode("Hello, World!"));
+            var both = new LinePartViewModel(3, $"{Encode("Hello, World!")}\n{Pem}");
+
+            Assert.IsTrue(pem.IsPem);
+            Assert.IsFalse(pem.IsBase64);
+            Assert.IsFalse(base64.IsPem);
+            Assert.IsTrue(base64.IsBase64);
+            Assert.IsTrue(both.IsPem);
+            Assert.IsTrue(both.IsBase64);
+        }
+
+        [TestMethod]
+        public void PemAndBase64AreToggledIndependently()
+        {
+            var part = new LinePartViewModel(1, $"{Encode("Hello, World!")}\n{Pem}");
+
+            part.IsPemDecoded = true;
+            Assert.IsTrue(part.IsDecoded);
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "Readable PEM payload text");
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), Encode("Hello, World!"));
+
+            part.IsBase64Decoded = true;
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "Hello, World!");
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "Readable PEM payload text");
+
+            part.IsPemDecoded = false;
+            StringAssert.Contains(part.TextModel.GetDisplayedText(null), "UmVhZGFibGUgUEVNIHBheWxvYWQgdGV4dA==");
+
+            part.IsBase64Decoded = false;
+            Assert.IsFalse(part.IsDecoded);
+            Assert.AreEqual(part.OriginalText, part.TextModel.GetDisplayedText(null).Replace("\r\n", "\n"));
+        }
+
+        [TestMethod]
+        public void PemCannotBeDecodedWithoutPem()
+        {
+            var part = new LinePartViewModel(1, Encode("Hello, World!"));
+
+            part.IsPemDecoded = true;
+
+            Assert.IsFalse(part.IsPemDecoded);
+            Assert.IsFalse(part.IsDecoded);
+        }
     }
 }

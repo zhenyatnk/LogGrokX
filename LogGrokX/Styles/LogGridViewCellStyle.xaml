@@ -35,7 +35,6 @@
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
         <Setter Property="Background" Value="Transparent"/>
         <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}"/>
-        <Setter Property="ToolTip" Value="Decode Base64"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="{x:Type ToggleButton}">
@@ -45,9 +44,8 @@
                             BorderThickness="1"
                             CornerRadius="3"
                             Padding="{TemplateBinding Padding}">
-                        <TextBlock Text="B64"
-                                   FontSize="{TemplateBinding FontSize}"
-                                   Foreground="{TemplateBinding Foreground}"/>
+                        <ContentPresenter TextElement.FontSize="{TemplateBinding FontSize}"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -57,7 +55,7 @@
                             <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                            <Setter Property="ToolTip" Value="Show original Base64"/>
+                            <Setter Property="ToolTip" Value="Show original"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -67,6 +65,14 @@
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
         <DockPanel LastChildFill="True">
             <ToggleButton DockPanel.Dock="Left"
+                          Content="PEM"
+                          ToolTip="Decode PEM"
+                          Style="{StaticResource Base64ToggleButtonStyle}"
+                          IsChecked="{Binding IsPemDecoded, Mode=TwoWay}"
+                          Visibility="{Binding IsPem, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <ToggleButton DockPanel.Dock="Left"
+                          Content="B64"
+                          ToolTip="Decode Base64"
                           Style="{StaticResource Base64ToggleButtonStyle}"
                           IsChecked="{Binding IsBase64Decoded, Mode=TwoWay}"
                           Visibility="{Binding IsBase64, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>

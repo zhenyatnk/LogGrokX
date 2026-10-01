@@ -47,9 +47,9 @@ remaining responsive even on multi-gigabyte files.
 - **Base64 decoding** — cells whose value (or a fragment of it, e.g. a JWT or
   `payload=...`) is Base64 with readable UTF-8 text get a `B64` toggle; it shows
   the decoded text in place (decoded JSON is formatted and foldable). Multi-line
-  PEM blocks are decoded too: certificates as a summary, other binary payloads
-  as a hex dump. Also
-  available as "Decode Base64" in the cell context menu.
+  PEM blocks get a separate `PEM` toggle: certificates are shown as a summary,
+  other binary payloads as a hex dump. Both are also available as
+  "Decode Base64" / "Decode PEM" in the cell context menu.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme

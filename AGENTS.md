@@ -185,12 +185,14 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `..._v2`) is retried as its suffixes/prefixes at those separators; the split
   with the best `GetTextScore` wins (a misaligned split decodes to junk such as
   `)#~` and loses).
-  `LinePartViewModel.IsBase64` is
-  computed lazily on first binding; `IsBase64Decoded` swaps `TextModel` to a
-  separately cached model with its own `UniqueId` (so folding state of the
-  decoded JSON does not clash with the original). The `B64` toggle lives in
-  `NormalTemplate` (`Styles/LogGridViewCellStyle.xaml`) and the
-  "Decode Base64" item in `Styles/LogViewContextMenu.xaml` binds to
+  `Base64Detector.Detect` returns `Base64Content` flags (`Pem`, `Base64`), and
+  `TryDecode(source, Base64Content, ...)` decodes only the selected kinds.
+  `LinePartViewModel.IsPem` / `IsBase64` are computed lazily on first binding;
+  `IsPemDecoded` / `IsBase64Decoded` are independent and swap `TextModel` to a
+  model cached per flag combination with its own `UniqueId` (so folding state of
+  the decoded JSON does not clash with the original). The `PEM` and `B64`
+  toggles live in `NormalTemplate` (`Styles/LogGridViewCellStyle.xaml`) and the
+  "Decode PEM" / "Decode Base64" items in `Styles/LogViewContextMenu.xaml` bind to
   `PlacementTarget.DataContext` (collapsed when it is not a `LinePartViewModel`).
   The index column is created with `detectBase64: false`.
   `LineViewModel.GetDisplayText` uses the decoded model for decoded parts, so

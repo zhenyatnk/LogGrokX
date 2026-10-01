@@ -31,17 +31,34 @@ public static partial class Base64Detector
     [GeneratedRegex(@"\s|\\[rn]", RegexOptions.CultureInvariant)]
     private static partial Regex PemBodySeparatorRegex();
 
-    public static bool ContainsBase64(string? source) => TryDecode(source, out _);
+    public static bool ContainsBase64(string? source) => Detect(source) != Base64Content.None;
 
-    public static bool TryDecode(string? source, out string decoded)
+    public static Base64Content Detect(string? source)
+    {
+        TryDecode(source, Base64Content.None, out _, out var found);
+        return found;
+    }
+
+    public static bool TryDecode(string? source, out string decoded) =>
+        TryDecode(source, Base64Content.All, out decoded, out _);
+
+    public static bool TryDecode(string? source, Base64Content decode, out string decoded, out Base64Content found)
     {
         decoded = string.Empty;
+        found = Base64Content.None;
         if (string.IsNullOrEmpty(source) || source.Length > MaxSourceLength)
             return false;
+
+        var decodePem = decode.HasFlag(Base64Content.Pem);
+        var decodeBase64 = decode.HasFlag(Base64Content.Base64);
 
         var (start, length) = GetWholeTextRange(source);
         if (length >= MinWholeTextLength && TryDecodeToken(source.AsSpan(start, length), out var whole))
         {
+            found = Base64Content.Base64;
+            if (!decodeBase64)
+                return false;
+
             decoded = string.Concat(source.AsSpan(0, start), whole, source.AsSpan(start + length));
             return true;
         }
@@ -55,13 +72,17 @@ public static partial class Base64Detector
                 if (!TryDecodePem(pem, out var text))
                     continue;
 
-                AddFragmentReplacements(source, offset, pem.Index - offset, replacements);
-                replacements.Add((pem.Index, pem.Length, text));
+                found |= AddFragmentReplacements(source, offset, pem.Index - offset,
+                    decodeBase64 ? replacements : null);
+                found |= Base64Content.Pem;
+                if (decodePem)
+                    replacements.Add((pem.Index, pem.Length, text));
                 offset = pem.Index + pem.Length;
             }
         }
 
-        AddFragmentReplacements(source, offset, source.Length - offset, replacements);
+        found |= AddFragmentReplacements(source, offset, source.Length - offset,
+            decodeBase64 ? replacements : null);
         if (replacements.Count == 0)
             return false;
 
@@ -79,11 +100,12 @@ public static partial class Base64Detector
         return true;
     }
 
-    private static void AddFragmentReplacements(string source, int start, int length,
-        List<(int index, int length, string text)> replacements)
+    private static Base64Content AddFragmentReplacements(string source, int start, int length,
+        List<(int index, int length, string text)>? replacements)
     {
+        var found = Base64Content.None;
         if (length < MinFragmentLength)
-            return;
+            return found;
 
         foreach (var match in CandidateRegex().EnumerateMatches(source.AsSpan(start, length)))
         {
@@ -92,10 +114,21 @@ public static partial class Base64Detector
 
             var index = start + match.Index;
             if (TryDecodeToken(source.AsSpan(index, match.Length), out var text))
-                replacements.Add((index, match.Length, text));
+            {
+                found = Base64Content.Base64;
+                replacements?.Add((index, match.Length, text));
+            }
             else if (TryDecodeGluedToken(source.AsSpan(index, match.Length), out var gluedOffset, out var gluedLength, out text))
-                replacements.Add((index + gluedOffset, gluedLength, text));
+            {
+                found = Base64Content.Base64;
+                replacements?.Add((index + gluedOffset, gluedLength, text));
+            }
+
+            if (found != Base64Content.None && replacements == null)
+                return found;
         }
+
+        return found;
     }
 
     private static bool TryDecodeGluedToken(ReadOnlySpan<char> candidate, out int offset, out int length,
