@@ -4,16 +4,18 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="{loc:Loc WhatsNew}"
-                 Width="480"
+                 Width="520"
                  SizeToContent="Height"
                  Icon="pack://application:,,,/app.ico"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="None"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner"
+                 Background="{DynamicResource ApplicationBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}"
                  ResizeMode="NoResize"
                  ShowInTaskbar="False">
-    <Grid>
+    <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -28,23 +30,20 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <StackPanel Grid.Row="1" Margin="16,4,16,16">
+        <StackPanel Grid.Row="1" Margin="24,8,24,24">
             <StackPanel Orientation="Horizontal">
                 <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
                 <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
+                    <TextBlock FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"
                                Text="{Binding UpdatedTitle}" />
                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                Text="{loc:Loc WhatsNewHint}" />
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc WhatsNew}" />
+            <TextBlock Margin="0,24,0,8" FontWeight="SemiBold" Text="{loc:Loc WhatsNew}" />
             <Border MaxHeight="280"
-                    Padding="8"
-                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6">
+                    Style="{StaticResource FluentCardStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <TextBlock Text="{Binding ReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" />
                 </ScrollViewer>
@@ -54,7 +53,8 @@
                                 Command="{Binding OpenReleasePageCommand}"
                                 Content="{loc:Loc OpenReleasePage}" />
 
-            <ui:Button Margin="0,16,0,0"
+            <ui:Button Margin="0,24,0,0"
+                       MinWidth="88"
                        HorizontalAlignment="Right"
                        Appearance="Primary"
                        Command="{Binding CloseCommand}"

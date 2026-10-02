@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Un formato de registro tiene una máscara XOR inválida.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Explore sus registros</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Abra un archivo de registro o arrástrelo a esta ventana para buscar, filtrar y comparar eventos.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Abrir registro</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O para abrir · Ctrl+F para buscar</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Línea de tiempo</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Mostrar línea de tiempo</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Línea de tiempo arriba. Pulse para moverla abajo.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Línea de tiempo abajo. Pulse para ocultarla.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Línea de tiempo oculta. Pulse para mostrarla arriba.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Buscar en registros (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Nueva búsqueda</value>
+  </data>
 </root>

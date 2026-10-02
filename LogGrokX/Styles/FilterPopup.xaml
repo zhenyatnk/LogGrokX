@@ -107,6 +107,13 @@
                                            BasedOn="{StaticResource {x:Type ListBoxItem}}">
                                         <Setter Property="Padding" Value="6,1" />
                                         <Setter Property="Margin" Value="0" />
+                                        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                        <Style.Triggers>
+                                            <Trigger Property="IsSelected" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                                <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                            </Trigger>
+                                        </Style.Triggers>
                                     </Style>
                                 </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
@@ -124,13 +131,24 @@
                                                                   MinHeight="20"
                                                                   Padding="0"
                                                                   FontSize="12"
+                                                                  Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=ListBoxItem}}"
                                                                   IsChecked="{Binding IsActive}" />
                                                         <TextBlock Grid.Column="1"
                                                                    Margin="8,0,2,0"
                                                                    VerticalAlignment="Center"
                                                                    FontStyle="Italic"
-                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                                   Text="{Binding Percent}" />
+                                                                   Text="{Binding Percent}">
+                                                            <TextBlock.Style>
+                                                                <Style TargetType="TextBlock">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=ListBoxItem}}" Value="True">
+                                                                            <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </TextBlock.Style>
+                                                        </TextBlock>
                                                     </Grid>
                                                 </DataTemplate><!--
                                                             <DataTemplate DataType="{x:Type local:ComponentViewModel}">

@@ -353,7 +353,7 @@ namespace LogGrokX.Settings
             _applicationSettings.DebugSettings.EnableCrashDumps = Debug.EnableCrashDumps;
             _applicationSettings.DebugSettings.MaxDumpsCount = maxDumpsCount;
 
-            _timelinePlacementService.SetAtTop(View.TimelineAtTop);
+            _timelinePlacementService.SetPlacement(View.TimelineAtTop, View.TimelineVisible);
             _threadGroupingService.SetEnabled(View.GroupByThread);
             _threadGroupingService.SetShowSeparators(View.ShowThreadGroupSeparators);
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
@@ -372,6 +372,7 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "Language", View.Language);
             file.SetScalar("ViewSettings", "BigLineSize", bigLineSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "TimelineAtTop", View.TimelineAtTop ? "true" : "false");
+            file.SetScalar("ViewSettings", "TimelineVisible", View.TimelineVisible ? "true" : "false");
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
             file.SetScalar("ViewSettings", "ShowThreadGroupSeparators", View.ShowThreadGroupSeparators ? "true" : "false");

@@ -4,16 +4,18 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="{loc:Loc Support}"
-                 Width="420"
+                 Width="480"
                  SizeToContent="Height"
                  Icon="pack://application:,,,/app.ico"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="None"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner"
+                 Background="{DynamicResource ApplicationBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}"
                  ResizeMode="NoResize"
                  ShowInTaskbar="False">
-    <Grid>
+    <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -29,118 +31,132 @@
         </ui:TitleBar>
 
         <ScrollViewer Grid.Row="1"
-                      Padding="16,4,16,16"
+                      Padding="24,8,24,24"
                       VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
-                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="LogGrokX" />
-                        <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                            <Run Text="{loc:Loc Version}" />
-                            <Run Text="{Binding Version, Mode=OneWay}" />
-                        </TextBlock>
-                    </StackPanel>
-                </StackPanel>
-
-                <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc Updates}" />
-                <ui:Button HorizontalAlignment="Stretch"
-                           HorizontalContentAlignment="Left"
-                           IsEnabled="{Binding CanCheckForUpdates}"
-                           Command="{Binding CheckForUpdatesCommand}">
+            <Border Style="{StaticResource FluentCardStyle}">
+                <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" />
-                        <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc CheckForUpdates}" />
+                        <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
+                        <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                            <TextBlock FontSize="24" FontWeight="SemiBold" Text="LogGrokX" />
+                            <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                <Run Text="{loc:Loc Version}" />
+                                <Run Text="{Binding Version, Mode=OneWay}" />
+                            </TextBlock>
+                        </StackPanel>
                     </StackPanel>
-                </ui:Button>
-                <TextBlock Margin="0,4,0,0"
-                           TextWrapping="Wrap"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Text="{Binding UpdateStatus}" />
 
-                <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc Links}" />
-                <ui:Button HorizontalAlignment="Stretch"
-                           HorizontalContentAlignment="Left"
-                           Command="{Binding OpenReleasesCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
-                        <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc DownloadLatestRelease}" />
-                    </StackPanel>
-                </ui:Button>
-                <ui:Button Margin="0,6,0,0"
-                           HorizontalAlignment="Stretch"
-                           HorizontalContentAlignment="Left"
-                           Command="{Binding OpenIssuesCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="Bug24" FontSize="16" />
-                        <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc ReportIssue}" />
-                    </StackPanel>
-                </ui:Button>
-                <ui:Button Margin="0,6,0,0"
-                           HorizontalAlignment="Stretch"
-                           HorizontalContentAlignment="Left"
-                           Command="{Binding OpenRepositoryCommand}">
-                    <StackPanel Orientation="Horizontal">
-                        <ui:SymbolIcon Symbol="Code24" FontSize="16" />
-                        <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc SourceCode}" />
-                    </StackPanel>
-                </ui:Button>
-
-                <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc Diagnostics}" />
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="96" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc Version}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Version, Mode=OneWay}" />
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc Commit}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Commit, Mode=OneWay}" />
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc Branch}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Branch, Mode=OneWay}" />
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc Runtime}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RuntimeVersion, Mode=OneWay}" />
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc Os}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding OsVersion, Mode=OneWay}" />
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc Architecture}"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Architecture, Mode=OneWay}" />
-                </Grid>
-
-                <StackPanel Margin="0,12,0,0" Orientation="Horizontal">
-                    <ui:Button Command="{Binding OpenLogsFolderCommand}">
+                    <TextBlock Margin="0,24,0,8" FontWeight="SemiBold" Text="{loc:Loc Updates}" />
+                    <ui:Button HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               IsEnabled="{Binding CanCheckForUpdates}"
+                               Command="{Binding CheckForUpdatesCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
-                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc OpenLogsFolder}" />
+                            <ui:SymbolIcon Symbol="ArrowSync24" FontSize="16" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc CheckForUpdates}" />
                         </StackPanel>
                     </ui:Button>
-                    <ui:Button Margin="8,0,0,0" Command="{Binding CopyDiagnosticsCommand}">
+                    <TextBlock Margin="0,4,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding UpdateStatus}" />
+
+                    <TextBlock Margin="0,20,0,8" FontWeight="SemiBold" Text="{loc:Loc Links}" />
+                    <ui:Button HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Command="{Binding OpenReleasesCommand}">
                         <StackPanel Orientation="Horizontal">
-                            <ui:SymbolIcon Symbol="Copy24" FontSize="16" />
-                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc CopyDiagnostics}" />
+                            <ui:SymbolIcon Symbol="ArrowDownload24" FontSize="16" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc DownloadLatestRelease}" />
                         </StackPanel>
                     </ui:Button>
-                </StackPanel>
+                    <ui:Button Margin="0,6,0,0"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Command="{Binding OpenIssuesCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Bug24" FontSize="16" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc ReportIssue}" />
+                        </StackPanel>
+                    </ui:Button>
+                    <ui:Button Margin="0,6,0,0"
+                               HorizontalAlignment="Stretch"
+                               HorizontalContentAlignment="Left"
+                               Command="{Binding OpenRepositoryCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Code24" FontSize="16" />
+                            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Text="{loc:Loc SourceCode}" />
+                        </StackPanel>
+                    </ui:Button>
 
-                <ui:Button Margin="0,16,0,0"
-                           HorizontalAlignment="Right"
-                           Appearance="Primary"
-                           Click="OnCloseClick"
-                           Content="{loc:Loc Close}" />
-            </StackPanel>
+                    <TextBlock Margin="0,20,0,8" FontWeight="SemiBold" Text="{loc:Loc Diagnostics}" />
+                    <Grid>
+                        <Grid.Resources>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                                <Style.Triggers>
+                                    <Trigger Property="Grid.Column" Value="0">
+                                        <Setter Property="MaxWidth" Value="160" />
+                                        <Setter Property="Margin" Value="0,0,12,0" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Grid.Resources>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc Version}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Version, Mode=OneWay}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc Commit}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Commit, Mode=OneWay}" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc Branch}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Branch, Mode=OneWay}" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc Runtime}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding RuntimeVersion, Mode=OneWay}" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc Os}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding OsVersion, Mode=OneWay}" />
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc Architecture}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding Architecture, Mode=OneWay}" />
+                    </Grid>
+
+                    <WrapPanel Margin="0,12,0,0" Orientation="Horizontal">
+                        <ui:Button Margin="0,0,8,6" Command="{Binding OpenLogsFolderCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc OpenLogsFolder}" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="0,0,0,6" Command="{Binding CopyDiagnosticsCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Copy24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc CopyDiagnostics}" />
+                            </StackPanel>
+                        </ui:Button>
+                    </WrapPanel>
+
+                    <ui:Button Margin="0,16,0,0"
+                               MinWidth="88"
+                               HorizontalAlignment="Right"
+                               Appearance="Primary"
+                               Click="OnCloseClick"
+                               Content="{loc:Loc Close}" />
+                </StackPanel>
+            </Border>
         </ScrollViewer>
     </Grid>
 </ui:FluentWindow>

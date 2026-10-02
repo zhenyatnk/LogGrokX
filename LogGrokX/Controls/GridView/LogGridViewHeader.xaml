@@ -18,6 +18,7 @@
     </UserControl.Resources>
     <DockPanel>
         <ToggleButton x:Name="CategoriesSearchButton"
+                      ToolTip="Filter column"
                       Margin="2"
                       Background="Transparent"
                       Visibility="{Binding IsFilteredField, 

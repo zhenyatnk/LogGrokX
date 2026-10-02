@@ -107,6 +107,10 @@ namespace LogGrokX
             SaveViewSettingValue("TimelineAtTop", isAtTop ? "true" : "false");
         }
 
+        public void SetTimelineVisible(bool isVisible) =>
+            SetViewSetting(ViewSettings.TimelineVisible, isVisible,
+                value => ViewSettings.TimelineVisible = value, nameof(ViewSettings.TimelineVisible));
+
         public void SetLogFontSize(double fontSize)
         {
             if (Math.Abs(ViewSettings.LogFontSize - fontSize) < 0.001)

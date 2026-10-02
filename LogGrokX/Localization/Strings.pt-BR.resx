@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Um formato de log tem uma máscara XOR inválida.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Explore seus logs</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Abra um arquivo de log ou arraste-o para esta janela para pesquisar, filtrar e comparar eventos.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Abrir arquivo de log</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O para abrir · Ctrl+F para pesquisar</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Linha do tempo</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Mostrar linha do tempo</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Linha do tempo acima. Clique para movê-la para baixo.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Linha do tempo abaixo. Clique para ocultá-la.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Linha do tempo oculta. Clique para exibi-la acima.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Pesquisar nos logs (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Nova pesquisa</value>
+  </data>
 </root>

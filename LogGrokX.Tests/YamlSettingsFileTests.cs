@@ -28,6 +28,20 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        [DataRow(true)]
+        [DataRow(false)]
+        public void TimelineWithoutVisibilitySettingKeepsExistingPosition(bool atTop)
+        {
+            WriteFile($"Settings:\n  ViewSettings:\n    TimelineAtTop: {atTop.ToString().ToLowerInvariant()}\n");
+            var settings = new ViewSettings();
+            new ConfigurationBuilder().AddYamlFile(_tempFile, false, false).Build()
+                .GetSection("Settings:ViewSettings").Bind(settings);
+
+            Assert.IsTrue(settings.TimelineVisible);
+            Assert.AreEqual(atTop, new LogGrokX.Settings.ViewSettingsViewModel(settings).TimelineAtTop);
+        }
+
+        [TestMethod]
         public void SetScalarReplacesValueAndKeepsComments()
         {
             WriteFile(

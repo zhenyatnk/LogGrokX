@@ -112,6 +112,7 @@ Settings:
     BigLineSize: 4096
     # Timeline position: true - at the top of the log view, false - above the search bar
     TimelineAtTop: false
+    TimelineVisible: true
     # Log text font size (Ctrl+= / Ctrl+- / Ctrl+0 or Ctrl+mouse wheel)
     LogFontSize: 12
     # Group consecutive log lines with the same Thread field

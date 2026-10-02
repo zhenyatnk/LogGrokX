@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>A log format has an invalid XOR mask.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Explore your logs</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Open a log file or drag it into this window to search, filter and compare events.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Open log file</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O to open a file · Ctrl+F to search</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Timeline</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Show timeline</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Timeline: top. Click to move to the bottom.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Timeline: bottom. Click to hide.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Timeline: off. Click to show at the top.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Search logs (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>New search</value>
+  </data>
 </root>

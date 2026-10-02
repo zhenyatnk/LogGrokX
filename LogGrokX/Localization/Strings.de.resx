@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Ein Protokollformat enthält eine ungültige XOR-Maske.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Erkunden Sie Ihre Protokolle</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Öffnen Sie eine Protokolldatei oder ziehen Sie sie in dieses Fenster, um Ereignisse zu suchen, zu filtern und zu vergleichen.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Protokolldatei öffnen</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Strg+O zum Öffnen · Strg+F zum Suchen</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Zeitleiste</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Zeitleiste anzeigen</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Zeitleiste oben. Klicken, um sie nach unten zu verschieben.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Zeitleiste unten. Klicken, um sie auszublenden.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Zeitleiste ausgeblendet. Klicken, um sie oben anzuzeigen.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Protokolle durchsuchen (Strg+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Neue Suche</value>
+  </data>
 </root>

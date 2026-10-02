@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Un format de journal contient un masque XOR invalide.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Explorez vos journaux</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Ouvrez un fichier journal ou faites-le glisser dans cette fenêtre pour rechercher, filtrer et comparer les événements.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Ouvrir un journal</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O pour ouvrir · Ctrl+F pour rechercher</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Chronologie</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Afficher la chronologie</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Chronologie en haut. Cliquez pour la déplacer en bas.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Chronologie en bas. Cliquez pour la masquer.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Chronologie masquée. Cliquez pour l’afficher en haut.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Rechercher dans les journaux (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Nouvelle recherche</value>
+  </data>
 </root>

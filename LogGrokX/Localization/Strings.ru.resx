@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Некорректная маска XOR в формате журнала.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Изучайте ваши логи</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Откройте файл лога или перетащите его в это окно для поиска, фильтрации и сравнения событий.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Открыть файл лога</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O — открыть файл · Ctrl+F — поиск</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Таймлайн</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Показывать таймлайн</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Таймлайн сверху. Нажмите, чтобы переместить вниз.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Таймлайн снизу. Нажмите, чтобы скрыть.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Таймлайн выключен. Нажмите, чтобы показать сверху.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Поиск в логах (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Новый поиск</value>
+  </data>
 </root>

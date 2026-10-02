@@ -11,6 +11,7 @@ namespace LogGrokX.Settings
         private ViewSettings.ViewBigLine _bigLine;
         private string _bigLineSizeText;
         private bool _timelineAtTop;
+        private bool _timelineVisible;
         private double _logFontSize;
         private bool _groupByThread;
         private bool _showThreadGroupSeparators;
@@ -27,6 +28,7 @@ namespace LogGrokX.Settings
             _bigLine = settings.BigLine;
             _bigLineSizeText = settings.BigLineSize.ToString(CultureInfo.InvariantCulture);
             _timelineAtTop = settings.TimelineAtTop;
+            _timelineVisible = settings.TimelineVisible;
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _showThreadGroupSeparators = settings.ShowThreadGroupSeparators;
@@ -92,6 +94,18 @@ namespace LogGrokX.Settings
                 if (_timelineAtTop == value)
                     return;
                 _timelineAtTop = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool TimelineVisible
+        {
+            get => _timelineVisible;
+            set
+            {
+                if (_timelineVisible == value)
+                    return;
+                _timelineVisible = value;
                 InvokePropertyChanged();
             }
         }

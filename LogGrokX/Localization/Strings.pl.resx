@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>Format dziennika zawiera nieprawidłową maskę XOR.</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>Przeglądaj swoje logi</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>Otwórz plik logu lub przeciągnij go do tego okna, aby wyszukiwać, filtrować i porównywać zdarzenia.</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>Otwórz plik logu</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O — otwórz plik · Ctrl+F — szukaj</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>Oś czasu</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>Pokaż oś czasu</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>Oś czasu u góry. Kliknij, aby przenieść ją na dół.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>Oś czasu na dole. Kliknij, aby ją ukryć.</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>Oś czasu ukryta. Kliknij, aby pokazać ją u góry.</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>Szukaj w logach (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>Nowe wyszukiwanie</value>
+  </data>
 </root>

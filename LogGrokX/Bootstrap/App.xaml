@@ -8,25 +8,30 @@
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
+                <ResourceDictionary Source="/LogGrokX;component/Styles/FluentStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <FontFamily x:Key="JetBrainsMono">pack://application:,,,/LogGrokX;component/Fonts/#JetBrains Mono</FontFamily>
 
-            <system:Double x:Key="ControlContentThemeFontSize">12</system:Double>
-            <system:Double x:Key="ContentControlFontSize">12</system:Double>
+            <system:Double x:Key="ControlContentThemeFontSize">13</system:Double>
+            <system:Double x:Key="ContentControlFontSize">13</system:Double>
             <system:Double x:Key="DefaultIconFontSize">14</system:Double>
             <system:Double x:Key="ListViewItemMinHeight">24</system:Double>
             <system:Double x:Key="LogFontSize">12</system:Double>
             <Style TargetType="{x:Type TextBlock}"
                    BasedOn="{StaticResource {x:Type TextBlock}}">
-                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+                <Setter Property="FontSize" Value="13" />
             </Style>
 
-            <Style TargetType="{x:Type GridViewColumnHeader}">
+            <Style x:Key="FluentGridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}">
                 <Setter Property="Background" Value="{DynamicResource ApplicationBackgroundBrush}" />
                 <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
                 <Setter Property="BorderThickness" Value="0,0,0,1" />
-                <Setter Property="Padding" Value="8,4" />
+                <Setter Property="Padding" Value="10,6" />
+                <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
+                <Setter Property="FontSize" Value="12" />
+                <Setter Property="FontWeight" Value="SemiBold" />
                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                 <Setter Property="Template">
                     <Setter.Value>
@@ -65,6 +70,10 @@
                     </Setter.Value>
                 </Setter>
             </Style>
+            <Style TargetType="{x:Type GridViewColumnHeader}"
+                   BasedOn="{StaticResource FluentGridViewColumnHeaderStyle}" />
+            <Style x:Key="UiGridViewColumnHeaderStyle" TargetType="{x:Type GridViewColumnHeader}"
+                   BasedOn="{StaticResource FluentGridViewColumnHeaderStyle}" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

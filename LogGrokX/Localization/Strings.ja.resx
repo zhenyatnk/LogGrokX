@@ -615,4 +615,37 @@
   <data xml:space="preserve" name="XorMaskInvalid">
     <value>ログ形式の XOR マスクが無効です。</value>
   </data>
+  <data xml:space="preserve" name="ExploreLogs">
+    <value>ログを確認しましょう</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeDescription">
+    <value>ログファイルを開くか、このウィンドウにドラッグしてイベントの検索、絞り込み、比較を行えます。</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogLabel">
+    <value>ログファイルを開く</value>
+  </data>
+  <data xml:space="preserve" name="WelcomeShortcuts">
+    <value>Ctrl+O：ファイルを開く · Ctrl+F：検索</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTitle">
+    <value>タイムライン</value>
+  </data>
+  <data xml:space="preserve" name="ShowTimeline">
+    <value>タイムラインを表示</value>
+  </data>
+  <data xml:space="preserve" name="TimelineTopHint">
+    <value>タイムラインは上部に表示されています。クリックすると下部に移動します。</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottomHint">
+    <value>タイムラインは下部に表示されています。クリックすると非表示になります。</value>
+  </data>
+  <data xml:space="preserve" name="TimelineOffHint">
+    <value>タイムラインは非表示です。クリックすると上部に表示します。</value>
+  </data>
+  <data xml:space="preserve" name="SearchLogsPlaceholder">
+    <value>ログを検索 (Ctrl+F)</value>
+  </data>
+  <data xml:space="preserve" name="NewSearch">
+    <value>新しい検索</value>
+  </data>
 </root>

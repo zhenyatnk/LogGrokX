@@ -4,20 +4,22 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="{loc:Loc UpdateAvailable}"
-                 Width="480"
+                 Width="520"
                  SizeToContent="Height"
                  Icon="pack://application:,,,/app.ico"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="None"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterOwner"
+                 Background="{DynamicResource ApplicationBackgroundBrush}"
+                 FontFamily="{StaticResource AppFontFamily}"
                  ResizeMode="NoResize"
                  ShowInTaskbar="False">
     <ui:FluentWindow.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
     </ui:FluentWindow.Resources>
 
-    <Grid>
+    <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -32,11 +34,11 @@
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
-        <StackPanel Grid.Row="1" Margin="16,4,16,16">
+        <StackPanel Grid.Row="1" Margin="24,8,24,24">
             <StackPanel Orientation="Horizontal">
                 <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
                 <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
+                    <TextBlock FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap"
                                Text="{Binding AvailableTitle}" />
                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}">
                         <Run Text="{loc:Loc CurrentVersion}" />
@@ -45,12 +47,9 @@
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc WhatsNew}" />
+            <TextBlock Margin="0,24,0,8" FontWeight="SemiBold" Text="{loc:Loc WhatsNew}" />
             <Border MaxHeight="220"
-                    Padding="8"
-                    BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6">
+                    Style="{StaticResource FluentCardStyle}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <TextBlock Text="{Binding ReleaseNotes, Mode=OneWay}" TextWrapping="Wrap" />
                 </ScrollViewer>
@@ -70,7 +69,7 @@
                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                        Text="{Binding Status}" />
 
-            <StackPanel Margin="0,16,0,0"
+            <StackPanel Margin="0,24,0,0"
                         HorizontalAlignment="Right"
                         Orientation="Horizontal"
                         Visibility="{Binding IsIdle, Converter={StaticResource BoolToVisibility}}">
