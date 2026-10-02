@@ -7,6 +7,7 @@ using System.Windows.Threading;
 using LogGrokX.Colors.Configuration;
 using LogGrokX.Data;
 using LogGrokX.MarkedLines;
+using LogGrokX.MergedView;
 using LogGrokX.Search;
 using LogGrokX.Theming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -16,6 +17,66 @@ namespace LogGrokX.Tests;
 [TestClass]
 public class ProfileRuntimeTests
 {
+    [TestMethod]
+    public void VennProfileGroupsConsecutiveLinesByThreadInBothViews()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"loggrokx-profile-thread-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "venn.log");
+            var settingsPath = Path.Combine(directory, "appsettings.yaml");
+            var defaultSettingsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                "..", "..", "..", "..", "LogGrokX", "appsettings.yaml"));
+            try
+            {
+                File.Copy(defaultSettingsPath, settingsPath);
+                File.WriteAllLines(path,
+                [
+                    "2026-07-22 9:01:02.123 - [INFO] - [123:456:789:M:U] - first",
+                    "2026-07-22 9:01:02.124 - [INFO] - [123:456:789:M:U] - second",
+                    "2026-07-22 9:01:02.125 - [INFO] - [123:456:790:M:U] - third"
+                ]);
+                var settings = ApplicationSettings.LoadFromFile(settingsPath);
+                using var main = CreateMain(settings);
+                main.SelectedProfile = main.Profiles.Single(profile => profile.Name == "Venn");
+                main.AddDocument(path);
+                var document = main.CurrentDocument!;
+                WaitFor(() => !document.LogViewModel.IsLoading);
+                var log = document.LogViewModel;
+                Assert.IsTrue(log.ThreadFieldIndex >= 0);
+                Assert.AreEqual(Array.IndexOf(document.MetaInformation.FieldNames, "Thread"), log.ThreadFieldIndex);
+                var lines = log.Lines.Cast<ItemViewModel>().OfType<LineViewModel>().ToArray();
+                Assert.AreEqual(3, lines.Length);
+                Assert.IsTrue(lines[0].HasSameThread(lines[1], log.ThreadFieldIndex));
+                Assert.IsFalse(lines[1].HasSameThread(lines[2], log.ThreadFieldIndex));
+
+                main.IsGroupByThread = true;
+                Assert.IsTrue(log.GroupByThread);
+                Assert.IsTrue(main.MergedViewModel.GroupByThread);
+                main.IsMergedView = true;
+                WaitFor(() => main.MergedViewModel.TotalLineCount == 3);
+                var merged = main.MergedViewModel;
+                Assert.AreEqual(Array.IndexOf(merged.MetaInformation.FieldNames, "Thread"), merged.ThreadFieldIndex);
+                var mergedLines = merged.Lines.Cast<ItemViewModel>().OfType<MergedLineViewModel>().ToArray();
+                Assert.IsTrue(mergedLines[0].HasSameThread(mergedLines[1], merged.ThreadFieldIndex));
+                Assert.IsFalse(mergedLines[1].HasSameThread(mergedLines[2], merged.ThreadFieldIndex));
+
+                Assert.IsTrue(ApplicationSettings.LoadFromFile(settingsPath).ViewSettings.GroupByThread);
+                main.IsGroupByThread = false;
+                Assert.IsFalse(log.GroupByThread);
+                Assert.IsFalse(merged.GroupByThread);
+                Assert.IsFalse(ApplicationSettings.LoadFromFile(settingsPath).ViewSettings.GroupByThread);
+            }
+            finally
+            {
+                File.Delete(path);
+                File.Delete(settingsPath);
+                Directory.Delete(directory);
+            }
+        });
+    }
+
     [TestMethod]
     public void SwitchingProfileReparsesDocumentsAndPreservesMarksAndMergedSelection()
     {

@@ -189,7 +189,8 @@ public class ProfileSettingsTests
             format.FieldNames.Length);
         Assert.IsTrue(parser.TryParse(line, 0, line.Length, metadata.ParsedLineComponents, out var ticks));
         Assert.AreEqual(new DateTime(2026, 7, 22, 9, 1, 2, 123).Ticks, ticks);
-        Assert.AreEqual("789", Regex.Match(line, format.Regex).Groups["Tid"].Value);
+        Assert.AreEqual("789", Regex.Match(line, format.Regex).Groups["Thread"].Value);
+        CollectionAssert.Contains(format.IndexedFields, "Thread");
         var plain = profiles.Single(profile => profile.Name == "Plain text");
         Assert.AreEqual(0, plain.ColorSettings!.Rules.Length);
         CollectionAssert.AreEqual(new[] { "Text" }, plain.LogFormats!.Single().FieldNames);

@@ -81,12 +81,12 @@ Settings:
           - RegexString: \[TRAC\]
             ForegroundColor: Gray
       LogFormats:
-        - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.\d{3})\s-\s\[(?<Level>[A-Z]+)\]\s-\s\[(?<Context>(?:(?<Sid>\d+):)?(?<Pid>\d+):(?<Tid>\d+)(?::[MU-]:[MU-])?|[^\]]*)\](?:\s-\s\[(?<Process>[^\]]*)\]\s-\s\[irql\s(?<Irql>\d+)\](?:\s-\s\[(?<Source>[^\]]*)\])?|\s-\s\[(?<Process>[^\]]*)\]\s-\s\[(?<Source>[^\]]*)\]|\s-\s\[(?<Source>[^\]]*)\])?\s-\s(?<Message>.*)
+        - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.\d{3})\s-\s\[(?<Level>[A-Z]+)\]\s-\s\[(?<Context>(?:(?<Sid>\d+):)?(?<Pid>\d+):(?<Thread>\d+)(?::[MU-]:[MU-])?|[^\]]*)\](?:\s-\s\[(?<Process>[^\]]*)\]\s-\s\[irql\s(?<Irql>\d+)\](?:\s-\s\[(?<Source>[^\]]*)\])?|\s-\s\[(?<Process>[^\]]*)\]\s-\s\[(?<Source>[^\]]*)\]|\s-\s\[(?<Source>[^\]]*)\])?\s-\s(?<Message>.*)
           IndexedFields:
             - Level
             - Sid
             - Pid
-            - Tid
+            - Thread
             - Process
             - Source
             - Irql
