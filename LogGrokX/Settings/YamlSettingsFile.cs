@@ -25,7 +25,12 @@ namespace LogGrokX.Settings
         public void SetScalar(string section, string key, string yamlValue)
         {
             if (!TryFindKey(section, key, out var index, out _))
+            {
+                var bounds = EnsureSection(section);
+                _lines.Insert(bounds.end, $"{new string(' ', ChildIndent(bounds))}{key}: {yamlValue}");
+                HasChanges = true;
                 return;
+            }
 
             var line = _lines[index];
             var match = Regex.Match(line, $@"^(\s*{Regex.Escape(key)}\s*:\s*)(.*)$");
@@ -42,10 +47,15 @@ namespace LogGrokX.Settings
             HasChanges = true;
         }
 
-        public void ReplaceSequence(string section, string key, Func<int, IReadOnlyList<string>> render)
+        public void ReplaceSequence(string section, string key, Func<int, IReadOnlyList<string>> render, bool force = false)
         {
             if (!TryFindKey(section, key, out var keyIndex, out var sectionEnd))
-                return;
+            {
+                var bounds = EnsureSection(section);
+                _lines.Insert(bounds.end, $"{new string(' ', ChildIndent(bounds))}{key}:");
+                HasChanges = true;
+                TryFindKey(section, key, out keyIndex, out sectionEnd);
+            }
 
             var keyIndent = IndentOf(_lines[keyIndex]);
             var (start, end) = FindSequenceBounds(keyIndex, keyIndent, sectionEnd);
@@ -59,7 +69,8 @@ namespace LogGrokX.Settings
                     .ToList()
                 : new List<string>();
 
-            if (existing.SequenceEqual(desired.Select(NormalizeForComparison)))
+            if (!force && existing.SequenceEqual(desired.Select(NormalizeForComparison)) &&
+                !_lines[keyIndex].Contains("[]", StringComparison.Ordinal))
                 return;
 
             if (start >= 0)
@@ -67,6 +78,8 @@ namespace LogGrokX.Settings
 
             var insertAt = start >= 0 ? start : keyIndex + 1;
             _lines.InsertRange(insertAt, desired);
+            var comment = ExtractInlineComment(_lines[keyIndex]);
+            _lines[keyIndex] = $"{new string(' ', keyIndent)}{key}:{(desired.Count == 0 ? " []" : string.Empty)}{comment}";
             HasChanges = true;
         }
 
@@ -88,6 +101,7 @@ namespace LogGrokX.Settings
                 return false;
 
             sectionEnd = end;
+            var childIndent = ChildIndent((start, end, indent));
             var keyRegex = new Regex($@"^(\s*){Regex.Escape(key)}\s*:");
             for (var i = start + 1; i < end; i++)
             {
@@ -95,7 +109,7 @@ namespace LogGrokX.Settings
                     continue;
 
                 var match = keyRegex.Match(_lines[i]);
-                if (match.Success && match.Groups[1].Value.Length > indent)
+                if (match.Success && match.Groups[1].Value.Length == childIndent)
                 {
                     keyIndex = i;
                     return true;
@@ -103,6 +117,27 @@ namespace LogGrokX.Settings
             }
 
             return false;
+        }
+
+        private int ChildIndent((int start, int end, int indent) bounds) => _lines
+            .Skip(bounds.start + 1).Take(bounds.end - bounds.start - 1)
+            .Where(IsContentLine).Select(IndentOf).Where(indent => indent > bounds.indent)
+            .DefaultIfEmpty(bounds.indent + 2).Min();
+
+        private (int start, int end, int indent) EnsureSection(string section)
+        {
+            var bounds = FindSectionBounds(section);
+            if (bounds.start >= 0)
+                return bounds;
+            if (section == "Settings")
+                _lines.Add("Settings:");
+            else
+            {
+                var parent = EnsureSection("Settings");
+                _lines.Insert(parent.end, $"{new string(' ', ChildIndent(parent))}{section}:");
+            }
+            HasChanges = true;
+            return FindSectionBounds(section);
         }
 
         private (int start, int end, int indent) FindSectionBounds(string section)

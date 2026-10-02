@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -21,8 +20,6 @@ namespace LogGrokX.Settings
         private string _validationMessage = string.Empty;
         private bool _requiresRestart;
         private ColorRuleViewModel? _selectedColorRule;
-        private List<ColorRuleData> _savedColorRules;
-        private List<LogFormatData> _savedLogFormats;
         private ViewSettings.ViewBigLine _savedBigLine;
         private string _savedBigLineSizeText = string.Empty;
         private ViewSettings.UpdateModeKind _savedUpdateMode;
@@ -32,6 +29,8 @@ namespace LogGrokX.Settings
         private bool _savedDetectHex;
         private bool _savedEnableCrashDumps;
         private string _savedMaxDumpsCountText = string.Empty;
+        private string[] _savedProfiles;
+        private ProfileViewModel _selectedProfile;
 
         public SettingsViewModel(ApplicationSettings applicationSettings,
             TimelinePlacementService timelinePlacementService,
@@ -48,24 +47,15 @@ namespace LogGrokX.Settings
             View = new ViewSettingsViewModel(applicationSettings.ViewSettings);
             Debug = new DebugSettingsViewModel(applicationSettings.DebugSettings);
 
-            foreach (var rule in applicationSettings.ColorSettings.Rules)
-                ColorRules.Add(new ColorRuleViewModel(rule));
-
-            foreach (var format in applicationSettings.LogFormats)
-                LogFormats.Add(new LogFormatViewModel(format));
-
-            _savedColorRules = ColorRules.Select(rule => rule.ToData()).ToList();
-            _savedLogFormats = LogFormats.Select(format => format.ToData()).ToList();
+            foreach (var profile in applicationSettings.GetProfiles())
+                Profiles.Add(new ProfileViewModel(profile));
+            _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
+                applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
+            _savedProfiles = SettingsYamlRenderer.RenderProfiles(Profiles, 0).ToArray();
             CaptureRestartSettings();
 
             View.PropertyChanged += OnTrackedPropertyChanged;
             Debug.PropertyChanged += OnTrackedPropertyChanged;
-            ColorRules.CollectionChanged += OnTrackedCollectionChanged;
-            LogFormats.CollectionChanged += OnTrackedCollectionChanged;
-            foreach (var rule in ColorRules)
-                rule.PropertyChanged += OnTrackedPropertyChanged;
-            foreach (var format in LogFormats)
-                format.PropertyChanged += OnTrackedPropertyChanged;
 
             SaveCommand = new DelegateCommand(() => Save());
             OpenFileCommand = new DelegateCommand(OpenSettingsFile);
@@ -73,15 +63,35 @@ namespace LogGrokX.Settings
             RemoveColorRuleCommand = new DelegateCommand(RemoveSelectedColorRule);
             AddLogFormatCommand = new DelegateCommand(() => LogFormats.Add(new LogFormatViewModel()));
             RemoveLogFormatCommand = DelegateCommand.Create<LogFormatViewModel>(format => LogFormats.Remove(format));
+            AddProfileCommand = new DelegateCommand(() => AddProfile(false));
+            DuplicateProfileCommand = new DelegateCommand(() => AddProfile(true));
+            RemoveProfileCommand = new DelegateCommand(RemoveProfile);
         }
 
         public ViewSettingsViewModel View { get; }
 
         public DebugSettingsViewModel Debug { get; }
 
-        public ObservableCollection<ColorRuleViewModel> ColorRules { get; } = new();
+        public ObservableCollection<ProfileViewModel> Profiles { get; } = new();
 
-        public ObservableCollection<LogFormatViewModel> LogFormats { get; } = new();
+        public ProfileViewModel SelectedProfile
+        {
+            get => _selectedProfile;
+            set
+            {
+                if (value == null || ReferenceEquals(_selectedProfile, value))
+                    return;
+                _selectedProfile = value;
+                SelectedColorRule = null;
+                InvokePropertyChanged();
+                InvokePropertyChanged(nameof(ColorRules));
+                InvokePropertyChanged(nameof(LogFormats));
+            }
+        }
+
+        public ObservableCollection<ColorRuleViewModel> ColorRules => SelectedProfile.ColorRules;
+
+        public ObservableCollection<LogFormatViewModel> LogFormats => SelectedProfile.LogFormats;
 
         public ColorRuleViewModel? SelectedColorRule
         {
@@ -95,7 +105,7 @@ namespace LogGrokX.Settings
             }
         }
 
-        public string SettingsFileName => ApplicationSettings.SettingsFileName;
+        public string SettingsFileName => _applicationSettings.FileName;
 
         public string ValidationMessage
         {
@@ -135,6 +145,32 @@ namespace LogGrokX.Settings
         public ICommand AddLogFormatCommand { get; }
 
         public ICommand RemoveLogFormatCommand { get; }
+        public ICommand AddProfileCommand { get; }
+        public ICommand DuplicateProfileCommand { get; }
+        public ICommand RemoveProfileCommand { get; }
+
+        private void AddProfile(bool duplicate)
+        {
+            var name = duplicate ? SelectedProfile.Name + " copy" : "New profile";
+            var uniqueName = name;
+            for (var suffix = 2; Profiles.Any(profile => string.Equals(profile.Name, uniqueName,
+                     StringComparison.OrdinalIgnoreCase)); suffix++)
+                uniqueName = $"{name} {suffix}";
+            var settings = duplicate ? SelectedProfile.ToSettings() : new ProfileSettings();
+            settings.Name = uniqueName;
+            var added = new ProfileViewModel(settings);
+            Profiles.Add(added);
+            SelectedProfile = added;
+        }
+
+        private void RemoveProfile()
+        {
+            if (Profiles.Count <= 1)
+                return;
+            var removed = SelectedProfile;
+            SelectedProfile = Profiles.First(profile => !ReferenceEquals(profile, removed));
+            Profiles.Remove(removed);
+        }
 
         public bool Save()
         {
@@ -162,7 +198,7 @@ namespace LogGrokX.Settings
             _textZoomService.SetFontSize(View.LogFontSize);
             _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
 
-            var file = new YamlSettingsFile(ApplicationSettings.SettingsFileName);
+            var file = new YamlSettingsFile(SettingsFileName);
             file.SetScalar("DebugSettings", "EnableCrashDumps", Debug.EnableCrashDumps ? "true" : "false");
             file.SetScalar("DebugSettings", "MaxDumpsCount", maxDumpsCount.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "BigLine", View.BigLine == ViewSettings.ViewBigLine.Prune ? "prune" : "break");
@@ -177,63 +213,30 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "DetectHex", View.DetectHex ? "true" : "false");
             file.SetScalar("ViewSettings", "UpdateMode", View.UpdateMode.ToString().ToLowerInvariant());
 
-            var colorRules = ColorRules.Select(rule => rule.ToData()).ToList();
-            if (!AreColorRulesEqual(_savedColorRules, colorRules))
+            var profiles = SettingsYamlRenderer.RenderProfiles(Profiles, 0).ToArray();
+            var profilesChanged = !_savedProfiles.SequenceEqual(profiles);
+            if (profilesChanged)
+                file.ReplaceSequence("Settings", "Profiles",
+                    indent => SettingsYamlRenderer.RenderProfiles(Profiles, indent), force: true);
+            file.SetScalar("Settings", "SelectedProfile", SettingsYamlRenderer.FormatScalar(SelectedProfile.Name.Trim()));
+            try
             {
-                file.ReplaceSequence("ColorSettings", "Rules",
-                    indent => SettingsYamlRenderer.RenderColorRules(colorRules, indent));
-                _savedColorRules = colorRules;
+                file.Save();
             }
-
-            var logFormats = LogFormats.Select(format => format.ToData()).ToList();
-            if (!AreLogFormatsEqual(_savedLogFormats, logFormats))
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                file.ReplaceSequence("Settings", "LogFormats",
-                    indent => SettingsYamlRenderer.RenderLogFormats(logFormats, indent));
-                _savedLogFormats = logFormats;
+                ValidationMessage = $"Cannot save settings: {e.Message}";
+                return false;
             }
+            _savedProfiles = profiles;
+            if (profilesChanged)
+                _applicationSettings.UpdateProfiles(Profiles.Select(profile => profile.ToSettings()).ToArray(),
+                    SelectedProfile.Name.Trim());
+            else
+                _applicationSettings.UpdateProfiles(_applicationSettings.Profiles, SelectedProfile.Name.Trim());
 
-            file.Save();
-
-            _savedColorRules = colorRules;
-            _savedLogFormats = logFormats;
             CaptureRestartSettings();
             UpdateRequiresRestart();
-
-            return true;
-        }
-
-        private static bool AreColorRulesEqual(IReadOnlyList<ColorRuleData> left, IReadOnlyList<ColorRuleData> right)
-        {
-            if (left.Count != right.Count)
-                return false;
-
-            for (var i = 0; i < left.Count; i++)
-            {
-                if (left[i].RegexString != right[i].RegexString ||
-                    left[i].ForegroundColor != right[i].ForegroundColor ||
-                    left[i].BackgroundColor != right[i].BackgroundColor)
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static bool AreLogFormatsEqual(IReadOnlyList<LogFormatData> left, IReadOnlyList<LogFormatData> right)
-        {
-            if (left.Count != right.Count)
-                return false;
-
-            for (var i = 0; i < left.Count; i++)
-            {
-                if (left[i].Regex != right[i].Regex ||
-                    left[i].TimeField != right[i].TimeField ||
-                    left[i].TimeFormat != right[i].TimeFormat ||
-                    left[i].XorMask != right[i].XorMask ||
-                    !left[i].IndexedFields.SequenceEqual(right[i].IndexedFields) ||
-                    !left[i].Transformations.SequenceEqual(right[i].Transformations))
-                    return false;
-            }
 
             return true;
         }
@@ -256,28 +259,8 @@ namespace LogGrokX.Settings
             UpdateRequiresRestart();
         }
 
-        private void OnTrackedCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.OldItems != null)
-            {
-                foreach (var item in e.OldItems.OfType<ViewModelBase>())
-                    item.PropertyChanged -= OnTrackedPropertyChanged;
-            }
-
-            if (e.NewItems != null)
-            {
-                foreach (var item in e.NewItems.OfType<ViewModelBase>())
-                    item.PropertyChanged += OnTrackedPropertyChanged;
-            }
-
-            UpdateRequiresRestart();
-        }
-
         private void UpdateRequiresRestart()
         {
-            var colorRules = ColorRules.Select(rule => rule.ToData()).ToList();
-            var logFormats = LogFormats.Select(format => format.ToData()).ToList();
-
             RequiresRestart =
                 View.BigLine != _savedBigLine ||
                 View.BigLineSizeText != _savedBigLineSizeText ||
@@ -287,9 +270,7 @@ namespace LogGrokX.Settings
                 View.DetectBase64 != _savedDetectBase64 ||
                 View.DetectHex != _savedDetectHex ||
                 Debug.EnableCrashDumps != _savedEnableCrashDumps ||
-                Debug.MaxDumpsCountText != _savedMaxDumpsCountText ||
-                !AreColorRulesEqual(_savedColorRules, colorRules) ||
-                !AreLogFormatsEqual(_savedLogFormats, logFormats);
+                Debug.MaxDumpsCountText != _savedMaxDumpsCountText;
         }
 
         private void RemoveSelectedColorRule()
@@ -308,7 +289,12 @@ namespace LogGrokX.Settings
             if (!int.TryParse(Debug.MaxDumpsCountText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxDumpsCount) || maxDumpsCount <= 0)
                 errors.Add("Max dumps count must be a positive integer.");
 
-            foreach (var format in LogFormats)
+            if (Profiles.Any(profile => string.IsNullOrWhiteSpace(profile.Name)))
+                errors.Add("Every profile must have a name.");
+            if (Profiles.Select(profile => profile.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Profiles.Count)
+                errors.Add("Profile names must be unique.");
+
+            foreach (var format in Profiles.SelectMany(profile => profile.LogFormats))
             {
                 if (!format.IsValid)
                     errors.Add("A log format has an invalid regular expression.");
@@ -316,18 +302,21 @@ namespace LogGrokX.Settings
                     errors.Add("A log format has an invalid XOR mask.");
             }
 
-            foreach (var rule in ColorRules)
+            foreach (var rule in Profiles.SelectMany(profile => profile.ColorRules))
             {
                 if (!rule.IsRegexValid)
                     errors.Add("A color rule has an invalid regular expression.");
+                if ((!string.IsNullOrWhiteSpace(rule.ForegroundColor) && rule.ForegroundBrush == null) ||
+                    (!string.IsNullOrWhiteSpace(rule.BackgroundColor) && rule.BackgroundBrush == null))
+                    errors.Add("A color rule has an invalid color.");
             }
 
             return errors;
         }
 
-        private static void OpenSettingsFile()
+        private void OpenSettingsFile()
         {
-            var fileName = ApplicationSettings.SettingsFileName;
+            var fileName = SettingsFileName;
             if (!File.Exists(fileName))
                 return;
 

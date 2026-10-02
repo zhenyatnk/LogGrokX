@@ -37,7 +37,7 @@ namespace LogGrokX.MergedView
         private readonly List<MergeSource> _mergeSources = new();
         private readonly TimeIndex _mergedTimeIndex = new();
         private readonly DispatcherTimer _rebuildTimer;
-        private readonly ColorRules _colorSettings;
+        private ColorRules _colorSettings;
 
         private MergedSchema _schema = null!;
         private MergedComponentIndexer _componentIndexer = null!;
@@ -65,7 +65,7 @@ namespace LogGrokX.MergedView
             _documents = documents;
             _applicationSettings = applicationSettings;
             _threadGroupingService = threadGroupingService;
-            _colorSettings = new ColorRules(applicationSettings.ColorSettings);
+            _colorSettings = new ColorRules(applicationSettings.GetSelectedProfile().ColorSettings ?? new Colors.Configuration.ColorSettings());
             _threadGroupingService.Changed += OnThreadGroupingChanged;
 
             Search = new SearchViewModel(
@@ -126,6 +126,14 @@ namespace LogGrokX.MergedView
         public SearchViewModel Search { get; }
 
         public ColorSettings ColorSettings => _colorSettings;
+
+        public void SetColorSettings(ColorRules settings)
+        {
+            _colorSettings = settings;
+            InvokePropertyChanged(nameof(ColorSettings));
+            _rebuildTimer.Stop();
+            Rebuild();
+        }
 
         public LogMetaInformation MetaInformation => _schema.MetaInformation;
 
@@ -366,6 +374,8 @@ namespace LogGrokX.MergedView
         private void SyncDocuments()
         {
             var current = new HashSet<DocumentViewModel>(_documents);
+            var previousByPath = AvailableDocuments.ToDictionary(item => item.Document.DocumentId,
+                StringComparer.OrdinalIgnoreCase);
 
             for (var i = AvailableDocuments.Count - 1; i >= 0; i--)
             {
@@ -378,13 +388,22 @@ namespace LogGrokX.MergedView
                 if (AvailableDocuments.Any(item => item.Document == document))
                     continue;
 
-                var item = new MergedDocumentItem(document, _nextColorIndex++ % MergedViewPalette.Count);
+                previousByPath.TryGetValue(document.DocumentId, out var previous);
+                var item = new MergedDocumentItem(document,
+                    previous?.ColorIndex ?? _nextColorIndex++ % MergedViewPalette.Count)
+                {
+                    IsSelected = previous?.IsSelected ?? true
+                };
                 item.UpdateFieldMap(_schema.Fields);
                 item.SelectionChanged += _ => ScheduleRebuild();
                 AvailableDocuments.Add(item);
             }
 
-            _subscribed.RemoveWhere(document => !current.Contains(document));
+            foreach (var document in _subscribed.Where(document => !current.Contains(document)).ToArray())
+            {
+                document.LogViewModel.Lines.CollectionGrown -= OnDocumentGrown;
+                _subscribed.Remove(document);
+            }
             foreach (var document in _documents)
             {
                 if (!_subscribed.Add(document))

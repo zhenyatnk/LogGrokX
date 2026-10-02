@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace LogGrokX.Settings
 {
@@ -22,6 +23,23 @@ namespace LogGrokX.Settings
 
     public static class SettingsYamlRenderer
     {
+        public static IReadOnlyList<string> RenderProfiles(IEnumerable<ProfileViewModel> profiles, int itemIndent)
+        {
+            var lines = new List<string>();
+            var pad = new string(' ', itemIndent);
+            foreach (var profile in profiles)
+            {
+                lines.Add($"{pad}- Name: {FormatScalar(profile.Name.Trim())}");
+                lines.Add($"{pad}  InheritLegacySettings: false");
+                lines.Add($"{pad}  ColorSettings:");
+                lines.Add($"{pad}    Rules:{(profile.ColorRules.Count == 0 ? " []" : string.Empty)}");
+                lines.AddRange(RenderColorRules(profile.ColorRules.Select(rule => rule.ToData()), itemIndent + 6));
+                lines.Add($"{pad}  LogFormats:{(profile.LogFormats.Count == 0 ? " []" : string.Empty)}");
+                lines.AddRange(RenderLogFormats(profile.LogFormats.Select(format => format.ToData()), itemIndent + 4));
+            }
+            return lines;
+        }
+
         public static IReadOnlyList<string> RenderColorRules(IEnumerable<ColorRuleData> rules, int itemIndent)
         {
             var lines = new List<string>();

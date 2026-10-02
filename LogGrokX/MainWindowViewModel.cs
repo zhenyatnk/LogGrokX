@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Windows;
 using System.Windows.Input;
@@ -32,6 +33,10 @@ namespace LogGrokX
         private readonly UpdateCheckService _updateCheckService;
         private readonly Dictionary<DocumentViewModel, DocumentContainer> _containers = new();
         private bool _disposed;
+        private ProfileSettings _selectedProfile;
+        private bool _refreshingProfiles;
+
+        public ObservableCollection<ProfileSettings> Profiles { get; }
 
         public ObservableCollection<DocumentViewModel> Documents { get; }
 
@@ -62,6 +67,9 @@ namespace LogGrokX
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
         {
             _applicationSettings = applicationSettings;
+            Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
+            _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
+                applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
             _themeService = themeService;
@@ -77,6 +85,7 @@ namespace LogGrokX
             Documents.CollectionChanged += OnDocumentsChanged;
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
             MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService) { IsActive = _mergedFilesViewService.IsEnabled };
+            _applicationSettings.ProfilesChanged += OnProfilesChanged;
             OpenSettings = new DelegateCommand(OpenSettingsWindow);
             OpenSupportCommand = new DelegateCommand(OpenSupport);
             ToggleThemeCommand = new DelegateCommand(ToggleTheme);
@@ -111,6 +120,95 @@ namespace LogGrokX
                 
                 InvokePropertyChanged();
             }
+        }
+
+        public ProfileSettings SelectedProfile
+        {
+            get => _selectedProfile;
+            set
+            {
+                if (value == null || _refreshingProfiles || ReferenceEquals(_selectedProfile, value))
+                    return;
+                if (TryApplyProfile(value))
+                {
+                    _selectedProfile = value;
+                    _applicationSettings.SetSelectedProfile(value.Name);
+                }
+                InvokePropertyChanged();
+            }
+        }
+
+        private void OnProfilesChanged()
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                _ = dispatcher.BeginInvoke(OnProfilesChanged);
+                return;
+            }
+            if (_disposed)
+                return;
+            var profiles = _applicationSettings.GetProfiles();
+            var selected = profiles.First(profile => string.Equals(profile.Name,
+                _applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
+            if (!TryApplyProfile(selected))
+                return;
+            _refreshingProfiles = true;
+            try
+            {
+                Profiles.Clear();
+                foreach (var profile in profiles)
+                    Profiles.Add(profile);
+                _selectedProfile = selected;
+                InvokePropertyChanged(nameof(SelectedProfile));
+            }
+            finally
+            {
+                _refreshingProfiles = false;
+            }
+        }
+
+        private bool TryApplyProfile(ProfileSettings profile)
+        {
+            if (_selectedProfile.HasSameConfiguration(profile))
+                return true;
+            var documents = Documents.ToArray();
+            var currentIndex = CurrentDocument == null ? -1 : Array.IndexOf(documents, CurrentDocument);
+            var replacements = new List<(DocumentViewModel document, DocumentContainer container)>();
+            Colors.ColorSettings colors;
+            try
+            {
+                colors = new Colors.ColorSettings(profile.ColorSettings ?? new Colors.Configuration.ColorSettings());
+                foreach (var document in documents)
+                {
+                    var replacement = CreateDocumentResources(document.DocumentId, profile);
+                    replacements.Add(replacement);
+                    foreach (var line in document.MarkedLines)
+                        replacement.document.MarkedLines.Add(line);
+                }
+            }
+            catch (Exception e)
+            {
+                foreach (var replacement in replacements)
+                {
+                    replacement.document.CloseFile();
+                    replacement.container.Dispose();
+                }
+                Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
+                if (Application.Current != null)
+                    MessageBox.Show($"Cannot apply profile '{profile.Name}': {e.Message}", "Profile change failed",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+            for (var i = 0; i < replacements.Count; i++)
+            {
+                var replacement = replacements[i];
+                _containers.Add(replacement.document, replacement.container);
+                Documents[i] = replacement.document;
+            }
+            CurrentDocument = currentIndex >= 0 ? replacements[currentIndex].document : null;
+            MergedViewModel.SetColorSettings(colors);
+            return true;
         }
 
         public ICommand OpenSettings { get; }
@@ -268,7 +366,16 @@ namespace LogGrokX
 
         private DocumentViewModel CreateDocument(string fileName)
         {
-            var container = new DocumentContainer(fileName, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService);
+            var (viewModel, container) = CreateDocumentResources(fileName, _selectedProfile);
+            _containers.Add(viewModel, container);
+            Documents.Add(viewModel);
+            return viewModel;
+        }
+
+        private (DocumentViewModel document, DocumentContainer container) CreateDocumentResources(
+            string fileName, ProfileSettings profile)
+        {
+            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService);
             DocumentViewModel viewModel;
             try
             {
@@ -280,9 +387,7 @@ namespace LogGrokX
                 throw;
             }
 
-            _containers.Add(viewModel, container);
-            Documents.Add(viewModel);
-            return viewModel;
+            return (viewModel, container);
         }
 
         private void OnDocumentsChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -324,6 +429,7 @@ namespace LogGrokX
                 return;
 
             _disposed = true;
+            _applicationSettings.ProfilesChanged -= OnProfilesChanged;
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _mergedFilesViewService.Changed -= OnMergedFilesViewChanged;

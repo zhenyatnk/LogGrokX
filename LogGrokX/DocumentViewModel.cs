@@ -27,6 +27,7 @@ namespace LogGrokX
         private readonly LogModelFacade _logModelFacade;
         private readonly TimeIndex _timeIndex;
         private Stream _fileHolder;
+        private int _lastPublishedLineCount;
 
         public DocumentViewModel(
             LineProvider lineProvider,
@@ -65,6 +66,7 @@ namespace LogGrokX
             _timeIndex = timeIndex;
             _markedLines.Changed += () => MarkedLinesChanged?.Invoke();
             _fileHolder = logModelFacade.LogFile.Open();
+            LogViewModel.Lines.CollectionGrown += OnLinesGrown;
 
             CopyPathToClipboardCommand =
                 new DelegateCommand(() => TextCopy.ClipboardService.SetText(logFileFilePath));
@@ -89,6 +91,15 @@ namespace LogGrokX
         public string DocumentId { get; }
     
         public event Action? MarkedLinesChanged;
+
+        private void OnLinesGrown(int _)
+        {
+            var count = _lineProvider.Count;
+            var haveNewMarkedLines = _markedLines.Any(number => number >= _lastPublishedLineCount && number < count);
+            _lastPublishedLineCount = count;
+            if (haveNewMarkedLines)
+                MarkedLinesChanged?.Invoke();
+        }
         
         public ICommand CopyPathToClipboardCommand { get; }
 
@@ -124,7 +135,7 @@ namespace LogGrokX
                 var lineNumbers = _markedLines.ToList();
                 lineNumbers.Sort();
                 var collection = new ObservableCollection<(int number, string text)>();
-                foreach (var lineNumber in lineNumbers)
+                foreach (var lineNumber in lineNumbers.Where(number => number >= 0 && number < _lineProvider.Count))
                 {
                     var lines = new (int, string)[1];
                     _lineProvider.Fetch(lineNumber, lines.AsSpan());
@@ -227,6 +238,7 @@ namespace LogGrokX
 
         public void CloseFile()
         {
+            LogViewModel.Lines.CollectionGrown -= OnLinesGrown;
             _fileHolder.Dispose();
         }
     }
