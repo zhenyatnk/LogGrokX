@@ -349,6 +349,12 @@ The boundaries are attached properties (`IsGroupFirst`, `IsGroupLast`,
 `VirtualizingStackPanel` and rendered by `Styles/ListViewItemStyle.xaml`. The
 setting is `ViewSettings.GroupByThread`.
 
+While grouping is on, the thread of the current line is in focus: rows of all
+other threads are dimmed (`IsOtherThread`), and the search pane shows only the
+matches of that thread. Moving to a line of another thread switches the focus
+and re-filters the search results. In a single log the filter relies on the
+indexed `Thread` field (`IndexedFields`); the merged view works per source file.
+
 ## 🔁 Text transformations
 
 **Business value.** Logs frequently carry encoded payloads (Base64, compressed

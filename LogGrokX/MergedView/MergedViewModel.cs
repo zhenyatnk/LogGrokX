@@ -233,7 +233,34 @@ namespace LogGrokX.MergedView
         public int CurrentItemIndex
         {
             get => _currentItemIndex;
-            set => SetAndRaiseIfChanged(ref _currentItemIndex, value);
+            set
+            {
+                if (_currentItemIndex == value)
+                    return;
+
+                _currentItemIndex = value;
+                InvokePropertyChanged();
+                UpdateCurrentThread();
+            }
+        }
+
+        public MergedThread? CurrentThread { get; private set; }
+
+        public event Action? CurrentThreadChanged;
+
+        private void UpdateCurrentThread()
+        {
+            MergedThread? thread = null;
+            var index = CurrentItemIndex;
+            if (GroupByThread && ThreadFieldIndex >= 0 && index >= 0 && index < Lines.Count
+                && Lines[index] is MergedLineViewModel line)
+                thread = new MergedThread(line.Source, line.GetFieldText(ThreadFieldIndex));
+
+            if (Nullable.Equals(CurrentThread, thread))
+                return;
+
+            CurrentThread = thread;
+            CurrentThreadChanged?.Invoke();
         }
 
         public int FirstVisibleIndex
@@ -337,6 +364,7 @@ namespace LogGrokX.MergedView
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(GroupByThread));
+            UpdateCurrentThread();
             foreach (var item in EnumerateItems())
                 if (item is MergedLineViewModel)
                     break;
@@ -464,6 +492,7 @@ namespace LogGrokX.MergedView
             }
 
             InvokePropertyChanged(nameof(IsLoading));
+            UpdateCurrentThread();
             Rebuilt?.Invoke();
         }
 

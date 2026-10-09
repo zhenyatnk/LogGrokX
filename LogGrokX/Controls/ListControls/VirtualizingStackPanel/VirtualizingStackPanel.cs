@@ -197,26 +197,41 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
         private void UpdateGroupFlags()
         {
+            var currentThreadItem = GetCurrentThreadItem();
             foreach (var visibleItem in _visibleItems)
-                UpdateGroupFlags(visibleItem.Element, visibleItem.Index);
+                UpdateGroupFlags(visibleItem.Element, visibleItem.Index, currentThreadItem);
         }
 
-        private void UpdateGroupFlags(ListViewItem element, int index)
+        private IThreadGroupedItem? GetCurrentThreadItem()
+        {
+            if (!GroupByThread || ThreadFieldIndex < 0)
+                return null;
+
+            var items = Items;
+            var position = CurrentPosition;
+            return position >= 0 && position < items.Count ? items[position] as IThreadGroupedItem : null;
+        }
+
+        private void UpdateGroupFlags(ListViewItem element, int index, IThreadGroupedItem? currentThreadItem)
         {
             var isGroupFirst = false;
             var isGroupLast = false;
             var isGroupContinuation = false;
+            var isOtherThread = false;
 
             if (GroupByThread && ThreadFieldIndex >= 0 && Items[index] is IThreadGroupedItem line)
             {
                 isGroupFirst = index == 0 || !line.HasSameThread(Items[index - 1] as IThreadGroupedItem, ThreadFieldIndex);
                 isGroupLast = index == Items.Count - 1;
                 isGroupContinuation = !isGroupFirst;
+                isOtherThread = currentThreadItem != null && !ReferenceEquals(line, currentThreadItem)
+                                && !line.HasSameThread(currentThreadItem, ThreadFieldIndex);
             }
 
             BaseLogListViewItem.SetIsGroupFirst(element, isGroupFirst);
             BaseLogListViewItem.SetIsGroupLast(element, isGroupLast);
             BaseLogListViewItem.SetIsGroupContinuation(element, isGroupContinuation);
+            BaseLogListViewItem.SetIsOtherThread(element, isOtherThread);
         }
 
         private void RecycleItems(IEnumerable<VisibleItem> itemsToRecycle)

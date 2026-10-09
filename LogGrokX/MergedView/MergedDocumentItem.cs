@@ -45,6 +45,35 @@ namespace LogGrokX.MergedView
 
         internal int MergedFieldCount => _mergedToSourceField.Length;
 
+        internal bool IsLineInThread(int lineNumber, int mergedThreadFieldIndex, string thread)
+        {
+            var sourceFieldIndex = GetSourceFieldIndex(mergedThreadFieldIndex);
+            if (sourceFieldIndex < 0)
+                return false;
+
+            var indexedFieldIndex = Document.MetaInformation.GetIndexedFieldIndexByFieldIndex(sourceFieldIndex);
+            if (indexedFieldIndex >= 0)
+                return Document.Indexer.IsLineComponentEqual(lineNumber, indexedFieldIndex, thread);
+
+            var text = Document.GetTransformedLine(lineNumber);
+            try
+            {
+                var parseResult = Document.LineParser.Parse(text);
+                if (sourceFieldIndex >= parseResult.ComponentCount)
+                    return false;
+
+                var lineMeta = parseResult.Get().ParsedLineComponents;
+                var start = lineMeta.ComponentStart(sourceFieldIndex);
+                var length = lineMeta.ComponentLength(sourceFieldIndex);
+                return start >= 0 && length >= 0 && start + length <= text.Length
+                       && text.AsSpan(start, length).SequenceEqual(thread);
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+
         public bool IsSelected
         {
             get => _isSelected;

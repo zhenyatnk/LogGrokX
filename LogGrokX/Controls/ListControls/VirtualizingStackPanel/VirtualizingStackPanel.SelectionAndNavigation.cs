@@ -50,6 +50,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
             {
                  SetIsCurrentItem(visibleItem.Element, visibleItem.Index == newValue);
             }
+            panel.UpdateGroupFlags();
             panel.ListView.Items.MoveCurrentToPosition(newValue);
         }
 

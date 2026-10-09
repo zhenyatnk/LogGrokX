@@ -65,6 +65,31 @@ public class IndexerTests
     }
 
     [TestMethod]
+    public void IsLineComponentEqualComparesIndexedComponentOfLine()
+    {
+        using var indexer = new Indexer();
+        indexer.Add(Key("alpha beta one"), 0);
+        indexer.Add(Key("gamma delta two"), 1);
+
+        Assert.IsTrue(indexer.IsLineComponentEqual(0, 0, "alpha"));
+        Assert.IsFalse(indexer.IsLineComponentEqual(0, 0, "gamma"));
+        Assert.IsTrue(indexer.IsLineComponentEqual(1, 0, "gamma"));
+        Assert.IsTrue(indexer.IsLineComponentEqual(1, 1, "two"));
+    }
+
+    [TestMethod]
+    public void IsLineComponentEqualIsFalseForOutOfRangeArguments()
+    {
+        using var indexer = new Indexer();
+        indexer.Add(Key("alpha beta one"), 0);
+
+        Assert.IsFalse(indexer.IsLineComponentEqual(-1, 0, "alpha"));
+        Assert.IsFalse(indexer.IsLineComponentEqual(1, 0, "alpha"));
+        Assert.IsFalse(indexer.IsLineComponentEqual(0, -1, "alpha"));
+        Assert.IsFalse(indexer.IsLineComponentEqual(0, 5, "alpha"));
+    }
+
+    [TestMethod]
     public void GetIndexCountForComponentCountsLines()
     {
         using var indexer = new Indexer();

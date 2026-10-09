@@ -143,6 +143,16 @@ public class Indexer : IndexerBase, IComponentIndexer
 
     public IndexKeyNum GetIndexKeyNum(int index) => _lineAndKeyIndex[index];
 
+    public bool IsLineComponentEqual(int lineNumber, int componentIndex, ReadOnlySpan<char> value)
+    {
+        if (lineNumber < 0 || lineNumber >= _lineAndKeyIndex.Count)
+            return false;
+
+        var key = NumbersToKeys[_lineAndKeyIndex[lineNumber]];
+        return componentIndex >= 0 && componentIndex < key.ComponentCount
+               && key.GetComponent(componentIndex).SequenceEqual(value);
+    }
+
     public bool IsLineIncluded(int lineNumber, IReadOnlyDictionary<int, IEnumerable<string>> excludedComponents)
     {
         if (excludedComponents.Count == 0)

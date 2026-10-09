@@ -37,8 +37,12 @@ namespace LogGrokX.Search
         private double _progress;
         private Regex? _highlightRegex;
         private readonly FilterSettings _filterSettings;
+        private readonly CurrentThreadFilter _currentThreadFilter;
+        private readonly int _indexedThreadFieldIndex;
      
         private SubIndexer? _currentSearchIndexer;
+        private IIndexedLinesProvider? _currentFilteredResults;
+        private int _excludedThreadsSnapshotCount = -1;
         private int? _currentItemIndex;
         private IEnumerable<object>? _selectedItems;
         private IReadOnlyList<int> _selectedMatchLines = Array.Empty<int>();
@@ -56,7 +60,8 @@ namespace LogGrokX.Search
             ColumnSettings columnSettings,
             TransformationPerformer transformationPerformer,
             TimeIndex timeIndex,
-            TextViewSharedFoldingState foldingState)
+            TextViewSharedFoldingState foldingState,
+            CurrentThreadFilter currentThreadFilter)
         {
             
             _viewFactory = viewFactory;
@@ -70,6 +75,12 @@ namespace LogGrokX.Search
             _filterSettings.TimeRangeChanged += StartSearch;
             _filterSettings.LineRangeChanged += StartSearch;
 
+            var metaInformation = logModelFacade.MetaInformation;
+            _indexedThreadFieldIndex = metaInformation.GetIndexedFieldIndexByFieldIndex(
+                Array.IndexOf(metaInformation.FieldNames, "Thread"));
+            _currentThreadFilter = currentThreadFilter;
+            _currentThreadFilter.Changed += OnCurrentThreadChanged;
+
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
 
@@ -82,7 +93,7 @@ namespace LogGrokX.Search
                     if (param is not BaseLogLineViewModel itemViewModel)
                         return;
 
-                    var resultIndex = _currentSearchLineIndex?.GetIndexByOriginalIndex(itemViewModel.Index) ?? -1;
+                    var resultIndex = GetResultIndexByOriginalLine(itemViewModel.Index);
                     if (resultIndex >= 0 && resultIndex < Lines.Count
                         && ReferenceEquals(Lines[resultIndex], itemViewModel))
                         CurrentItemIndex = resultIndex;
@@ -134,8 +145,8 @@ namespace LogGrokX.Search
             if (anchorOriginalLine >= 0 && _currentSearchLineIndex != null)
             {
                 var index = direction > 0
-                    ? _currentSearchLineIndex.GetIndexByOriginalIndex(anchorOriginalLine + 1)
-                    : _currentSearchLineIndex.GetIndexByOriginalIndex(anchorOriginalLine) - 1;
+                    ? GetResultIndexByOriginalLine(anchorOriginalLine + 1)
+                    : GetResultIndexByOriginalLine(anchorOriginalLine) - 1;
 
                 if (index < 0) index = count - 1;
                 if (index >= count) index = 0;
@@ -273,6 +284,7 @@ namespace LogGrokX.Search
             _filterSettings.ExclusionsChanged -= UpdateLines;
             _filterSettings.TimeRangeChanged -= StartSearch;
             _filterSettings.LineRangeChanged -= StartSearch;
+            _currentThreadFilter.Changed -= OnCurrentThreadChanged;
 
             lock (_cancellationTokenSourceLock)
             {
@@ -323,6 +335,53 @@ namespace LogGrokX.Search
             InvokePropertyChanged(nameof(Title));
         }
 
+        private void OnCurrentThreadChanged()
+        {
+            CurrentItemIndex = null;
+            UpdateLines();
+            InvokePropertyChanged(nameof(Title));
+        }
+
+        private IReadOnlyDictionary<int, IEnumerable<string>> GetExclusions()
+        {
+            var exclusions = _filterSettings.Exclusions;
+            if (_currentThreadFilter.Thread is not { } thread || _indexedThreadFieldIndex < 0)
+            {
+                _excludedThreadsSnapshotCount = -1;
+                return exclusions;
+            }
+
+            var allThreads = _logModelFacade.Indexer.GetAllComponents(_indexedThreadFieldIndex).ToList();
+            _excludedThreadsSnapshotCount = allThreads.Count;
+            return CurrentThreadFilter.AddThreadExclusions(exclusions, _indexedThreadFieldIndex, thread, allThreads);
+        }
+
+        private bool AreThreadExclusionsOutdated() =>
+            _excludedThreadsSnapshotCount >= 0 &&
+            _logModelFacade.Indexer.GetAllComponents(_indexedThreadFieldIndex).Count() != _excludedThreadsSnapshotCount;
+
+        private int GetResultIndexByOriginalLine(int originalLine)
+        {
+            if (_currentSearchLineIndex == null)
+                return -1;
+
+            var searchResultIndex = _currentSearchLineIndex.GetIndexByOriginalIndex(originalLine);
+            if (_currentFilteredResults is not { } filtered)
+                return searchResultIndex;
+
+            var count = filtered.Count;
+            if (count == 0)
+                return 0;
+
+            var index = filtered.GetIndexByValue(searchResultIndex);
+            if (index != count - 1)
+                return index;
+
+            Span<int> last = stackalloc int[1];
+            filtered.Fetch(index, last);
+            return last[0] < searchResultIndex ? count : index;
+        }
+
         private IReadOnlyList<ItemViewModel> GetLineCollection(
             SubIndexer searchIndexer,          // components -> searchResultLineNumber
             SearchLineIndex searchLineIndex, // searchResultLineNumber -> originalLogLineNumber mapping
@@ -333,6 +392,7 @@ namespace LogGrokX.Search
             var lineParser = _logModelFacade.LineParser;
 
             var filteredSearchResultLineNumbersProvider = searchIndexer.GetIndexedLinesProvider(exclusions); // collection of filtered searchResultLineNumbers
+            _currentFilteredResults = filteredSearchResultLineNumbersProvider;
             // to map from search result line numbers to original line numbers
             var filteredOriginalLineNumbersProvider =
                 new ItemProviderMapper<int>(filteredSearchResultLineNumbersProvider, searchLineIndex);
@@ -415,6 +475,8 @@ namespace LogGrokX.Search
                 Lines?.UpdateCount();
                 SearchProgress = progress.Value * 100.0;
                 SetIsSearching(false);
+                if (AreThreadExclusionsOutdated())
+                    UpdateLines();
                 MatchBuckets = BuildBuckets();
                 InvokePropertyChanged(nameof(Title));
                 InvokePropertyChanged(nameof(MatchCounterText));
@@ -437,7 +499,7 @@ namespace LogGrokX.Search
             };
 
             var foundLines = GetLineCollection(
-                _currentSearchIndexer, _currentSearchLineIndex, _filterSettings.Exclusions);
+                _currentSearchIndexer, _currentSearchLineIndex, GetExclusions());
             
             Lines.Reset(new List<ItemViewModel>(), foundLines);
             MatchBuckets = BuildBuckets();
@@ -446,11 +508,11 @@ namespace LogGrokX.Search
 
             if (originalLineIndex is not { } index) return;
             
-            var nearestIndex = _currentSearchLineIndex.GetIndexByOriginalIndex(index);
+            var nearestIndex = GetResultIndexByOriginalLine(index);
             if (nearestIndex < 0 || nearestIndex >= Lines.Count)
                 CurrentItemIndex = null;
             else
-                NavigateToLineRequest.Raise(_currentSearchLineIndex.GetIndexByOriginalIndex(index));
+                NavigateToLineRequest.Raise(nearestIndex);
         }
 
         private bool[] BuildBuckets()
@@ -462,7 +524,7 @@ namespace LogGrokX.Search
                 return buckets;
 
             var filteredSearchResults =
-                _currentSearchIndexer.GetIndexedLinesProvider(_filterSettings.Exclusions);
+                _currentSearchIndexer.GetIndexedLinesProvider(GetExclusions());
             var originalLineNumbers = new ItemProviderMapper<int>(filteredSearchResults, _currentSearchLineIndex);
             var matchCount = originalLineNumbers.Count;
             if (matchCount == 0)
