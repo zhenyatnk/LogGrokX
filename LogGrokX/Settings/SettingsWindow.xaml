@@ -166,7 +166,7 @@
                                    Margin="0,6,0,0"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection applies to lines shown after saving; reopen the log to apply it to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
+                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection and value mappings apply to lines shown after saving; reopen the log to apply them to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
                     </Grid>
                 </ScrollViewer>
             </TabItem>
@@ -382,6 +382,205 @@
                             </StackPanel>
                         </ui:Button>
                     </StackPanel>
+                </Grid>
+            </TabItem>
+
+            <TabItem Header="Value mappings">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="3"
+                               Margin="0,0,0,8"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="Values found in the listed fields are shown as value(mapping), for example 0x00001(type 1). Leave Fields empty to apply a list to every field. Lists are imported and exported as JSON." />
+
+                    <ListBox Grid.Row="1"
+                             Grid.Column="0"
+                             BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                             BorderThickness="1"
+                             ItemsSource="{Binding ValueMappings}"
+                             SelectedItem="{Binding SelectedValueMapping, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox MinWidth="0"
+                                              Margin="0,0,4,0"
+                                              VerticalAlignment="Center"
+                                              ToolTip="Enabled"
+                                              IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding DisplayName}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <Grid Grid.Row="1"
+                          Grid.Column="2"
+                          DataContext="{Binding SelectedValueMapping}"
+                          IsEnabled="{Binding DataContext.HasSelectedValueMapping, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
+                            <TextBlock Margin="0,0,0,2" Text="Name" />
+                            <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
+                            <TextBlock Margin="0,0,0,2" Text="Fields (comma separated, empty = all fields)" />
+                            <ui:TextBox Text="{Binding Fields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="3"
+                                    Margin="0,0,0,8"
+                                    Orientation="Horizontal">
+                            <CheckBox Content="Enabled" IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                            <CheckBox Margin="16,0,0,0"
+                                      Content="Ignore case"
+                                      IsChecked="{Binding IgnoreCase, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="3"
+                                   Margin="0,0,0,2"
+                                   Text="Values" />
+                        <DataGrid Grid.Row="3"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="3"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="True"
+                                  CanUserDeleteRows="True"
+                                  CanUserReorderColumns="False"
+                                  HeadersVisibility="Column"
+                                  SelectionMode="Single"
+                                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                                  ItemsSource="{Binding Items}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Width="*"
+                                                    Header="Value"
+                                                    Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridTextColumn Width="2*"
+                                                    Header="Mapping"
+                                                    Binding="{Binding Mapping, UpdateSourceTrigger=PropertyChanged}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <StackPanel Grid.Row="4"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="3"
+                                    Margin="0,8,0,0"
+                                    Orientation="Horizontal">
+                            <ui:Button Command="{Binding AddItemCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add value" />
+                                </StackPanel>
+                            </ui:Button>
+                            <ui:Button Margin="8,0,0,0" Command="{Binding RemoveItemCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove value" />
+                                </StackPanel>
+                            </ui:Button>
+                        </StackPanel>
+
+                        <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       Text="Preview" />
+                            <ui:TextBox Grid.Column="1"
+                                        FontFamily="{StaticResource JetBrainsMono}"
+                                        PlaceholderText="Sample text"
+                                        Text="{Binding SampleText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="3"
+                                       VerticalAlignment="Center"
+                                       FontFamily="{StaticResource JetBrainsMono}"
+                                       Text="{Binding SamplePreview}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </Grid>
+
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,8,0,0"
+                                Orientation="Horizontal">
+                        <ui:Button Command="{Binding AddValueMappingCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add list" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Command="{Binding RemoveValueMappingCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove list" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="24,0,0,0" Click="OnImportValueMappingsClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowImport24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Import JSON..." />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0"
+                                   Click="OnExportValueMappingClick"
+                                   IsEnabled="{Binding HasSelectedValueMapping}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export list..." />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Click="OnExportAllValueMappingsClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export all..." />
+                            </StackPanel>
+                        </ui:Button>
+                    </StackPanel>
+
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="3"
+                               Margin="0,6,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding ValueMappingMessage}" />
                 </Grid>
             </TabItem>
 

@@ -70,6 +70,30 @@ namespace LogGrokX.Settings
             HasChanges = true;
         }
 
+        public void EnsureKey(string section, string key)
+        {
+            if (TryFindKey(section, key, out _, out _))
+                return;
+
+            var (start, end, indent) = FindSectionBounds(section);
+            if (start < 0)
+                return;
+
+            var childIndent = indent + 2;
+            var insertAt = start + 1;
+            for (var i = start + 1; i < end; i++)
+            {
+                if (!IsContentLine(_lines[i]))
+                    continue;
+                if (insertAt == start + 1)
+                    childIndent = IndentOf(_lines[i]);
+                insertAt = i + 1;
+            }
+
+            _lines.Insert(insertAt, $"{new string(' ', childIndent)}{key}:");
+            HasChanges = true;
+        }
+
         public void Save()
         {
             if (!HasChanges)

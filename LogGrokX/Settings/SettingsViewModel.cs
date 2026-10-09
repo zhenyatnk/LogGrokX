@@ -8,6 +8,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows.Input;
+using LogGrokX.Data;
 
 namespace LogGrokX.Settings
 {
@@ -21,6 +22,9 @@ namespace LogGrokX.Settings
         private string _validationMessage = string.Empty;
         private bool _requiresRestart;
         private ColorRuleViewModel? _selectedColorRule;
+        private ValueMappingListViewModel? _selectedValueMapping;
+        private string _valueMappingMessage = string.Empty;
+        private string _savedValueMappings;
         private List<ColorRuleData> _savedColorRules;
         private List<LogFormatData> _savedLogFormats;
         private ViewSettings.ViewBigLine _savedBigLine;
@@ -54,14 +58,22 @@ namespace LogGrokX.Settings
             foreach (var format in applicationSettings.LogFormats)
                 LogFormats.Add(new LogFormatViewModel(format));
 
+            foreach (var list in applicationSettings.ValueMappings)
+                ValueMappings.Add(new ValueMappingListViewModel(list));
+            _selectedValueMapping = ValueMappings.FirstOrDefault();
+
             _savedColorRules = ColorRules.Select(rule => rule.ToData()).ToList();
             _savedLogFormats = LogFormats.Select(format => format.ToData()).ToList();
+            _savedValueMappings = GetValueMappingsSignature(GetValueMappingsData());
             CaptureRestartSettings();
 
             View.PropertyChanged += OnTrackedPropertyChanged;
             Debug.PropertyChanged += OnTrackedPropertyChanged;
             ColorRules.CollectionChanged += OnTrackedCollectionChanged;
             LogFormats.CollectionChanged += OnTrackedCollectionChanged;
+            ValueMappings.CollectionChanged += OnTrackedCollectionChanged;
+            foreach (var list in ValueMappings)
+                list.PropertyChanged += OnTrackedPropertyChanged;
             foreach (var rule in ColorRules)
                 rule.PropertyChanged += OnTrackedPropertyChanged;
             foreach (var format in LogFormats)
@@ -73,6 +85,13 @@ namespace LogGrokX.Settings
             RemoveColorRuleCommand = new DelegateCommand(RemoveSelectedColorRule);
             AddLogFormatCommand = new DelegateCommand(() => LogFormats.Add(new LogFormatViewModel()));
             RemoveLogFormatCommand = DelegateCommand.Create<LogFormatViewModel>(format => LogFormats.Remove(format));
+            AddValueMappingCommand = new DelegateCommand(() =>
+            {
+                var list = new ValueMappingListViewModel(new ValueMappingList { Name = GetUniqueValueMappingName("New mapping") });
+                ValueMappings.Add(list);
+                SelectedValueMapping = list;
+            });
+            RemoveValueMappingCommand = new DelegateCommand(RemoveSelectedValueMapping);
         }
 
         public ViewSettingsViewModel View { get; }
@@ -82,6 +101,35 @@ namespace LogGrokX.Settings
         public ObservableCollection<ColorRuleViewModel> ColorRules { get; } = new();
 
         public ObservableCollection<LogFormatViewModel> LogFormats { get; } = new();
+
+        public ObservableCollection<ValueMappingListViewModel> ValueMappings { get; } = new();
+
+        public ValueMappingListViewModel? SelectedValueMapping
+        {
+            get => _selectedValueMapping;
+            set
+            {
+                if (ReferenceEquals(_selectedValueMapping, value))
+                    return;
+                _selectedValueMapping = value;
+                InvokePropertyChanged();
+                InvokePropertyChanged(nameof(HasSelectedValueMapping));
+            }
+        }
+
+        public bool HasSelectedValueMapping => _selectedValueMapping != null;
+
+        public string ValueMappingMessage
+        {
+            get => _valueMappingMessage;
+            private set
+            {
+                if (_valueMappingMessage == value)
+                    return;
+                _valueMappingMessage = value;
+                InvokePropertyChanged();
+            }
+        }
 
         public ColorRuleViewModel? SelectedColorRule
         {
@@ -136,6 +184,114 @@ namespace LogGrokX.Settings
 
         public ICommand RemoveLogFormatCommand { get; }
 
+        public ICommand AddValueMappingCommand { get; }
+
+        public ICommand RemoveValueMappingCommand { get; }
+
+        public bool ImportValueMappings(IEnumerable<string> fileNames)
+        {
+            var imported = new List<ValueMappingList>();
+            foreach (var fileName in fileNames)
+            {
+                try
+                {
+                    imported.AddRange(ValueMappingJson.Deserialize(File.ReadAllText(fileName),
+                        Path.GetFileNameWithoutExtension(fileName)));
+                }
+                catch (Exception e) when (e is IOException or UnauthorizedAccessException or
+                                              System.Text.Json.JsonException or FormatException)
+                {
+                    ValueMappingMessage = $"Cannot import {Path.GetFileName(fileName)}: {e.Message}";
+                    return false;
+                }
+            }
+
+            ImportValueMappings(imported);
+            return true;
+        }
+
+        public void ImportValueMappings(IReadOnlyList<ValueMappingList> lists)
+        {
+            ValueMappingListViewModel? last = null;
+            var replaced = 0;
+            foreach (var list in lists)
+            {
+                var viewModel = new ValueMappingListViewModel(list);
+                var existing = ValueMappings.FirstOrDefault(m =>
+                    !string.IsNullOrWhiteSpace(list.Name) &&
+                    string.Equals(m.Name.Trim(), list.Name.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (existing != null)
+                {
+                    ValueMappings[ValueMappings.IndexOf(existing)] = viewModel;
+                    replaced++;
+                }
+                else
+                {
+                    ValueMappings.Add(viewModel);
+                }
+
+                last = viewModel;
+            }
+
+            if (last != null)
+                SelectedValueMapping = last;
+
+            var items = lists.Sum(list => list.Items.Length);
+            ValueMappingMessage = replaced > 0
+                ? $"Imported {lists.Count} list(s) with {items} value(s), {replaced} replaced by name. Save to apply."
+                : $"Imported {lists.Count} list(s) with {items} value(s). Save to apply.";
+        }
+
+        public bool ExportValueMappings(string fileName, bool all)
+        {
+            try
+            {
+                if (all)
+                {
+                    File.WriteAllText(fileName, ValueMappingJson.Serialize(GetValueMappingsData()));
+                    ValueMappingMessage = $"Exported {ValueMappings.Count} list(s) to {Path.GetFileName(fileName)}.";
+                }
+                else if (_selectedValueMapping != null)
+                {
+                    File.WriteAllText(fileName, ValueMappingJson.Serialize(_selectedValueMapping.ToData()));
+                    ValueMappingMessage = $"Exported \"{_selectedValueMapping.DisplayName}\" to {Path.GetFileName(fileName)}.";
+                }
+
+                return true;
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                ValueMappingMessage = $"Cannot export: {e.Message}";
+                return false;
+            }
+        }
+
+        private List<ValueMappingList> GetValueMappingsData() =>
+            ValueMappings.Select(list => list.ToData()).ToList();
+
+        private static string GetValueMappingsSignature(IEnumerable<ValueMappingList> lists) =>
+            ValueMappingJson.Serialize(lists);
+
+        private string GetUniqueValueMappingName(string baseName)
+        {
+            var name = baseName;
+            for (var i = 2; ValueMappings.Any(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase)); i++)
+                name = $"{baseName} {i}";
+            return name;
+        }
+
+        private void RemoveSelectedValueMapping()
+        {
+            if (_selectedValueMapping == null)
+                return;
+
+            var index = ValueMappings.IndexOf(_selectedValueMapping);
+            ValueMappings.Remove(_selectedValueMapping);
+            SelectedValueMapping = ValueMappings.Count == 0
+                ? null
+                : ValueMappings[Math.Min(index, ValueMappings.Count - 1)];
+        }
+
         public bool Save()
         {
             var errors = Validate();
@@ -161,6 +317,11 @@ namespace LogGrokX.Settings
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
             _textZoomService.SetFontSize(View.LogFontSize);
             _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
+
+            var valueMappings = GetValueMappingsData();
+            var valueMappingsSignature = GetValueMappingsSignature(valueMappings);
+            if (valueMappingsSignature != _savedValueMappings)
+                _applicationSettings.SetValueMappings(valueMappings.ToArray());
 
             var file = new YamlSettingsFile(ApplicationSettings.SettingsFileName);
             file.SetScalar("DebugSettings", "EnableCrashDumps", Debug.EnableCrashDumps ? "true" : "false");
@@ -193,8 +354,16 @@ namespace LogGrokX.Settings
                 _savedLogFormats = logFormats;
             }
 
+            if (valueMappingsSignature != _savedValueMappings)
+            {
+                file.EnsureKey("Settings", "ValueMappings");
+                file.ReplaceSequence("Settings", "ValueMappings",
+                    indent => SettingsYamlRenderer.RenderValueMappings(valueMappings, indent));
+            }
+
             file.Save();
 
+            _savedValueMappings = valueMappingsSignature;
             _savedColorRules = colorRules;
             _savedLogFormats = logFormats;
             CaptureRestartSettings();
@@ -289,7 +458,8 @@ namespace LogGrokX.Settings
                 Debug.EnableCrashDumps != _savedEnableCrashDumps ||
                 Debug.MaxDumpsCountText != _savedMaxDumpsCountText ||
                 !AreColorRulesEqual(_savedColorRules, colorRules) ||
-                !AreLogFormatsEqual(_savedLogFormats, logFormats);
+                !AreLogFormatsEqual(_savedLogFormats, logFormats) ||
+                GetValueMappingsSignature(GetValueMappingsData()) != _savedValueMappings;
         }
 
         private void RemoveSelectedColorRule()
@@ -321,6 +491,9 @@ namespace LogGrokX.Settings
                 if (!rule.IsRegexValid)
                     errors.Add("A color rule has an invalid regular expression.");
             }
+
+            foreach (var list in ValueMappings)
+                errors.AddRange(list.GetValidationErrors());
 
             return errors;
         }

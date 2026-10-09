@@ -9,6 +9,7 @@ public class LinePartViewModel : ViewModelBase
 {
     private readonly int _uniqueId;
     private readonly BinaryDetectionOptions _detection;
+    private readonly FieldValueMapper _valueMapper;
     private readonly TextModel _originalTextModel;
     private const int HexDecodedFlag = (int)Base64Content.All + 1;
 
@@ -20,10 +21,11 @@ public class LinePartViewModel : ViewModelBase
     private bool _isHexDecoded;
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true,
-        BinaryDetectionOptions? detection = null)
+        BinaryDetectionOptions? detection = null, FieldValueMapper? valueMapper = null)
     {
         _uniqueId = uniqueId;
-        _originalTextModel = new TextModel(uniqueId, source);
+        _valueMapper = valueMapper ?? FieldValueMapper.None;
+        _originalTextModel = new TextModel(uniqueId, ValueMappingText.Apply(source, _valueMapper));
         _detection = detectBase64 ? detection ?? BinaryDetectionOptions.Current : BinaryDetectionOptions.None;
         OriginalText = source;
     }
@@ -118,6 +120,7 @@ public class LinePartViewModel : ViewModelBase
             Base64Detector.TryDecode(OriginalText, _decoded, out text, out _, StructuredSpans);
         if (_isHexDecoded && HexText.TryDecode(text, out var hexDecoded))
             text = hexDecoded;
+        text = ValueMappingText.Apply(text, _valueMapper);
 
         _decodedTextModels[key] = new TextModel(
             HashCode.Combine(_uniqueId, nameof(Base64Content), key), text);

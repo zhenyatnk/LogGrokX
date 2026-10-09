@@ -25,6 +25,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🧵 Thread grouping](#-thread-grouping)
 - [🔁 Text transformations](#-text-transformations)
 - [🔓 Base64 decoding](#-base64-decoding)
+- [🏷️ Value mappings](#️-value-mappings)
 - [🔐 XOR-masked logs](#-xor-masked-logs)
 - [🌗 Light and dark themes](#-light-and-dark-themes)
 - [🩺 Crash dumps](#-crash-dumps)
@@ -471,6 +472,75 @@ saving; reopen the log to apply it to every line.
     DetectPem: true
     DetectBase64: true
     DetectHex: true
+```
+
+## 🏷️ Value mappings
+
+**Business value.** Logs are full of numeric codes, enum values and
+identifiers (`0x00001`, `0x80070005`, `3`) whose meaning lives in a header file
+or a wiki page. Value mappings show that meaning right next to the value, so
+the log can be read without looking codes up.
+
+A value found in a mapping list is displayed as `value(mapping)`:
+
+```text
+request type 0x00001 failed: 0x80070005
+→ request type 0x00001(type 1) failed: 0x80070005(E_ACCESSDENIED)
+```
+
+Mappings are edited in **Settings → Value mappings**. Each list has a name, an
+**Enabled** switch, **Ignore case** and **Fields**: a comma-separated list of
+fields (columns) the list applies to; empty means every field. The marked-lines
+view and the whole-line text of the merged view use only lists without fields.
+A value matches only as a whole token (`0x00001` is not mapped inside
+`0x000010`); the longest value wins and the first list wins for the same value.
+The **Preview** box shows how a sample text is displayed.
+
+Inside JSON only string values are mapped (property names and numbers are not),
+inside XML element text, attribute values and CDATA; the mapping is escaped, and
+if the fragment would no longer be the same JSON/XML it is left unchanged, so
+folding keeps working. Mappings change only what is displayed (and copied):
+search, filters, color rules and indexes work on the original values. Changes
+apply to lines shown after saving; reopen the log to apply them to every line.
+
+```yaml
+  ValueMappings:
+    - Name: Types
+      Enabled: true
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x00001
+          Mapping: type 1
+```
+
+**Import / export.** **Import JSON...** adds lists from one or more files (a
+list with the same name is replaced), **Export list...** writes the selected
+list and **Export all...** writes every list. Changes are applied after
+**Save**. Import accepts a list object, an array of lists or a plain
+`{"value": "mapping"}` object (the file name becomes the list name):
+
+```json
+[
+  {
+    "Name": "Types",
+    "Enabled": true,
+    "IgnoreCase": true,
+    "Fields": [ "Message" ],
+    "Items": [
+      { "Value": "0x00001", "Mapping": "type 1" },
+      { "Value": "0x00002", "Mapping": "type 2" }
+    ]
+  }
+]
+```
+
+```csharp
+using LogGrokX.Data;
+
+var mapper = new ValueMapper(ValueMappingJson.Deserialize("{ \"0x00001\": \"type 1\" }"));
+Console.WriteLine(mapper.ForField("Message").Map("got 0x00001")); // got 0x00001(type 1)
 ```
 
 ## 🔐 XOR-masked logs

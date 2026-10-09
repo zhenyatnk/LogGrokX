@@ -62,6 +62,12 @@ remaining responsive even on multi-gigabyte files.
   can also be toggled separately with "Decode Base64" / "Decode PEM" in the
   context menu. Detection is on by default and can be turned off completely or
   per kind (PEM, Base64, HEX) in Settings → View → Binary data detection.
+- **Value mappings** — show a readable meaning next to codes and identifiers:
+  a value from a mapping list is displayed as `value(mapping)`, for example
+  `0x00001(type 1)` or `0x80070005(E_ACCESSDENIED)`. Lists can be limited to
+  specific fields, are case-sensitive or not, are edited in Settings → Value
+  mappings and are imported/exported as JSON. Search, filters and indexes still
+  work on the original values.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme
@@ -231,6 +237,17 @@ Settings:
     DetectHex: true
     # Updates: disabled | check (notify about a new version) | install (install silently on exit)
     UpdateMode: check
+
+  # Shown as value(mapping); Fields empty = every field
+  ValueMappings:
+    - Name: Types
+      Enabled: true
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x00001
+          Mapping: type 1
 
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)

@@ -331,6 +331,7 @@ namespace LogGrokX.Search
         {
             var lineProvider = _logModelFacade.LineProvider; // originalLogLineNumber -> string 
             var lineParser = _logModelFacade.LineParser;
+            var fieldNames = _logModelFacade.MetaInformation.FieldNames;
 
             var filteredSearchResultLineNumbersProvider = searchIndexer.GetIndexedLinesProvider(exclusions); // collection of filtered searchResultLineNumbers
             // to map from search result line numbers to original line numbers
@@ -344,7 +345,8 @@ namespace LogGrokX.Search
             return new VirtualList<(int originalLogLineNumber, string str), ItemViewModel>(
                     filteredLineWithOriginalLineNumber, indexAndString =>
                         new LineViewModel(indexAndString.originalLogLineNumber, indexAndString.str, lineParser, 
-                            _markedLines, _transformationPerformer));
+                            _markedLines, _transformationPerformer,
+                            ValueMapper.Current.ForFields(fieldNames)));
         } 
         
         private DateTime _isSearchingShowStartTime = DateTime.Now;

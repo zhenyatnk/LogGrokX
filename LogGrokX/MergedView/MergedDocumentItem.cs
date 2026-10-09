@@ -8,6 +8,7 @@ namespace LogGrokX.MergedView
     {
         private bool _isSelected = true;
         private int[] _mergedToSourceField = Array.Empty<int>();
+        private string[]? _fieldNames;
 
         public MergedDocumentItem(DocumentViewModel document, int colorIndex)
         {
@@ -30,7 +31,7 @@ namespace LogGrokX.MergedView
         internal void UpdateFieldMap(IReadOnlyList<string> mergedFields)
         {
             var map = new int[mergedFields.Count];
-            var fieldNames = Document.MetaInformation.FieldNames;
+            var fieldNames = FieldNames;
             for (var i = 0; i < mergedFields.Count; i++)
                 map[i] = MergedSchema.FindSourceFieldIndex(fieldNames, mergedFields[i]);
             _mergedToSourceField = map;
@@ -44,6 +45,8 @@ namespace LogGrokX.MergedView
         }
 
         internal int MergedFieldCount => _mergedToSourceField.Length;
+
+        internal string[] FieldNames => _fieldNames ??= Document.MetaInformation.FieldNames;
 
         public bool IsSelected
         {

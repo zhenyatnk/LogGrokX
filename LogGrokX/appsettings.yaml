@@ -48,6 +48,32 @@ Settings:
     DetectHex: true
     # Updates: disabled - do not check, check - notify about a new version, install - download and install silently on exit
     UpdateMode: check
+
+  # Value mappings: values found in Fields (all fields when empty) are shown as value(mapping), e.g. 0x80070005(E_ACCESSDENIED).
+  # Lists can be edited, imported and exported as JSON in Settings -> Value mappings.
+  ValueMappings:
+    - Name: HRESULT
+      Enabled: false
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x80004001
+          Mapping: E_NOTIMPL
+        - Value: 0x80004002
+          Mapping: E_NOINTERFACE
+        - Value: 0x80004003
+          Mapping: E_POINTER
+        - Value: 0x80004005
+          Mapping: E_FAIL
+        - Value: 0x80070002
+          Mapping: ERROR_FILE_NOT_FOUND
+        - Value: 0x80070005
+          Mapping: E_ACCESSDENIED
+        - Value: 0x8007000E
+          Mapping: E_OUTOFMEMORY
+        - Value: 0x80070057
+          Mapping: E_INVALIDARG
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
       IndexedFields:

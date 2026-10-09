@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LogGrokX.Data;
 
 namespace LogGrokX.Settings
 {
@@ -72,6 +73,41 @@ namespace LogGrokX.Settings
 
                 if (!string.IsNullOrEmpty(format.XorMask))
                     lines.Add($"{fieldPad}XorMask: {FormatScalar(format.XorMask)}");
+            }
+
+            return lines;
+        }
+
+        public static IReadOnlyList<string> RenderValueMappings(IEnumerable<ValueMappingList> lists, int itemIndent)
+        {
+            var lines = new List<string>();
+            var itemPad = new string(' ', itemIndent);
+            var fieldPad = new string(' ', itemIndent + 2);
+            var listPad = new string(' ', itemIndent + 4);
+            var entryPad = new string(' ', itemIndent + 6);
+
+            foreach (var list in lists)
+            {
+                lines.Add($"{itemPad}- Name: {FormatScalar(list.Name)}");
+                lines.Add($"{fieldPad}Enabled: {(list.Enabled ? "true" : "false")}");
+                lines.Add($"{fieldPad}IgnoreCase: {(list.IgnoreCase ? "true" : "false")}");
+
+                if (list.Fields.Length > 0)
+                {
+                    lines.Add($"{fieldPad}Fields:");
+                    foreach (var field in list.Fields)
+                        lines.Add($"{listPad}- {FormatScalar(field)}");
+                }
+
+                if (list.Items.Length > 0)
+                {
+                    lines.Add($"{fieldPad}Items:");
+                    foreach (var item in list.Items)
+                    {
+                        lines.Add($"{listPad}- Value: {FormatScalar(item.Value)}");
+                        lines.Add($"{entryPad}Mapping: {FormatScalar(item.Mapping)}");
+                    }
+                }
             }
 
             return lines;
