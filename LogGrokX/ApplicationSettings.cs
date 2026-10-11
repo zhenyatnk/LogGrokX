@@ -69,6 +69,15 @@ namespace LogGrokX
             SaveViewSettingValue("GroupByThread", groupByThread ? "true" : "false");
         }
 
+        public void SetShowThreadGroupSeparators(bool showThreadGroupSeparators)
+        {
+            if (ViewSettings.ShowThreadGroupSeparators == showThreadGroupSeparators)
+                return;
+
+            ViewSettings.ShowThreadGroupSeparators = showThreadGroupSeparators;
+            SaveViewSettingValue("ShowThreadGroupSeparators", showThreadGroupSeparators ? "true" : "false");
+        }
+
         public void SetMergedFilesView(bool mergedFilesView)
         {
             if (ViewSettings.MergedFilesView == mergedFilesView)

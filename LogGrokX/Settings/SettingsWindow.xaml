@@ -49,6 +49,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
@@ -117,19 +118,30 @@
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Merged files view" />
+                                   Text="Show thread group separators" />
                         <CheckBox Grid.Row="5"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding View.ShowThreadGroupSeparators, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="6"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,10"
+                                   VerticalAlignment="Center"
+                                   Text="Merged files view" />
+                        <CheckBox Grid.Row="6"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.MergedFilesView, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="6"
+                        <TextBlock Grid.Row="7"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Top"
                                    Text="Binary data detection" />
-                        <StackPanel Grid.Row="6"
+                        <StackPanel Grid.Row="7"
                                     Grid.Column="1"
                                     Margin="0,0,0,10">
                             <CheckBox Content="Detect binary data (BIN)"
@@ -147,12 +159,12 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <TextBlock Grid.Row="7"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
                                    Text="Automatic updates" />
-                        <ComboBox Grid.Row="7"
+                        <ComboBox Grid.Row="8"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   ItemsSource="{Binding View.UpdateModeOptions}"
@@ -160,7 +172,7 @@
                                   SelectedValuePath="Value"
                                   SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="8"
+                        <TextBlock Grid.Row="9"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="2"
                                    Margin="0,6,0,0"

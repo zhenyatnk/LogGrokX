@@ -10,9 +10,12 @@ namespace LogGrokX
         {
             _applicationSettings = applicationSettings;
             IsEnabled = applicationSettings.ViewSettings.GroupByThread;
+            ShowSeparators = applicationSettings.ViewSettings.ShowThreadGroupSeparators;
         }
 
         public bool IsEnabled { get; private set; }
+
+        public bool ShowSeparators { get; private set; }
 
         public event Action? Changed;
 
@@ -23,6 +26,16 @@ namespace LogGrokX
 
             IsEnabled = isEnabled;
             _applicationSettings.SetGroupByThread(isEnabled);
+            Changed?.Invoke();
+        }
+
+        public void SetShowSeparators(bool showSeparators)
+        {
+            if (ShowSeparators == showSeparators)
+                return;
+
+            ShowSeparators = showSeparators;
+            _applicationSettings.SetShowThreadGroupSeparators(showSeparators);
             Changed?.Invoke();
         }
     }

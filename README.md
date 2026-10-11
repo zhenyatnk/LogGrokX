@@ -46,8 +46,9 @@ remaining responsive even on multi-gigabyte files.
   line centers the target row in the grid.
 - **Thread grouping** — group consecutive visible lines that share the same
   `Thread` field, separated by subtle dividers and with the thread value dimmed
-  on continuation rows. Toggled from the title bar and persisted in
-  `appsettings.yaml`.
+  on continuation rows. Rows of threads other than the current line are dimmed
+  and search results are limited to the current thread. Toggled from the title
+  bar and persisted in `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
 - **Base64 decoding** — rows with Base64 that decodes to readable UTF-8 text
@@ -227,6 +228,8 @@ Settings:
     LogFontSize: 12
     # Group consecutive lines that share the same Thread field
     GroupByThread: false
+    # Draw horizontal separators between thread groups
+    ShowThreadGroupSeparators: true
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
     # Binary data detection (BIN): DetectBinary turns it off completely,

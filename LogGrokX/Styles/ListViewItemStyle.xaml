@@ -24,7 +24,7 @@
             <Border BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="1"
                     SnapsToDevicePixels="True" />
-            <GridViewRowPresenter 
+            <GridViewRowPresenter x:Name="RowPresenter"
                                   Margin="2,0,-4,0"
                                   VerticalAlignment="Stretch"
                                   Columns="{TemplateBinding GridView.ColumnCollection}"
@@ -50,6 +50,9 @@
             </Trigger>
             <Trigger Property="listControls:BaseLogListViewItem.IsGroupLast" Value="True">
                 <Setter TargetName="GroupBottomSeparator" Property="Visibility" Value="Visible" />
+            </Trigger>
+            <Trigger Property="listControls:BaseLogListViewItem.IsOtherThread" Value="True">
+                <Setter TargetName="RowPresenter" Property="Opacity" Value="0.4" />
             </Trigger>
         </ControlTemplate.Triggers>
     </ControlTemplate>

@@ -68,7 +68,21 @@ persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Controls/ListControls/BaseLogListViewItem`, computed by
 `Controls/ListControls/VirtualizingStackPanel` and rendered by
-`Styles/ListViewItemStyle.xaml`. The support window is `SupportWindow.xaml` /
+`Styles/ListViewItemStyle.xaml`. The horizontal group separators are toggled by
+`ViewSettings.ShowThreadGroupSeparators` (Settings -> View, default on), exposed
+as `ThreadGroupingService.ShowSeparators` /
+`VirtualizingStackPanel.ShowGroupSeparators`; disabling them leaves
+`IsGroupContinuation` (thread-value dimming) intact. While grouping is on, rows of other threads than
+the current line are dimmed (`IsOtherThread`, computed by the panel from
+`CurrentPosition`, rendered as reduced `RowPresenter` opacity) and the search
+results are limited to the current thread (#56): `LogViewModel` publishes the
+thread of the current line to the per-document `CurrentThreadFilter`, and
+`SearchDocumentViewModel` turns it into exclusions of all other values of the
+indexed `Thread` field (`CurrentThreadFilter.AddThreadExclusions`, so the field
+must be in `IndexedFields`). In the merged view `MergedViewModel.CurrentThread`
+(source + thread) drives `MergedSearchDocumentViewModel.FilterByThread`, which
+uses `Indexer.IsLineComponentEqual` or parses the line when `Thread` is not
+indexed. The support window is `SupportWindow.xaml` /
 `SupportViewModel` (opened through `OpenSupportCommand`).
 
 The timeline/minimap strip is `Controls/LogMinimapControl.cs` (a

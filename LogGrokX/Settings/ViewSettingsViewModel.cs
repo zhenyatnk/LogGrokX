@@ -11,6 +11,7 @@ namespace LogGrokX.Settings
         private bool _timelineAtTop;
         private double _logFontSize;
         private bool _groupByThread;
+        private bool _showThreadGroupSeparators;
         private bool _mergedFilesView;
         private bool _detectBinary;
         private bool _detectPem;
@@ -25,6 +26,7 @@ namespace LogGrokX.Settings
             _timelineAtTop = settings.TimelineAtTop;
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
+            _showThreadGroupSeparators = settings.ShowThreadGroupSeparators;
             _mergedFilesView = settings.MergedFilesView;
             _detectBinary = settings.DetectBinary;
             _detectPem = settings.DetectPem;
@@ -95,6 +97,18 @@ namespace LogGrokX.Settings
                 if (_groupByThread == value)
                     return;
                 _groupByThread = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool ShowThreadGroupSeparators
+        {
+            get => _showThreadGroupSeparators;
+            set
+            {
+                if (_showThreadGroupSeparators == value)
+                    return;
+                _showThreadGroupSeparators = value;
                 InvokePropertyChanged();
             }
         }

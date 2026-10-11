@@ -314,6 +314,7 @@ namespace LogGrokX.Settings
 
             _timelinePlacementService.SetAtTop(View.TimelineAtTop);
             _threadGroupingService.SetEnabled(View.GroupByThread);
+            _threadGroupingService.SetShowSeparators(View.ShowThreadGroupSeparators);
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
             _textZoomService.SetFontSize(View.LogFontSize);
             _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
@@ -331,6 +332,7 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "TimelineAtTop", View.TimelineAtTop ? "true" : "false");
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
+            file.SetScalar("ViewSettings", "ShowThreadGroupSeparators", View.ShowThreadGroupSeparators ? "true" : "false");
             file.SetScalar("ViewSettings", "MergedFilesView", View.MergedFilesView ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectBinary", View.DetectBinary ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectPem", View.DetectPem ? "true" : "false");
