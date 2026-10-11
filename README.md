@@ -18,9 +18,13 @@ remaining responsive even on multi-gigabyte files.
 - **Configurable log formats** — describe your log layout with named-capture
   .NET regular expressions. Multiple formats can be configured, each with its
   own indexed fields.
+- **Big lines** — oversized lines are pruned (truncated with an ellipsis) or
+  wrapped into fixed-size chunks (`BigLine` / `BigLineSize`), so a single
+  malformed record cannot stall the grid or bury everything around it.
 - **Column / field indexing** — fields declared under `IndexedFields` are
   available as filterable columns and as search facets.
-- **Search** — regex search with a progress indicator, result navigation and an
+- **Search** — regex search with match-case and regex toggles, a progress
+  indicator, result navigation and an
   autocomplete cache. Search patterns can be saved and reused.
 - **Filtering** — filter by indexed column values directly from the grid, with
   removable filter chips.
@@ -83,7 +87,14 @@ remaining responsive even on multi-gigabyte files.
   app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
   is available in the Support window. After an update is applied, a **What's new**
   window shows the release notes on the next launch.
-- **Multiple documents** — dockable tabs powered by AvalonDock.
+- **Multiple documents** — dockable tabs powered by AvalonDock. Open files from
+  the command line or by drag & drop, and use the tab context menu to copy a
+  path or file name or open the containing folder.
+- **Grid conveniences** — horizontal scrolling, auto-width columns, and
+  copy-as-displayed / copy-as-native for whole rows or single cells.
+- **Settings** — a tabbed settings window (View, Colors, Log formats, Value
+  mappings, Debug) that applies changes without a restart and mirrors
+  `appsettings.yaml`.
 - **Merged files view** — combine several opened logs into one time-ordered grid.
   Columns are aligned across different log formats, rows are tinted per source,
   and search, time-range filtering, thread grouping, JSON folding and marking
@@ -109,11 +120,16 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🎯 Centered navigation](./FEATURES.md#-centered-navigation)
 - [🧵 Thread grouping](./FEATURES.md#-thread-grouping)
 - [🔁 Text transformations](./FEATURES.md#-text-transformations)
+- [🔓 Base64 and PEM decoding](./FEATURES.md#-base64-and-pem-decoding)
+- [🏷️ Value mappings](./FEATURES.md#️-value-mappings)
 - [🔐 XOR-masked logs](./FEATURES.md#-xor-masked-logs)
+- [🧱 Big lines](./FEATURES.md#-big-lines)
+- [📑 Files and documents](./FEATURES.md#-files-and-documents)
+- [🧭 Grid behaviour](./FEATURES.md#-grid-behaviour)
+- [⚙️ Settings](./FEATURES.md#️-settings)
 - [🌗 Light and dark themes](./FEATURES.md#-light-and-dark-themes)
 - [🩺 Crash dumps](./FEATURES.md#-crash-dumps)
 - [🛟 Support window](./FEATURES.md#-support-window)
-- [📑 Multiple documents](./FEATURES.md#-multiple-documents)
 - [🧬 Merged files view](./FEATURES.md#-merged-files-view)
 - [🔄 Automatic updates](./FEATURES.md#-automatic-updates)
 
