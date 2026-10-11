@@ -505,10 +505,13 @@ A value matches only as a whole token (`0x00001` is not mapped inside
 `0x000010`); the longest value wins and the first list wins for the same value.
 The **Preview** box shows how a sample text is displayed.
 
-Inside JSON only string values are mapped (property names and numbers are not),
-inside XML element text, attribute values and CDATA; the mapping is escaped, and
-if the fragment would no longer be the same JSON/XML it is left unchanged, so
-folding keeps working. Mappings change only what is displayed (and copied):
+Inside JSON string values are mapped inside their quotes and numbers are mapped
+as a trailing `5 /*mapping*/` comment (so the number stays a number; property
+names are not mapped), inside XML element text, attribute values and CDATA; the
+mapping is escaped, and if the fragment would no longer be the same JSON/XML it
+is left unchanged, so folding keeps working. JSON comments written by mappings
+are tolerated from `JsonCommentHandling.Skip` and preserved when the fragment is
+formatted and folded. Mappings change only what is displayed (and copied):
 search, filters, color rules and indexes work on the original values. Changes
 apply to lines shown after saving; reopen the log to apply them to every line.
 

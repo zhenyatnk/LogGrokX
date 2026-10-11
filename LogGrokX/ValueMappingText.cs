@@ -63,22 +63,76 @@ public static class ValueMappingText
         builder.Append(source, position, end - position);
     }
 
-    private static string MapStructured(string fragment, FieldValueMapper mapper, StructuredTextKind kind)
-    {
-        var valueRanges = kind == StructuredTextKind.Json
-            ? GetJsonStringValues(fragment)
-            : GetXmlValues(fragment);
+    private static string MapStructured(string fragment, FieldValueMapper mapper, StructuredTextKind kind) =>
+        kind == StructuredTextKind.Json ? MapJson(fragment, mapper) : MapXml(fragment, mapper);
 
+    private static string MapXml(string fragment, FieldValueMapper mapper)
+    {
         var matches = new List<ValueMappingMatch>();
-        foreach (var (start, end) in valueRanges)
+        foreach (var (start, end) in GetXmlValues(fragment))
             matches.AddRange(mapper.FindMatches(fragment, start, end - start));
 
         if (matches.Count == 0)
             return fragment;
 
-        var mapped = FieldValueMapper.Apply(fragment, matches,
-            kind == StructuredTextKind.Json ? EscapeJson : SecurityElement.Escape);
-        return IsSameStructure(mapped, kind) ? mapped : fragment;
+        var mapped = FieldValueMapper.Apply(fragment, matches, SecurityElement.Escape);
+        return IsSameStructure(mapped, StructuredTextKind.Xml) ? mapped : fragment;
+    }
+
+    private static string MapJson(string fragment, FieldValueMapper mapper)
+    {
+        var matches = new List<(ValueMappingMatch Match, bool IsNumber)>();
+        foreach (var (start, end) in GetJsonStringValues(fragment))
+            foreach (var match in mapper.FindMatches(fragment, start, end - start))
+                matches.Add((match, false));
+        foreach (var (start, end) in GetJsonNumberValues(fragment))
+            foreach (var match in mapper.FindMatches(fragment, start, end - start))
+                matches.Add((match, true));
+
+        if (matches.Count == 0)
+            return fragment;
+
+        matches.Sort(static (left, right) => left.Match.Start.CompareTo(right.Match.Start));
+
+        var builder = new StringBuilder(fragment.Length + matches.Count * 8);
+        var position = 0;
+        foreach (var (match, isNumber) in matches)
+        {
+            builder.Append(fragment, position, match.Start + match.Length - position);
+            if (isNumber)
+                builder.Append(" /*").Append(SanitizeComment(match.Mapping)).Append("*/");
+            else
+                builder.Append('(').Append(EscapeJson(match.Mapping)).Append(')');
+            position = match.Start + match.Length;
+        }
+
+        builder.Append(fragment, position, fragment.Length - position);
+        var mapped = builder.ToString();
+        return IsSameStructure(mapped, StructuredTextKind.Json) ? mapped : fragment;
+    }
+
+    private static string SanitizeComment(string mapping)
+    {
+        var builder = new StringBuilder(mapping.Length);
+        foreach (var ch in mapping)
+        {
+            switch (ch)
+            {
+                case '\r' or '\n':
+                    break;
+                case '{' or '}' or '[' or ']':
+                    builder.Append(' ');
+                    break;
+                case '/' when builder.Length > 0 && builder[^1] == '*':
+                    builder.Append(' ').Append(ch);
+                    break;
+                default:
+                    builder.Append(ch);
+                    break;
+            }
+        }
+
+        return builder.ToString();
     }
 
     private static bool IsSameStructure(string fragment, StructuredTextKind kind)
@@ -129,6 +183,71 @@ public static class ValueMappingText
             position++;
         return position < json.Length && json[position] == ':';
     }
+
+    internal static List<(int start, int end)> GetJsonNumberValues(string json)
+    {
+        var result = new List<(int start, int end)>();
+        var i = 0;
+        while (i < json.Length)
+        {
+            var ch = json[i];
+            if (ch == '"')
+            {
+                i = SkipJsonString(json, i);
+                continue;
+            }
+
+            if (ch == '/' && i + 1 < json.Length && json[i + 1] == '*')
+            {
+                var commentEnd = json.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                i = commentEnd < 0 ? json.Length : commentEnd + 2;
+                continue;
+            }
+
+            if (ch == '/' && i + 1 < json.Length && json[i + 1] == '/')
+            {
+                var commentEnd = json.IndexOf('\n', i + 2);
+                i = commentEnd < 0 ? json.Length : commentEnd + 1;
+                continue;
+            }
+
+            if (ch == '-' || char.IsAsciiDigit(ch))
+            {
+                var start = i;
+                i++;
+                while (i < json.Length && IsJsonNumberChar(json[i]))
+                    i++;
+                result.Add((start, i));
+                continue;
+            }
+
+            i++;
+        }
+
+        return result;
+    }
+
+    private static int SkipJsonString(string json, int position)
+    {
+        position++;
+        while (position < json.Length)
+        {
+            if (json[position] == '\\')
+            {
+                position += 2;
+                continue;
+            }
+
+            if (json[position] == '"')
+                return position + 1;
+            position++;
+        }
+
+        return position;
+    }
+
+    private static bool IsJsonNumberChar(char c) =>
+        char.IsAsciiDigit(c) || c is '.' or 'e' or 'E' or '+' or '-';
 
     internal static List<(int start, int end)> GetXmlValues(string xml)
     {

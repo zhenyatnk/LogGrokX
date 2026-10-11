@@ -477,7 +477,8 @@ namespace LogGrokX
             
             try
             {
-                using var doc = JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas = true });
+                using var doc = JsonDocument.Parse(jsonString,
+                    new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
                 return true;
             }
             catch (JsonException)
@@ -485,7 +486,11 @@ namespace LogGrokX
                 return false;
             }
         }
-        private static string FormatJsonText(string jsonString)
+
+        private static string FormatJsonText(string jsonString) =>
+            ContainsJsonComment(jsonString) ? FormatJsonWithComments(jsonString) : FormatJsonTextCore(jsonString);
+
+        private static string FormatJsonTextCore(string jsonString)
         {
             using var doc = JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas = true });
             var memoryStream = new MemoryStream();
@@ -498,7 +503,154 @@ namespace LogGrokX
             return new UTF8Encoding()
                 .GetString(memoryStream.ToArray());
         }
-        
+
+        private static bool ContainsJsonComment(string json)
+        {
+            var inString = false;
+            for (var i = 0; i < json.Length; i++)
+            {
+                var ch = json[i];
+                if (inString)
+                {
+                    if (ch == '\\')
+                    {
+                        i++;
+                        continue;
+                    }
+
+                    if (ch == '"')
+                        inString = false;
+                    continue;
+                }
+
+                if (ch == '"')
+                {
+                    inString = true;
+                    continue;
+                }
+
+                if (ch == '/' && i + 1 < json.Length && (json[i + 1] == '*' || json[i + 1] == '/'))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static string FormatJsonWithComments(string json)
+        {
+            var builder = new StringBuilder(json.Length + 32);
+            var indent = 0;
+            var inString = false;
+            var i = 0;
+
+            void NewLine()
+            {
+                builder.Append('\n').Append(' ', indent * 4);
+            }
+
+            while (i < json.Length)
+            {
+                var ch = json[i];
+                if (inString)
+                {
+                    builder.Append(ch);
+                    if (ch == '\\' && i + 1 < json.Length)
+                    {
+                        builder.Append(json[i + 1]);
+                        i += 2;
+                        continue;
+                    }
+
+                    if (ch == '"')
+                        inString = false;
+                    i++;
+                    continue;
+                }
+
+                if (ch == '"')
+                {
+                    inString = true;
+                    builder.Append(ch);
+                    i++;
+                    continue;
+                }
+
+                if (ch == '/' && i + 1 < json.Length && (json[i + 1] == '*' || json[i + 1] == '/'))
+                {
+                    var lineComment = json[i + 1] == '/';
+                    var end = lineComment
+                        ? json.IndexOf('\n', i + 2)
+                        : json.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                    if (end < 0)
+                    {
+                        if (!lineComment)
+                        {
+                            builder.Append(json, i, json.Length - i);
+                            break;
+                        }
+
+                        end = json.Length;
+                    }
+
+                    if (builder.Length > 0 && builder[^1] is not (' ' or '\n'))
+                        builder.Append(' ');
+
+                    if (lineComment)
+                    {
+                        builder.Append(json, i, end - i);
+                        i = end;
+                    }
+                    else
+                    {
+                        builder.Append(json, i, end - i + 2);
+                        i = end + 2;
+                    }
+
+                    continue;
+                }
+
+                switch (ch)
+                {
+                    case '{':
+                    case '[':
+                        builder.Append(ch);
+                        indent++;
+                        NewLine();
+                        i++;
+                        break;
+                    case '}':
+                    case ']':
+                        indent = Math.Max(0, indent - 1);
+                        if (builder.Length > 0 && builder[^1] != '\n')
+                            NewLine();
+                        builder.Append(ch);
+                        i++;
+                        break;
+                    case ',':
+                        builder.Append(ch);
+                        NewLine();
+                        i++;
+                        break;
+                    case ':':
+                        builder.Append(": ");
+                        i++;
+                        break;
+                    case ' ':
+                    case '\t':
+                    case '\r':
+                    case '\n':
+                        i++;
+                        break;
+                    default:
+                        builder.Append(ch);
+                        i++;
+                        break;
+                }
+            }
+
+            return builder.ToString();
+        }
+
         private static int SkipLines(ReadOnlySpan<char> source, uint linesToSkip)
         {
             if (linesToSkip == 0) return 0;

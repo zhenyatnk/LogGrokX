@@ -50,11 +50,39 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void JsonNumberIsNotMapped()
+        public void JsonNumberIsMappedAsComment()
         {
             const string source = "{\"code\": 5, \"name\": \"x\"}";
 
-            Assert.AreEqual(source, ValueMappingText.Apply(source, Mapper(("5", "denied"))));
+            var mapped = ValueMappingText.Apply(source, Mapper(("5", "denied")));
+
+            Assert.AreEqual("{\"code\": 5 /*denied*/, \"name\": \"x\"}", mapped);
+            var ranges = TextOperations.GetStructuredRanges(mapped);
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(StructuredTextKind.Json, ranges[0].kind);
+        }
+
+        [TestMethod]
+        public void JsonNumberMappingKeepsJsonFormatted()
+        {
+            const string source = "{\"a\":{\"b\":5}}";
+
+            var model = new TextModel(1, ValueMappingText.Apply(source, Mapper(("5", "denied"))));
+
+            Assert.IsNotNull(model.CollapsibleRanges);
+            var displayed = model.GetDisplayedText(new System.Collections.Generic.HashSet<int>());
+            StringAssert.Contains(displayed, "\"b\": 5 /*denied*/");
+        }
+
+        [TestMethod]
+        public void JsonNumberCommentOmitsCommentTerminator()
+        {
+            const string source = "{\"code\": 5}";
+
+            var mapped = ValueMappingText.Apply(source, Mapper(("5", "a*/b")));
+
+            StringAssert.Contains(mapped, "5 /*a* /b*/");
+            Assert.AreEqual(1, TextOperations.GetStructuredRanges(mapped).Count);
         }
 
         [TestMethod]

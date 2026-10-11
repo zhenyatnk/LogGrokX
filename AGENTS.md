@@ -281,9 +281,13 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   passes it to `LinePartViewModel`, which builds its `TextModel` (and every
   decoded model, after Base64/HEX) from `ValueMappingText.Apply`, so the display
   and "Copy" show `value(mapping)` while `OriginalText`, search, filters and
-  indexes keep the raw value. `ValueMappingText` maps JSON string values only
-  (not keys or numbers), XML text/attribute values/CDATA, escapes the mapping and
-  keeps the fragment unchanged if it is no longer the same JSON/XML
+  indexes keep the raw value. `ValueMappingText` maps JSON string values (inside
+  the quotes, `value(mapping)`) and JSON numbers (as a trailing `5 /*mapping*/`
+  comment, so the number stays a number); property names are not mapped. JSON
+  comments are tolerated by `TextOperations.IsValidJson` (`JsonCommentHandling.Skip`)
+  and preserved by `FormatJsonWithComments`, so commented JSON is still formatted
+  and folded. XML text/attribute values/CDATA are mapped with the mapping escaped,
+  and the fragment is kept unchanged if it is no longer the same JSON/XML
   (`TextOperations.GetStructuredRanges`). Rows already created keep their
   snapshot; the change reaches every line after reopening the log. JSON
   import/export is `ValueMappingJson` (object, array or a plain value->mapping
