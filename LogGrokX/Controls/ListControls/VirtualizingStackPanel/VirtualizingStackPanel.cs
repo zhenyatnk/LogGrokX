@@ -25,6 +25,10 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
             "ThreadFieldIndex", typeof(int), typeof(VirtualizingStackPanel),
             new FrameworkPropertyMetadata(-1, OnGroupingChanged));
 
+        public static readonly DependencyProperty ShowGroupSeparatorsProperty = DependencyProperty.Register(
+            "ShowGroupSeparators", typeof(bool), typeof(VirtualizingStackPanel),
+            new FrameworkPropertyMetadata(true, OnGroupingChanged));
+
         private static readonly Logger Log = Logger.Get("VirtualizingStackPanel");
 
         private List<VisibleItem> _visibleItems = new();
@@ -127,6 +131,12 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
             set => SetValue(ThreadFieldIndexProperty, value);
         }
 
+        public bool ShowGroupSeparators
+        {
+            get => (bool)GetValue(ShowGroupSeparatorsProperty);
+            set => SetValue(ShowGroupSeparatorsProperty, value);
+        }
+
         private static void OnGroupingChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is VirtualizingStackPanel panel)
@@ -221,9 +231,11 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
             if (GroupByThread && ThreadFieldIndex >= 0 && Items[index] is IThreadGroupedItem line)
             {
-                isGroupFirst = index == 0 || !line.HasSameThread(Items[index - 1] as IThreadGroupedItem, ThreadFieldIndex);
-                isGroupLast = index == Items.Count - 1;
-                isGroupContinuation = !isGroupFirst;
+                var isNewGroup = index == 0
+                    || !line.HasSameThread(Items[index - 1] as IThreadGroupedItem, ThreadFieldIndex);
+                isGroupContinuation = !isNewGroup;
+                isGroupFirst = ShowGroupSeparators && isNewGroup;
+                isGroupLast = ShowGroupSeparators && index == Items.Count - 1;
                 isOtherThread = currentThreadItem != null && !ReferenceEquals(line, currentThreadItem)
                                 && !line.HasSameThread(currentThreadItem, ThreadFieldIndex);
             }

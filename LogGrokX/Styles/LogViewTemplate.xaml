@@ -137,6 +137,7 @@
                             CurrentPosition="{Binding CurrentItemIndex}" 
                             FirstVisibleIndex="{Binding FirstVisibleIndex}"
                             GroupByThread="{Binding GroupByThread}"
+                            ShowGroupSeparators="{Binding ShowGroupSeparators}"
                             ThreadFieldIndex="{Binding ThreadFieldIndex}"
                             textRender:TextView.HighlightRegex="{Binding HighlightRegex}"
                             Tag="{Binding 

@@ -68,7 +68,11 @@ persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Controls/ListControls/BaseLogListViewItem`, computed by
 `Controls/ListControls/VirtualizingStackPanel` and rendered by
-`Styles/ListViewItemStyle.xaml`. While grouping is on, rows of other threads than
+`Styles/ListViewItemStyle.xaml`. The horizontal group separators are toggled by
+`ViewSettings.ShowThreadGroupSeparators` (Settings -> View, default on), exposed
+as `ThreadGroupingService.ShowSeparators` /
+`VirtualizingStackPanel.ShowGroupSeparators`; disabling them leaves
+`IsGroupContinuation` (thread-value dimming) intact. While grouping is on, rows of other threads than
 the current line are dimmed (`IsOtherThread`, computed by the panel from
 `CurrentPosition`, rendered as reduced `RowPresenter` opacity) and the search
 results are limited to the current thread (#56): `LogViewModel` publishes the

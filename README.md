@@ -222,6 +222,8 @@ Settings:
     LogFontSize: 12
     # Group consecutive lines that share the same Thread field
     GroupByThread: false
+    # Draw horizontal separators between thread groups
+    ShowThreadGroupSeparators: true
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
     # Binary data detection (BIN): DetectBinary turns it off completely,

@@ -347,7 +347,10 @@ if (grouping.IsEnabled)
 The boundaries are attached properties (`IsGroupFirst`, `IsGroupLast`,
 `IsGroupContinuation`) on `BaseLogListViewItem`, computed by the custom
 `VirtualizingStackPanel` and rendered by `Styles/ListViewItemStyle.xaml`. The
-setting is `ViewSettings.GroupByThread`.
+setting is `ViewSettings.GroupByThread`. The horizontal dividers between groups
+are controlled separately by `ViewSettings.ShowThreadGroupSeparators` (default
+`true`, toggled in **Settings -> View**); turning them off hides the top and
+bottom group lines while keeping the dimmed thread value on continuation rows.
 
 While grouping is on, the thread of the current line is in focus: rows of all
 other threads are dimmed (`IsOtherThread`), and the search pane shows only the

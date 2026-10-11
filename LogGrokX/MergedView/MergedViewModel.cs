@@ -147,6 +147,8 @@ namespace LogGrokX.MergedView
 
         public bool GroupByThread => _threadGroupingService.IsEnabled;
 
+        public bool ShowGroupSeparators => _threadGroupingService.ShowSeparators;
+
         public MergedTimeRangeFilterViewModel TimeRangeFilter { get; }
 
         public ObservableCollection<FilterChipViewModel> ActiveFilters { get; } = new();
@@ -364,6 +366,7 @@ namespace LogGrokX.MergedView
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(GroupByThread));
+            InvokePropertyChanged(nameof(ShowGroupSeparators));
             UpdateCurrentThread();
             foreach (var item in EnumerateItems())
                 if (item is MergedLineViewModel)

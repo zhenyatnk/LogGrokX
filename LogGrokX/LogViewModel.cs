@@ -211,11 +211,14 @@ namespace LogGrokX
 
         public bool GroupByThread => _threadGroupingService.IsEnabled;
 
+        public bool ShowGroupSeparators => _threadGroupingService.ShowSeparators;
+
         public int ThreadFieldIndex => _threadFieldIndex;
 
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(GroupByThread));
+            InvokePropertyChanged(nameof(ShowGroupSeparators));
             UpdateCurrentThread();
         }
 
