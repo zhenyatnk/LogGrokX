@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="AddFormat">
+    <value>Добавить формат</value>
+  </data>
+  <data xml:space="preserve" name="AddList">
+    <value>Добавить список</value>
+  </data>
+  <data xml:space="preserve" name="AddRule">
+    <value>Добавить правило</value>
+  </data>
+  <data xml:space="preserve" name="AddValue">
+    <value>Добавить значение</value>
+  </data>
+  <data xml:space="preserve" name="Architecture">
+    <value>Архитектура</value>
+  </data>
+  <data xml:space="preserve" name="AutomaticUpdates">
+    <value>Автоматические обновления</value>
+  </data>
+  <data xml:space="preserve" name="AvailableTitle">
+    <value>Доступна версия LogGrokX {0}</value>
+  </data>
+  <data xml:space="preserve" name="Background">
+    <value>Цвет фона</value>
+  </data>
+  <data xml:space="preserve" name="Base64Text">
+    <value>Текст Base64</value>
+  </data>
+  <data xml:space="preserve" name="BigLineBreak">
+    <value>Переносить</value>
+  </data>
+  <data xml:space="preserve" name="BigLineHandling">
+    <value>Обработка длинных строк</value>
+  </data>
+  <data xml:space="preserve" name="BigLinePrune">
+    <value>Обрезать</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSize">
+    <value>Порог длины строки</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSizeInvalid">
+    <value>Порог длины строки должен быть положительным целым числом.</value>
+  </data>
+  <data xml:space="preserve" name="BinaryDataDetection">
+    <value>Распознавание двоичных данных</value>
+  </data>
+  <data xml:space="preserve" name="Branch">
+    <value>Ветка</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Отмена</value>
+  </data>
+  <data xml:space="preserve" name="CheckForUpdates">
+    <value>Проверить обновления</value>
+  </data>
+  <data xml:space="preserve" name="CheckingUpdates">
+    <value>Проверка обновлений...</value>
+  </data>
+  <data xml:space="preserve" name="ChecksumMismatch">
+    <value>Контрольная сумма загруженного инсталлятора не совпадает.</value>
+  </data>
+  <data xml:space="preserve" name="ClearAll">
+    <value>Очистить всё</value>
+  </data>
+  <data xml:space="preserve" name="ClearAllFilters">
+    <value>Очистить все фильтры</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Закрыть</value>
+  </data>
+  <data xml:space="preserve" name="CollapseAll">
+    <value>Свернуть всё</value>
+  </data>
+  <data xml:space="preserve" name="CollapseRecursively">
+    <value>Свернуть рекурсивно</value>
+  </data>
+  <data xml:space="preserve" name="ColorInvalid">
+    <value>Некорректный цвет в правиле цвета.</value>
+  </data>
+  <data xml:space="preserve" name="ColorRegexInvalid">
+    <value>Некорректное регулярное выражение в правиле цвета.</value>
+  </data>
+  <data xml:space="preserve" name="Colors">
+    <value>Цвета</value>
+  </data>
+  <data xml:space="preserve" name="ColorsHint">
+    <value>Строки окрашиваются по правилам. Укажите имя цвета или #AARRGGBB. Используется первое совпавшее правило.</value>
+  </data>
+  <data xml:space="preserve" name="Commit">
+    <value>Коммит</value>
+  </data>
+  <data xml:space="preserve" name="Copy">
+    <value>Копировать</value>
+  </data>
+  <data xml:space="preserve" name="CopyDiagnostics">
+    <value>Копировать диагностику</value>
+  </data>
+  <data xml:space="preserve" name="CopyFilename">
+    <value>Копировать имя файла</value>
+  </data>
+  <data xml:space="preserve" name="CopyFullPath">
+    <value>Копировать полный путь</value>
+  </data>
+  <data xml:space="preserve" name="CopyLines">
+    <value>Копировать строки</value>
+  </data>
+  <data xml:space="preserve" name="CopyNative">
+    <value>Копировать исходный текст</value>
+  </data>
+  <data xml:space="preserve" name="CurrentSearchName">
+    <value>Название текущего поиска</value>
+  </data>
+  <data xml:space="preserve" name="CurrentVersion">
+    <value>Текущая версия:</value>
+  </data>
+  <data xml:space="preserve" name="Debug">
+    <value>Диагностика</value>
+  </data>
+  <data xml:space="preserve" name="DebugHint">
+    <value>Настройки диагностики применяются при следующем запуске приложения.</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBase64">
+    <value>Декодировать Base64</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBinary">
+    <value>Декодировать двоичные данные</value>
+  </data>
+  <data xml:space="preserve" name="DecodeHex">
+    <value>Декодировать HEX</value>
+  </data>
+  <data xml:space="preserve" name="DecodePem">
+    <value>Декодировать PEM</value>
+  </data>
+  <data xml:space="preserve" name="DecreaseTextSize">
+    <value>Уменьшить текст (Ctrl+-)</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Удалить</value>
+  </data>
+  <data xml:space="preserve" name="DeselectAll">
+    <value>Снять выделение</value>
+  </data>
+  <data xml:space="preserve" name="DetectBinary">
+    <value>Распознавать двоичные данные (BIN)</value>
+  </data>
+  <data xml:space="preserve" name="Diagnostics">
+    <value>Диагностика</value>
+  </data>
+  <data xml:space="preserve" name="DownloadLatestRelease">
+    <value>Скачать последнюю версию</value>
+  </data>
+  <data xml:space="preserve" name="DownloadingUpdate">
+    <value>Загрузка обновления...</value>
+  </data>
+  <data xml:space="preserve" name="DurationDays">
+    <value>{0} д</value>
+  </data>
+  <data xml:space="preserve" name="DurationHours">
+    <value>{0} ч</value>
+  </data>
+  <data xml:space="preserve" name="DurationMilliseconds">
+    <value>{0} мс</value>
+  </data>
+  <data xml:space="preserve" name="DurationMinutes">
+    <value>{0} мин</value>
+  </data>
+  <data xml:space="preserve" name="DurationSeconds">
+    <value>{0} с</value>
+  </data>
+  <data xml:space="preserve" name="Edit">
+    <value>Изменить</value>
+  </data>
+  <data xml:space="preserve" name="EnableCrashDumps">
+    <value>Создавать дампы при сбое</value>
+  </data>
+  <data xml:space="preserve" name="Enabled">
+    <value>Включено</value>
+  </data>
+  <data xml:space="preserve" name="Exclude">
+    <value>Исключить</value>
+  </data>
+  <data xml:space="preserve" name="ExcludeAllBut">
+    <value>Исключить всё, кроме</value>
+  </data>
+  <data xml:space="preserve" name="ExpandAll">
+    <value>Развернуть всё</value>
+  </data>
+  <data xml:space="preserve" name="ExpandRecursively">
+    <value>Развернуть рекурсивно</value>
+  </data>
+  <data xml:space="preserve" name="ExportAll">
+    <value>Экспорт всего...</value>
+  </data>
+  <data xml:space="preserve" name="ExportAllValueMappings">
+    <value>Экспорт всех сопоставлений</value>
+  </data>
+  <data xml:space="preserve" name="ExportDone">
+    <value>Экспортировано списков: {0} в {1}.</value>
+  </data>
+  <data xml:space="preserve" name="ExportFailed">
+    <value>Не удалось экспортировать: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ExportList">
+    <value>Экспорт списка...</value>
+  </data>
+  <data xml:space="preserve" name="ExportListDone">
+    <value>Список «{0}» экспортирован в {1}.</value>
+  </data>
+  <data xml:space="preserve" name="ExportValueMapping">
+    <value>Экспорт сопоставления</value>
+  </data>
+  <data xml:space="preserve" name="FieldsLabel">
+    <value>Поля:</value>
+  </data>
+  <data xml:space="preserve" name="FilterSavedSearches">
+    <value>Фильтр сохранённых поисков...</value>
+  </data>
+  <data xml:space="preserve" name="Folding">
+    <value>Сворачивание</value>
+  </data>
+  <data xml:space="preserve" name="Foreground">
+    <value>Цвет текста</value>
+  </data>
+  <data xml:space="preserve" name="FormatsHint">
+    <value>Форматы проверяются по порядку при открытии журнала. Индексируемые поля и преобразования задаются по одному на строку.</value>
+  </data>
+  <data xml:space="preserve" name="GroupByThread">
+    <value>Группировать по потоку</value>
+  </data>
+  <data xml:space="preserve" name="HiddenValues">
+    <value>{0}: скрыто {1}</value>
+  </data>
+  <data xml:space="preserve" name="IgnoreCase">
+    <value>Без учёта регистра</value>
+  </data>
+  <data xml:space="preserve" name="ImportDone">
+    <value>Импортировано списков: {0}, значений: {1}. Сохраните для применения.</value>
+  </data>
+  <data xml:space="preserve" name="ImportFailed">
+    <value>Не удалось импортировать {0}: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ImportJson">
+    <value>Импорт JSON...</value>
+  </data>
+  <data xml:space="preserve" name="ImportReplaced">
+    <value>Импортировано списков: {0}, значений: {1}; заменено по названию: {2}. Сохраните для применения.</value>
+  </data>
+  <data xml:space="preserve" name="ImportValueMappings">
+    <value>Импорт сопоставлений значений</value>
+  </data>
+  <data xml:space="preserve" name="IncreaseTextSize">
+    <value>Увеличить текст (Ctrl+=)</value>
+  </data>
+  <data xml:space="preserve" name="IndexedFields">
+    <value>Индексируемые поля (по одному на строку)</value>
+  </data>
+  <data xml:space="preserve" name="InstallUpdatesAutomatically">
+    <value>Устанавливать обновления автоматически</value>
+  </data>
+  <data xml:space="preserve" name="InstallerUnavailable">
+    <value>Для этой версии нет инсталлятора.</value>
+  </data>
+  <data xml:space="preserve" name="JsonFilter">
+    <value>Файлы JSON (*.json)|*.json|Все файлы (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Язык</value>
+  </data>
+  <data xml:space="preserve" name="LanguageRestart">
+    <value>Язык интерфейса изменится после перезапуска приложения.</value>
+  </data>
+  <data xml:space="preserve" name="LanguageSystem">
+    <value>Язык системы</value>
+  </data>
+  <data xml:space="preserve" name="Later">
+    <value>Позже</value>
+  </data>
+  <data xml:space="preserve" name="LatestVersion">
+    <value>Установлена последняя версия.</value>
+  </data>
+  <data xml:space="preserve" name="LineCountFew">
+    <value>{0} строки</value>
+  </data>
+  <data xml:space="preserve" name="LineCountMany">
+    <value>{0} строк</value>
+  </data>
+  <data xml:space="preserve" name="LineCountOne">
+    <value>{0} строка</value>
+  </data>
+  <data xml:space="preserve" name="LineNumber">
+    <value>Строка {0}</value>
+  </data>
+  <data xml:space="preserve" name="Links">
+    <value>Ссылки</value>
+  </data>
+  <data xml:space="preserve" name="LogFontSize">
+    <value>Размер шрифта журнала</value>
+  </data>
+  <data xml:space="preserve" name="LogFormat">
+    <value>Формат журнала</value>
+  </data>
+  <data xml:space="preserve" name="LogFormats">
+    <value>Форматы журналов</value>
+  </data>
+  <data xml:space="preserve" name="LogRegexInvalid">
+    <value>Некорректное регулярное выражение в формате журнала.</value>
+  </data>
+  <data xml:space="preserve" name="Mapping">
+    <value>Сопоставление</value>
+  </data>
+  <data xml:space="preserve" name="MappingDuplicates">
+    <value>В списке «{0}» повторяются значения: {1}.</value>
+  </data>
+  <data xml:space="preserve" name="MappingFields">
+    <value>Поля (через запятую; пусто = все поля)</value>
+  </data>
+  <data xml:space="preserve" name="MappingValueMissing">
+    <value>В списке «{0}» есть элемент без значения.</value>
+  </data>
+  <data xml:space="preserve" name="MappingsHint">
+    <value>Значения в указанных полях показываются как значение(сопоставление), например 0x00001(тип 1). Пустой список полей применяет сопоставления ко всем полям. Импорт и экспорт — в JSON.</value>
+  </data>
+  <data xml:space="preserve" name="MarkedLines">
+    <value>Отмеченные строки</value>
+  </data>
+  <data xml:space="preserve" name="MatchCase">
+    <value>Учитывать регистр</value>
+  </data>
+  <data xml:space="preserve" name="MatchCount">
+    <value>Совпадений: {0}</value>
+  </data>
+  <data xml:space="preserve" name="MatchPosition">
+    <value>{0} из {1}</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsCount">
+    <value>Максимальное число дампов</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsInvalid">
+    <value>Максимальное число дампов должно быть положительным целым числом.</value>
+  </data>
+  <data xml:space="preserve" name="MergeFiles">
+    <value>Объединить строки нескольких файлов по времени</value>
+  </data>
+  <data xml:space="preserve" name="MergedFiles">
+    <value>Объединённые файлы</value>
+  </data>
+  <data xml:space="preserve" name="MergedFilesView">
+    <value>Объединённый просмотр файлов</value>
+  </data>
+  <data xml:space="preserve" name="MoreLines">
+    <value>Ещё строк: {0} &gt;&gt;&gt;</value>
+  </data>
+  <data xml:space="preserve" name="Name">
+    <value>Название</value>
+  </data>
+  <data xml:space="preserve" name="New">
+    <value>Создать</value>
+  </data>
+  <data xml:space="preserve" name="NewMapping">
+    <value>Новое сопоставление</value>
+  </data>
+  <data xml:space="preserve" name="NewProfile">
+    <value>Новый профиль</value>
+  </data>
+  <data xml:space="preserve" name="NoReleaseNotes">
+    <value>Нет описания изменений.</value>
+  </data>
+  <data xml:space="preserve" name="Ok">
+    <value>ОК</value>
+  </data>
+  <data xml:space="preserve" name="OpenContainingFolder">
+    <value>Открыть папку файла</value>
+  </data>
+  <data xml:space="preserve" name="OpenDownloadPage">
+    <value>Открыть страницу загрузки</value>
+  </data>
+  <data xml:space="preserve" name="OpenFileFilter">
+    <value>Все файлы|*.*|Файлы журналов (*.log)|*.log|Текстовые файлы (*.txt)|*.txt</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogFile">
+    <value>Открыть журнал (Ctrl+O)</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogsFolder">
+    <value>Открыть папку журналов</value>
+  </data>
+  <data xml:space="preserve" name="OpenReleasePage">
+    <value>Открыть страницу версии</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettings">
+    <value>Открыть настройки</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettingsFile">
+    <value>Открыть appsettings.yaml</value>
+  </data>
+  <data xml:space="preserve" name="Os">
+    <value>ОС</value>
+  </data>
+  <data xml:space="preserve" name="Pattern">
+    <value>Шаблон</value>
+  </data>
+  <data xml:space="preserve" name="PemDetection">
+    <value>Блоки PEM, сертификаты и ключи</value>
+  </data>
+  <data xml:space="preserve" name="Preview">
+    <value>Предпросмотр</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeError">
+    <value>Не удалось применить профиль «{0}»: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeFailed">
+    <value>Ошибка смены профиля</value>
+  </data>
+  <data xml:space="preserve" name="ProfileCopy">
+    <value>{0} — копия</value>
+  </data>
+  <data xml:space="preserve" name="ProfileHint">
+    <value>Профиль разбора и подсветки. При смене все открытые файлы перезагружаются.</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNameRequired">
+    <value>У каждого профиля должно быть название.</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNamesUnique">
+    <value>Названия профилей должны быть уникальными.</value>
+  </data>
+  <data xml:space="preserve" name="Profiles">
+    <value>Профили</value>
+  </data>
+  <data xml:space="preserve" name="ProfilesHint">
+    <value>У каждого профиля свои форматы и правила цветов. Сохранение применяет выбранный профиль ко всем открытым файлам и перезагружает их с сохранением отмеченных строк.</value>
+  </data>
+  <data xml:space="preserve" name="Regex">
+    <value>Регулярное выражение</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseInfoUnavailable">
+    <value>Не удалось получить сведения о версии.</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseNotesUnavailable">
+    <value>Не удалось загрузить описание изменений с GitHub. Оно доступно на странице версии.</value>
+  </data>
+  <data xml:space="preserve" name="Remove">
+    <value>Удалить</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFilter">
+    <value>Удалить фильтр</value>
+  </data>
+  <data xml:space="preserve" name="RemoveList">
+    <value>Удалить список</value>
+  </data>
+  <data xml:space="preserve" name="RemoveValue">
+    <value>Удалить значение</value>
+  </data>
+  <data xml:space="preserve" name="ReportIssue">
+    <value>Сообщить о проблеме</value>
+  </data>
+  <data xml:space="preserve" name="ResetAll">
+    <value>Сбросить всё</value>
+  </data>
+  <data xml:space="preserve" name="ResetTextSize">
+    <value>Сбросить размер текста (Ctrl+0)</value>
+  </data>
+  <data xml:space="preserve" name="ResetToDefault">
+    <value>Сбросить к умолчанию</value>
+  </data>
+  <data xml:space="preserve" name="RestartHint">
+    <value>Для применения этих настроек перезапустите приложение или заново откройте журнал.</value>
+  </data>
+  <data xml:space="preserve" name="RestartRequired">
+    <value>Требуется перезапуск</value>
+  </data>
+  <data xml:space="preserve" name="Runtime">
+    <value>Среда выполнения</value>
+  </data>
+  <data xml:space="preserve" name="SampleText">
+    <value>Пример текста</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Сохранить</value>
+  </data>
+  <data xml:space="preserve" name="SaveSettingsFailed">
+    <value>Не удалось сохранить настройки: {0}</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearches">
+    <value>Сохранённые поиски</value>
+  </data>
+  <data xml:space="preserve" name="SearchPlaceholder">
+    <value>Поиск...</value>
+  </data>
+  <data xml:space="preserve" name="SearchResultsOnly">
+    <value>Только результаты поиска</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelected">
+    <value>Найти «{0}»</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelection">
+    <value>Найти выделенный текст</value>
+  </data>
+  <data xml:space="preserve" name="SelectAll">
+    <value>Выбрать всё</value>
+  </data>
+  <data xml:space="preserve" name="Settings">
+    <value>Настройки</value>
+  </data>
+  <data xml:space="preserve" name="ShowOriginal">
+    <value>Показать оригинал</value>
+  </data>
+  <data xml:space="preserve" name="ShowThreadGroupSeparators">
+    <value>Разделители групп потоков</value>
+  </data>
+  <data xml:space="preserve" name="SkipVersion">
+    <value>Пропустить эту версию</value>
+  </data>
+  <data xml:space="preserve" name="SourceCode">
+    <value>Исходный код на GitHub</value>
+  </data>
+  <data xml:space="preserve" name="Support">
+    <value>Поддержка</value>
+  </data>
+  <data xml:space="preserve" name="ThreadGrouping">
+    <value>Группировать соседние строки по потоку</value>
+  </data>
+  <data xml:space="preserve" name="TimeField">
+    <value>Поле времени</value>
+  </data>
+  <data xml:space="preserve" name="TimeFormat">
+    <value>Формат времени</value>
+  </data>
+  <data xml:space="preserve" name="TimelineAtTop">
+    <value>Шкала времени сверху</value>
+  </data>
+  <data xml:space="preserve" name="TimelinePlacement">
+    <value>Разместить шкалу времени сверху</value>
+  </data>
+  <data xml:space="preserve" name="ToggleMarks">
+    <value>Переключить отметки</value>
+  </data>
+  <data xml:space="preserve" name="ToggleTheme">
+    <value>Переключить светлую / тёмную тему</value>
+  </data>
+  <data xml:space="preserve" name="Transformations">
+    <value>Преобразования (по одному на строку)</value>
+  </data>
+  <data xml:space="preserve" name="Unnamed">
+    <value>(без названия)</value>
+  </data>
+  <data xml:space="preserve" name="Update">
+    <value>Обновить</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailable">
+    <value>Доступно обновление</value>
+  </data>
+  <data xml:space="preserve" name="UpdateCheckFailed">
+    <value>Ошибка проверки обновлений: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateFailed">
+    <value>Ошибка обновления: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateReady">
+    <value>LogGrokX {0} будет установлен автоматически после закрытия приложения.</value>
+  </data>
+  <data xml:space="preserve" name="UpdatedTitle">
+    <value>Обновлено до LogGrokX {0}</value>
+  </data>
+  <data xml:space="preserve" name="Updates">
+    <value>Обновления</value>
+  </data>
+  <data xml:space="preserve" name="UpdatesDisabled">
+    <value>Не проверять обновления</value>
+  </data>
+  <data xml:space="preserve" name="UseRegex">
+    <value>Регулярные выражения</value>
+  </data>
+  <data xml:space="preserve" name="Value">
+    <value>Значение</value>
+  </data>
+  <data xml:space="preserve" name="ValueMappings">
+    <value>Сопоставления значений</value>
+  </data>
+  <data xml:space="preserve" name="Values">
+    <value>Значения</value>
+  </data>
+  <data xml:space="preserve" name="Version">
+    <value>Версия</value>
+  </data>
+  <data xml:space="preserve" name="VersionAvailable">
+    <value>Доступна версия {0}.</value>
+  </data>
+  <data xml:space="preserve" name="View">
+    <value>Вид</value>
+  </data>
+  <data xml:space="preserve" name="ViewHint">
+    <value>Обработка длинных строк и группировка применяются при открытии журнала. Распознавание двоичных данных и сопоставления значений применяются к строкам, показанным после сохранения; для всех строк откройте журнал заново. Расположение шкалы времени, переключение группировки, объединённый просмотр и размер шрифта меняются сразу.</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNew">
+    <value>Что нового</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNewHint">
+    <value>Изменения в этой версии.</value>
+  </data>
+  <data xml:space="preserve" name="XorMask">
+    <value>Маска XOR</value>
+  </data>
+  <data xml:space="preserve" name="XorMaskInvalid">
+    <value>Некорректная маска XOR в формате журнала.</value>
+  </data>
+</root>

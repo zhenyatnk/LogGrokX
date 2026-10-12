@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Windows.Input;
+using LogGrokX.Localization;
 
 namespace LogGrokX;
 
@@ -35,12 +36,13 @@ public sealed class UpdateViewModel : ViewModelBase
     public string CurrentVersion => BuildInfo.Version;
 
     public string NewVersion => _release.Tag;
+    public string AvailableTitle => Strings.Format("AvailableTitle", NewVersion);
 
-    public string ReleaseNotes => string.IsNullOrWhiteSpace(_release.Notes) ? "No release notes." : _release.Notes.Trim();
+    public string ReleaseNotes => string.IsNullOrWhiteSpace(_release.Notes) ? Strings.Get("NoReleaseNotes") : _release.Notes.Trim();
 
     public bool CanInstall { get; }
 
-    public string UpdateButtonText => CanInstall ? "Update" : "Open download page";
+    public string UpdateButtonText => CanInstall ? Strings.Get("Update") : Strings.Get("OpenDownloadPage");
 
     public bool IsDownloading
     {
@@ -107,14 +109,14 @@ public sealed class UpdateViewModel : ViewModelBase
 
         _cancellation = new CancellationTokenSource();
         IsDownloading = true;
-        Status = "Downloading update...";
+        Status = Strings.Get("DownloadingUpdate");
         try
         {
             var progress = new Progress<double>(value => Progress = value * 100);
             await _service.DownloadInstallerAsync(_release, progress, _cancellation.Token);
             Progress = 100;
             IsReady = true;
-            Status = $"LogGrokX {_release.Tag} will be installed silently when you close the application.";
+            Status = Strings.Format("UpdateReady", _release.Tag);
         }
         catch (OperationCanceledException)
         {
@@ -122,7 +124,7 @@ public sealed class UpdateViewModel : ViewModelBase
         }
         catch (Exception e)
         {
-            Status = $"Update failed: {e.Message}";
+            Status = Strings.Format("UpdateFailed", e.Message);
         }
         finally
         {

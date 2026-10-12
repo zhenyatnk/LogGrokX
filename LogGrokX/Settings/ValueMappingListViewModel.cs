@@ -6,6 +6,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Settings
 {
@@ -113,7 +114,7 @@ namespace LogGrokX.Settings
             }
         }
 
-        public string DisplayName => string.IsNullOrWhiteSpace(_name) ? "(unnamed)" : _name;
+        public string DisplayName => string.IsNullOrWhiteSpace(_name) ? Strings.Get("Unnamed") : _name;
 
         public bool Enabled
         {
@@ -197,7 +198,7 @@ namespace LogGrokX.Settings
         {
             var title = DisplayName;
             if (Items.Any(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value)))
-                yield return $"Value mapping list \"{title}\" has an item without a value.";
+                yield return Strings.Format("MappingValueMissing", title);
 
             var comparer = _ignoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             var duplicates = Items
@@ -207,7 +208,7 @@ namespace LogGrokX.Settings
                 .Select(group => group.Key)
                 .ToList();
             if (duplicates.Count > 0)
-                yield return $"Value mapping list \"{title}\" has duplicate values: {string.Join(", ", duplicates)}.";
+                yield return Strings.Format("MappingDuplicates", title, string.Join(", ", duplicates));
         }
 
         public ValueMappingList ToData() => new()

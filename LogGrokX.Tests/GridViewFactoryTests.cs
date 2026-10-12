@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Globalization;
 using System.Threading;
 using System.Windows.Controls;
 using LogGrokX.Controls;
@@ -50,6 +51,38 @@ namespace LogGrokX.Tests
                     columns[2 + Array.IndexOf(meta.FieldNames, "Thread")].ContentTextProvider!(line));
                 Assert.AreEqual("hello world",
                     columns[2 + Array.IndexOf(meta.FieldNames, "Message")].ContentTextProvider!(line));
+            });
+        }
+
+        [TestMethod]
+        [DataRow("ru")]
+        [DataRow("de")]
+        [DataRow("ja")]
+        public void ColumnHeadersBindToRegexGroupNames(string language)
+        {
+            RunOnSta(() =>
+            {
+                var previous = CultureInfo.CurrentUICulture;
+                try
+                {
+                    CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                    var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                    var expected = new[] { "Index" }.Concat(meta.FieldNames).ToArray();
+
+                    for (var i = 0; i < expected.Length; i++)
+                    {
+                        var header = new LogGridViewHeader { DataContext = new HeaderViewModel(expected[i], null) };
+                        var label = ((DockPanel)header.Content).Children.OfType<TextBlock>().Single();
+                        var binding = label.GetBindingExpression(TextBlock.TextProperty).ParentBinding;
+                        Assert.AreEqual(nameof(HeaderViewModel.FieldHeader), binding.Path.Path);
+                        Assert.IsNull(binding.Converter);
+                        Assert.AreEqual(expected[i], ((HeaderViewModel)header.DataContext).FieldHeader);
+                    }
+                }
+                finally
+                {
+                    CultureInfo.CurrentUICulture = previous;
+                }
             });
         }
 

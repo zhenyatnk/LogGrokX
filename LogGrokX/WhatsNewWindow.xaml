@@ -1,8 +1,9 @@
 <ui:FluentWindow x:Class="LogGrokX.WhatsNewWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:loc="clr-namespace:LogGrokX.Localization"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                 Title="What's new"
+                 Title="{loc:Loc WhatsNew}"
                  Width="480"
                  SizeToContent="Height"
                  Icon="pack://application:,,,/app.ico"
@@ -19,7 +20,7 @@
         </Grid.RowDefinitions>
 
         <ui:TitleBar Grid.Row="0"
-                     Title="What's new"
+                     Title="{loc:Loc WhatsNew}"
                      ShowMinimize="False"
                      ShowMaximize="False">
             <ui:TitleBar.Icon>
@@ -31,16 +32,14 @@
             <StackPanel Orientation="Horizontal">
                 <ui:ImageIcon Source="pack://application:,,,/app-large.png" Width="40" Height="40" />
                 <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-                    <TextBlock FontSize="18" FontWeight="SemiBold">
-                        <Run Text="Updated to LogGrokX" />
-                        <Run Text="{Binding Version, Mode=OneWay}" />
-                    </TextBlock>
+                    <TextBlock FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"
+                               Text="{Binding UpdatedTitle}" />
                     <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Here is what changed in this version." />
+                               Text="{loc:Loc WhatsNewHint}" />
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="What's new" />
+            <TextBlock Margin="0,16,0,6" FontWeight="SemiBold" Text="{loc:Loc WhatsNew}" />
             <Border MaxHeight="280"
                     Padding="8"
                     BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
@@ -53,13 +52,13 @@
             <ui:HyperlinkButton Margin="0,4,0,0"
                                 Padding="0"
                                 Command="{Binding OpenReleasePageCommand}"
-                                Content="Open release page" />
+                                Content="{loc:Loc OpenReleasePage}" />
 
             <ui:Button Margin="0,16,0,0"
                        HorizontalAlignment="Right"
                        Appearance="Primary"
                        Command="{Binding CloseCommand}"
-                       Content="OK" />
+                       Content="{loc:Loc Ok}" />
         </StackPanel>
     </Grid>
 </ui:FluentWindow>

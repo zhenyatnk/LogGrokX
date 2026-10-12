@@ -4,6 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
+using LogGrokX.Localization;
 
 namespace LogGrokX
 {
@@ -78,7 +79,7 @@ namespace LogGrokX
 
             _isCheckingForUpdates = true;
             InvokePropertyChanged(nameof(CanCheckForUpdates));
-            UpdateStatus = "Checking for updates...";
+            UpdateStatus = Strings.Get("CheckingUpdates");
             try
             {
                 var owner = Owner ?? Application.Current?.MainWindow;
@@ -86,14 +87,14 @@ namespace LogGrokX
                     return;
                 var release = await _updateCheckService.CheckNowAsync(owner);
                 UpdateStatus = release == null
-                    ? "Could not get release information."
+                    ? Strings.Get("ReleaseInfoUnavailable")
                     : UpdateVersion.IsNewer(release.Tag, Version)
-                        ? $"Version {release.Tag} is available."
-                        : "You have the latest version.";
+                        ? Strings.Format("VersionAvailable", release.Tag)
+                        : Strings.Get("LatestVersion");
             }
             catch (Exception e)
             {
-                UpdateStatus = $"Update check failed: {e.Message}";
+                UpdateStatus = Strings.Format("UpdateCheckFailed", e.Message);
             }
             finally
             {

@@ -18,6 +18,7 @@ using LogGrokX.Data.Virtualization;
 using LogGrokX.Filter;
 using LogGrokX.Search;
 using ColorRules = LogGrokX.Colors.ColorSettings;
+using LogGrokX.Localization;
 
 namespace LogGrokX.MergedView
 {
@@ -121,7 +122,7 @@ namespace LogGrokX.MergedView
             SyncDocuments();
         }
 
-        public string Title => "Merged files";
+        public string Title => Strings.Get("MergedFiles");
 
         public SearchViewModel Search { get; }
 

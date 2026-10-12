@@ -1,5 +1,6 @@
 <ui:FluentWindow x:Class="LogGrokX.MainWindow"
                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:loc="clr-namespace:LogGrokX.Localization"
                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -28,12 +29,12 @@
                 <ResourceDictionary Source="Styles/MarkedLinesViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/MergedViewTemplate.xaml" />
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
+                <ResourceDictionary Source="Styles/LayoutItemStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <localControls:StringShortenerConvereter x:Key="StringShortenerConverter" />
             <avalonDockExtensions:MenuItemCollection x:Key="AdditionalDocumentMenuItems">
-                <MenuItem Header="Copy Filename" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
-                <MenuItem Header="Copy Full Path" Command="{Binding Model.Content.CopyPathToClipboardCommand}" />
-                <MenuItem Header="Open Containing Folder" Command="{Binding Model.Content.OpenContainingFolderCommand}" />
+                <MenuItem Header="{loc:Loc CopyFilename}" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
+                <MenuItem Header="{loc:Loc CopyFullPath}" Command="{Binding Model.Content.CopyPathToClipboardCommand}" />
+                <MenuItem Header="{loc:Loc OpenContainingFolder}" Command="{Binding Model.Content.OpenContainingFolderCommand}" />
             </avalonDockExtensions:MenuItemCollection>
         </ResourceDictionary>
     </ui:FluentWindow.Resources>
@@ -61,29 +62,29 @@
                     <ComboBox Width="150" Margin="4,0,8,0" VerticalAlignment="Center"
                               ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
                               SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"
-                              ToolTip="Parsing and highlighting profile. Changing it reloads all open files." />
+                              ToolTip="{loc:Loc ProfileHint}" />
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Open log file (Ctrl+O)"
+                               ToolTip="{loc:Loc OpenLogFile}"
                                Command="{Binding OpenFileCommand}">
                         <ui:SymbolIcon Symbol="FolderOpen24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Increase text size (Ctrl+=)"
+                               ToolTip="{loc:Loc IncreaseTextSize}"
                                Command="{Binding ZoomInCommand}">
                         <ui:SymbolIcon Symbol="ZoomIn24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Decrease text size (Ctrl+-)"
+                               ToolTip="{loc:Loc DecreaseTextSize}"
                                Command="{Binding ZoomOutCommand}">
                         <ui:SymbolIcon Symbol="ZoomOut24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Reset text size (Ctrl+0)"
+                               ToolTip="{loc:Loc ResetTextSize}"
                                Command="{Binding ResetZoomCommand}">
                         <ui:SymbolIcon Symbol="ZoomFit24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Toggle light / dark theme"
+                               ToolTip="{loc:Loc ToggleTheme}"
                                Command="{Binding ToggleThemeCommand}">
                         <ui:SymbolIcon FontSize="16">
                             <ui:SymbolIcon.Style>
@@ -101,28 +102,28 @@
                     <ToggleButton Margin="4,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding IsTimelineAtTop, Mode=TwoWay}"
-                                  ToolTip="Place the timeline at the top">
+                                  ToolTip="{loc:Loc TimelinePlacement}">
                         <ui:SymbolIcon Symbol="ArrowSort24" FontSize="16" />
                     </ToggleButton>
                     <ToggleButton Margin="4,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding IsGroupByThread, Mode=TwoWay}"
-                                  ToolTip="Group consecutive lines by thread">
+                                  ToolTip="{loc:Loc ThreadGrouping}">
                         <ui:SymbolIcon Symbol="GroupList24" FontSize="16" />
                     </ToggleButton>
                     <ToggleButton Margin="4,0"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding IsMergedView, Mode=TwoWay}"
-                                  ToolTip="Show lines from multiple files merged by time">
+                                  ToolTip="{loc:Loc MergeFiles}">
                         <ui:SymbolIcon Symbol="Merge24" FontSize="16" />
                     </ToggleButton>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Support"
+                               ToolTip="{loc:Loc Support}"
                                Command="{Binding OpenSupportCommand}">
                         <ui:SymbolIcon Symbol="QuestionCircle24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Appearance="Transparent"
-                               ToolTip="Open settings"
+                               ToolTip="{loc:Loc OpenSettings}"
                                Command="{Binding OpenSettings}">
                         <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
                     </ui:Button>
@@ -135,27 +136,12 @@
                         Theme="{Binding DockTheme}"
                         GridSplitterWidth="10"
                         GridSplitterHeight="10"
+                        LayoutItemContainerStyleSelector="{StaticResource DocumentLayoutItemStyleSelector}"
                         avalonDockExtensions:BindingBehavior.CurrentDocument="{Binding CurrentDocument}"
                         avalonDockExtensions:BindingBehavior.DocumentViewTemplate="{StaticResource DocumentTemplate}"
                         avalonDockExtensions:BindingBehavior.DocumentsSource="{Binding Documents}"
                         avalonDockExtensions:BindingBehavior.OnDocumentCloseCommand="{Binding OnDocumentCloseCommand}"
                         avalonDockExtensions:DocumentContextMenu.AdditionalContextMenuItems="{StaticResource AdditionalDocumentMenuItems}">
-            <DockingManager.LayoutItemContainerStyle>
-                <Style TargetType="{x:Type LayoutItem}">
-                    <Setter Property="ToolTip" Value="{Binding Model.Content.Title}" />
-                    <Setter Property="Title" Value="{Binding Model.Content.Title}" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding Model.Content.IsCurrentDocument}" Value="True">
-                            <Setter Property="Title" Value="{Binding Model.Content.Title}" />
-                        </DataTrigger>
-                        <DataTrigger Binding="{Binding Model.Content.IsCurrentDocument}" Value="False">
-                            <Setter Property="Title"
-                                    Value="{Binding Model.Content.Title,
-                            Converter={StaticResource StringShortenerConverter}, ConverterParameter=25}" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </DockingManager.LayoutItemContainerStyle>
         </DockingManager>
     </Grid>
 </ui:FluentWindow>

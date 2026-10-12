@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using DryIoc;
 using LogGrokX.Data;
 using LogGrokX.Diagnostics;
+using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 using LogGrokX.Search;
 using LogGrokX.Theming;
@@ -20,9 +20,7 @@ namespace LogGrokX.Bootstrap
         private readonly Container _container;
         public App()
         {
-#if DEBUG
-            CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
-#endif
+            LocalizationService.Initialize(ApplicationSettings.Instance().ViewSettings.Language);
             TracesLogger.Initialize();
             ExceptionsLogger.Initialize();
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);

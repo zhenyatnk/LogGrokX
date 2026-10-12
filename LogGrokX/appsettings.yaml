@@ -105,6 +105,8 @@ Settings:
     MaxDumpsCount: 10
 
   ViewSettings:
+    # UI language: system, en, ru, de, fr, es, ja, pl, pt-BR (applied on restart)
+    Language: system
     # BigLine: prune|break
     BigLine: prune
     BigLineSize: 4096

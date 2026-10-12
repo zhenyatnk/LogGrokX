@@ -37,6 +37,15 @@ Setup installs **per-user** by default; choose to install for all users to place
 LogGrokX under `Program Files` (this asks for elevation). Upgrading keeps your
 existing `appsettings.yaml`.
 
+The interface, settings and installer support English, Russian, German, French,
+Spanish, Japanese, Polish and Brazilian Portuguese. A fresh installation uses
+the language selected in Setup; portable builds use the system language, falling
+back to English. Change it under **Settings -> View -> Language**, then restart.
+The choice is saved as `Settings.ViewSettings.Language` (`system`, `en`, `ru`,
+`de`, `fr`, `es`, `ja`, `pl`, `pt-BR`) and is preserved on upgrade. Log contents,
+field names (including column headers) and configuration keys retain their
+original text.
+
 ### Portable
 
 No installation needed — extract the archive and run `LogGrokX.exe`.

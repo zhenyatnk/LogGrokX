@@ -1,4 +1,5 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:loc="clr-namespace:LogGrokX.Localization"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:gridView="clr-namespace:LogGrokX.Controls.GridView"
                     xmlns:listControls="clr-namespace:LogGrokX.Controls.ListControls"
@@ -57,7 +58,7 @@
                             <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                             <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
                             <Setter Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                            <Setter Property="ToolTip" Value="Show original"/>
+                            <Setter Property="ToolTip" Value="{loc:Loc ShowOriginal}"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>
@@ -66,7 +67,7 @@
     </Style>
     <DataTemplate x:Key="DecodeTogglesTemplate" DataType="{x:Type logGrokCore:BaseLogLineViewModel}">
         <ToggleButton Content="BIN"
-                      ToolTip="Decode binary content"
+                      ToolTip="{loc:Loc DecodeBinary}"
                       Style="{StaticResource Base64ToggleButtonStyle}"
                       HorizontalAlignment="Center"
                       IsChecked="{Binding IsDecoded, Mode=TwoWay}"
