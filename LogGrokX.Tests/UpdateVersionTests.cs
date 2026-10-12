@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests
@@ -104,7 +105,46 @@ namespace LogGrokX.Tests
             Assert.AreEqual(
                 "https://github.com/zhenyatnk/LogGrokX/releases/download/v1.4.0/SHA256SUMS.txt",
                 release.Assets["SHA256SUMS.txt"]);
+            Assert.AreEqual(
+                "https://github.com/zhenyatnk/LogGrokX/releases/download/v1.4.0/LogGrokX-1.4.0-x86-setup.exe.sha256",
+                release.Assets["LogGrokX-1.4.0-x86-setup.exe.sha256"]);
             Assert.IsNotNull(UpdateCheckService.GetInstallerAssetName(release));
+        }
+
+        [TestMethod]
+        public void ChecksumPrefersInstallerChecksumFile()
+        {
+            var release = UpdateCheckService.CreateFallbackRelease("v1.7.0");
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "https://github.com/zhenyatnk/LogGrokX/releases/download/v1.7.0/LogGrokX-1.7.0-x64-setup.exe.sha256",
+                    "https://github.com/zhenyatnk/LogGrokX/releases/download/v1.7.0/SHA256SUMS.txt"
+                },
+                UpdateCheckService.GetChecksumUrls(release, "LogGrokX-1.7.0-x64-setup.exe").ToArray());
+        }
+
+        [TestMethod]
+        public void ChecksumFallsBackToSumsForOlderReleases()
+        {
+            var assets = new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
+            {
+                ["LogGrokX-1.5.0-x64-setup.exe"] = "https://example.com/setup.exe",
+                ["SHA256SUMS.txt"] = "https://example.com/SHA256SUMS.txt"
+            };
+            var release = new ReleaseInfo("v1.5.0", "https://example.com", string.Empty, assets);
+
+            CollectionAssert.AreEqual(
+                new[] { "https://example.com/SHA256SUMS.txt" },
+                UpdateCheckService.GetChecksumUrls(release, "LogGrokX-1.5.0-x64-setup.exe").ToArray());
+        }
+
+        [TestMethod]
+        public void FindChecksumReadsInstallerChecksumFile()
+        {
+            Assert.AreEqual("CCC333",
+                UpdateCheckService.FindChecksum("CCC333  LogGrokX-1.7.0-x64-setup.exe\r\n", "LogGrokX-1.7.0-x64-setup.exe"));
         }
     }
 }

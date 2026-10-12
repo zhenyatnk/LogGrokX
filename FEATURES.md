@@ -849,7 +849,10 @@ silently when the application is closed.
 - If a newer version exists, the **Update available** dialog shows the release
   notes with **Update**, **Later** and **Skip this version**.
 - **Update** downloads the installer for the current architecture, verifies it
-  against `SHA256SUMS.txt`, and runs it in silent mode after LogGrokX exits.
+  against `LogGrokX-<version>-<arch>-setup.exe.sha256` (or `SHA256SUMS.txt` for
+  older releases), and runs it in silent mode after LogGrokX exits. The download
+  count of the `.sha256` file on GitHub is the number of in-app updates, see
+  **Release statistics** in the README.
   Program Files installs ask for UAC elevation.
 - Portable builds cannot self-update: the button opens the release page instead.
 - **Check for updates** in the Support window runs a check right away, ignoring

@@ -29,6 +29,7 @@ public class UpdateCheckService
     private const string ReleasePageUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/tag/";
     private const string ReleaseDownloadUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/download/";
     private const string ChecksumsAssetName = "SHA256SUMS.txt";
+    private const string ChecksumAssetSuffix = ".sha256";
 
     internal const string FallbackReleaseNotes =
         "Release notes could not be loaded from GitHub right now. Open the release page to read them.";
@@ -253,24 +254,56 @@ public class UpdateCheckService
             }
         }
 
-        if (release.Assets.TryGetValue(ChecksumsAssetName, out var sumsUrl))
+        var expected = await GetExpectedChecksumAsync(client, release, assetName, cancellationToken);
+        if (expected != null)
         {
-            var sums = await client.GetStringAsync(sumsUrl, cancellationToken);
-            var expected = FindChecksum(sums, assetName);
-            if (expected != null)
+            string actual;
+            await using (var stream = File.OpenRead(path))
+                actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken));
+            if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
             {
-                await using var stream = File.OpenRead(path);
-                var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken));
-                if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
-                {
-                    File.Delete(path);
-                    throw new InvalidOperationException("Checksum of the downloaded installer does not match.");
-                }
+                File.Delete(path);
+                throw new InvalidOperationException("Checksum of the downloaded installer does not match.");
             }
         }
 
         _pendingInstallerPath = path;
         SavePendingRelease(release);
+    }
+
+    // The per-installer checksum file is downloaded only by the updater, so its download count on
+    // GitHub is the number of in-app updates to that release (#61). SHA256SUMS.txt is the fallback
+    // for releases published before the file existed.
+    internal static string GetChecksumAssetName(string installerAssetName) => installerAssetName + ChecksumAssetSuffix;
+
+    internal static IReadOnlyList<string> GetChecksumUrls(ReleaseInfo release, string installerAssetName)
+    {
+        var urls = new List<string>();
+        if (release.Assets.TryGetValue(GetChecksumAssetName(installerAssetName), out var checksumUrl))
+            urls.Add(checksumUrl);
+        if (release.Assets.TryGetValue(ChecksumsAssetName, out var sumsUrl))
+            urls.Add(sumsUrl);
+        return urls;
+    }
+
+    private static async Task<string?> GetExpectedChecksumAsync(HttpClient client, ReleaseInfo release, string installerAssetName,
+        CancellationToken cancellationToken)
+    {
+        foreach (var url in GetChecksumUrls(release, installerAssetName))
+        {
+            using var response = await client.GetAsync(url, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                Trace.TraceInformation($"Checksum file {url} is not available: {(int)response.StatusCode}.");
+                continue;
+            }
+
+            var expected = FindChecksum(await response.Content.ReadAsStringAsync(cancellationToken), installerAssetName);
+            if (expected != null)
+                return expected;
+        }
+
+        return null;
     }
 
     public void LaunchPendingInstaller()
@@ -488,8 +521,14 @@ public class UpdateCheckService
         var version = tag.TrimStart('v', 'V');
         var downloadPrefix = ReleaseDownloadUrlPrefix + Uri.EscapeDataString(tag) + "/";
         var assets = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var name in new[] { $"LogGrokX-{version}-x64-setup.exe", $"LogGrokX-{version}-x86-setup.exe", ChecksumsAssetName })
-            assets[name] = downloadPrefix + Uri.EscapeDataString(name);
+        foreach (var arch in new[] { "x64", "x86" })
+        {
+            var installer = $"LogGrokX-{version}-{arch}-setup.exe";
+            assets[installer] = downloadPrefix + Uri.EscapeDataString(installer);
+            assets[GetChecksumAssetName(installer)] = downloadPrefix + Uri.EscapeDataString(GetChecksumAssetName(installer));
+        }
+
+        assets[ChecksumsAssetName] = downloadPrefix + Uri.EscapeDataString(ChecksumsAssetName);
 
         return new ReleaseInfo(tag, GetReleasePageUrl(tag), FallbackReleaseNotes, assets);
     }
