@@ -1,7 +1,9 @@
 #nullable enable
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Threading;
 using LogGrokX.Colors.Configuration;
@@ -192,6 +194,79 @@ public class ProfileRuntimeTests
             finally
             {
                 File.Delete(path);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void FailedReloadRefreshesProfilesKeepsAppliedSettingsAndSuppressesRepeatedErrors()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"loggrokx-profile-reload-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "first.log");
+            var otherPath = Path.Combine(directory, "second.log");
+            var settingsPath = Path.Combine(directory, "appsettings.yaml");
+            using var errors = new StringWriter();
+            using var listener = new TextWriterTraceListener(errors);
+            Trace.Listeners.Add(listener);
+            try
+            {
+                File.WriteAllText(path, "sample\n");
+                File.WriteAllText(otherPath, "other\n");
+                var settings = new ApplicationSettings(settingsPath)
+                {
+                    Profiles = [Profile("Active", "^(?'Message'.*)", "Red"),
+                        Profile("Removed", "^(?'Message'.*)", "Red")],
+                    SelectedProfile = "Active"
+                };
+                using var main = CreateMain(settings);
+                main.AddDocument(path);
+                var original = main.CurrentDocument!;
+                WaitFor(() => !original.LogViewModel.IsLoading);
+
+                var updatedActive = Profile("Active", "^(?'Text'.*)", "Blue");
+                var invalid = Profile("Invalid", "^(?'Text'.*)", "invalid-color");
+                settings.UpdateProfiles([updatedActive, Profile("Added", "^(?'Text'.*)", "Gray"), invalid], "Invalid");
+                CollectionAssert.AreEqual(new[] { "Active", "Added", "Invalid" }, main.Profiles.Select(profile => profile.Name).ToArray());
+                Assert.AreSame(main.Profiles[0], main.SelectedProfile);
+                Assert.AreSame(original, main.CurrentDocument);
+                Assert.AreEqual(1, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
+
+                settings.UpdateProfiles([updatedActive, Profile("Renamed", "^(?'Text'.*)", "Gray"), invalid], "Invalid");
+                CollectionAssert.AreEqual(new[] { "Active", "Renamed", "Invalid" }, main.Profiles.Select(profile => profile.Name).ToArray());
+                Assert.AreEqual(1, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
+                main.AddDocument(otherPath);
+                WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading);
+                CollectionAssert.AreEqual(new[] { "Message" }, main.CurrentDocument!.MetaInformation.FieldNames);
+                Assert.AreEqual(System.Windows.Media.Colors.Red, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+
+                settings.UpdateProfiles([invalid], "Invalid");
+                Assert.AreEqual("Invalid", main.Profiles.Single().Name);
+                Assert.AreEqual("Active", main.SelectedProfile.Name);
+                Assert.AreEqual(1, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
+
+                var anotherInvalid = Profile("Invalid", "^(?'Text'.*)", "another-invalid-color");
+                settings.UpdateProfiles([anotherInvalid], "Invalid");
+                Assert.AreEqual(2, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
+                settings.UpdateProfiles([Profile("Invalid", "^(?'Text'.*)", "Blue")], "Invalid");
+                WaitFor(() => main.Documents.All(document => !document.LogViewModel.IsLoading));
+                Assert.AreEqual("Invalid", main.SelectedProfile.Name);
+                CollectionAssert.AreEqual(new[] { "Text" }, main.CurrentDocument!.MetaInformation.FieldNames);
+                Assert.AreEqual(System.Windows.Media.Colors.Blue, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+
+                settings.UpdateProfiles([anotherInvalid], "Invalid");
+                Assert.AreEqual(3, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
+                Assert.AreEqual(System.Windows.Media.Colors.Blue, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+            }
+            finally
+            {
+                Trace.Listeners.Remove(listener);
+                File.Delete(path);
+                File.Delete(otherPath);
+                File.Delete(settingsPath);
+                Directory.Delete(directory);
             }
         });
     }

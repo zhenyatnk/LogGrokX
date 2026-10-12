@@ -194,19 +194,21 @@ namespace LogGrokX
         internal static ApplicationSettings LoadFromFile(string fileName, bool reloadOnChange = false)
         {
             var builder = new ConfigurationBuilder()
-                .AddYamlFile(fileName, true, reloadOnChange);
-
-            var settings = new ApplicationSettings(fileName);
+                .Add(new ProfileYamlConfigurationSource
+                {
+                    Path = fileName,
+                    Optional = true,
+                    ReloadOnChange = reloadOnChange
+                });
 
             var configuration = builder.Build();
-            configuration.GetSection("Settings").Bind(settings);
+            var settings = BindSettings(configuration, fileName);
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
             ValueMapper.Current = new ValueMapper(settings.ValueMappings);
 
             ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
             {
-                var newSettings = new ApplicationSettings();
-                configuration.GetSection("Settings").Bind(newSettings);
+                var newSettings = BindSettings(configuration);
                 settings.ColorSettings = newSettings.ColorSettings;
                 settings.LogFormats = newSettings.LogFormats;
                 settings.ViewSettings.DetectBinary = newSettings.ViewSettings.DetectBinary;
@@ -218,6 +220,24 @@ namespace LogGrokX
                 settings.UpdateProfiles(newSettings.Profiles, newSettings.SelectedProfile);
             });
 
+            return settings;
+        }
+
+        private static ApplicationSettings BindSettings(IConfiguration configuration, string? fileName = null)
+        {
+            var settings = new ApplicationSettings(fileName);
+            var section = configuration.GetSection("Settings");
+            section.Bind(settings);
+            settings.Profiles = section.GetSection(nameof(Profiles)).GetChildren().Select(profileSection =>
+            {
+                var profile = profileSection.Get<ProfileSettings>() ?? new ProfileSettings();
+                var keys = profileSection.GetChildren().Select(child => child.Key).ToArray();
+                if (profile.LogFormats == null && keys.Contains(nameof(ProfileSettings.LogFormats), StringComparer.OrdinalIgnoreCase))
+                    profile.LogFormats = Array.Empty<LogFormat>();
+                if (profile.ColorSettings == null && keys.Contains(nameof(ProfileSettings.ColorSettings), StringComparer.OrdinalIgnoreCase))
+                    profile.ColorSettings = new ColorSettings();
+                return profile;
+            }).ToArray();
             return settings;
         }
 

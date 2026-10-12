@@ -34,6 +34,8 @@ namespace LogGrokX
         private readonly Dictionary<DocumentViewModel, DocumentContainer> _containers = new();
         private bool _disposed;
         private ProfileSettings _selectedProfile;
+        private ProfileSettings _appliedProfile;
+        private ProfileSettings? _lastFailedProfile;
         private bool _refreshingProfiles;
 
         public ObservableCollection<ProfileSettings> Profiles { get; }
@@ -70,6 +72,7 @@ namespace LogGrokX
             Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
             _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
                 applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
+            _appliedProfile = _selectedProfile;
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
             _themeService = themeService;
@@ -152,7 +155,8 @@ namespace LogGrokX
             var selected = profiles.First(profile => string.Equals(profile.Name,
                 _applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
             if (!TryApplyProfile(selected))
-                return;
+                selected = profiles.FirstOrDefault(profile => string.Equals(profile.Name,
+                    _appliedProfile.Name, StringComparison.OrdinalIgnoreCase)) ?? _appliedProfile;
             _refreshingProfiles = true;
             try
             {
@@ -170,8 +174,12 @@ namespace LogGrokX
 
         private bool TryApplyProfile(ProfileSettings profile)
         {
-            if (_selectedProfile.HasSameConfiguration(profile))
+            if (_appliedProfile.HasSameConfiguration(profile))
+            {
+                _appliedProfile = profile;
+                _lastFailedProfile = null;
                 return true;
+            }
             var documents = Documents.ToArray();
             var currentIndex = CurrentDocument == null ? -1 : Array.IndexOf(documents, CurrentDocument);
             var replacements = new List<(DocumentViewModel document, DocumentContainer container)>();
@@ -194,10 +202,14 @@ namespace LogGrokX
                     replacement.document.CloseFile();
                     replacement.container.Dispose();
                 }
-                Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
-                if (Application.Current != null)
-                    MessageBox.Show($"Cannot apply profile '{profile.Name}': {e.Message}", "Profile change failed",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (_lastFailedProfile == null || !_lastFailedProfile.HasSameConfiguration(profile))
+                {
+                    _lastFailedProfile = profile;
+                    Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
+                    if (Application.Current != null)
+                        MessageBox.Show($"Cannot apply profile '{profile.Name}': {e.Message}", "Profile change failed",
+                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
                 return false;
             }
             for (var i = 0; i < replacements.Count; i++)
@@ -208,6 +220,8 @@ namespace LogGrokX
             }
             CurrentDocument = currentIndex >= 0 ? replacements[currentIndex].document : null;
             MergedViewModel.SetColorSettings(colors);
+            _appliedProfile = profile;
+            _lastFailedProfile = null;
             return true;
         }
 
@@ -366,7 +380,7 @@ namespace LogGrokX
 
         private DocumentViewModel CreateDocument(string fileName)
         {
-            var (viewModel, container) = CreateDocumentResources(fileName, _selectedProfile);
+            var (viewModel, container) = CreateDocumentResources(fileName, _appliedProfile);
             _containers.Add(viewModel, container);
             Documents.Add(viewModel);
             return viewModel;

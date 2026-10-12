@@ -54,6 +54,41 @@ public class ProfileSettingsTests
     }
 
     [TestMethod]
+    [DataRow(null)]
+    [DataRow("true")]
+    public void ExplicitEmptyCollectionsDoNotInheritLegacySettings(string? inheritanceValue)
+    {
+        var inheritance = inheritanceValue == null ? string.Empty : $"      InheritLegacySettings: {inheritanceValue}\n";
+        File.WriteAllText(_path,
+            "Settings:\n  ColorSettings:\n    Rules:\n      - RegexString: legacy\n  LogFormats:\n    - Regex: ^legacy$\n  Profiles:\n" +
+            $"    - Name: Empty formats\n{inheritance}      LogFormats: []\n" +
+            $"    - Name: Empty colors\n{inheritance}      ColorSettings:\n        Rules: []\n" +
+            $"    - Name: Empty both\n{inheritance}      LogFormats: []\n      ColorSettings:\n        Rules: []\n");
+        var profiles = ApplicationSettings.LoadFromFile(_path).GetProfiles();
+        Assert.AreEqual(0, profiles[0].LogFormats!.Length);
+        Assert.AreEqual("legacy", profiles[0].ColorSettings!.Rules.Single().RegexString);
+        Assert.AreEqual("^legacy$", profiles[1].LogFormats!.Single().Regex);
+        Assert.AreEqual(0, profiles[1].ColorSettings!.Rules.Length);
+        Assert.AreEqual(0, profiles[2].LogFormats!.Length);
+        Assert.AreEqual(0, profiles[2].ColorSettings!.Rules.Length);
+    }
+
+    [TestMethod]
+    public async Task ExplicitEmptyCollectionsRemainEmptyAfterReload()
+    {
+        const string legacy = "Settings:\n  ColorSettings:\n    Rules:\n      - RegexString: legacy\n  LogFormats:\n    - Regex: ^legacy$\n";
+        File.WriteAllText(_path, legacy + "  Profiles:\n    - Name: Active\n");
+        var settings = ApplicationSettings.LoadFromFile(_path, reloadOnChange: true);
+        Assert.AreEqual(1, settings.GetSelectedProfile().LogFormats!.Length);
+        var changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        settings.ProfilesChanged += () => changed.TrySetResult();
+        File.WriteAllText(_path, legacy + "  Profiles:\n    - Name: Active\n      LogFormats: []\n      ColorSettings:\n        Rules: []\n");
+        await changed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.AreEqual(0, settings.GetSelectedProfile().LogFormats!.Length);
+        Assert.AreEqual(0, settings.GetSelectedProfile().ColorSettings!.Rules.Length);
+    }
+
+    [TestMethod]
     public void UnknownSelectionFallsBackAndNamesAreCaseInsensitive()
     {
         var settings = new ApplicationSettings(_path)
