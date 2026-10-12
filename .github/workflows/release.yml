@@ -216,6 +216,13 @@ jobs:
         } | Set-Content -Path ./artifacts/SHA256SUMS.txt -Encoding ascii
         Get-Content ./artifacts/SHA256SUMS.txt
 
+        # Per-installer checksum files are downloaded only by the in-app updater,
+        # so their download counts are the number of updates (see tools/Get-ReleaseStats.ps1).
+        Get-ChildItem ./artifacts -File -Filter "*-setup.exe" | ForEach-Object {
+          $hash = (Get-FileHash -Algorithm SHA256 -Path $_.FullName).Hash
+          "$hash  $($_.Name)" | Set-Content -Path "$($_.FullName).sha256" -Encoding ascii
+        }
+
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
@@ -234,6 +241,8 @@ jobs:
         files: |
           ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe
           ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x64-setup.exe.sha256
+          ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-x86-setup.exe.sha256
           ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-selfcontained.zip
           ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x64-portable.zip
           ./artifacts/LogGrokX-${{ steps.version.outputs.RELEASE_VERSION }}-win-x86-selfcontained.zip
@@ -265,6 +274,7 @@ jobs:
 
           ## Verification
           SHA-256 checksums for all assets are provided in `SHA256SUMS.txt`.
+          The `*-setup.exe.sha256` files are used by the in-app updater.
 
           ## Requirements
           - Windows 10 or later

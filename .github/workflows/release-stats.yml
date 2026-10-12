@@ -1,0 +1,62 @@
+name: Release statistics
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-stats
+  cancel-in-progress: false
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      STATS_BRANCH: release-stats
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+
+    - name: Checkout statistics branch
+      shell: bash
+      run: |
+        if git ls-remote --exit-code --heads origin "$STATS_BRANCH" > /dev/null; then
+          git fetch --depth=1 origin "$STATS_BRANCH"
+          git worktree add stats "origin/$STATS_BRANCH"
+        else
+          git worktree add --orphan -b "$STATS_BRANCH" stats
+        fi
+
+    - name: Collect statistics
+      shell: pwsh
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        ./tools/Get-ReleaseStats.ps1 `
+          -Repository '${{ github.repository }}' `
+          -HistoryPath ./stats/downloads.csv `
+          -OutputPath ./stats/README.md | Out-Null
+        Get-Content ./stats/README.md -Raw >> $env:GITHUB_STEP_SUMMARY
+
+    - name: Save snapshot
+      shell: bash
+      working-directory: stats
+      run: |
+        git add README.md downloads.csv
+        if git diff --cached --quiet; then
+          echo "No changes."
+          exit 0
+        fi
+        git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Release statistics $(date -u +%Y-%m-%d)"
+        git push origin "HEAD:$STATS_BRANCH"

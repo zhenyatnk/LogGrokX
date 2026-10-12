@@ -169,7 +169,8 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `CreateFallbackRelease` (well-known asset URLs, no notes). Then it shows
   `UpdateWindow` / `UpdateViewModel`. "Update"
   downloads `LogGrokX-<ver>-<arch>-setup.exe` to `%TEMP%\LogGrokX\Update`,
-  verifies it against `SHA256SUMS.txt`, and `App.OnExit` starts it silently
+  verifies it against `LogGrokX-<ver>-<arch>-setup.exe.sha256`
+  (`GetChecksumUrls`; `SHA256SUMS.txt` is the fallback for older releases), and `App.OnExit` starts it silently
   (`/VERYSILENT /AUTOUPDATE=1`, `/ALLUSERS` + UAC for Program Files installs)
   after the process exits. Portable builds (no `unins000.exe`) only open the
   release page. The mode is `ViewSettings.UpdateMode` (`disabled`/`check`/`install`,
@@ -182,6 +183,15 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   which returns the notes only if the stored version matches `BuildInfo.Version`
   (a `v`-prefix is ignored), deletes the file either way, and `WhatsNewWindow` /
   `WhatsNewViewModel` shows them.
+- **Release statistics** (#61): the release workflow publishes
+  `*-setup.exe.sha256` files next to the installers. They are downloaded only by
+  the updater, so `tools/Get-ReleaseStats.ps1` counts their GitHub
+  `download_count` as in-app updates and `setup.exe` downloads minus updates as
+  new installations. The `Release statistics` workflow
+  (`.github/workflows/release-stats.yml`) runs daily and keeps the history in
+  `downloads.csv` plus the rendered report `README.md` on the orphan
+  `release-stats` branch. Do not download the per-installer checksum anywhere
+  else or more than once per update, or the numbers drift.
 - **Search results selection**: the search pane's `VirtualizingStackPanel` sets
   `ReplaceSelectionOnCurrentPosition="True"` so F3/next/previous replace the
   selection. Mouse and Shift+arrow selection must change `CurrentPosition`

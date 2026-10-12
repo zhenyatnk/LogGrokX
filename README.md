@@ -355,6 +355,29 @@ Tagged releases are published by the **Release** workflow, which runs on `v*`
 tags (or manually via `workflow_dispatch` with a version input). It runs the
 tests, publishes self-contained and framework-dependent builds for x64 and x86,
 builds Inno Setup installers, optionally signs them, and attaches the installers,
-portable ZIPs and `SHA256SUMS.txt` to a GitHub Release. Installed copies use
-these assets for automatic updates; the installer's **Install updates
+portable ZIPs, `SHA256SUMS.txt` and per-installer `*-setup.exe.sha256` checksum
+files to a GitHub Release. Installed copies use these assets for automatic
+updates; the installer's **Install updates
 automatically** option sets `UpdateMode: install` (unchecked — `UpdateMode: check`).
+
+### Release statistics
+
+GitHub counts downloads of every release asset. The in-app updater verifies the
+installer against `LogGrokX-<version>-<arch>-setup.exe.sha256`, a file that is not
+downloaded by hand, so its download count is the number of in-app updates; new
+installations are estimated as installer downloads minus updates. Releases
+published before these files existed show no update data.
+
+Build the report locally (PowerShell 5.1 or 7; `GITHUB_TOKEN`/`GH_TOKEN` is
+optional and only raises the API rate limit):
+
+```powershell
+.\tools\Get-ReleaseStats.ps1
+.\tools\Get-ReleaseStats.ps1 -HistoryPath .\stats\downloads.csv -OutputPath .\stats\README.md
+```
+
+The **Release statistics** workflow runs daily (and on demand), stores a snapshot
+of the counters in `downloads.csv` on the `release-stats` branch, and renders the
+report to `README.md` on that branch and to the workflow run summary. With the
+history, the report also shows downloads, updates and installations for the last
+1, 7 and 30 days.
