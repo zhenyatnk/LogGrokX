@@ -137,6 +137,13 @@ namespace LogGrokX.Controls.ListControls
 
         public static bool GetIsGroupContinuation(DependencyObject element) => (bool)element.GetValue(IsGroupContinuationProperty);
 
+        public static readonly DependencyProperty IsOtherThreadProperty = DependencyProperty.RegisterAttached(
+            "IsOtherThread", typeof(bool), typeof(BaseLogListViewItem), new PropertyMetadata(false));
+
+        public static void SetIsOtherThread(DependencyObject element, bool value) => element.SetValue(IsOtherThreadProperty, value);
+
+        public static bool GetIsOtherThread(DependencyObject element) => (bool)element.GetValue(IsOtherThreadProperty);
+
         public static readonly DependencyProperty IsCurrentItemProperty = DependencyProperty.Register(
             "IsCurrentItem", typeof(bool), typeof(BaseLogListViewItem), 
             new PropertyMetadata(false));

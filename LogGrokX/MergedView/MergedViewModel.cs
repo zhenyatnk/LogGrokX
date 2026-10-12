@@ -37,7 +37,7 @@ namespace LogGrokX.MergedView
         private readonly List<MergeSource> _mergeSources = new();
         private readonly TimeIndex _mergedTimeIndex = new();
         private readonly DispatcherTimer _rebuildTimer;
-        private readonly ColorRules _colorSettings;
+        private ColorRules _colorSettings;
 
         private MergedSchema _schema = null!;
         private MergedComponentIndexer _componentIndexer = null!;
@@ -65,7 +65,7 @@ namespace LogGrokX.MergedView
             _documents = documents;
             _applicationSettings = applicationSettings;
             _threadGroupingService = threadGroupingService;
-            _colorSettings = new ColorRules(applicationSettings.ColorSettings);
+            _colorSettings = new ColorRules(applicationSettings.GetSelectedProfile().ColorSettings ?? new Colors.Configuration.ColorSettings());
             _threadGroupingService.Changed += OnThreadGroupingChanged;
 
             Search = new SearchViewModel(
@@ -127,6 +127,14 @@ namespace LogGrokX.MergedView
 
         public ColorSettings ColorSettings => _colorSettings;
 
+        public void SetColorSettings(ColorRules settings)
+        {
+            _colorSettings = settings;
+            InvokePropertyChanged(nameof(ColorSettings));
+            _rebuildTimer.Stop();
+            Rebuild();
+        }
+
         public LogMetaInformation MetaInformation => _schema.MetaInformation;
 
         public ColumnSettings ColumnSettings { get; }
@@ -146,6 +154,8 @@ namespace LogGrokX.MergedView
         public int ThreadFieldIndex => _schema.ThreadFieldIndex;
 
         public bool GroupByThread => _threadGroupingService.IsEnabled;
+
+        public bool ShowGroupSeparators => _threadGroupingService.ShowSeparators;
 
         public MergedTimeRangeFilterViewModel TimeRangeFilter { get; }
 
@@ -233,7 +243,34 @@ namespace LogGrokX.MergedView
         public int CurrentItemIndex
         {
             get => _currentItemIndex;
-            set => SetAndRaiseIfChanged(ref _currentItemIndex, value);
+            set
+            {
+                if (_currentItemIndex == value)
+                    return;
+
+                _currentItemIndex = value;
+                InvokePropertyChanged();
+                UpdateCurrentThread();
+            }
+        }
+
+        public MergedThread? CurrentThread { get; private set; }
+
+        public event Action? CurrentThreadChanged;
+
+        private void UpdateCurrentThread()
+        {
+            MergedThread? thread = null;
+            var index = CurrentItemIndex;
+            if (GroupByThread && ThreadFieldIndex >= 0 && index >= 0 && index < Lines.Count
+                && Lines[index] is MergedLineViewModel line)
+                thread = new MergedThread(line.Source, line.GetFieldText(ThreadFieldIndex));
+
+            if (Nullable.Equals(CurrentThread, thread))
+                return;
+
+            CurrentThread = thread;
+            CurrentThreadChanged?.Invoke();
         }
 
         public int FirstVisibleIndex
@@ -337,6 +374,8 @@ namespace LogGrokX.MergedView
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(GroupByThread));
+            InvokePropertyChanged(nameof(ShowGroupSeparators));
+            UpdateCurrentThread();
             foreach (var item in EnumerateItems())
                 if (item is MergedLineViewModel)
                     break;
@@ -366,6 +405,8 @@ namespace LogGrokX.MergedView
         private void SyncDocuments()
         {
             var current = new HashSet<DocumentViewModel>(_documents);
+            var previousByPath = AvailableDocuments.ToDictionary(item => item.Document.DocumentId,
+                StringComparer.OrdinalIgnoreCase);
 
             for (var i = AvailableDocuments.Count - 1; i >= 0; i--)
             {
@@ -378,13 +419,22 @@ namespace LogGrokX.MergedView
                 if (AvailableDocuments.Any(item => item.Document == document))
                     continue;
 
-                var item = new MergedDocumentItem(document, _nextColorIndex++ % MergedViewPalette.Count);
+                previousByPath.TryGetValue(document.DocumentId, out var previous);
+                var item = new MergedDocumentItem(document,
+                    previous?.ColorIndex ?? _nextColorIndex++ % MergedViewPalette.Count)
+                {
+                    IsSelected = previous?.IsSelected ?? true
+                };
                 item.UpdateFieldMap(_schema.Fields);
                 item.SelectionChanged += _ => ScheduleRebuild();
                 AvailableDocuments.Add(item);
             }
 
-            _subscribed.RemoveWhere(document => !current.Contains(document));
+            foreach (var document in _subscribed.Where(document => !current.Contains(document)).ToArray())
+            {
+                document.LogViewModel.Lines.CollectionGrown -= OnDocumentGrown;
+                _subscribed.Remove(document);
+            }
             foreach (var document in _documents)
             {
                 if (!_subscribed.Add(document))
@@ -464,6 +514,7 @@ namespace LogGrokX.MergedView
             }
 
             InvokePropertyChanged(nameof(IsLoading));
+            UpdateCurrentThread();
             Rebuilt?.Invoke();
         }
 

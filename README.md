@@ -4,12 +4,64 @@
 [![Run Unit tests](https://github.com/zhenyatnk/LogGrokX/actions/workflows/run-tests.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/run-tests.yml)
 [![Upload Binaries](https://github.com/zhenyatnk/LogGrokX/actions/workflows/build_upload.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/build_upload.yml)
 [![Benchmarks](https://github.com/zhenyatnk/LogGrokX/actions/workflows/benchmarks.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/benchmarks.yml)
-[![Release](https://github.com/zhenyatnk/LogGrokX/actions/workflows/release.yml/badge.svg)](https://github.com/zhenyatnk/LogGrokX/actions/workflows/release.yml)
 
 A fast WPF log viewer for very large log files. LogGrokX parses structured
 log lines with configurable regular expressions, builds in-memory indexes for
 columns and fields, and lets you search, filter, colorize and mark lines while
 remaining responsive even on multi-gigabyte files.
+
+## Installation
+
+LogGrokX is **Windows-only** (Windows 10 or later) and is published for **x64**
+and **x86**. Download the latest build from the
+[Releases page](https://github.com/zhenyatnk/LogGrokX/releases/latest).
+
+### Installer (recommended)
+
+| Windows   | File                                |
+| --------- | ----------------------------------- |
+| 64-bit    | `LogGrokX-<version>-x64-setup.exe`  |
+| 32-bit    | `LogGrokX-<version>-x86-setup.exe`  |
+
+The installer is **self-contained** — no .NET runtime needs to be installed — and
+offers:
+
+- a Start Menu shortcut and an optional desktop shortcut;
+- an optional **.log** file association;
+- **Install updates automatically** (checked downloads and installs new versions
+  silently on exit; unchecked only notifies — see
+  [Automatic updates](./FEATURES.md#-automatic-updates));
+- a standard uninstaller in **Add/Remove Programs**.
+
+Setup installs **per-user** by default; choose to install for all users to place
+LogGrokX under `Program Files` (this asks for elevation). Upgrading keeps your
+existing `appsettings.yaml`.
+
+### Portable
+
+No installation needed — extract the archive and run `LogGrokX.exe`.
+
+| Variant                              | 64-bit                                        | 32-bit                                        | Needs .NET runtime |
+| ------------------------------------ | --------------------------------------------- | --------------------------------------------- | ------------------ |
+| Self-contained (recommended)         | `LogGrokX-<version>-win-x64-selfcontained.zip` | `LogGrokX-<version>-win-x86-selfcontained.zip` | no                 |
+| Framework-dependent                  | `LogGrokX-<version>-win-x64-portable.zip`      | `LogGrokX-<version>-win-x86-portable.zip`      | [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) |
+
+Portable builds cannot update themselves: the **Update** button opens the release
+page instead of installing silently.
+
+### Verify the download
+
+Every release ships `SHA256SUMS.txt`. Compare the hash of the file you downloaded:
+
+```powershell
+Get-FileHash .\LogGrokX-<version>-x64-setup.exe -Algorithm SHA256
+```
+
+### Open a log from the command line
+
+```powershell
+LogGrokX.exe C:\logs\app.log C:\logs\worker.log
+```
 
 ## Features
 
@@ -18,9 +70,13 @@ remaining responsive even on multi-gigabyte files.
 - **Configurable log formats** — describe your log layout with named-capture
   .NET regular expressions. Multiple formats can be configured, each with its
   own indexed fields.
+- **Big lines** — oversized lines are pruned (truncated with an ellipsis) or
+  wrapped into fixed-size chunks (`BigLine` / `BigLineSize`), so a single
+  malformed record cannot stall the grid or bury everything around it.
 - **Column / field indexing** — fields declared under `IndexedFields` are
   available as filterable columns and as search facets.
-- **Search** — regex search with a progress indicator, result navigation and an
+- **Search** — regex search with match-case and regex toggles, a progress
+  indicator, result navigation and an
   autocomplete cache. Search patterns can be saved and reused.
 - **Filtering** — filter by indexed column values directly from the grid, with
   removable filter chips.
@@ -46,8 +102,9 @@ remaining responsive even on multi-gigabyte files.
   line centers the target row in the grid.
 - **Thread grouping** — group consecutive visible lines that share the same
   `Thread` field, separated by subtle dividers and with the thread value dimmed
-  on continuation rows. Toggled from the title bar and persisted in
-  `appsettings.yaml`.
+  on continuation rows. Rows of threads other than the current line are dimmed
+  and search results are limited to the current thread. Toggled from the title
+  bar and persisted in `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
 - **Base64 decoding** — rows with Base64 that decodes to readable UTF-8 text
@@ -62,6 +119,12 @@ remaining responsive even on multi-gigabyte files.
   can also be toggled separately with "Decode Base64" / "Decode PEM" in the
   context menu. Detection is on by default and can be turned off completely or
   per kind (PEM, Base64, HEX) in Settings → View → Binary data detection.
+- **Value mappings** — show a readable meaning next to codes and identifiers:
+  a value from a mapping list is displayed as `value(mapping)`, for example
+  `0x00001(type 1)` or `0x80070005(E_ACCESSDENIED)`. Lists can be limited to
+  specific fields, are case-sensitive or not, are edited in Settings → Value
+  mappings and are imported/exported as JSON. Search, filters and indexes still
+  work on the original values.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
 - **Light & dark themes** — switch theme from the title bar; chrome, log colors
   and search highlighting follow the active theme. The window uses solid theme
@@ -76,7 +139,14 @@ remaining responsive even on multi-gigabyte files.
   app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
   is available in the Support window. After an update is applied, a **What's new**
   window shows the release notes on the next launch.
-- **Multiple documents** — dockable tabs powered by AvalonDock.
+- **Multiple documents** — dockable tabs powered by AvalonDock. Open files from
+  the command line or by drag & drop, and use the tab context menu to copy a
+  path or file name or open the containing folder.
+- **Grid conveniences** — horizontal scrolling, auto-width columns, and
+  copy-as-displayed / copy-as-native for whole rows or single cells.
+- **Settings** — a tabbed settings window (View, Colors, Log formats, Value
+  mappings, Debug) that applies changes without a restart and mirrors
+  `appsettings.yaml`.
 - **Merged files view** — combine several opened logs into one time-ordered grid.
   Columns are aligned across different log formats, rows are tinted per source,
   and search, time-range filtering, thread grouping, JSON folding and marking
@@ -102,18 +172,32 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🎯 Centered navigation](./FEATURES.md#-centered-navigation)
 - [🧵 Thread grouping](./FEATURES.md#-thread-grouping)
 - [🔁 Text transformations](./FEATURES.md#-text-transformations)
+- [🔓 Base64 and PEM decoding](./FEATURES.md#-base64-and-pem-decoding)
+- [🏷️ Value mappings](./FEATURES.md#️-value-mappings)
 - [🔐 XOR-masked logs](./FEATURES.md#-xor-masked-logs)
+- [🧱 Big lines](./FEATURES.md#-big-lines)
+- [📑 Files and documents](./FEATURES.md#-files-and-documents)
+- [🧭 Grid behaviour](./FEATURES.md#-grid-behaviour)
+- [⚙️ Settings](./FEATURES.md#️-settings)
 - [🌗 Light and dark themes](./FEATURES.md#-light-and-dark-themes)
 - [🩺 Crash dumps](./FEATURES.md#-crash-dumps)
 - [🛟 Support window](./FEATURES.md#-support-window)
-- [📑 Multiple documents](./FEATURES.md#-multiple-documents)
 - [🧬 Merged files view](./FEATURES.md#-merged-files-view)
 - [🔄 Automatic updates](./FEATURES.md#-automatic-updates)
 
 ## Requirements
 
-- Windows
-- .NET SDK 10.0.100 or later (see `global.json`)
+### To run
+
+- Windows 10 or later (x64 or x86).
+- The **installer** and the **self-contained** portable ZIPs bundle the .NET
+  runtime, so nothing else is required.
+- The **framework-dependent** portable ZIPs need the
+  [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0).
+
+### To build from source
+
+- .NET SDK 10.0.100 or later (pinned by `global.json`)
 - Visual Studio 2022+ or the .NET CLI
 
 ## Building
@@ -221,6 +305,8 @@ Settings:
     LogFontSize: 12
     # Group consecutive lines that share the same Thread field
     GroupByThread: false
+    # Draw horizontal separators between thread groups
+    ShowThreadGroupSeparators: true
     # Combine all open documents into one time-ordered grid
     MergedFilesView: false
     # Binary data detection (BIN): DetectBinary turns it off completely,
@@ -231,6 +317,17 @@ Settings:
     DetectHex: true
     # Updates: disabled | check (notify about a new version) | install (install silently on exit)
     UpdateMode: check
+
+  # Shown as value(mapping); Fields empty = every field
+  ValueMappings:
+    - Name: Types
+      Enabled: true
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x00001
+          Mapping: type 1
 
   LogFormats:
     - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)

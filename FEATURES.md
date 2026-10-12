@@ -5,15 +5,17 @@ This document is the deep-dive companion to the [README](./README.md). It covers
 and shows the relevant configuration or core API with a ready-to-adapt snippet.
 
 > All screenshots were captured from the running application using **generated
-> demo logs** (`demo-app.log`, `demo-worker.log`), not real product traces. Each
-> image is 1920×1080 (Full HD).
+> demo logs** (`demo-app.log`, `demo-worker.log`, `demo-xor.log`), not real
+> product traces. The demo files live in [`assets/demo`](./assets/demo) and can
+> be regenerated from the scenario script. Each image is 1920×1080 (Full HD);
+> detail views are cropped and highlight the relevant area.
 
 ## Table of contents
 
 - [⚡ Large file support](#-large-file-support)
 - [🧩 Configurable log formats](#-configurable-log-formats)
 - [📊 Column and field indexing](#-column-and-field-indexing)
-- [🔍 Search](#-regex-search)
+- [🔍 Regex search](#-regex-search)
 - [🧾 Filtering](#-filtering)
 - [⏳ Time filter and timeline](#-time-filter-and-timeline)
 - [📦 JSON/XML folding](#-jsonxml-folding)
@@ -24,12 +26,16 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🎯 Centered navigation](#-centered-navigation)
 - [🧵 Thread grouping](#-thread-grouping)
 - [🔁 Text transformations](#-text-transformations)
-- [🔓 Base64 decoding](#-base64-decoding)
+- [🔓 Base64 and PEM decoding](#-base64-and-pem-decoding)
+- [🏷️ Value mappings](#️-value-mappings)
 - [🔐 XOR-masked logs](#-xor-masked-logs)
+- [🧱 Big lines](#-big-lines)
+- [📑 Files and documents](#-files-and-documents)
+- [🧭 Grid behaviour](#-grid-behaviour)
+- [⚙️ Settings](#️-settings)
 - [🌗 Light and dark themes](#-light-and-dark-themes)
 - [🩺 Crash dumps](#-crash-dumps)
 - [🛟 Support window](#-support-window)
-- [📑 Multiple documents](#-multiple-documents)
 - [🧬 Merged files view](#-merged-files-view)
 - [🔄 Automatic updates](#-automatic-updates)
 
@@ -41,7 +47,12 @@ line-aware reader and builds indexes in the background, while UI virtualization
 keeps scrolling smooth. A file that would not open in a text editor becomes
 interactive within seconds.
 
-![Demo](assets/images/feature-1.png)
+![A multi-gigabyte log opened in the grid](assets/images/feature-large-file.png)
+
+The timeline strip doubles as a density map of the **whole** file, so hotspots
+(incident storms, restarts) are visible before any filtering:
+
+![Timeline density map of the whole file](assets/images/feature-large-file-timeline.png)
 
 ```csharp
 using LogGrokX.Data;
@@ -67,7 +78,7 @@ parser, LogGrokX describes each format with a named-capture .NET regex in
 `appsettings.yaml`. Several formats can coexist, so a single installation can
 open logs from different components without changing code.
 
-![Demo](assets/images/feature-7.png)
+![Log formats are edited in Settings](assets/images/feature-log-formats.png)
 
 ```yaml
 LogFormats:
@@ -102,7 +113,11 @@ filterable columns and search facets. Instead of scrolling through millions of
 lines, an operator can pivot on `Level`, `Thread` or `Component` and narrow the
 view instantly.
 
-![Demo](assets/images/feature-1.png)
+![The log grid with indexed columns](assets/images/feature-overview.png)
+
+Indexed fields are rendered as their own columns, next to the message:
+
+![Indexed fields become columns](assets/images/feature-indexing.png)
 
 ```csharp
 var format = new LogFormat
@@ -126,7 +141,17 @@ root cause is a precise search across a multi-gigabyte file. LogGrokX runs the
 search asynchronously over the parsed buffer, reports live progress, and records
 every hit so navigation and the timeline can jump to a result instantly.
 
-![Demo](assets/images/feature-2.png)
+![Search pane with live results](assets/images/feature-search.png)
+
+The search box supports **match case** and **regex** toggles, keeps an
+**autocomplete** history, and lets frequently used patterns be **saved** and
+reused:
+
+![Search text, match case, regex, saved searches](assets/images/feature-search-options.png)
+
+Every hit is listed with its parsed fields, ready to navigate:
+
+![Every hit, ready to navigate](assets/images/feature-search-results.png)
 
 ```csharp
 using System.Text.RegularExpressions;
@@ -147,8 +172,8 @@ for (var hit = 0; hit < lineIndex.Count; hit++)
 ```
 
 `Search.CreateSearchIndex` returns immediately; the pipeline fills
-`searchIndexer` and `lineIndex` on a background task. The search pane keeps an
-autocomplete cache and lets frequently used patterns be saved and reused.
+`searchIndexer` and `lineIndex` on a background task. Saved searches and the
+autocomplete cache live in the search view model.
 
 ## 🧾 Filtering
 
@@ -157,7 +182,11 @@ by one or more indexed column values directly from the grid header; removable
 chips show what is currently excluded, and the same index powers instant
 recomputation of the visible set.
 
-![Demo](assets/images/feature-1.png)
+![Filtering by an indexed column value](assets/images/feature-filtering.png)
+
+Active exclusions are shown as removable chips above the grid:
+
+![Removable filter chips](assets/images/feature-filtering-chips.png)
 
 ```csharp
 IReadOnlyDictionary<int, IEnumerable<string>> excludedComponents =
@@ -183,7 +212,9 @@ and the timestamp under the cursor (or `Line N` in line-number mode) directly in
 the canvas, so the exact moment of a marker or match can be read without leaving
 the strip.
 
-![Demo](assets/images/feature-9.png)
+![Time range selected on the timeline](assets/images/feature-timeline.png)
+
+![Time-range handles, markers and matches](assets/images/feature-timeline-detail.png)
 
 ```csharp
 var timeline = new TimeIndex();
@@ -210,7 +241,17 @@ folds those blobs inline so the default view stays compact, while the folded
 content can be expanded on demand. The folding state is shared across the log
 grid, search results and the marked-lines view of the same document.
 
-![Demo](assets/images/feature-3.png)
+Collapsed, a whole JSON payload occupies a single line:
+
+![JSON collapsed to a single line](assets/images/feature-json-folding.png)
+
+![Collapsed to a single line](assets/images/feature-json-folding-detail.png)
+
+Expanding a region shows the formatted, indented JSON:
+
+![JSON expanded and formatted](assets/images/feature-json-folding-expanded.png)
+
+![Formatted and expanded JSON](assets/images/feature-json-folding-expanded-detail.png)
 
 ```csharp
 using LogGrokX.Controls.TextRender;
@@ -233,10 +274,14 @@ using the same `TextModel.UniqueId`, otherwise expansion falls out of sync.
 **Business value.** Network, device and protocol logs often dump payloads as HEX
 bytes. Reading `48656C6C6F20776F726C64` as `Hello world` by hand is slow and
 error-prone. When a row contains HEX that decodes to readable text, the same
-`BIN` toggle that decodes Base64/PEM (see [Base64 decoding](#-base64-decoding))
+`BIN` toggle that decodes Base64/PEM (see [Base64 and PEM decoding](#-base64-and-pem-decoding))
 appears; clicking it replaces the HEX fragments with the decoded string together
 with any Base64/PEM in the row, clicking again restores the original value. Per
 cell, HEX can be toggled separately with **Decode HEX** in the context menu.
+
+![HEX payload in the log](assets/images/feature-hex.png)
+
+![HEX decoded to readable text](assets/images/feature-hex-detail.png)
 
 ```csharp
 using LogGrokX;
@@ -265,7 +310,9 @@ highlight matching lines and fragments, and because they are expressed as regex
 rules in `appsettings.yaml`, severity conventions can be tuned per team without
 a rebuild. Colors adapt to the active theme.
 
-![Demo](assets/images/feature-2.png)
+![Severity lines highlighted by color rules](assets/images/feature-color-rules.png)
+
+![ERR / WRN / fatal lines are colored](assets/images/feature-color-rules-detail.png)
 
 ```yaml
 ColorSettings:
@@ -287,11 +334,14 @@ notation; a rule without colors keeps the default foreground.
 needle lines across a huge haystack. Marking pins them into a dedicated view so
 the evidence can be revisited, copied or compared without repeating the search.
 
-![Demo](assets/images/feature-8.png)
+![Marked lines in the grid](assets/images/feature-marked-lines.png)
+
+![Pinned lines, also marked on the timeline](assets/images/feature-marked-lines-detail.png)
 
 Marked lines are browsed from the dedicated "Marked lines" view; jumping to a
 marked line centers the target row in the grid (see
-[Centered navigation](#-centered-navigation)).
+[Centered navigation](#-centered-navigation)), and the marks also appear on the
+timeline strip.
 
 ## 🔠 Text zoom
 
@@ -299,7 +349,9 @@ marked line centers the target row in the grid (see
 distances. Log text can be scaled on the fly and the choice is remembered, so
 readability preferences survive restarts.
 
-![Demo](assets/images/feature-1.png)
+![Log text scaled up](assets/images/feature-text-zoom.png)
+
+![Log font size increased with Ctrl+wheel / Ctrl+0](assets/images/feature-text-zoom-detail.png)
 
 ```csharp
 var zoom = container.Resolve<TextZoomService>();
@@ -321,7 +373,9 @@ persists the value as `ViewSettings.LogFontSize`.
 centers the target row in the grid. That small detail keeps context visible on
 both sides of the hit and makes result-by-result review much faster.
 
-![Demo](assets/images/feature-2.png)
+![A search hit centered in the grid](assets/images/feature-centered-navigation.png)
+
+![The hit is centered, not pinned to the top](assets/images/feature-centered-navigation-detail.png)
 
 Navigation is driven by the document view model (`FindNext`/`FindPrevious`) and
 `CurrentDocument`; the grid scrolls the target into the middle of the viewport
@@ -334,7 +388,9 @@ follow. Thread grouping collapses consecutive visible lines that share the same
 `Thread` value, dims the repeated thread value on continuation rows, and adds
 subtle dividers. Toggled from the title bar and persisted.
 
-![Demo](assets/images/feature-5.png)
+![Thread grouping enabled](assets/images/feature-thread-grouping.png)
+
+![Same-thread lines grouped, others dimmed](assets/images/feature-thread-grouping-detail.png)
 
 ```csharp
 var grouping = container.Resolve<ThreadGroupingService>();
@@ -347,7 +403,16 @@ if (grouping.IsEnabled)
 The boundaries are attached properties (`IsGroupFirst`, `IsGroupLast`,
 `IsGroupContinuation`) on `BaseLogListViewItem`, computed by the custom
 `VirtualizingStackPanel` and rendered by `Styles/ListViewItemStyle.xaml`. The
-setting is `ViewSettings.GroupByThread`.
+setting is `ViewSettings.GroupByThread`. The horizontal dividers between groups
+are controlled separately by `ViewSettings.ShowThreadGroupSeparators` (default
+`true`, toggled in **Settings -> View**); turning them off hides the top and
+bottom group lines while keeping the dimmed thread value on continuation rows.
+
+While grouping is on, the thread of the current line is in focus: rows of all
+other threads are dimmed (`IsOtherThread`), and the search pane shows only the
+matches of that thread. Moving to a line of another thread switches the focus
+and re-filters the search results. In a single log the filter relies on the
+indexed `Thread` field (`IndexedFields`); the merged view works per source file.
 
 ## 🔁 Text transformations
 
@@ -355,7 +420,7 @@ setting is `ViewSettings.GroupByThread`.
 or JSON-in-JSON). Transformations rewrite matched fragments before display, so
 the readable value is shown inline without any external tooling.
 
-![Demo](assets/images/feature-7.png)
+![Log format with transformations](assets/images/feature-log-formats.png)
 
 ```yaml
 LogFormats:
@@ -369,12 +434,23 @@ name selects the decoder (for example `Base64Decode` or
 `Base64DecodeFormatJson`) and the matched group is replaced with the decoded
 text. Rules run in order.
 
-## 🔓 Base64 decoding
+## 🔓 Base64 and PEM decoding
 
 **Business value.** Encoded payloads (request bodies, tokens, tickets) often
 show up in logs without a configured transformation. LogGrokX recognizes them
 on the fly, so a single click reveals the readable value without copying it
 into an external decoder.
+
+![A JWT decoded in place](assets/images/feature-base64.png)
+
+![Decoded JWT / JSON payload](assets/images/feature-base64-detail.png)
+
+Multi-line **PEM** blocks are decoded the same way, the markers are kept and the
+body becomes a readable certificate summary (or text / hex dump):
+
+![A PEM certificate decoded in place](assets/images/feature-pem.png)
+
+![Certificate summary from a PEM block](assets/images/feature-pem-detail.png)
 
 When a cell value is Base64 — either the whole value (optionally quoted) or a
 fragment of at least 16 characters inside it, such as `payload=eyJ...` or the
@@ -473,13 +549,92 @@ saving; reopen the log to apply it to every line.
     DetectHex: true
 ```
 
+## 🏷️ Value mappings
+
+**Business value.** Logs are full of numeric codes, enum values and
+identifiers (`0x00001`, `0x80070005`, `3`) whose meaning lives in a header file
+or a wiki page. Value mappings show that meaning right next to the value, so
+the log can be read without looking codes up.
+
+![Codes annotated in the grid](assets/images/feature-value-mappings.png)
+
+![0x80070005(E_ACCESSDENIED) and 0x00001(type 1)](assets/images/feature-value-mappings-detail.png)
+
+A value found in a mapping list is displayed as `value(mapping)`:
+
+```text
+request type 0x00001 failed: 0x80070005
+→ request type 0x00001(type 1) failed: 0x80070005(E_ACCESSDENIED)
+```
+
+Mappings are edited in **Settings → Value mappings**. Each list has a name, an
+**Enabled** switch, **Ignore case** and **Fields**: a comma-separated list of
+fields (columns) the list applies to; empty means every field. The marked-lines
+view and the whole-line text of the merged view use only lists without fields.
+
+![Value mappings settings](assets/images/feature-settings-value-mappings.png)
+
+A value matches only as a whole token (`0x00001` is not mapped inside
+`0x000010`); the longest value wins and the first list wins for the same value.
+The **Preview** box shows how a sample text is displayed.
+
+Inside JSON string values are mapped inside their quotes and numbers are mapped
+as a trailing `5 /*mapping*/` comment (so the number stays a number; property
+names are not mapped), inside XML element text, attribute values and CDATA; the
+mapping is escaped, and if the fragment would no longer be the same JSON/XML it
+is left unchanged, so folding keeps working. JSON comments written by mappings
+are tolerated from `JsonCommentHandling.Skip` and preserved when the fragment is
+formatted and folded. Mappings change only what is displayed (and copied):
+search, filters, color rules and indexes work on the original values. Changes
+apply to lines shown after saving; reopen the log to apply them to every line.
+
+```yaml
+  ValueMappings:
+    - Name: Types
+      Enabled: true
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x00001
+          Mapping: type 1
+```
+
+**Import / export.** **Import JSON...** adds lists from one or more files (a
+list with the same name is replaced), **Export list...** writes the selected
+list and **Export all...** writes every list. Changes are applied after
+**Save**. Import accepts a list object, an array of lists or a plain
+`{"value": "mapping"}` object (the file name becomes the list name):
+
+```json
+[
+  {
+    "Name": "Types",
+    "Enabled": true,
+    "IgnoreCase": true,
+    "Fields": [ "Message" ],
+    "Items": [
+      { "Value": "0x00001", "Mapping": "type 1" },
+      { "Value": "0x00002", "Mapping": "type 2" }
+    ]
+  }
+]
+```
+
+```csharp
+using LogGrokX.Data;
+
+var mapper = new ValueMapper(ValueMappingJson.Deserialize("{ \"0x00001\": \"type 1\" }"));
+Console.WriteLine(mapper.ForField("Message").Map("got 0x00001")); // got 0x00001(type 1)
+```
+
 ## 🔐 XOR-masked logs
 
 **Business value.** Some vendors obfuscate logs with a single-byte XOR key.
 LogGrokX transparently de-obfuscates such files while streaming, so they can be
 opened and searched like any other log — no manual decode step.
 
-![Demo](assets/images/feature-7.png)
+![A XOR-masked log opened like any other](assets/images/feature-xor.png)
 
 ```csharp
 var masked = new LogFile(@"C:\logs\encrypted.log", xorMask: 0xEF);
@@ -490,6 +645,100 @@ using var loader = new Loader(masked, lineProcessor, logger);
 `LogFile` wraps the file stream in `MaskedStream(fileStream, xorMask)`, and the
 same key can be declared per format as `XorMask` in `appsettings.yaml`.
 
+## 🧱 Big lines
+
+**Business value.** A single malformed record — an embedded blob, a minified
+JSON document, a binary dump — can be hundreds of kilobytes long. Letting it
+through verbatim stalls layout and buries everything around it. LogGrokX caps
+oversized lines so the grid stays responsive and readable.
+
+![Big line handling and size](assets/images/feature-big-line-full.png)
+
+![Big line handling and size](assets/images/feature-big-line.png)
+
+Two modes are configured in **Settings → View** (`ViewSettings.BigLine`):
+
+- **prune** — a line longer than `BigLineSize` characters is truncated and an
+  ellipsis is appended, keeping one row per record;
+- **break** — such a line is wrapped into chunks of `BigLineSize` characters,
+  so nothing is lost from the view.
+
+```yaml
+  ViewSettings:
+    BigLine: prune       # prune | break
+    BigLineSize: 4096    # characters per chunk
+```
+
+The original, untruncated text is still kept for **Copy**.
+
+## 📑 Files and documents
+
+**Business value.** Real investigations compare several logs at once. LogGrokX
+hosts dockable tabs powered by AvalonDock, so documents can be opened, closed,
+rearranged and auto-hidden without losing their state. Command-line paths are
+opened as documents on startup.
+
+![Two logs open as dockable documents](assets/images/feature-multiple-documents.png)
+
+```powershell
+LogGrokX.exe C:\logs\app.log C:\logs\worker.log
+```
+
+```csharp
+// The application forwards command-line paths to the main view model.
+foreach (var path in commandLine)
+    mainViewModel.AddDocument(path);
+```
+
+Additional ways to open files:
+
+- **Drag & drop** one or more files anywhere onto the window.
+- **Document tab context menu** on a tab header:
+  **Copy path**, **Copy file name** and **Open containing folder**, so a path
+  can be shared or the log located on disk without leaving the app.
+
+## 🧭 Grid behaviour
+
+**Business value.** Reading wide, structured logs means going back and forth
+between distant columns and long messages. A few grid conveniences keep that
+navigation comfortable:
+
+- **Horizontal scrolling** — the grid scrolls horizontally when the parsed
+  columns are wider than the viewport, so no field is unreachable.
+- **Auto-width columns** — double-clicking a column header separator sizes the
+  column to its content; the `Message` column can be widened once and stays.
+- **Copy** — `Ctrl+C` copies the selected lines as displayed (after any textual
+  transformation, Base64/HEX decoding or value mapping); the per-cell context
+  menu offers **Copy** and **Copy as native** (the original, undecoded value).
+- **Centered, keyboard-driven navigation** — arrow keys move the current line,
+  `F3`/`Shift+F3` step through search hits, all centering the target row (see
+  [Centered navigation](#-centered-navigation)).
+
+## ⚙️ Settings
+
+**Business value.** Everything tunable lives in one place and is applied without
+restarting the app. The same values can be edited by hand in `appsettings.yaml`,
+which is watched and hot-reloaded.
+
+![Settings — View tab](assets/images/feature-settings-view.png)
+
+The Settings window is organised into tabs:
+
+| Tab | Contents |
+| --- | --- |
+| **View** | Text size, thread grouping and separators, timeline placement, merged view, binary detection, big lines, update mode. |
+| **Colors** | Foreground/background color rules. |
+| **Log formats** | The regular expressions that describe each log layout, their indexed fields, transformations and XOR mask. |
+| **Value mappings** | The mapping lists and their JSON import/export. |
+| **Debug** | Crash dumps and diagnostics. |
+
+![Settings — Colors tab](assets/images/feature-settings-colors.png)
+
+![Settings — Debug tab](assets/images/feature-settings-debug.png)
+
+Open it from the **settings** button in the title bar; changes take effect after
+**Save** (a few options only apply to logs opened afterwards).
+
 ## 🌗 Light and dark themes
 
 **Business value.** Log review happens in bright offices and dark NOCs alike.
@@ -498,7 +747,9 @@ highlighting. The window deliberately uses solid theme colors instead of the
 Windows 11 Mica material, which is incompatible with AvalonDock's auto-hide
 flyout.
 
-![Demo](assets/images/feature-4.png)
+![Dark theme](assets/images/feature-theme-dark.png)
+
+![Light theme](assets/images/feature-theme-light.png)
 
 ```csharp
 var themeService = container.Resolve<UiThemeService>();
@@ -518,7 +769,7 @@ re-applied on startup by `UiThemeService.ApplySavedTheme`. Reference
 a critical incident. Optional Windows Error Reporting local dumps capture the
 state for diagnosis, and the feature can be toggled without reinstalling.
 
-![Demo](assets/images/feature-7.png)
+![Crash dump settings on the Debug tab](assets/images/feature-settings-debug.png)
 
 ```yaml
 DebugSettings:
@@ -537,30 +788,11 @@ The Support window collects version, git commit and branch, .NET runtime, OS and
 CPU architecture, lets you check for updates manually, and offers one-click links to the latest release, the issue
 tracker and the source, plus "copy diagnostics" and "open logs folder".
 
-![Demo](assets/images/feature-6.png)
+![Support window](assets/images/feature-support.png)
 
 Open it with the `?` button in the title bar (`OpenSupportCommand`). Diagnostic
 logs live in `%LOCALAPPDATA%\LogGrokX\`; the UI is `SupportWindow.xaml` /
 `SupportViewModel`.
-
-## 📑 Multiple documents
-
-**Business value.** Real investigations compare several logs at once. LogGrokX
-hosts dockable tabs powered by AvalonDock, so documents can be opened, closed,
-rearranged and auto-hidden without losing their state. Command-line paths are
-opened as documents on startup.
-
-![Demo](assets/images/feature-8.png)
-
-```powershell
-LogGrokX.exe C:\logs\app.log C:\logs\worker.log
-```
-
-```csharp
-// The application forwards command-line paths to the main view model.
-foreach (var path in commandLine)
-    mainViewModel.AddDocument(path);
-```
 
 ## 🧬 Merged files view
 
@@ -572,7 +804,7 @@ lines fall back into `Message`, and `Level`/`Severity` are unified into a single
 `Severity` column. Rows are tinted per source, and search, time filtering,
 thread grouping, JSON folding and marking all keep working.
 
-![Demo](assets/images/feature-3.png)
+![Rows from both files, time-ordered and tinted per source](assets/images/feature-merged-view.png)
 
 ```csharp
 using LogGrokX.Data;
@@ -639,6 +871,9 @@ silently when the application is closed.
   ViewSettings:
     UpdateMode: check   # disabled | check | install
 ```
+
+> This dialog only appears when a newer release exists, so it is not shown in
+> the screenshots above; the mode is configured on the **View** settings tab.
 
 ## Missing a feature?
 

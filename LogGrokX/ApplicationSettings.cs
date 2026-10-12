@@ -1,12 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using LogGrokX.Colors.Configuration;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Data;
+using LogGrokX.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 
@@ -14,7 +15,9 @@ namespace LogGrokX
 {
     public class ApplicationSettings
     {
+        public const string LegacyProfileName = "Default";
         private static ApplicationSettings? instance;
+        private readonly string _fileName;
 
         public static string SettingsFileName => PathHelpers.GetLocalFilePath("appsettings.yaml");
 
@@ -26,6 +29,62 @@ namespace LogGrokX
 
         public LogFormat[] LogFormats { get; set; } =
             Array.Empty<LogFormat>();
+
+        public ValueMappingList[] ValueMappings { get; set; } =
+            Array.Empty<ValueMappingList>();
+
+        public ProfileSettings[] Profiles { get; set; } = Array.Empty<ProfileSettings>();
+        public string SelectedProfile { get; set; } = LegacyProfileName;
+        public event Action? ProfilesChanged;
+        internal string FileName => _fileName;
+
+        public IReadOnlyList<ProfileSettings> GetProfiles()
+        {
+            var configured = Profiles
+                .Where(profile => !string.IsNullOrWhiteSpace(profile.Name))
+                .GroupBy(profile => profile.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .Select(profile => new ProfileSettings
+                {
+                    Name = profile.Name,
+                    InheritLegacySettings = profile.InheritLegacySettings,
+                    ColorSettings = profile.ColorSettings ??
+                        (profile.InheritLegacySettings == false ? new ColorSettings() : ColorSettings),
+                    LogFormats = profile.LogFormats ??
+                        (profile.InheritLegacySettings == false ? Array.Empty<LogFormat>() : LogFormats)
+                }).ToArray();
+            return configured.Length > 0 ? configured :
+                [new ProfileSettings { Name = LegacyProfileName, ColorSettings = ColorSettings, LogFormats = LogFormats }];
+        }
+
+        public ProfileSettings GetSelectedProfile()
+        {
+            var profiles = GetProfiles();
+            return profiles.FirstOrDefault(profile =>
+                string.Equals(profile.Name, SelectedProfile, StringComparison.OrdinalIgnoreCase)) ?? profiles[0];
+        }
+
+        public void SetSelectedProfile(string name)
+        {
+            SelectedProfile = name;
+            try
+            {
+                var file = new YamlSettingsFile(_fileName);
+                file.SetScalar("Settings", "SelectedProfile", SettingsYamlRenderer.FormatScalar(name));
+                file.Save();
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                Trace.TraceError($"Cannot save selected profile: {e}");
+            }
+        }
+
+        internal void UpdateProfiles(ProfileSettings[] profiles, string selectedProfile)
+        {
+            Profiles = profiles;
+            SelectedProfile = selectedProfile;
+            ProfilesChanged?.Invoke();
+        }
 
         private readonly Dictionary<string, ColumnSettings> _columnSettingsMap = new();
         public ColumnSettings GetColumnSettings(string logFormat)
@@ -66,6 +125,15 @@ namespace LogGrokX
             SaveViewSettingValue("GroupByThread", groupByThread ? "true" : "false");
         }
 
+        public void SetShowThreadGroupSeparators(bool showThreadGroupSeparators)
+        {
+            if (ViewSettings.ShowThreadGroupSeparators == showThreadGroupSeparators)
+                return;
+
+            ViewSettings.ShowThreadGroupSeparators = showThreadGroupSeparators;
+            SaveViewSettingValue("ShowThreadGroupSeparators", showThreadGroupSeparators ? "true" : "false");
+        }
+
         public void SetMergedFilesView(bool mergedFilesView)
         {
             if (ViewSettings.MergedFilesView == mergedFilesView)
@@ -84,7 +152,13 @@ namespace LogGrokX
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(ViewSettings);
         }
 
-        private static void SetViewSetting(bool current, bool value, Action<bool> set, string key)
+        public void SetValueMappings(ValueMappingList[] valueMappings)
+        {
+            ValueMappings = valueMappings;
+            ValueMapper.Current = new ValueMapper(valueMappings);
+        }
+
+        private void SetViewSetting(bool current, bool value, Action<bool> set, string key)
         {
             if (current == value)
                 return;
@@ -93,33 +167,13 @@ namespace LogGrokX
             SaveViewSettingValue(key, value ? "true" : "false");
         }
 
-        private static void SaveViewSettingValue(string key, string value)
+        private void SaveViewSettingValue(string key, string value)
         {
             try
             {
-                if (!File.Exists(SettingsFileName))
-                    return;
-
-                var lines = File.ReadAllLines(SettingsFileName).ToList();
-                var keyRegex = new Regex($@"^(\s*){Regex.Escape(key)}\s*:.*$");
-                for (var i = 0; i < lines.Count; i++)
-                {
-                    var match = keyRegex.Match(lines[i]);
-                    if (!match.Success) continue;
-                    lines[i] = $"{match.Groups[1].Value}{key}: {value}";
-                    File.WriteAllLines(SettingsFileName, lines);
-                    return;
-                }
-
-                var sectionRegex = new Regex(@"^(\s*)ViewSettings\s*:\s*$");
-                for (var i = 0; i < lines.Count; i++)
-                {
-                    var match = sectionRegex.Match(lines[i]);
-                    if (!match.Success) continue;
-                    lines.Insert(i + 1, $"{match.Groups[1].Value}  {key}: {value}");
-                    File.WriteAllLines(SettingsFileName, lines);
-                    return;
-                }
+                var file = new YamlSettingsFile(_fileName);
+                file.SetScalar("ViewSettings", key, value);
+                file.Save();
             }
             catch (Exception)
             {
@@ -135,20 +189,26 @@ namespace LogGrokX
         }
 
         private static ApplicationSettings Load()
+            => LoadFromFile(SettingsFileName, true);
+
+        internal static ApplicationSettings LoadFromFile(string fileName, bool reloadOnChange = false)
         {
             var builder = new ConfigurationBuilder()
-                .AddYamlFile(SettingsFileName, true, true);
-
-            var settings = new ApplicationSettings();
+                .Add(new ProfileYamlConfigurationSource
+                {
+                    Path = fileName,
+                    Optional = true,
+                    ReloadOnChange = reloadOnChange
+                });
 
             var configuration = builder.Build();
-            configuration.GetSection("Settings").Bind(settings);
+            var settings = BindSettings(configuration, fileName);
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
+            ValueMapper.Current = new ValueMapper(settings.ValueMappings);
 
             ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
             {
-                var newSettings = new ApplicationSettings();
-                configuration.GetSection("Settings").Bind(newSettings);
+                var newSettings = BindSettings(configuration);
                 settings.ColorSettings = newSettings.ColorSettings;
                 settings.LogFormats = newSettings.LogFormats;
                 settings.ViewSettings.DetectBinary = newSettings.ViewSettings.DetectBinary;
@@ -156,13 +216,34 @@ namespace LogGrokX
                 settings.ViewSettings.DetectBase64 = newSettings.ViewSettings.DetectBase64;
                 settings.ViewSettings.DetectHex = newSettings.ViewSettings.DetectHex;
                 BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
+                settings.SetValueMappings(newSettings.ValueMappings);
+                settings.UpdateProfiles(newSettings.Profiles, newSettings.SelectedProfile);
             });
 
             return settings;
         }
 
-        private ApplicationSettings()
+        private static ApplicationSettings BindSettings(IConfiguration configuration, string? fileName = null)
         {
+            var settings = new ApplicationSettings(fileName);
+            var section = configuration.GetSection("Settings");
+            section.Bind(settings);
+            settings.Profiles = section.GetSection(nameof(Profiles)).GetChildren().Select(profileSection =>
+            {
+                var profile = profileSection.Get<ProfileSettings>() ?? new ProfileSettings();
+                var keys = profileSection.GetChildren().Select(child => child.Key).ToArray();
+                if (profile.LogFormats == null && keys.Contains(nameof(ProfileSettings.LogFormats), StringComparer.OrdinalIgnoreCase))
+                    profile.LogFormats = Array.Empty<LogFormat>();
+                if (profile.ColorSettings == null && keys.Contains(nameof(ProfileSettings.ColorSettings), StringComparer.OrdinalIgnoreCase))
+                    profile.ColorSettings = new ColorSettings();
+                return profile;
+            }).ToArray();
+            return settings;
+        }
+
+        internal ApplicationSettings(string? fileName = null)
+        {
+            _fileName = fileName ?? SettingsFileName;
         }
     }
 }

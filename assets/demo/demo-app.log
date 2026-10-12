@@ -1,0 +1,372 @@
+2026-05-14 10:00:00.089 DBG Thread-07 PaymentService Payment accepted orderId=1000 amount=12.34
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:00:00.605 INF Thread-01 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:00:00.860 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 72ms
+2026-05-14 10:00:01.081 INF Thread-08 PaymentService Processing payment orderId=1003 amount=42.50 currency=USD status=ok
+2026-05-14 10:00:01.123 INF Thread-04 Database Query completed in 17ms rows=4
+2026-05-14 10:00:01.431 INF Thread-06 AuthService User alice authenticated session=SID-1005
+2026-05-14 10:00:01.969 INF Thread-04 PaymentService Payment accepted orderId=1006 amount=12.34
+2026-05-14 10:00:02.453 INF Thread-01 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:00:02.889 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 21ms
+2026-05-14 10:00:03.203 WRN Thread-03 Cache cache miss key=user:1009
+2026-05-14 10:00:03.288 INF Thread-07 Database Query completed in 36ms rows=0
+2026-05-14 10:00:03.309 INF Thread-04 AuthService User alice authenticated session=SID-1011
+2026-05-14 10:00:03.883 INF Thread-03 PaymentService Payment accepted orderId=1012 amount=12.34
+2026-05-14 10:00:04.576 INF Thread-01 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:00:04.963 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 7ms
+2026-05-14 10:00:05.147 WRN Thread-06 Cache cache miss key=user:1015
+2026-05-14 10:00:05.655 INF Thread-01 Database Query completed in 8ms rows=1
+2026-05-14 10:00:06.326 ERR Thread-04 PaymentService Payment authorization failed error=0x80070005 type=0x00001 orderId=1017
+2026-05-14 10:00:06.553 DBG Thread-01 PaymentService Payment accepted orderId=1018 amount=12.34
+2026-05-14 10:00:07.123 INF Thread-05 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:00:07.439 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 73ms
+2026-05-14 10:00:07.872 WRN Thread-01 Cache cache miss key=user:1021
+2026-05-14 10:00:08.281 INF Thread-06 Database Query completed in 18ms rows=2
+2026-05-14 10:00:08.348 INF Thread-06 AuthService User alice authenticated session=SID-1023
+2026-05-14 10:00:08.671 INF Thread-05 PaymentService Payment accepted orderId=1024 amount=12.34
+2026-05-14 10:00:08.825 INF Thread-04 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:00:09.031 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 41ms
+2026-05-14 10:00:09.436 WRN Thread-01 Cache cache miss key=user:1027
+2026-05-14 10:00:09.725 INF Thread-07 Database Query completed in 29ms rows=3
+2026-05-14 10:00:10.149 INF Thread-05 AuthService User alice authenticated session=SID-1029
+2026-05-14 10:00:10.605 INF Thread-08 PaymentService Payment accepted orderId=1030 amount=12.34
+2026-05-14 10:00:11.304 INF Thread-04 PaymentService Payment response {"orderId":1031,"status":"declined","reason":"insufficient_funds","items":[{"sku":"A-1","qty":2},{"sku":"B-7","qty":1}]}
+2026-05-14 10:00:11.517 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 14ms
+2026-05-14 10:00:11.715 WRN Thread-03 Cache cache miss key=user:1033
+2026-05-14 10:00:11.915 INF Thread-04 Database Query completed in 19ms rows=4
+2026-05-14 10:00:12.282 INF Thread-02 AuthService User alice authenticated session=SID-1035
+2026-05-14 10:00:12.462 DBG Thread-04 PaymentService Payment accepted orderId=1036 amount=12.34
+2026-05-14 10:00:12.717 INF Thread-01 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:00:13.154 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 64ms
+2026-05-14 10:00:13.246 WRN Thread-05 Cache cache miss key=user:1039
+2026-05-14 10:00:13.668 INF Thread-08 Database Query completed in 20ms rows=0
+2026-05-14 10:00:14.352 INF Thread-06 AuthService User alice authenticated session=SID-1041
+2026-05-14 10:00:14.383 INF Thread-04 PaymentService Payment accepted orderId=1042 amount=12.34
+2026-05-14 10:00:14.866 INF Thread-06 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:00:15.522 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 77ms
+2026-05-14 10:00:15.619 INF Thread-05 PaymentService Payment response {"orderId":1045,"status":"ok","amount":42.5,"meta":{"region":"eu","retry":false,"tags":["fast","card"]}}
+2026-05-14 10:00:15.809 INF Thread-02 Database Query completed in 14ms rows=1
+2026-05-14 10:00:16.196 INF Thread-02 AuthService User alice authenticated session=SID-1047
+2026-05-14 10:00:16.428 INF Thread-08 PaymentService Payment accepted orderId=1048 amount=12.34
+2026-05-14 10:00:17.110 INF Thread-07 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:00:17.776 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 29ms
+2026-05-14 10:00:18.233 WRN Thread-01 Cache cache miss key=user:1051
+2026-05-14 10:00:18.764 INF Thread-01 Database Query completed in 10ms rows=2
+2026-05-14 10:00:19.265 INF Thread-05 AuthService User alice authenticated session=SID-1053
+2026-05-14 10:00:19.586 DBG Thread-04 PaymentService Payment accepted orderId=1054 amount=12.34
+2026-05-14 10:00:19.970 INF Thread-07 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:00:20.512 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 23ms
+2026-05-14 10:00:21.138 WRN Thread-05 Cache cache miss key=user:1057
+2026-05-14 10:00:21.665 INF Thread-05 Database Query completed in 5ms rows=3
+2026-05-14 10:00:21.838 INF Thread-01 PaymentService token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInNlciI6ImVtcHR5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+2026-05-14 10:00:22.419 INF Thread-01 PaymentService Payment accepted orderId=1060 amount=12.34
+2026-05-14 10:00:23.094 INF Thread-03 OrderService Order 0x00001 state=processing step=5
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:00:23.663 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 64ms
+2026-05-14 10:00:24.070 WRN Thread-05 Cache cache miss key=user:1063
+2026-05-14 10:00:24.139 INF Thread-05 Database Query completed in 28ms rows=4
+2026-05-14 10:00:24.435 INF Thread-04 AuthService User alice authenticated session=SID-1065
+2026-05-14 10:00:24.689 INF Thread-08 PaymentService Payment accepted orderId=1066 amount=12.34
+2026-05-14 10:00:25.120 INF Thread-06 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:00:25.602 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 55ms
+2026-05-14 10:00:25.735 WRN Thread-06 Cache cache miss key=user:1069
+2026-05-14 10:00:25.974 INF Thread-05 Database Query completed in 7ms rows=0
+2026-05-14 10:00:26.632 INF Thread-04 AuthService User alice authenticated session=SID-1071
+2026-05-14 10:00:26.877 DBG Thread-02 PaymentService Payment accepted orderId=1072 amount=12.34
+2026-05-14 10:00:27.066 INF Thread-07 PaymentService cert=-----BEGIN CERTIFICATE-----MIIDBzCCAe+gAwIBAgIIHth7fmIKCIIwDQYJKoZIhvcNAQELBQAwKzERMA8GA1UE\nChMITG9nR3Jva1gxFjAUBgNVBAMTDWxvZ2dyb2t4LnRlc3QwHhcNMjYwMTAyMDMw\nNDA1WhcNMjcwMTAyMDMwNDA1WjArMREwDwYDVQQKEwhMb2dHcm9rWDEWMBQGA1UE\nAxMNbG9nZ3Jva3gudGVzdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\nAMsDonKVjZC+pnk43cMWT3DW2yDJ4ZWqZdYomsr5hasQYWH8ss5mnyAq9DHPy9yJ\np3/gLOHK0KXj8PyBV1FxMc1+boSWc3gJpQHGb5t8RASMskQ+o+PEbYj+gvkl1gSF\nu74y5jgw30Gpq7hn8z7KcZmux7gtxowlNcHfBbC5RYNK2xg1nWhdUGlgd52N/N5x\nao8UXAFT1x8KZVDuDcc6gQW4wA326MucD1MKXC4Y45aOMqbJulAf43GI2f9ogIwU\nGT8COznZhcw820I4lIRie0LEqGqHBEEyn3OaO1zdS2pWorBx/IyElBE6dNQ0UZEo\no8FhPB5m5ENwAL+8ZG6WuzkCAwEAAaMvMC0wKwYDVR0RBCQwIoINbG9nZ3Jva3gu\ndGVzdIIRd3d3LmxvZ2dyb2t4LnRlc3QwDQYJKoZIhvcNAQELBQADggEBADZsVt2u\n0CO7lq4SFa2BOK2L2S0qaWAGFCkzXQl403qg5LEhrxRIY7PZ691swe/dfJ8M+91j\niD8aMeGvbvqKjiVAePR13C2hLWiyGeQBukhofX2gZAutgnJsbJYPzXkURtCMikIH\nC4OJ/YOdfiRsN4wyjG/o7cmctyBS/Mu4eHzQmJwakPQvs9n87Ucg3rkftryMQ6z1\nKNnAOCuS8IbSu/jLcrwO0tEHNYvxdEQaCo6MuRmYLwK6N2I0tysva2MlGXz7Ksp8\nuMgpvFsOM/817kjHrMlE3vSm7sAFtCvodwRTkq7H28gLIL+AWkL0DxUi9mknL0HW\nodKY6vd/K6U/ugI=-----END CERTIFICATE-----
+2026-05-14 10:00:27.105 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 66ms
+2026-05-14 10:00:27.774 WRN Thread-07 Cache cache miss key=user:1075
+2026-05-14 10:00:28.350 INF Thread-04 Database Query completed in 4ms rows=1
+2026-05-14 10:00:28.862 INF Thread-08 AuthService User alice authenticated session=SID-1077
+2026-05-14 10:00:29.406 INF Thread-04 PaymentService Payment accepted orderId=1078 amount=12.34
+2026-05-14 10:00:29.603 INF Thread-01 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:00:30.281 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 45ms
+2026-05-14 10:00:30.745 WRN Thread-02 Cache cache miss key=user:1081
+2026-05-14 10:00:31.340 INF Thread-04 Database Query completed in 32ms rows=2
+2026-05-14 10:00:31.654 INF Thread-06 AuthService User alice authenticated session=SID-1083
+2026-05-14 10:00:31.919 INF Thread-06 PaymentService Payment accepted orderId=1084 amount=12.34
+2026-05-14 10:00:32.425 INF Thread-06 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:00:32.902 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 22ms
+2026-05-14 10:00:33.186 INF Thread-07 Database raw device payload 48656C6C6F20776F726C64
+2026-05-14 10:00:33.681 INF Thread-06 Database Query completed in 9ms rows=3
+2026-05-14 10:00:34.079 INF Thread-04 AuthService User alice authenticated session=SID-1089
+2026-05-14 10:00:34.182 DBG Thread-07 PaymentService Payment accepted orderId=1090 amount=12.34
+2026-05-14 10:00:34.372 INF Thread-05 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:00:34.871 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 35ms
+2026-05-14 10:00:35.062 WRN Thread-01 Cache cache miss key=user:1093
+2026-05-14 10:00:35.405 INF Thread-02 Database Query completed in 4ms rows=4
+2026-05-14 10:00:36.031 INF Thread-06 AuthService User alice authenticated session=SID-1095
+2026-05-14 10:00:36.098 INF Thread-04 PaymentService Payment accepted orderId=1096 amount=12.34
+2026-05-14 10:00:36.381 INF Thread-02 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:00:36.916 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 48ms
+2026-05-14 10:00:37.036 WRN Thread-01 Cache cache miss key=user:1099
+2026-05-14 10:00:37.586 INF Thread-04 Database Query completed in 15ms rows=0
+2026-05-14 10:00:38.038 INF Thread-04 Database raw device payload 48 65 6C 6C 6F 20 77 6F 72 6C 64
+2026-05-14 10:00:38.481 INF Thread-05 PaymentService Payment accepted orderId=1102 amount=12.34
+2026-05-14 10:00:38.787 INF Thread-07 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:00:38.997 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 44ms
+2026-05-14 10:00:39.246 WRN Thread-05 Cache cache miss key=user:1105
+2026-05-14 10:00:39.836 INF Thread-01 Database Query completed in 26ms rows=1
+2026-05-14 10:00:40.011 INF Thread-01 AuthService User alice authenticated session=SID-1107
+2026-05-14 10:00:40.412 DBG Thread-02 PaymentService Payment accepted orderId=1108 amount=12.34
+2026-05-14 10:00:40.733 INF Thread-05 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:00:41.068 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 28ms
+2026-05-14 10:00:41.361 WRN Thread-03 Cache cache miss key=user:1111
+2026-05-14 10:00:41.646 INF Thread-04 Database Query completed in 16ms rows=2
+2026-05-14 10:00:42.219 INF Thread-08 AuthService User alice authenticated session=SID-1113
+2026-05-14 10:00:42.702 INF Thread-04 PaymentService Payment accepted orderId=1114 amount=12.34
+2026-05-14 10:00:42.831 INF Thread-03 OrderService Order 0x00001 created for customer CUST-1115
+2026-05-14 10:00:42.948 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 52ms
+2026-05-14 10:00:43.295 WRN Thread-01 Cache cache miss key=user:1117
+2026-05-14 10:00:43.605 INF Thread-07 Database Query completed in 30ms rows=3
+2026-05-14 10:00:43.724 INF Thread-06 AuthService User alice authenticated session=SID-1119
+2026-05-14 10:00:44.305 INF Thread-05 PaymentService Payment accepted orderId=1120 amount=12.34
+2026-05-14 10:00:44.421 INF Thread-01 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:00:45.072 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 49ms
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:00:45.680 WRN Thread-03 Cache cache miss key=user:1123
+2026-05-14 10:00:46.256 INF Thread-08 Database Query completed in 4ms rows=4
+2026-05-14 10:00:46.306 INF Thread-02 AuthService User alice authenticated session=SID-1125
+2026-05-14 10:00:46.495 DBG Thread-01 PaymentService Payment accepted orderId=1126 amount=12.34
+2026-05-14 10:00:46.717 INF Thread-08 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:00:46.945 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 54ms
+2026-05-14 10:00:47.026 ERR Thread-06 OrderService Order 0x00002 failed error: 0x80070002
+2026-05-14 10:00:47.547 INF Thread-04 Database Query completed in 9ms rows=0
+2026-05-14 10:00:47.880 INF Thread-01 AuthService User alice authenticated session=SID-1131
+2026-05-14 10:00:48.013 INF Thread-01 PaymentService Payment accepted orderId=1132 amount=12.34
+2026-05-14 10:00:48.577 INF Thread-06 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:00:48.854 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 48ms
+2026-05-14 10:00:49.382 WRN Thread-02 Cache cache miss key=user:1135
+2026-05-14 10:00:49.616 INF Thread-04 Database Query completed in 14ms rows=1
+2026-05-14 10:00:49.887 INF Thread-07 AuthService User alice authenticated session=SID-1137
+2026-05-14 10:00:49.998 INF Thread-03 PaymentService Payment accepted orderId=1138 amount=12.34
+2026-05-14 10:00:50.322 INF Thread-01 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:00:50.999 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 22ms
+2026-05-14 10:00:51.023 WRN Thread-02 Cache cache miss key=user:1141
+2026-05-14 10:00:51.646 INF Thread-04 Database Query completed in 24ms rows=2
+2026-05-14 10:00:51.706 INF Thread-06 OrderService Order lookup <response><status>OK</status><order id="1143"><item qty="2">A-1</item><item qty="1">B-7</item></order></response>
+2026-05-14 10:00:52.328 DBG Thread-04 PaymentService Payment accepted orderId=1144 amount=12.34
+2026-05-14 10:00:52.775 INF Thread-06 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:00:52.786 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 56ms
+2026-05-14 10:00:53.011 WRN Thread-01 Cache cache miss key=user:1147
+2026-05-14 10:00:53.139 INF Thread-06 Database Query completed in 19ms rows=3
+2026-05-14 10:00:53.584 INF Thread-05 AuthService User alice authenticated session=SID-1149
+2026-05-14 10:00:54.136 INF Thread-08 PaymentService Payment accepted orderId=1150 amount=12.34
+2026-05-14 10:00:54.448 INF Thread-08 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:00:54.570 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 76ms
+2026-05-14 10:00:54.794 WRN Thread-03 Cache cache miss key=user:1153
+2026-05-14 10:00:55.090 INF Thread-02 Database Query completed in 2ms rows=4
+2026-05-14 10:00:55.685 INF Thread-02 AuthService User alice authenticated session=SID-1155
+2026-05-14 10:00:56.308 INF Thread-08 PaymentService Payment accepted orderId=1156 amount=12.34
+2026-05-14 10:00:56.508 INF Thread-07 HttpClient GET https://api.example.com/v1/orders/1157 -> 200 OK in 34ms
+2026-05-14 10:00:56.862 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 69ms
+2026-05-14 10:00:57.444 WRN Thread-06 Cache cache miss key=user:1159
+2026-05-14 10:00:57.966 INF Thread-03 Database Query completed in 34ms rows=0
+2026-05-14 10:00:58.067 INF Thread-07 AuthService User alice authenticated session=SID-1161
+2026-05-14 10:00:58.308 DBG Thread-03 PaymentService Payment accepted orderId=1162 amount=12.34
+2026-05-14 10:00:58.568 INF Thread-04 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:00:59.121 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 22ms
+2026-05-14 10:00:59.228 WRN Thread-04 Cache cache miss key=user:1165
+2026-05-14 10:00:59.555 INF Thread-04 Database Query completed in 10ms rows=1
+2026-05-14 10:01:00.093 INF Thread-05 AuthService User alice authenticated session=SID-1167
+2026-05-14 10:01:00.190 INF Thread-02 PaymentService Payment accepted orderId=1168 amount=12.34
+2026-05-14 10:01:00.524 INF Thread-08 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:01:00.992 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 36ms
+2026-05-14 10:01:01.070 ERR Thread-08 HttpClient POST https://api.example.com/v1/pay -> 500 InternalServerError in 1203ms
+2026-05-14 10:01:01.720 INF Thread-08 Database Query completed in 31ms rows=2
+2026-05-14 10:01:02.175 INF Thread-08 AuthService User alice authenticated session=SID-1173
+2026-05-14 10:01:02.384 INF Thread-06 PaymentService Payment accepted orderId=1174 amount=12.34
+2026-05-14 10:01:02.834 INF Thread-03 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:01:03.330 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 78ms
+2026-05-14 10:01:03.339 WRN Thread-01 Cache cache miss key=user:1177
+2026-05-14 10:01:03.874 INF Thread-03 Database Query completed in 6ms rows=3
+2026-05-14 10:01:04.519 INF Thread-06 AuthService User alice authenticated session=SID-1179
+2026-05-14 10:01:04.850 DBG Thread-07 PaymentService Payment accepted orderId=1180 amount=12.34
+2026-05-14 10:01:05.083 INF Thread-03 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:01:05.157 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 57ms
+2026-05-14 10:01:05.493 WRN Thread-03 Cache cache miss key=user:1183
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:01:05.764 INF Thread-02 Database Query completed in 24ms rows=4
+2026-05-14 10:01:06.056 ERR Thread-02 AuthService JWT validation fatal token expired
+2026-05-14 10:01:06.331 INF Thread-04 PaymentService Payment accepted orderId=1186 amount=12.34
+2026-05-14 10:01:06.683 INF Thread-01 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:01:06.740 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 68ms
+2026-05-14 10:01:07.268 WRN Thread-07 Cache cache miss key=user:1189
+2026-05-14 10:01:07.379 INF Thread-05 Database Query completed in 26ms rows=0
+2026-05-14 10:01:07.802 INF Thread-02 AuthService User alice authenticated session=SID-1191
+2026-05-14 10:01:07.924 INF Thread-06 PaymentService Payment accepted orderId=1192 amount=12.34
+2026-05-14 10:01:08.412 INF Thread-05 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:01:08.840 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 52ms
+2026-05-14 10:01:08.903 WRN Thread-05 Cache cache miss key=user:1195
+2026-05-14 10:01:09.409 INF Thread-06 Database Query completed in 14ms rows=1
+2026-05-14 10:01:09.594 INF Thread-07 AuthService User alice authenticated session=SID-1197
+2026-05-14 10:01:09.895 DBG Thread-03 PaymentService Payment accepted orderId=1198 amount=12.34
+2026-05-14 10:01:09.971 ERR Thread-01 AuthService Login failed error: 0x80070056 for user bob
+2026-05-14 10:01:10.469 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 51ms
+2026-05-14 10:01:10.903 WRN Thread-03 Cache cache miss key=user:1201
+2026-05-14 10:01:11.078 INF Thread-01 Database Query completed in 25ms rows=2
+2026-05-14 10:01:11.705 INF Thread-06 AuthService User alice authenticated session=SID-1203
+2026-05-14 10:01:12.400 INF Thread-02 PaymentService Payment accepted orderId=1204 amount=12.34
+2026-05-14 10:01:12.916 INF Thread-04 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:01:13.400 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 28ms
+2026-05-14 10:01:13.797 WRN Thread-06 Cache cache miss key=user:1207
+2026-05-14 10:01:14.265 INF Thread-08 Database Query completed in 29ms rows=3
+2026-05-14 10:01:14.689 INF Thread-03 AuthService User alice authenticated session=SID-1209
+2026-05-14 10:01:15.274 INF Thread-07 PaymentService Payment accepted orderId=1210 amount=12.34
+2026-05-14 10:01:15.520 INF Thread-06 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:01:15.544 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 29ms
+2026-05-14 10:01:15.941 ERR Thread-01 Database Connection error: 0x80004005
+2026-05-14 10:01:16.246 INF Thread-08 Database Query completed in 34ms rows=4
+2026-05-14 10:01:16.608 INF Thread-05 AuthService User alice authenticated session=SID-1215
+2026-05-14 10:01:16.923 DBG Thread-04 PaymentService Payment accepted orderId=1216 amount=12.34
+2026-05-14 10:01:17.259 INF Thread-08 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:01:17.808 INF Thread-08 HttpClient GET https://api.example.com/v1/health -> 200 OK in 11ms
+2026-05-14 10:01:18.110 WRN Thread-08 Cache cache miss key=user:1219
+2026-05-14 10:01:18.273 INF Thread-06 Database Query completed in 27ms rows=0
+2026-05-14 10:01:18.632 INF Thread-07 AuthService User alice authenticated session=SID-1221
+2026-05-14 10:01:19.035 INF Thread-04 PaymentService Payment accepted orderId=1222 amount=12.34
+2026-05-14 10:01:19.113 INF Thread-08 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:01:19.215 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 63ms
+2026-05-14 10:01:19.559 WRN Thread-08 Cache cache miss key=user:1225
+2026-05-14 10:01:19.807 INF Thread-05 Database Query completed in 34ms rows=1
+2026-05-14 10:01:20.083 INF Thread-04 Database Hex dump 48 65 6C 6C 6F 20 77 6F 72 6C 64
+2026-05-14 10:01:20.179 INF Thread-03 PaymentService Payment accepted orderId=1228 amount=12.34
+2026-05-14 10:01:20.542 INF Thread-07 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:01:20.591 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 13ms
+2026-05-14 10:01:20.761 WRN Thread-02 Cache cache miss key=user:1231
+2026-05-14 10:01:20.790 INF Thread-08 Database Query completed in 27ms rows=2
+2026-05-14 10:01:20.949 INF Thread-04 AuthService User alice authenticated session=SID-1233
+2026-05-14 10:01:21.505 DBG Thread-01 PaymentService Payment accepted orderId=1234 amount=12.34
+2026-05-14 10:01:21.542 INF Thread-03 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:01:21.914 INF Thread-04 HttpClient GET https://api.example.com/v1/health -> 200 OK in 79ms
+2026-05-14 10:01:22.348 WRN Thread-03 Cache cache miss key=user:1237
+2026-05-14 10:01:23.021 INF Thread-06 Database Query completed in 8ms rows=3
+2026-05-14 10:01:23.558 INF Thread-08 AuthService User alice authenticated session=SID-1239
+2026-05-14 10:01:23.949 INF Thread-02 PaymentService Payment accepted orderId=1240 amount=12.34
+2026-05-14 10:01:24.199 INF Thread-08 PaymentService Processing payment orderId=1241 amount=42.50 currency=USD status=ok
+2026-05-14 10:01:24.574 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 27ms
+2026-05-14 10:01:25.052 WRN Thread-06 Cache cache miss key=user:1243
+2026-05-14 10:01:25.642 INF Thread-05 Database Query completed in 30ms rows=4
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:01:26.164 INF Thread-03 AuthService User alice authenticated session=SID-1245
+2026-05-14 10:01:26.339 INF Thread-01 PaymentService Payment accepted orderId=1246 amount=12.34
+2026-05-14 10:01:26.363 INF Thread-04 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:01:26.434 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 57ms
+2026-05-14 10:01:26.980 WRN Thread-03 Cache cache miss key=user:1249
+2026-05-14 10:01:27.180 INF Thread-03 Database Query completed in 36ms rows=0
+2026-05-14 10:01:27.492 INF Thread-05 AuthService User alice authenticated session=SID-1251
+2026-05-14 10:01:28.175 DBG Thread-05 PaymentService Payment accepted orderId=1252 amount=12.34
+2026-05-14 10:01:28.254 INF Thread-07 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:01:28.950 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 56ms
+2026-05-14 10:01:29.002 ERR Thread-06 PaymentService Payment authorization failed error=0x80070005 type=0x00001 orderId=1255
+2026-05-14 10:01:29.029 INF Thread-02 Database Query completed in 22ms rows=1
+2026-05-14 10:01:29.114 INF Thread-01 AuthService User alice authenticated session=SID-1257
+2026-05-14 10:01:29.404 INF Thread-02 PaymentService Payment accepted orderId=1258 amount=12.34
+2026-05-14 10:01:29.906 INF Thread-07 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:01:30.414 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 33ms
+2026-05-14 10:01:30.601 WRN Thread-08 Cache cache miss key=user:1261
+2026-05-14 10:01:30.795 INF Thread-01 Database Query completed in 16ms rows=2
+2026-05-14 10:01:30.986 INF Thread-07 AuthService User alice authenticated session=SID-1263
+2026-05-14 10:01:31.563 INF Thread-01 PaymentService Payment accepted orderId=1264 amount=12.34
+2026-05-14 10:01:31.979 INF Thread-05 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:01:32.136 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 57ms
+2026-05-14 10:01:32.254 WRN Thread-06 Cache cache miss key=user:1267
+2026-05-14 10:01:32.792 INF Thread-07 Database Query completed in 23ms rows=3
+2026-05-14 10:01:33.254 INF Thread-02 PaymentService Payment response {"orderId":1269,"status":"declined","reason":"insufficient_funds","items":[{"sku":"A-1","qty":2},{"sku":"B-7","qty":1}]}
+2026-05-14 10:01:33.530 DBG Thread-08 PaymentService Payment accepted orderId=1270 amount=12.34
+2026-05-14 10:01:33.747 INF Thread-05 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:01:33.935 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 32ms
+2026-05-14 10:01:34.014 WRN Thread-05 Cache cache miss key=user:1273
+2026-05-14 10:01:34.403 INF Thread-02 Database Query completed in 31ms rows=4
+2026-05-14 10:01:34.506 INF Thread-06 AuthService User alice authenticated session=SID-1275
+2026-05-14 10:01:34.938 INF Thread-07 PaymentService Payment accepted orderId=1276 amount=12.34
+2026-05-14 10:01:35.463 INF Thread-05 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:01:36.091 INF Thread-08 HttpClient GET https://api.example.com/v1/health -> 200 OK in 23ms
+2026-05-14 10:01:36.520 WRN Thread-04 Cache cache miss key=user:1279
+2026-05-14 10:01:36.902 INF Thread-03 Database Query completed in 13ms rows=0
+2026-05-14 10:01:37.192 INF Thread-02 AuthService User alice authenticated session=SID-1281
+2026-05-14 10:01:37.519 INF Thread-08 PaymentService Payment accepted orderId=1282 amount=12.34
+2026-05-14 10:01:37.547 INF Thread-02 PaymentService Payment response {"orderId":1283,"status":"ok","amount":42.5,"meta":{"region":"eu","retry":false,"tags":["fast","card"]}}
+2026-05-14 10:01:38.244 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 70ms
+2026-05-14 10:01:38.903 WRN Thread-08 Cache cache miss key=user:1285
+2026-05-14 10:01:39.312 INF Thread-02 Database Query completed in 27ms rows=1
+2026-05-14 10:01:39.599 INF Thread-06 AuthService User alice authenticated session=SID-1287
+2026-05-14 10:01:39.959 DBG Thread-01 PaymentService Payment accepted orderId=1288 amount=12.34
+2026-05-14 10:01:40.252 INF Thread-04 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:01:40.709 INF Thread-08 HttpClient GET https://api.example.com/v1/health -> 200 OK in 45ms
+2026-05-14 10:01:41.343 WRN Thread-01 Cache cache miss key=user:1291
+2026-05-14 10:01:41.454 INF Thread-06 Database Query completed in 30ms rows=2
+2026-05-14 10:01:42.109 INF Thread-07 AuthService User alice authenticated session=SID-1293
+2026-05-14 10:01:42.504 INF Thread-07 PaymentService Payment accepted orderId=1294 amount=12.34
+2026-05-14 10:01:42.638 INF Thread-08 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:01:42.764 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 53ms
+2026-05-14 10:01:43.196 INF Thread-05 PaymentService token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInNlciI6ImVtcHR5In0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+2026-05-14 10:01:43.243 INF Thread-07 Database Query completed in 37ms rows=3
+2026-05-14 10:01:43.836 INF Thread-06 AuthService User alice authenticated session=SID-1299
+2026-05-14 10:01:44.444 INF Thread-02 PaymentService Payment accepted orderId=1300 amount=12.34
+2026-05-14 10:01:44.777 INF Thread-02 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:01:45.131 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 12ms
+2026-05-14 10:01:45.414 WRN Thread-02 Cache cache miss key=user:1303
+2026-05-14 10:01:46.055 INF Thread-06 Database Query completed in 17ms rows=4
+2026-05-14 10:01:46.548 INF Thread-05 AuthService User alice authenticated session=SID-1305
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+2026-05-14 10:01:47.200 DBG Thread-08 PaymentService Payment accepted orderId=1306 amount=12.34
+2026-05-14 10:01:47.522 INF Thread-02 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:01:47.709 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 33ms
+2026-05-14 10:01:47.857 WRN Thread-04 Cache cache miss key=user:1309
+2026-05-14 10:01:48.001 INF Thread-05 Database Query completed in 11ms rows=0
+2026-05-14 10:01:48.063 INF Thread-08 PaymentService cert=-----BEGIN CERTIFICATE-----MIIDBzCCAe+gAwIBAgIIHth7fmIKCIIwDQYJKoZIhvcNAQELBQAwKzERMA8GA1UE\nChMITG9nR3Jva1gxFjAUBgNVBAMTDWxvZ2dyb2t4LnRlc3QwHhcNMjYwMTAyMDMw\nNDA1WhcNMjcwMTAyMDMwNDA1WjArMREwDwYDVQQKEwhMb2dHcm9rWDEWMBQGA1UE\nAxMNbG9nZ3Jva3gudGVzdDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEB\nAMsDonKVjZC+pnk43cMWT3DW2yDJ4ZWqZdYomsr5hasQYWH8ss5mnyAq9DHPy9yJ\np3/gLOHK0KXj8PyBV1FxMc1+boSWc3gJpQHGb5t8RASMskQ+o+PEbYj+gvkl1gSF\nu74y5jgw30Gpq7hn8z7KcZmux7gtxowlNcHfBbC5RYNK2xg1nWhdUGlgd52N/N5x\nao8UXAFT1x8KZVDuDcc6gQW4wA326MucD1MKXC4Y45aOMqbJulAf43GI2f9ogIwU\nGT8COznZhcw820I4lIRie0LEqGqHBEEyn3OaO1zdS2pWorBx/IyElBE6dNQ0UZEo\no8FhPB5m5ENwAL+8ZG6WuzkCAwEAAaMvMC0wKwYDVR0RBCQwIoINbG9nZ3Jva3gu\ndGVzdIIRd3d3LmxvZ2dyb2t4LnRlc3QwDQYJKoZIhvcNAQELBQADggEBADZsVt2u\n0CO7lq4SFa2BOK2L2S0qaWAGFCkzXQl403qg5LEhrxRIY7PZ691swe/dfJ8M+91j\niD8aMeGvbvqKjiVAePR13C2hLWiyGeQBukhofX2gZAutgnJsbJYPzXkURtCMikIH\nC4OJ/YOdfiRsN4wyjG/o7cmctyBS/Mu4eHzQmJwakPQvs9n87Ucg3rkftryMQ6z1\nKNnAOCuS8IbSu/jLcrwO0tEHNYvxdEQaCo6MuRmYLwK6N2I0tysva2MlGXz7Ksp8\nuMgpvFsOM/817kjHrMlE3vSm7sAFtCvodwRTkq7H28gLIL+AWkL0DxUi9mknL0HW\nodKY6vd/K6U/ugI=-----END CERTIFICATE-----
+2026-05-14 10:01:48.428 INF Thread-03 PaymentService Payment accepted orderId=1312 amount=12.34
+2026-05-14 10:01:48.880 INF Thread-06 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:01:48.984 INF Thread-07 HttpClient GET https://api.example.com/v1/health -> 200 OK in 7ms
+2026-05-14 10:01:49.580 WRN Thread-06 Cache cache miss key=user:1315
+2026-05-14 10:01:49.916 INF Thread-03 Database Query completed in 17ms rows=1
+2026-05-14 10:01:50.394 INF Thread-02 AuthService User alice authenticated session=SID-1317
+2026-05-14 10:01:50.840 INF Thread-03 PaymentService Payment accepted orderId=1318 amount=12.34
+2026-05-14 10:01:51.027 INF Thread-06 OrderService Order 0x00001 state=processing step=4
+2026-05-14 10:01:51.326 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 56ms
+2026-05-14 10:01:51.778 WRN Thread-05 Cache cache miss key=user:1321
+2026-05-14 10:01:52.162 INF Thread-06 Database Query completed in 30ms rows=2
+2026-05-14 10:01:52.371 INF Thread-06 AuthService User alice authenticated session=SID-1323
+2026-05-14 10:01:52.911 DBG Thread-03 PaymentService Payment accepted orderId=1324 amount=12.34
+2026-05-14 10:01:53.403 INF Thread-02 Database raw device payload 48656C6C6F20776F726C64
+2026-05-14 10:01:53.717 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 71ms
+2026-05-14 10:01:54.260 WRN Thread-03 Cache cache miss key=user:1327
+2026-05-14 10:01:54.938 INF Thread-03 Database Query completed in 33ms rows=3
+2026-05-14 10:01:55.306 INF Thread-01 AuthService User alice authenticated session=SID-1329
+2026-05-14 10:01:55.453 INF Thread-08 PaymentService Payment accepted orderId=1330 amount=12.34
+2026-05-14 10:01:56.148 INF Thread-07 OrderService Order 0x00001 state=processing step=2
+2026-05-14 10:01:56.440 INF Thread-02 HttpClient GET https://api.example.com/v1/health -> 200 OK in 47ms
+2026-05-14 10:01:56.538 WRN Thread-08 Cache cache miss key=user:1333
+2026-05-14 10:01:57.073 INF Thread-07 Database Query completed in 39ms rows=4
+2026-05-14 10:01:57.228 INF Thread-07 AuthService User alice authenticated session=SID-1335
+2026-05-14 10:01:57.756 INF Thread-01 PaymentService Payment accepted orderId=1336 amount=12.34
+2026-05-14 10:01:57.780 INF Thread-04 OrderService Order 0x00001 state=processing step=1
+2026-05-14 10:01:58.190 INF Thread-03 HttpClient GET https://api.example.com/v1/health -> 200 OK in 11ms
+2026-05-14 10:01:58.478 INF Thread-07 Database raw device payload 48 65 6C 6C 6F 20 77 6F 72 6C 64
+2026-05-14 10:01:58.508 INF Thread-08 Database Query completed in 19ms rows=0
+2026-05-14 10:01:58.709 INF Thread-07 AuthService User alice authenticated session=SID-1341
+2026-05-14 10:01:59.404 DBG Thread-03 PaymentService Payment accepted orderId=1342 amount=12.34
+2026-05-14 10:01:59.735 INF Thread-05 OrderService Order 0x00001 state=processing step=0
+2026-05-14 10:02:00.132 INF Thread-05 HttpClient GET https://api.example.com/v1/health -> 200 OK in 38ms
+2026-05-14 10:02:00.570 WRN Thread-05 Cache cache miss key=user:1345
+2026-05-14 10:02:01.157 INF Thread-03 Database Query completed in 3ms rows=1
+2026-05-14 10:02:01.229 INF Thread-06 AuthService User alice authenticated session=SID-1347
+2026-05-14 10:02:01.469 INF Thread-08 PaymentService Payment accepted orderId=1348 amount=12.34
+2026-05-14 10:02:01.725 INF Thread-04 OrderService Order 0x00001 state=processing step=6
+2026-05-14 10:02:02.418 INF Thread-01 HttpClient GET https://api.example.com/v1/health -> 200 OK in 6ms
+2026-05-14 10:02:02.546 WRN Thread-08 Cache cache miss key=user:1351
+2026-05-14 10:02:03.175 INF Thread-02 Database Query completed in 6ms rows=2
+2026-05-14 10:02:03.183 INF Thread-07 OrderService Order 0x00001 created for customer CUST-1353
+2026-05-14 10:02:03.333 INF Thread-08 PaymentService Payment accepted orderId=1354 amount=12.34
+2026-05-14 10:02:03.946 INF Thread-08 OrderService Order 0x00001 state=processing step=5
+2026-05-14 10:02:04.604 INF Thread-06 HttpClient GET https://api.example.com/v1/health -> 200 OK in 15ms
+2026-05-14 10:02:05.060 WRN Thread-03 Cache cache miss key=user:1357
+2026-05-14 10:02:05.253 INF Thread-04 Database Query completed in 24ms rows=3
+2026-05-14 10:02:05.561 INF Thread-02 AuthService User alice authenticated session=SID-1359

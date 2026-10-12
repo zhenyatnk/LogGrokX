@@ -68,7 +68,21 @@ persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Controls/ListControls/BaseLogListViewItem`, computed by
 `Controls/ListControls/VirtualizingStackPanel` and rendered by
-`Styles/ListViewItemStyle.xaml`. The support window is `SupportWindow.xaml` /
+`Styles/ListViewItemStyle.xaml`. The horizontal group separators are toggled by
+`ViewSettings.ShowThreadGroupSeparators` (Settings -> View, default on), exposed
+as `ThreadGroupingService.ShowSeparators` /
+`VirtualizingStackPanel.ShowGroupSeparators`; disabling them leaves
+`IsGroupContinuation` (thread-value dimming) intact. While grouping is on, rows of other threads than
+the current line are dimmed (`IsOtherThread`, computed by the panel from
+`CurrentPosition`, rendered as reduced `RowPresenter` opacity) and the search
+results are limited to the current thread (#56): `LogViewModel` publishes the
+thread of the current line to the per-document `CurrentThreadFilter`, and
+`SearchDocumentViewModel` turns it into exclusions of all other values of the
+indexed `Thread` field (`CurrentThreadFilter.AddThreadExclusions`, so the field
+must be in `IndexedFields`). In the merged view `MergedViewModel.CurrentThread`
+(source + thread) drives `MergedSearchDocumentViewModel.FilterByThread`, which
+uses `Indexer.IsLineComponentEqual` or parses the line when `Thread` is not
+indexed. The support window is `SupportWindow.xaml` /
 `SupportViewModel` (opened through `OpenSupportCommand`).
 
 The timeline/minimap strip is `Controls/LogMinimapControl.cs` (a
@@ -251,6 +265,36 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   menu items stay hidden. Parts already created keep their snapshot; the change
   reaches every line after reopening the log. Covered by
   `BinaryDetectionOptionsTests`.
+- **Value mappings** (#58): `Settings.ValueMappings` (`ValueMappingList[]`:
+  `Name`, `Enabled`, `IgnoreCase`, `Fields`, `Items` of `Value`/`Mapping`) is
+  compiled into `LogGrokX.Data/ValueMapper` and published as the static
+  `ValueMapper.Current` by `ApplicationSettings.Load`, its hot reload and
+  `SetValueMappings` (Settings -> Value mappings on save). `ForField(name)` returns
+  a cached `FieldValueMapper` with the enabled lists whose `Fields` contain the
+  field (case-insensitive) or are empty; `ForField(null)` (whole-line text: marked
+  lines, merged `Text`) uses only lists without fields. `ForFields(names)` is
+  cached by the joined names, because `LogFormat.FieldNames` builds a new array on
+  every call: callers keep the names (`LineViewModelCollectionProvider`,
+  `SearchDocumentViewModel`, `MergedDocumentItem.FieldNames`). Values match as
+  whole tokens (`(?<!\w)`/`(?!\w)` only at word-character edges); the longest
+  value wins, then the first list. `LineViewModel` gets one mapper per field and
+  passes it to `LinePartViewModel`, which builds its `TextModel` (and every
+  decoded model, after Base64/HEX) from `ValueMappingText.Apply`, so the display
+  and "Copy" show `value(mapping)` while `OriginalText`, search, filters and
+  indexes keep the raw value. `ValueMappingText` maps JSON string values (inside
+  the quotes, `value(mapping)`) and JSON numbers (as a trailing `5 /*mapping*/`
+  comment, so the number stays a number); property names are not mapped. JSON
+  comments are tolerated by `TextOperations.IsValidJson` (`JsonCommentHandling.Skip`)
+  and preserved by `FormatJsonWithComments`, so commented JSON is still formatted
+  and folded. XML text/attribute values/CDATA are mapped with the mapping escaped,
+  and the fragment is kept unchanged if it is no longer the same JSON/XML
+  (`TextOperations.GetStructuredRanges`). Rows already created keep their
+  snapshot; the change reaches every line after reopening the log. JSON
+  import/export is `ValueMappingJson` (object, array or a plain value->mapping
+  object). The YAML block is written by `SettingsYamlRenderer.RenderValueMappings`;
+  `YamlSettingsFile.EnsureKey` adds a missing `ValueMappings:` key to older
+  files first. Covered by `ValueMapperTests`/`ValueMappingJsonTests`
+  (`LogGrokX.Data.Tests`) and `ValueMappingTests` (`LogGrokX.Tests`).
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

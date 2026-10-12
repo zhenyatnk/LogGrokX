@@ -29,7 +29,7 @@ namespace LogGrokX
         }
 
         private readonly Container _container;
-        public DocumentContainer(string fileName, ApplicationSettings applicationSettings,
+        public DocumentContainer(string fileName, ProfileSettings profile, ApplicationSettings applicationSettings,
             SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore,
             TimelinePlacementService timelinePlacementService, ThreadGroupingService threadGroupingService)
         {
@@ -62,7 +62,7 @@ namespace LogGrokX
                 return new LogFile(fileName, meta.XorMask);
             });
             _container.RegisterDelegate(_ => LogMetaInformationProvider.GetLogMetaInformation(fileName,
-                applicationSettings.LogFormats.Where(l => l.IsCorrect())),
+                (profile.LogFormats ?? Array.Empty<LogFormat>()).Where(l => l.IsCorrect())),
                 Reuse.Singleton);
             _container.Register<LineIndex>();
             _container.RegisterMapping<ILineIndex, LineIndex>();
@@ -80,7 +80,7 @@ namespace LogGrokX
                 serviceKey: ParserType.Full);
             
             // Presentation
-            _container.RegisterInstance(applicationSettings.ColorSettings);
+            _container.RegisterInstance(profile.ColorSettings ?? new Colors.Configuration.ColorSettings());
             _container.RegisterDelegate(c => 
                 applicationSettings.GetColumnSettings(c.Resolve<LogMetaInformation>().LineRegex), 
                 reuse: Reuse.Singleton);
@@ -96,6 +96,7 @@ namespace LogGrokX
                     .Type(request => request.Container.Resolve<LogHeaderCollection>()));
             
             _container.Register<FilterSettings>(Reuse.Singleton);
+            _container.Register<CurrentThreadFilter>(Reuse.Singleton);
             _container.Register<TextViewSharedFoldingState>(Reuse.Singleton);
             
             _container.Register<DocumentViewModel>();
@@ -122,8 +123,10 @@ namespace LogGrokX
                     var transofrmationPerformer = r.Resolve<TransformationPerformer>();
                     var timeIndex = r.Resolve<TimeIndex>();
                     var foldingState = r.Resolve<TextViewSharedFoldingState>();
+                    var currentThreadFilter = r.Resolve<CurrentThreadFilter>();
                     return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, viewFactory, pattern,
-                        markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState);
+                        markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState,
+                        currentThreadFilter);
                 });
             
             // view

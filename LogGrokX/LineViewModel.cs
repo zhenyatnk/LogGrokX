@@ -15,12 +15,14 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         private readonly ParseResult _parseResult;
         private readonly string _transformResult;
         private readonly LinePartViewModel?[] _parts;
+        private readonly FieldValueMapper[]? _valueMappers;
 
         public LineViewModel(int index, string sourceString, ILineParser parser, Selection markedLines,
-            TransformationPerformer transformationPerformer)
+            TransformationPerformer transformationPerformer, FieldValueMapper[]? valueMappers = null)
             : base(index, markedLines)
         {
             _sourceString = sourceString;
+            _valueMappers = valueMappers;
             _transformResult = transformationPerformer.Transform(sourceString); 
             _parseResult = parser.Parse(
                 _transformResult);
@@ -68,12 +70,15 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             var text = _transformResult.Substring(lineMeta.ComponentStart(index),
                 lineMeta.ComponentLength(index));
 
-            var part = new LinePartViewModel(uniqueId, text);
+            var part = new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index));
             if (index >= 0 && index < _parts.Length)
                 _parts[index] = part;
 
             return part;
         }
+
+        private FieldValueMapper? GetValueMapper(int index) =>
+            _valueMappers != null && index >= 0 && index < _valueMappers.Length ? _valueMappers[index] : null;
 
         public override bool Equals(object? o)
         {
@@ -123,7 +128,8 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             var textModel = componentIndex >= 0 && componentIndex < _parts.Length &&
                             _parts[componentIndex] is { IsDecoded: true } decodedPart
                 ? decodedPart.TextModel
-                : new TextModel(HashCode.Combine(Index, componentIndex), componentText);
+                : new TextModel(HashCode.Combine(Index, componentIndex),
+                    ValueMappingText.Apply(componentText, GetValueMapper(componentIndex)));
 
             if (foldingState == null || textModel.CollapsibleRanges == null)
                 return textModel.GetDisplayedText(null);

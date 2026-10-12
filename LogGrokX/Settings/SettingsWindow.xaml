@@ -49,6 +49,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0"
@@ -117,19 +118,30 @@
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Merged files view" />
+                                   Text="Show thread group separators" />
                         <CheckBox Grid.Row="5"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  VerticalAlignment="Center"
+                                  IsChecked="{Binding View.ShowThreadGroupSeparators, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="6"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,10"
+                                   VerticalAlignment="Center"
+                                   Text="Merged files view" />
+                        <CheckBox Grid.Row="6"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.MergedFilesView, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="6"
+                        <TextBlock Grid.Row="7"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Top"
                                    Text="Binary data detection" />
-                        <StackPanel Grid.Row="6"
+                        <StackPanel Grid.Row="7"
                                     Grid.Column="1"
                                     Margin="0,0,0,10">
                             <CheckBox Content="Detect binary data (BIN)"
@@ -147,12 +159,12 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <TextBlock Grid.Row="7"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
                                    Text="Automatic updates" />
-                        <ComboBox Grid.Row="7"
+                        <ComboBox Grid.Row="8"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   ItemsSource="{Binding View.UpdateModeOptions}"
@@ -160,228 +172,459 @@
                                   SelectedValuePath="Value"
                                   SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="8"
+                        <TextBlock Grid.Row="9"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="2"
                                    Margin="0,6,0,0"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection applies to lines shown after saving; reopen the log to apply it to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
+                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection and value mappings apply to lines shown after saving; reopen the log to apply them to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
                     </Grid>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Colors">
+            <TabItem Header="Profiles">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0"
-                               Margin="0,0,0,8"
-                               TextWrapping="Wrap"
+                    <WrapPanel>
+                      <StackPanel Orientation="Horizontal" Margin="0,0,12,6">
+                        <ComboBox Width="200" Margin="0,0,12,0"
+                                  ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
+                                  SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" />
+                        <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" Text="Name" />
+                        <ui:TextBox Width="180"
+                                    Text="{Binding SelectedProfile.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                      </StackPanel>
+                      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                        <ui:Button Command="{Binding AddProfileCommand}" Content="New" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding DuplicateProfileCommand}" Content="Copy" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding RemoveProfileCommand}" Content="Remove" />
+                      </StackPanel>
+                    </WrapPanel>
+                    <TextBlock Grid.Row="1" Margin="0,10,0,8" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Lines matching a rule are colored. Use a color name or #AARRGGBB. The first matching rule wins." />
+                               Text="Each profile has its own formats and color rules. Save applies the selected profile to all open files and reloads them while preserving marked lines." />
+                    <TabControl Grid.Row="2">
+                        <TabItem Header="Colors">
+                            <Grid Margin="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                    <DataGrid x:Name="ColorRulesGrid"
-                              Grid.Row="1"
-                              AutoGenerateColumns="False"
-                              CanUserAddRows="False"
-                              CanUserDeleteRows="False"
-                              CanUserReorderColumns="False"
-                              HeadersVisibility="Column"
-                              SelectionMode="Single"
-                              SelectedItem="{Binding SelectedColorRule, Mode=TwoWay}"
-                              ItemsSource="{Binding ColorRules}">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Width="*"
-                                                Header="Regex"
-                                                Binding="{Binding RegexString, UpdateSourceTrigger=PropertyChanged}" />
-                            <DataGridTextColumn Width="150"
-                                                Header="Foreground"
-                                                Binding="{Binding ForegroundColor, UpdateSourceTrigger=PropertyChanged}" />
-                            <DataGridTextColumn Width="150"
-                                                Header="Background"
-                                                Binding="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged}" />
-                            <DataGridTemplateColumn Width="90" Header="Preview">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border Margin="2"
-                                                Padding="6,2"
-                                                Background="{Binding BackgroundBrush}"
-                                                BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="4">
-                                            <TextBlock HorizontalAlignment="Center"
-                                                       Foreground="{Binding ForegroundBrush}"
-                                                       Text="Aa" />
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                                <TextBlock Grid.Row="0"
+                                           Margin="0,0,0,8"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="Lines matching a rule are colored. Use a color name or #AARRGGBB. The first matching rule wins." />
 
-                    <StackPanel Grid.Row="2" Margin="0,8,0,0" Orientation="Horizontal">
-                        <ui:Button Command="{Binding AddColorRuleCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add rule" />
-                            </StackPanel>
-                        </ui:Button>
-                        <ui:Button Margin="8,0,0,0"
-                                   Command="{Binding RemoveColorRuleCommand}">
-                            <StackPanel Orientation="Horizontal">
-                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
-                            </StackPanel>
-                        </ui:Button>
-                    </StackPanel>
+                                <DataGrid x:Name="ColorRulesGrid"
+                                          Grid.Row="1"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          CanUserReorderColumns="False"
+                                          HeadersVisibility="Column"
+                                          SelectionMode="Single"
+                                          SelectedItem="{Binding SelectedColorRule, Mode=TwoWay}"
+                                          ItemsSource="{Binding ColorRules}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Width="*" MinWidth="240"
+                                                            Header="Regex"
+                                                            Binding="{Binding RegexString, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Width="150"
+                                                            Header="Foreground"
+                                                            Binding="{Binding ForegroundColor, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTextColumn Width="150"
+                                                            Header="Background"
+                                                            Binding="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged}" />
+                                        <DataGridTemplateColumn Width="90" Header="Preview">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border Margin="2"
+                                                            Padding="6,2"
+                                                            Background="{Binding BackgroundBrush}"
+                                                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                            BorderThickness="1"
+                                                            CornerRadius="4">
+                                                        <TextBlock HorizontalAlignment="Center"
+                                                                   Foreground="{Binding ForegroundBrush}"
+                                                                   Text="Aa" />
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <StackPanel Grid.Row="2" Margin="0,8,0,0" Orientation="Horizontal">
+                                    <ui:Button Command="{Binding AddColorRuleCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add rule" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                    <ui:Button Margin="8,0,0,0"
+                                               Command="{Binding RemoveColorRuleCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+                        </TabItem>
+
+                        <TabItem Header="Log formats">
+                            <Grid Margin="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0"
+                                           Margin="0,0,0,8"
+                                           TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="Formats are tried in order when a log file is opened. Indexed fields and transformations are edited one entry per line." />
+
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding LogFormats}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,0,10"
+                                                        Padding="10"
+                                                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        CornerRadius="6">
+                                                    <Grid>
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                            <RowDefinition Height="Auto" />
+                                                        </Grid.RowDefinitions>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="0"
+                                                                   Margin="0,0,0,6"
+                                                                   FontWeight="SemiBold"
+                                                                   Text="Log format" />
+
+                                                        <TextBlock Grid.Row="0"
+                                                                   Grid.Column="1"
+                                                                   MaxWidth="350"
+                                                                   TextWrapping="Wrap"
+                                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                            <Run Text="Fields:" />
+                                                            <Run Text="{Binding FieldNames, Mode=OneWay}" />
+                                                        </TextBlock>
+
+                                                        <ui:TextBox Grid.Row="1"
+                                                                    Grid.Column="0"
+                                                                    Grid.ColumnSpan="2"
+                                                                    MinHeight="52"
+                                                                    Margin="0,0,0,8"
+                                                                    AcceptsReturn="True"
+                                                                    FontFamily="{StaticResource JetBrainsMono}"
+                                                                    HorizontalScrollBarVisibility="Auto"
+                                                                    Text="{Binding Regex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                                    TextWrapping="NoWrap" />
+
+                                                        <TextBlock Grid.Row="2"
+                                                                   Grid.Column="0"
+                                                                   Grid.ColumnSpan="2"
+                                                                   Margin="0,0,0,2"
+                                                                   Text="Indexed fields (one per line)" />
+                                                        <ui:TextBox Grid.Row="3"
+                                                                    Grid.Column="0"
+                                                                    Grid.ColumnSpan="2"
+                                                                    MinHeight="44"
+                                                                    Margin="0,0,0,8"
+                                                                    AcceptsReturn="True"
+                                                                    FontFamily="{StaticResource JetBrainsMono}"
+                                                                    Text="{Binding IndexedFields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                                    TextWrapping="NoWrap" />
+
+                                                        <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="12" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="12" />
+                                                                <ColumnDefinition Width="120" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock Margin="0,0,0,2" Text="Time field" />
+                                                                <ui:TextBox Text="{Binding TimeField, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="2">
+                                                                <TextBlock Margin="0,0,0,2" Text="Time format" />
+                                                                <ui:TextBox Text="{Binding TimeFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                            </StackPanel>
+                                                            <StackPanel Grid.Column="4">
+                                                                <TextBlock Margin="0,0,0,2" Text="XOR mask" />
+                                                                <ui:TextBox Text="{Binding XorMask, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                            </StackPanel>
+                                                        </Grid>
+
+                                                        <TextBlock Grid.Row="5"
+                                                                   Grid.Column="0"
+                                                                   Grid.ColumnSpan="2"
+                                                                   Margin="0,8,0,2"
+                                                                   Text="Transformations (one per line)" />
+                                                        <ui:TextBox Grid.Row="6"
+                                                                    Grid.Column="0"
+                                                                    Grid.ColumnSpan="2"
+                                                                    MinHeight="44"
+                                                                    AcceptsReturn="True"
+                                                                    FontFamily="{StaticResource JetBrainsMono}"
+                                                                    Text="{Binding Transformations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
+                                                                    TextWrapping="NoWrap" />
+
+                                                        <ui:Button Grid.Row="7"
+                                                                   Grid.Column="1"
+                                                                   Margin="0,8,0,0"
+                                                                   HorizontalAlignment="Right"
+                                                                   Command="{Binding DataContext.RemoveLogFormatCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                   CommandParameter="{Binding}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
+                                                            </StackPanel>
+                                                        </ui:Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+
+                                <StackPanel Grid.Row="2" Margin="0,8,0,0" Orientation="Horizontal">
+                                    <ui:Button Command="{Binding AddLogFormatCommand}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add format" />
+                                        </StackPanel>
+                                    </ui:Button>
+                                </StackPanel>
+                            </Grid>
+                        </TabItem>
+
+                    </TabControl>
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Log formats">
+            <TabItem Header="Value mappings">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="220" />
+                        <ColumnDefinition Width="12" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
                     <TextBlock Grid.Row="0"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="3"
                                Margin="0,0,0,8"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Formats are tried in order when a log file is opened. Indexed fields and transformations are edited one entry per line." />
+                               Text="Values found in the listed fields are shown as value(mapping), for example 0x00001(type 1). Leave Fields empty to apply a list to every field. Lists are imported and exported as JSON." />
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding LogFormats}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,10"
-                                            Padding="10"
-                                            BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="6">
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                    <ListBox Grid.Row="1"
+                             Grid.Column="0"
+                             BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                             BorderThickness="1"
+                             ItemsSource="{Binding ValueMappings}"
+                             SelectedItem="{Binding SelectedValueMapping, Mode=TwoWay}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <CheckBox MinWidth="0"
+                                              Margin="0,0,4,0"
+                                              VerticalAlignment="Center"
+                                              ToolTip="Enabled"
+                                              IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                                    <TextBlock VerticalAlignment="Center"
+                                               Text="{Binding DisplayName}"
+                                               TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
 
-                                            <TextBlock Grid.Row="0"
-                                                       Grid.Column="0"
-                                                       Margin="0,0,0,6"
-                                                       FontWeight="SemiBold"
-                                                       Text="Log format" />
+                    <Grid Grid.Row="1"
+                          Grid.Column="2"
+                          DataContext="{Binding SelectedValueMapping}"
+                          IsEnabled="{Binding DataContext.HasSelectedValueMapping, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                                            <TextBlock Grid.Row="0"
-                                                       Grid.Column="1"
-                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                                <Run Text="Fields:" />
-                                                <Run Text="{Binding FieldNames, Mode=OneWay}" />
-                                            </TextBlock>
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
+                            <TextBlock Margin="0,0,0,2" Text="Name" />
+                            <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
+                            <TextBlock Margin="0,0,0,2" Text="Fields (comma separated, empty = all fields)" />
+                            <ui:TextBox Text="{Binding Fields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                        </StackPanel>
 
-                                            <ui:TextBox Grid.Row="1"
-                                                        Grid.Column="0"
-                                                        Grid.ColumnSpan="2"
-                                                        MinHeight="52"
-                                                        Margin="0,0,0,8"
-                                                        AcceptsReturn="True"
-                                                        FontFamily="{StaticResource JetBrainsMono}"
-                                                        HorizontalScrollBarVisibility="Auto"
-                                                        Text="{Binding Regex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                        TextWrapping="NoWrap" />
+                        <StackPanel Grid.Row="1"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="3"
+                                    Margin="0,0,0,8"
+                                    Orientation="Horizontal">
+                            <CheckBox Content="Enabled" IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                            <CheckBox Margin="16,0,0,0"
+                                      Content="Ignore case"
+                                      IsChecked="{Binding IgnoreCase, Mode=TwoWay}" />
+                        </StackPanel>
 
-                                            <TextBlock Grid.Row="2"
-                                                       Grid.Column="0"
-                                                       Grid.ColumnSpan="2"
-                                                       Margin="0,0,0,2"
-                                                       Text="Indexed fields (one per line)" />
-                                            <ui:TextBox Grid.Row="3"
-                                                        Grid.Column="0"
-                                                        Grid.ColumnSpan="2"
-                                                        MinHeight="44"
-                                                        Margin="0,0,0,8"
-                                                        AcceptsReturn="True"
-                                                        FontFamily="{StaticResource JetBrainsMono}"
-                                                        Text="{Binding IndexedFields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                        TextWrapping="NoWrap" />
+                        <TextBlock Grid.Row="2"
+                                   Grid.Column="0"
+                                   Grid.ColumnSpan="3"
+                                   Margin="0,0,0,2"
+                                   Text="Values" />
+                        <DataGrid Grid.Row="3"
+                                  Grid.Column="0"
+                                  Grid.ColumnSpan="3"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="True"
+                                  CanUserDeleteRows="True"
+                                  CanUserReorderColumns="False"
+                                  HeadersVisibility="Column"
+                                  SelectionMode="Single"
+                                  SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                                  ItemsSource="{Binding Items}">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Width="*"
+                                                    Header="Value"
+                                                    Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
+                                <DataGridTextColumn Width="2*"
+                                                    Header="Mapping"
+                                                    Binding="{Binding Mapping, UpdateSourceTrigger=PropertyChanged}" />
+                            </DataGrid.Columns>
+                        </DataGrid>
 
-                                            <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="12" />
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="12" />
-                                                    <ColumnDefinition Width="120" />
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Margin="0,0,0,2" Text="Time field" />
-                                                    <ui:TextBox Text="{Binding TimeField, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="2">
-                                                    <TextBlock Margin="0,0,0,2" Text="Time format" />
-                                                    <ui:TextBox Text="{Binding TimeFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="4">
-                                                    <TextBlock Margin="0,0,0,2" Text="XOR mask" />
-                                                    <ui:TextBox Text="{Binding XorMask, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-                                                </StackPanel>
-                                            </Grid>
+                        <StackPanel Grid.Row="4"
+                                    Grid.Column="0"
+                                    Grid.ColumnSpan="3"
+                                    Margin="0,8,0,0"
+                                    Orientation="Horizontal">
+                            <ui:Button Command="{Binding AddItemCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Add24" FontSize="16" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add value" />
+                                </StackPanel>
+                            </ui:Button>
+                            <ui:Button Margin="8,0,0,0" Command="{Binding RemoveItemCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove value" />
+                                </StackPanel>
+                            </ui:Button>
+                        </StackPanel>
 
-                                            <TextBlock Grid.Row="5"
-                                                       Grid.Column="0"
-                                                       Grid.ColumnSpan="2"
-                                                       Margin="0,8,0,2"
-                                                       Text="Transformations (one per line)" />
-                                            <ui:TextBox Grid.Row="6"
-                                                        Grid.Column="0"
-                                                        Grid.ColumnSpan="2"
-                                                        MinHeight="44"
-                                                        AcceptsReturn="True"
-                                                        FontFamily="{StaticResource JetBrainsMono}"
-                                                        Text="{Binding Transformations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
-                                                        TextWrapping="NoWrap" />
+                        <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="12" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0"
+                                       Margin="0,0,8,0"
+                                       VerticalAlignment="Center"
+                                       Text="Preview" />
+                            <ui:TextBox Grid.Column="1"
+                                        FontFamily="{StaticResource JetBrainsMono}"
+                                        PlaceholderText="Sample text"
+                                        Text="{Binding SampleText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                            <TextBlock Grid.Column="3"
+                                       VerticalAlignment="Center"
+                                       FontFamily="{StaticResource JetBrainsMono}"
+                                       Text="{Binding SamplePreview}"
+                                       TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </Grid>
 
-                                            <ui:Button Grid.Row="7"
-                                                       Grid.Column="1"
-                                                       Margin="0,8,0,0"
-                                                       HorizontalAlignment="Right"
-                                                       Command="{Binding DataContext.RemoveLogFormatCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                                       CommandParameter="{Binding}">
-                                                <StackPanel Orientation="Horizontal">
-                                                    <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
-                                                </StackPanel>
-                                            </ui:Button>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-
-                    <StackPanel Grid.Row="2" Margin="0,8,0,0" Orientation="Horizontal">
-                        <ui:Button Command="{Binding AddLogFormatCommand}">
+                    <StackPanel Grid.Row="2"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3"
+                                Margin="0,8,0,0"
+                                Orientation="Horizontal">
+                        <ui:Button Command="{Binding AddValueMappingCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add format" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add list" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Command="{Binding RemoveValueMappingCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove list" />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="24,0,0,0" Click="OnImportValueMappingsClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowImport24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Import JSON..." />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0"
+                                   Click="OnExportValueMappingClick"
+                                   IsEnabled="{Binding HasSelectedValueMapping}">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export list..." />
+                            </StackPanel>
+                        </ui:Button>
+                        <ui:Button Margin="8,0,0,0" Click="OnExportAllValueMappingsClick">
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export all..." />
                             </StackPanel>
                         </ui:Button>
                     </StackPanel>
+
+                    <TextBlock Grid.Row="3"
+                               Grid.Column="0"
+                               Grid.ColumnSpan="3"
+                               Margin="0,6,0,0"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{Binding ValueMappingMessage}" />
                 </Grid>
             </TabItem>
 

@@ -219,6 +219,7 @@
                                     CurrentPosition="{Binding CurrentItemIndex}"
                                     FirstVisibleIndex="{Binding FirstVisibleIndex}"
                                     GroupByThread="{Binding GroupByThread}"
+                                    ShowGroupSeparators="{Binding ShowGroupSeparators}"
                                     ThreadFieldIndex="{Binding ThreadFieldIndex}"
                                     Tag="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type listControls:ListView}}}"
                                     ContextMenu="{StaticResource LogViewContextMenu}"

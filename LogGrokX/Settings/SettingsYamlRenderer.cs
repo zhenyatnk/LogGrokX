@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using LogGrokX.Data;
 
 namespace LogGrokX.Settings
 {
@@ -22,6 +24,23 @@ namespace LogGrokX.Settings
 
     public static class SettingsYamlRenderer
     {
+        public static IReadOnlyList<string> RenderProfiles(IEnumerable<ProfileViewModel> profiles, int itemIndent)
+        {
+            var lines = new List<string>();
+            var pad = new string(' ', itemIndent);
+            foreach (var profile in profiles)
+            {
+                lines.Add($"{pad}- Name: {FormatScalar(profile.Name.Trim())}");
+                lines.Add($"{pad}  InheritLegacySettings: false");
+                lines.Add($"{pad}  ColorSettings:");
+                lines.Add($"{pad}    Rules:{(profile.ColorRules.Count == 0 ? " []" : string.Empty)}");
+                lines.AddRange(RenderColorRules(profile.ColorRules.Select(rule => rule.ToData()), itemIndent + 6));
+                lines.Add($"{pad}  LogFormats:{(profile.LogFormats.Count == 0 ? " []" : string.Empty)}");
+                lines.AddRange(RenderLogFormats(profile.LogFormats.Select(format => format.ToData()), itemIndent + 4));
+            }
+            return lines;
+        }
+
         public static IReadOnlyList<string> RenderColorRules(IEnumerable<ColorRuleData> rules, int itemIndent)
         {
             var lines = new List<string>();
@@ -72,6 +91,41 @@ namespace LogGrokX.Settings
 
                 if (!string.IsNullOrEmpty(format.XorMask))
                     lines.Add($"{fieldPad}XorMask: {FormatScalar(format.XorMask)}");
+            }
+
+            return lines;
+        }
+
+        public static IReadOnlyList<string> RenderValueMappings(IEnumerable<ValueMappingList> lists, int itemIndent)
+        {
+            var lines = new List<string>();
+            var itemPad = new string(' ', itemIndent);
+            var fieldPad = new string(' ', itemIndent + 2);
+            var listPad = new string(' ', itemIndent + 4);
+            var entryPad = new string(' ', itemIndent + 6);
+
+            foreach (var list in lists)
+            {
+                lines.Add($"{itemPad}- Name: {FormatScalar(list.Name)}");
+                lines.Add($"{fieldPad}Enabled: {(list.Enabled ? "true" : "false")}");
+                lines.Add($"{fieldPad}IgnoreCase: {(list.IgnoreCase ? "true" : "false")}");
+
+                if (list.Fields.Length > 0)
+                {
+                    lines.Add($"{fieldPad}Fields:");
+                    foreach (var field in list.Fields)
+                        lines.Add($"{listPad}- {FormatScalar(field)}");
+                }
+
+                if (list.Items.Length > 0)
+                {
+                    lines.Add($"{fieldPad}Items:");
+                    foreach (var item in list.Items)
+                    {
+                        lines.Add($"{listPad}- Value: {FormatScalar(item.Value)}");
+                        lines.Add($"{entryPad}Mapping: {FormatScalar(item.Mapping)}");
+                    }
+                }
             }
 
             return lines;

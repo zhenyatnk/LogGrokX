@@ -15,6 +15,7 @@ namespace LogGrokX
         private readonly Selection _markedLines;
         private readonly TransformationPerformer _transformationPerformer;
         private readonly TimeIndex _timeIndex;
+        private readonly string[] _fieldNames;
 
         public LineViewModelCollectionProvider(
             IItemProvider<(int index, string str)> lineProvider,
@@ -22,8 +23,10 @@ namespace LogGrokX
             LogHeaderCollection headerCollection,
             Selection markedLines, 
             TransformationPerformer transformationPerformer,
-            TimeIndex timeIndex)       
+            TimeIndex timeIndex,
+            LogMetaInformation metaInformation)
         {
+            _fieldNames = metaInformation.FieldNames;
             _lineProvider = lineProvider;
             _lineParser = lineParser;
             _headerCollection = headerCollection;
@@ -59,7 +62,8 @@ namespace LogGrokX
             return new VirtualList<(int index, string str), ItemViewModel>(itemProvider,
                 indexAndString => 
                     new LineViewModel(indexAndString.index, indexAndString.str, _lineParser,
-                        _markedLines, _transformationPerformer));
+                        _markedLines, _transformationPerformer,
+                        ValueMapper.Current.ForFields(_fieldNames)));
         }
 
         private (IItemProvider<(int index, string str)> itemProvider, Func<int, int> GetIndexByValue) GetLineProvider(

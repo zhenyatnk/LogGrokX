@@ -1,0 +1,320 @@
+10:00:00.386	0x03F6	INF	Worker	job 5000 started
+10:00:00.422	0x0404	INF	Scheduler	schedule tick processed 2 jobs
+10:00:00.623	0x03FD	ERR	Queue	message 5002 dead-lettered
+10:00:00.679	0x0412	INF	Storage	flush segment 5003 bytes=384
+10:00:01.153	0x0404	ERR	Network	peer node-4 timeout, retry
+10:00:01.497	0x03F6	ERR	Worker	job 5005 failed with error 0x80070005
+10:00:02.084	0x040B	INF	Scheduler	enqueued job 5006 priority=1
+10:00:02.330	0x0404	INF	Queue	queue depth 7
+10:00:02.576	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:00:02.999	0x0404	INF	Network	heartbeat sent peer=node-4
+10:00:03.295	0x0404	INF	Worker	job 5010 finished in 385ms
+10:00:03.585	0x03EF	WRN	Scheduler	scheduler warning backlog=11 jobs
+10:00:03.858	0x0404	INF	Queue	dequeue batch 5012 size=32
+10:00:04.341	0x0404	INF	Storage	compaction finished files=4
+10:00:04.412	0x03EF	ERR	Network	connection reset by peer node-4
+10:00:04.681	0x0404	INF	Worker	job 5015 started
+10:00:05.306	0x0404	INF	Scheduler	schedule tick processed 8 jobs
+10:00:05.838	0x0412	ERR	Queue	message 5017 dead-lettered
+10:00:06.355	0x0412	INF	Storage	flush segment 5018 bytes=2304
+10:00:06.748	0x040B	ERR	Network	peer node-4 timeout, retry
+10:00:07.010	0x03F6	ERR	Worker	job 5020 failed with error 0x80070005
+10:00:07.261	0x03FD	INF	Scheduler	enqueued job 5021 priority=1
+10:00:07.731	0x0412	INF	Queue	queue depth 22
+10:00:07.958	0x03F6	ERR	Storage	storage error 0x8007000E out of memory
+10:00:08.469	0x0412	INF	Network	heartbeat sent peer=node-4
+10:00:08.488	0x03EF	INF	Worker	job 5025 finished in 316ms
+10:00:08.988	0x0412	WRN	Scheduler	scheduler warning backlog=26 jobs
+10:00:09.150	0x0404	INF	Queue	dequeue batch 5027 size=32
+10:00:09.421	0x0412	INF	Storage	compaction finished files=4
+10:00:10.080	0x03FD	ERR	Network	connection reset by peer node-4
+10:00:10.224	0x0404	INF	Worker	job 5030 started
+10:00:10.582	0x03EF	INF	Scheduler	schedule tick processed 5 jobs
+10:00:11.073	0x0412	ERR	Queue	message 5032 dead-lettered
+10:00:11.214	0x0404	INF	Storage	flush segment 5033 bytes=4224
+10:00:11.714	0x0404	ERR	Network	peer node-4 timeout, retry
+10:00:12.100	0x03EF	ERR	Worker	job 5035 failed with error 0x80070005
+10:00:12.744	0x03EF	INF	Scheduler	enqueued job 5036 priority=1
+10:00:12.963	0x0404	INF	Queue	queue depth 37
+10:00:13.635	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:00:13.996	0x03F6	INF	Network	heartbeat sent peer=node-4
+10:00:14.270	0x0412	INF	Worker	job 5040 finished in 71ms
+10:00:14.969	0x03FD	WRN	Scheduler	scheduler warning backlog=1 jobs
+10:00:15.520	0x03F6	INF	Queue	dequeue batch 5042 size=32
+10:00:15.992	0x0404	INF	Storage	compaction finished files=4
+10:00:16.156	0x03FD	ERR	Network	connection reset by peer node-4
+10:00:16.837	0x0404	INF	Worker	job 5045 started
+10:00:17.081	0x03F6	INF	Scheduler	schedule tick processed 2 jobs
+10:00:17.575	0x0412	ERR	Queue	message 5047 dead-lettered
+10:00:17.818	0x0412	INF	Storage	flush segment 5048 bytes=6144
+10:00:18.468	0x03EF	ERR	Network	peer node-4 timeout, retry
+10:00:18.971	0x03EF	ERR	Worker	job 5050 failed with error 0x80070005
+10:00:19.195	0x03FD	INF	Scheduler	enqueued job 5051 priority=1
+10:00:19.872	0x0412	INF	Queue	queue depth 52
+10:00:20.338	0x0404	ERR	Storage	storage error 0x8007000E out of memory
+10:00:20.770	0x040B	INF	Network	heartbeat sent peer=node-4
+10:00:21.413	0x03FD	INF	Worker	job 5055 finished in 304ms
+10:00:22.111	0x03F6	WRN	Scheduler	scheduler warning backlog=16 jobs
+10:00:22.405	0x0404	INF	Queue	dequeue batch 5057 size=32
+10:00:22.926	0x0412	INF	Storage	compaction finished files=4
+10:00:23.462	0x0404	ERR	Network	connection reset by peer node-4
+10:00:23.506	0x03FD	INF	Worker	job 5060 started
+10:00:23.689	0x0404	INF	Scheduler	schedule tick processed 8 jobs
+10:00:23.992	0x0404	ERR	Queue	message 5062 dead-lettered
+10:00:24.608	0x0404	INF	Storage	flush segment 5063 bytes=8064
+10:00:25.145	0x0404	ERR	Network	peer node-4 timeout, retry
+10:00:25.493	0x0404	ERR	Worker	job 5065 failed with error 0x80070005
+10:00:25.540	0x040B	INF	Scheduler	enqueued job 5066 priority=1
+10:00:26.169	0x0412	INF	Queue	queue depth 67
+10:00:26.543	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:00:27.184	0x0404	INF	Network	heartbeat sent peer=node-4
+10:00:27.205	0x0412	INF	Worker	job 5070 finished in 223ms
+10:00:27.515	0x0404	WRN	Scheduler	scheduler warning backlog=31 jobs
+10:00:28.116	0x03FD	INF	Queue	dequeue batch 5072 size=32
+10:00:28.737	0x03F6	INF	Storage	compaction finished files=4
+10:00:28.980	0x0404	ERR	Network	connection reset by peer node-4
+10:00:29.027	0x03EF	INF	Worker	job 5075 started
+10:00:29.452	0x0404	INF	Scheduler	schedule tick processed 5 jobs
+10:00:29.826	0x03EF	ERR	Queue	message 5077 dead-lettered
+10:00:30.453	0x0404	INF	Storage	flush segment 5078 bytes=9984
+10:00:30.662	0x040B	ERR	Network	peer node-4 timeout, retry
+10:00:30.703	0x0412	ERR	Worker	job 5080 failed with error 0x80070005
+10:00:30.746	0x03FD	INF	Scheduler	enqueued job 5081 priority=1
+10:00:31.309	0x040B	INF	Queue	queue depth 82
+10:00:31.545	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:00:31.939	0x0412	INF	Network	heartbeat sent peer=node-4
+10:00:32.183	0x0412	INF	Worker	job 5085 finished in 101ms
+10:00:32.538	0x03EF	WRN	Scheduler	scheduler warning backlog=6 jobs
+10:00:33.190	0x040B	INF	Queue	dequeue batch 5087 size=32
+10:00:33.880	0x0404	INF	Storage	compaction finished files=4
+10:00:34.049	0x0412	ERR	Network	connection reset by peer node-4
+10:00:34.274	0x03FD	INF	Worker	job 5090 started
+10:00:34.296	0x03FD	INF	Scheduler	schedule tick processed 2 jobs
+10:00:34.593	0x03FD	ERR	Queue	message 5092 dead-lettered
+10:00:34.605	0x03FD	INF	Storage	flush segment 5093 bytes=11904
+10:00:35.163	0x0404	ERR	Network	peer node-4 timeout, retry
+10:00:35.765	0x0404	ERR	Worker	job 5095 failed with error 0x80070005
+10:00:36.282	0x0412	INF	Scheduler	enqueued job 5096 priority=1
+10:00:36.340	0x0404	INF	Queue	queue depth 97
+10:00:36.354	0x040B	ERR	Storage	storage error 0x8007000E out of memory
+10:00:36.471	0x03EF	INF	Network	heartbeat sent peer=node-4
+10:00:36.825	0x040B	INF	Worker	job 5100 finished in 148ms
+10:00:37.010	0x03EF	WRN	Scheduler	scheduler warning backlog=21 jobs
+10:00:37.654	0x03EF	INF	Queue	dequeue batch 5102 size=32
+10:00:38.029	0x0404	INF	Storage	compaction finished files=4
+10:00:38.205	0x0412	ERR	Network	connection reset by peer node-4
+10:00:38.884	0x03EF	INF	Worker	job 5105 started
+10:00:39.438	0x040B	INF	Scheduler	schedule tick processed 8 jobs
+10:00:39.738	0x03EF	ERR	Queue	message 5107 dead-lettered
+10:00:40.431	0x03FD	INF	Storage	flush segment 5108 bytes=13824
+10:00:40.609	0x03F6	ERR	Network	peer node-4 timeout, retry
+10:00:40.630	0x040B	ERR	Worker	job 5110 failed with error 0x80070005
+10:00:40.875	0x03FD	INF	Scheduler	enqueued job 5111 priority=1
+10:00:41.140	0x0404	INF	Queue	queue depth 112
+10:00:41.514	0x03EF	ERR	Storage	storage error 0x8007000E out of memory
+10:00:41.819	0x040B	INF	Network	heartbeat sent peer=node-4
+10:00:41.965	0x03FD	INF	Worker	job 5115 finished in 91ms
+10:00:42.313	0x0404	WRN	Scheduler	scheduler warning backlog=36 jobs
+10:00:42.363	0x040B	INF	Queue	dequeue batch 5117 size=32
+10:00:42.631	0x03FD	INF	Storage	compaction finished files=4
+10:00:42.882	0x03FD	ERR	Network	connection reset by peer node-4
+10:00:43.422	0x0404	INF	Worker	job 5120 started
+10:00:43.931	0x0412	INF	Scheduler	schedule tick processed 5 jobs
+10:00:44.331	0x0412	ERR	Queue	message 5122 dead-lettered
+10:00:44.504	0x0404	INF	Storage	flush segment 5123 bytes=15744
+10:00:44.838	0x03EF	ERR	Network	peer node-4 timeout, retry
+10:00:45.124	0x0412	ERR	Worker	job 5125 failed with error 0x80070005
+10:00:45.610	0x03FD	INF	Scheduler	enqueued job 5126 priority=1
+10:00:46.287	0x03EF	INF	Queue	queue depth 127
+10:00:46.830	0x040B	ERR	Storage	storage error 0x8007000E out of memory
+10:00:47.123	0x0404	INF	Network	heartbeat sent peer=node-4
+10:00:47.457	0x03F6	INF	Worker	job 5130 finished in 177ms
+10:00:47.955	0x0404	WRN	Scheduler	scheduler warning backlog=11 jobs
+10:00:48.542	0x03F6	INF	Queue	dequeue batch 5132 size=32
+10:00:48.653	0x03FD	INF	Storage	compaction finished files=4
+10:00:48.844	0x0404	ERR	Network	connection reset by peer node-4
+10:00:49.464	0x0412	INF	Worker	job 5135 started
+10:00:50.058	0x03F6	INF	Scheduler	schedule tick processed 2 jobs
+10:00:50.211	0x0404	ERR	Queue	message 5137 dead-lettered
+10:00:50.630	0x040B	INF	Storage	flush segment 5138 bytes=17664
+10:00:51.025	0x03F6	ERR	Network	peer node-4 timeout, retry
+10:00:51.315	0x0412	ERR	Worker	job 5140 failed with error 0x80070005
+10:00:51.868	0x040B	INF	Scheduler	enqueued job 5141 priority=1
+10:00:52.222	0x0404	INF	Queue	queue depth 142
+10:00:52.237	0x0404	ERR	Storage	storage error 0x8007000E out of memory
+10:00:52.273	0x0412	INF	Network	heartbeat sent peer=node-4
+10:00:52.758	0x03EF	INF	Worker	job 5145 finished in 312ms
+10:00:52.768	0x0404	WRN	Scheduler	scheduler warning backlog=26 jobs
+10:00:52.856	0x03EF	INF	Queue	dequeue batch 5147 size=32
+10:00:53.091	0x040B	INF	Storage	compaction finished files=4
+10:00:53.548	0x03EF	ERR	Network	connection reset by peer node-4
+10:00:53.755	0x03F6	INF	Worker	job 5150 started
+10:00:54.042	0x0404	INF	Scheduler	schedule tick processed 8 jobs
+10:00:54.061	0x0412	ERR	Queue	message 5152 dead-lettered
+10:00:54.229	0x040B	INF	Storage	flush segment 5153 bytes=19584
+10:00:54.515	0x03F6	ERR	Network	peer node-4 timeout, retry
+10:00:55.133	0x0412	ERR	Worker	job 5155 failed with error 0x80070005
+10:00:55.335	0x03EF	INF	Scheduler	enqueued job 5156 priority=1
+10:00:55.487	0x0404	INF	Queue	queue depth 157
+10:00:56.124	0x03EF	ERR	Storage	storage error 0x8007000E out of memory
+10:00:56.345	0x03F6	INF	Network	heartbeat sent peer=node-4
+10:00:56.722	0x03F6	INF	Worker	job 5160 finished in 113ms
+10:00:57.370	0x040B	WRN	Scheduler	scheduler warning backlog=1 jobs
+10:00:57.458	0x0412	INF	Queue	dequeue batch 5162 size=32
+10:00:57.914	0x03EF	INF	Storage	compaction finished files=4
+10:00:58.338	0x03F6	ERR	Network	connection reset by peer node-4
+10:00:58.397	0x0412	INF	Worker	job 5165 started
+10:00:58.545	0x03EF	INF	Scheduler	schedule tick processed 5 jobs
+10:00:59.074	0x03FD	ERR	Queue	message 5167 dead-lettered
+10:00:59.276	0x03FD	INF	Storage	flush segment 5168 bytes=21504
+10:00:59.757	0x040B	ERR	Network	peer node-4 timeout, retry
+10:01:00.358	0x0404	ERR	Worker	job 5170 failed with error 0x80070005
+10:01:00.926	0x040B	INF	Scheduler	enqueued job 5171 priority=1
+10:01:01.095	0x03FD	INF	Queue	queue depth 172
+10:01:01.754	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:01:02.086	0x03EF	INF	Network	heartbeat sent peer=node-4
+10:01:02.280	0x03FD	INF	Worker	job 5175 finished in 148ms
+10:01:02.671	0x0412	WRN	Scheduler	scheduler warning backlog=16 jobs
+10:01:03.322	0x03FD	INF	Queue	dequeue batch 5177 size=32
+10:01:03.826	0x0412	INF	Storage	compaction finished files=4
+10:01:03.834	0x0404	ERR	Network	connection reset by peer node-4
+10:01:04.302	0x040B	INF	Worker	job 5180 started
+10:01:04.943	0x040B	INF	Scheduler	schedule tick processed 2 jobs
+10:01:05.602	0x03EF	ERR	Queue	message 5182 dead-lettered
+10:01:06.262	0x03FD	INF	Storage	flush segment 5183 bytes=23424
+10:01:06.452	0x0404	ERR	Network	peer node-4 timeout, retry
+10:01:06.858	0x0404	ERR	Worker	job 5185 failed with error 0x80070005
+10:01:07.218	0x040B	INF	Scheduler	enqueued job 5186 priority=1
+10:01:07.696	0x03FD	INF	Queue	queue depth 187
+10:01:07.785	0x0404	ERR	Storage	storage error 0x8007000E out of memory
+10:01:08.220	0x0412	INF	Network	heartbeat sent peer=node-4
+10:01:08.405	0x0404	INF	Worker	job 5190 finished in 200ms
+10:01:09.102	0x0404	WRN	Scheduler	scheduler warning backlog=31 jobs
+10:01:09.489	0x0404	INF	Queue	dequeue batch 5192 size=32
+10:01:09.601	0x040B	INF	Storage	compaction finished files=4
+10:01:10.235	0x0404	ERR	Network	connection reset by peer node-4
+10:01:10.646	0x040B	INF	Worker	job 5195 started
+10:01:10.788	0x03F6	INF	Scheduler	schedule tick processed 8 jobs
+10:01:11.376	0x0412	ERR	Queue	message 5197 dead-lettered
+10:01:11.384	0x03F6	INF	Storage	flush segment 5198 bytes=25344
+10:01:11.682	0x0412	ERR	Network	peer node-4 timeout, retry
+10:01:12.338	0x03F6	ERR	Worker	job 5200 failed with error 0x80070005
+10:01:12.675	0x040B	INF	Scheduler	enqueued job 5201 priority=1
+10:01:13.235	0x0412	INF	Queue	queue depth 2
+10:01:13.850	0x03F6	ERR	Storage	storage error 0x8007000E out of memory
+10:01:14.179	0x03FD	INF	Network	heartbeat sent peer=node-4
+10:01:14.292	0x03F6	INF	Worker	job 5205 finished in 44ms
+10:01:14.526	0x03EF	WRN	Scheduler	scheduler warning backlog=6 jobs
+10:01:14.744	0x0412	INF	Queue	dequeue batch 5207 size=32
+10:01:14.857	0x03FD	INF	Storage	compaction finished files=4
+10:01:15.163	0x040B	ERR	Network	connection reset by peer node-4
+10:01:15.607	0x03FD	INF	Worker	job 5210 started
+10:01:15.660	0x0412	INF	Scheduler	schedule tick processed 5 jobs
+10:01:16.318	0x03F6	ERR	Queue	message 5212 dead-lettered
+10:01:16.662	0x0412	INF	Storage	flush segment 5213 bytes=27264
+10:01:17.064	0x03EF	ERR	Network	peer node-4 timeout, retry
+10:01:17.260	0x03F6	ERR	Worker	job 5215 failed with error 0x80070005
+10:01:17.893	0x03F6	INF	Scheduler	enqueued job 5216 priority=1
+10:01:18.189	0x03EF	INF	Queue	queue depth 17
+10:01:18.406	0x0412	ERR	Storage	storage error 0x8007000E out of memory
+10:01:18.895	0x040B	INF	Network	heartbeat sent peer=node-4
+10:01:19.498	0x03FD	INF	Worker	job 5220 finished in 220ms
+10:01:19.789	0x03F6	WRN	Scheduler	scheduler warning backlog=21 jobs
+10:01:20.200	0x0412	INF	Queue	dequeue batch 5222 size=32
+10:01:20.310	0x0404	INF	Storage	compaction finished files=4
+10:01:20.994	0x0412	ERR	Network	connection reset by peer node-4
+10:01:21.625	0x0412	INF	Worker	job 5225 started
+10:01:21.774	0x03F6	INF	Scheduler	schedule tick processed 2 jobs
+10:01:22.369	0x03FD	ERR	Queue	message 5227 dead-lettered
+10:01:22.862	0x0412	INF	Storage	flush segment 5228 bytes=29184
+10:01:23.242	0x03FD	ERR	Network	peer node-4 timeout, retry
+10:01:23.560	0x0412	ERR	Worker	job 5230 failed with error 0x80070005
+10:01:23.736	0x0412	INF	Scheduler	enqueued job 5231 priority=1
+10:01:23.802	0x03F6	INF	Queue	queue depth 32
+10:01:23.816	0x0404	ERR	Storage	storage error 0x8007000E out of memory
+10:01:24.021	0x0404	INF	Network	heartbeat sent peer=node-4
+10:01:24.234	0x040B	INF	Worker	job 5235 finished in 265ms
+10:01:24.886	0x03F6	WRN	Scheduler	scheduler warning backlog=36 jobs
+10:01:25.456	0x0404	INF	Queue	dequeue batch 5237 size=32
+10:01:25.941	0x03FD	INF	Storage	compaction finished files=4
+10:01:26.258	0x03FD	ERR	Network	connection reset by peer node-4
+10:01:26.478	0x0404	INF	Worker	job 5240 started
+10:01:26.672	0x03FD	INF	Scheduler	schedule tick processed 8 jobs
+10:01:26.825	0x040B	ERR	Queue	message 5242 dead-lettered
+10:01:26.841	0x0404	INF	Storage	flush segment 5243 bytes=31104
+10:01:27.270	0x0404	ERR	Network	peer node-4 timeout, retry
+10:01:27.968	0x03EF	ERR	Worker	job 5245 failed with error 0x80070005
+10:01:28.238	0x03FD	INF	Scheduler	enqueued job 5246 priority=1
+10:01:28.566	0x03F6	INF	Queue	queue depth 47
+10:01:28.940	0x03F6	ERR	Storage	storage error 0x8007000E out of memory
+10:01:29.216	0x0412	INF	Network	heartbeat sent peer=node-4
+10:01:29.585	0x03F6	INF	Worker	job 5250 finished in 147ms
+10:01:29.973	0x03F6	WRN	Scheduler	scheduler warning backlog=11 jobs
+10:01:30.208	0x03F6	INF	Queue	dequeue batch 5252 size=32
+10:01:30.239	0x03EF	INF	Storage	compaction finished files=4
+10:01:30.768	0x03EF	ERR	Network	connection reset by peer node-4
+10:01:31.122	0x03EF	INF	Worker	job 5255 started
+10:01:31.167	0x03EF	INF	Scheduler	schedule tick processed 5 jobs
+10:01:31.384	0x0412	ERR	Queue	message 5257 dead-lettered
+10:01:31.744	0x0412	INF	Storage	flush segment 5258 bytes=33024
+10:01:32.096	0x0412	ERR	Network	peer node-4 timeout, retry
+10:01:32.144	0x040B	ERR	Worker	job 5260 failed with error 0x80070005
+10:01:32.162	0x03F6	INF	Scheduler	enqueued job 5261 priority=1
+10:01:32.542	0x03F6	INF	Queue	queue depth 62
+10:01:32.908	0x040B	ERR	Storage	storage error 0x8007000E out of memory
+10:01:33.269	0x03EF	INF	Network	heartbeat sent peer=node-4
+10:01:33.604	0x0412	INF	Worker	job 5265 finished in 237ms
+10:01:34.176	0x03EF	WRN	Scheduler	scheduler warning backlog=26 jobs
+10:01:34.343	0x040B	INF	Queue	dequeue batch 5267 size=32
+10:01:34.466	0x0412	INF	Storage	compaction finished files=4
+10:01:34.768	0x0412	ERR	Network	connection reset by peer node-4
+10:01:35.143	0x0412	INF	Worker	job 5270 started
+10:01:35.558	0x03FD	INF	Scheduler	schedule tick processed 2 jobs
+10:01:35.612	0x03F6	ERR	Queue	message 5272 dead-lettered
+10:01:35.808	0x03EF	INF	Storage	flush segment 5273 bytes=34944
+10:01:36.041	0x03EF	ERR	Network	peer node-4 timeout, retry
+10:01:36.286	0x0412	ERR	Worker	job 5275 failed with error 0x80070005
+10:01:36.890	0x03FD	INF	Scheduler	enqueued job 5276 priority=1
+10:01:37.292	0x03FD	INF	Queue	queue depth 77
+10:01:37.474	0x0404	ERR	Storage	storage error 0x8007000E out of memory
+10:01:37.514	0x040B	INF	Network	heartbeat sent peer=node-4
+10:01:37.677	0x0404	INF	Worker	job 5280 finished in 252ms
+10:01:38.057	0x0404	WRN	Scheduler	scheduler warning backlog=1 jobs
+10:01:38.411	0x03F6	INF	Queue	dequeue batch 5282 size=32
+10:01:38.475	0x03EF	INF	Storage	compaction finished files=4
+10:01:38.660	0x03FD	ERR	Network	connection reset by peer node-4
+10:01:39.354	0x03EF	INF	Worker	job 5285 started
+10:01:39.373	0x0404	INF	Scheduler	schedule tick processed 8 jobs
+10:01:39.950	0x03FD	ERR	Queue	message 5287 dead-lettered
+10:01:40.512	0x03FD	INF	Storage	flush segment 5288 bytes=36864
+10:01:41.181	0x03F6	ERR	Network	peer node-4 timeout, retry
+10:01:41.637	0x03F6	ERR	Worker	job 5290 failed with error 0x80070005
+10:01:41.719	0x03EF	INF	Scheduler	enqueued job 5291 priority=1
+10:01:41.781	0x040B	INF	Queue	queue depth 92
+10:01:42.031	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:01:42.650	0x03FD	INF	Network	heartbeat sent peer=node-4
+10:01:43.005	0x0412	INF	Worker	job 5295 finished in 269ms
+10:01:43.535	0x03EF	WRN	Scheduler	scheduler warning backlog=16 jobs
+10:01:43.700	0x03EF	INF	Queue	dequeue batch 5297 size=32
+10:01:44.376	0x0404	INF	Storage	compaction finished files=4
+10:01:44.444	0x03F6	ERR	Network	connection reset by peer node-4
+10:01:44.513	0x03EF	INF	Worker	job 5300 started
+10:01:44.989	0x03FD	INF	Scheduler	schedule tick processed 5 jobs
+10:01:45.563	0x0412	ERR	Queue	message 5302 dead-lettered
+10:01:46.220	0x040B	INF	Storage	flush segment 5303 bytes=38784
+10:01:46.865	0x03FD	ERR	Network	peer node-4 timeout, retry
+10:01:47.006	0x03EF	ERR	Worker	job 5305 failed with error 0x80070005
+10:01:47.365	0x0404	INF	Scheduler	enqueued job 5306 priority=1
+10:01:47.609	0x0404	INF	Queue	queue depth 107
+10:01:47.900	0x03FD	ERR	Storage	storage error 0x8007000E out of memory
+10:01:48.443	0x0412	INF	Network	heartbeat sent peer=node-4
+10:01:48.861	0x03F6	INF	Worker	job 5310 finished in 316ms
+10:01:49.450	0x03EF	WRN	Scheduler	scheduler warning backlog=31 jobs
+10:01:49.735	0x03F6	INF	Queue	dequeue batch 5312 size=32
+10:01:50.103	0x0404	INF	Storage	compaction finished files=4
+10:01:50.370	0x0412	ERR	Network	connection reset by peer node-4
+10:01:51.005	0x0412	INF	Worker	job 5315 started
+10:01:51.051	0x0404	INF	Scheduler	schedule tick processed 2 jobs
+10:01:51.137	0x03FD	ERR	Queue	message 5317 dead-lettered
+10:01:51.683	0x03F6	INF	Storage	flush segment 5318 bytes=40704
+10:01:52.302	0x03FD	ERR	Network	peer node-4 timeout, retry
