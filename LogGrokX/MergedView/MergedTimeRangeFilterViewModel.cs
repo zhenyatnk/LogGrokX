@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using System.Windows.Input;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 
 namespace LogGrokX.MergedView
 {
@@ -211,6 +212,6 @@ namespace LogGrokX.MergedView
                 : duration.ToString(@"m\:ss\.fff", CultureInfo.InvariantCulture);
 
         private static string FormatLineCount(long count) =>
-            count == 1 ? "1 line" : $"{count} lines";
+            Strings.LineCount(count);
     }
 }

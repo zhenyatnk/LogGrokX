@@ -1,4 +1,5 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:loc="clr-namespace:LogGrokX.Localization"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -97,7 +98,7 @@
                           BorderThickness="0"
                           IsChecked="{Binding IsCaseSensitive}"
                           Style="{StaticResource SearchOptionToggleButtonStyle}"
-                          ToolTip="Match case">
+                          ToolTip="{loc:Loc MatchCase}">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            FontStretch="SemiCondensed"
@@ -112,7 +113,7 @@
                           BorderThickness="0"
                           IsChecked="{Binding UseRegex}"
                           Style="{StaticResource SearchOptionToggleButtonStyle}"
-                          ToolTip="Use Regular Expressions">
+                          ToolTip="{loc:Loc UseRegex}">
                 <TextBlock HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            FontStretch="SemiCondensed"
@@ -126,7 +127,7 @@
                                         NotifyOnValidationError=True,
                                         ValidatesOnDataErrors=True,
                                         Mode=TwoWay}"
-                     PlaceholderText="Search..."
+                     PlaceholderText="{loc:Loc SearchPlaceholder}"
                      controls:SetFocusBehavior.SetFocusRequest="{Binding SetFocusRequest}"
                      behaviors:AutoCompleteBehavior.AutoCompleteItemsSource="{Binding AutoCompleteList, Mode=OneWay}"
                      behaviors:AutoCompleteBehavior.AutoCompleteStringComparison="InvariantCultureIgnoreCase">
@@ -143,7 +144,7 @@
                           BorderThickness="0"
                           IsTabStop="False"
                           Style="{StaticResource SearchOptionToggleButtonStyle}"
-                          ToolTip="Saved searches">
+                          ToolTip="{loc:Loc SavedSearches}">
                 <ui:SymbolIcon Symbol="Star24" FontSize="14" />
             </ToggleButton>
             <Popup Grid.Row="0"
@@ -168,7 +169,7 @@
                                  Margin="0,0,0,4"
                                  Text="{Binding SavedSearchFilter,
                                                 UpdateSourceTrigger=PropertyChanged}"
-                                 PlaceholderText="Filter saved searches..." />
+                                 PlaceholderText="{loc:Loc FilterSavedSearches}" />
                         <ListBox Grid.Row="1"
                                  MinHeight="80"
                                  HorizontalContentAlignment="Stretch"
@@ -210,7 +211,7 @@
                                                     Command="{Binding DataContext.BeginEditSavedSearchCommand,
                                                                       RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     CommandParameter="{Binding}"
-                                                    ToolTip="Edit">
+                                                    ToolTip="{loc:Loc Edit}">
                                                 <ui:SymbolIcon Symbol="Edit24" FontSize="12" Foreground="Gray" />
                                             </ui:Button>
                                             <ui:Button Grid.Column="2"
@@ -219,7 +220,7 @@
                                                     Command="{Binding DataContext.DeleteSavedSearchCommand,
                                                                       RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     CommandParameter="{Binding}"
-                                                    ToolTip="Delete">
+                                                    ToolTip="{loc:Loc Delete}">
                                                 <ui:SymbolIcon Symbol="Delete24" FontSize="12" Foreground="Gray" />
                                             </ui:Button>
                                         </Grid>
@@ -233,18 +234,18 @@
                                             <StackPanel Grid.Column="0" Margin="2,0,0,0">
                                                 <ui:TextBox Text="{Binding EditName,
                                                                         UpdateSourceTrigger=PropertyChanged}"
-                                                         PlaceholderText="Name" />
+                                                         PlaceholderText="{loc:Loc Name}" />
                                                 <ui:TextBox Margin="0,2,0,0"
                                                          Text="{Binding EditPattern,
                                                                         UpdateSourceTrigger=PropertyChanged}"
-                                                         PlaceholderText="Pattern" />
+                                                         PlaceholderText="{loc:Loc Pattern}" />
                                             </StackPanel>
                                             <ui:Button Grid.Column="1"
                                                     Appearance="Transparent"
                                                     Command="{Binding DataContext.CommitEditSavedSearchCommand,
                                                                       RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     CommandParameter="{Binding}"
-                                                    ToolTip="Save">
+                                                    ToolTip="{loc:Loc Save}">
                                                 <ui:SymbolIcon Symbol="Checkmark24" FontSize="12" Foreground="Gray" />
                                             </ui:Button>
                                             <ui:Button Grid.Column="2"
@@ -253,7 +254,7 @@
                                                     Command="{Binding DataContext.CancelEditSavedSearchCommand,
                                                                       RelativeSource={RelativeSource AncestorType=ListBox}}"
                                                     CommandParameter="{Binding}"
-                                                    ToolTip="Cancel">
+                                                    ToolTip="{loc:Loc Cancel}">
                                                 <ui:SymbolIcon Symbol="Dismiss24" FontSize="12" Foreground="Gray" />
                                             </ui:Button>
                                         </Grid>
@@ -270,10 +271,10 @@
                                      Margin="0,0,4,0"
                                      Text="{Binding NewSearchName,
                                                     UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="Name for current search" />
+                                     PlaceholderText="{loc:Loc CurrentSearchName}" />
                             <Button Grid.Column="1"
                                     Command="{Binding SaveSearchCommand}"
-                                    Content="Save" />
+                                    Content="{loc:Loc Save}" />
                         </Grid>
                     </Grid>
                 </Border>

@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using LogGrokX.Localization;
 
 namespace LogGrokX;
 
@@ -30,8 +31,7 @@ public class UpdateCheckService
     private const string ReleaseDownloadUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/download/";
     private const string ChecksumsAssetName = "SHA256SUMS.txt";
 
-    internal const string FallbackReleaseNotes =
-        "Release notes could not be loaded from GitHub right now. Open the release page to read them.";
+    internal static string FallbackReleaseNotes => Strings.Get("ReleaseNotesUnavailable");
 
     // Unauthenticated GitHub API allows only 60 requests per hour per IP address, and users behind
     // a corporate NAT/proxy share that quota (#40). The latest tag is therefore resolved through the
@@ -229,7 +229,7 @@ public class UpdateCheckService
 
     public async Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var assetName = GetInstallerAssetName(release) ?? throw new InvalidOperationException("Installer is not available for this release.");
+        var assetName = GetInstallerAssetName(release) ?? throw new InvalidOperationException(Strings.Get("InstallerUnavailable"));
         var directory = Path.Combine(Path.GetTempPath(), "LogGrokX", "Update");
         Directory.CreateDirectory(directory);
         var path = Path.Combine(directory, assetName);
@@ -264,7 +264,7 @@ public class UpdateCheckService
                 if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
                 {
                     File.Delete(path);
-                    throw new InvalidOperationException("Checksum of the downloaded installer does not match.");
+                    throw new InvalidOperationException(Strings.Get("ChecksumMismatch"));
                 }
             }
         }
@@ -281,7 +281,8 @@ public class UpdateCheckService
         try
         {
             var perMachine = IsPerMachineInstall();
-            var installerArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /AUTOUPDATE=1 " + (perMachine ? "/ALLUSERS" : "/CURRENTUSER");
+            var installerArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /AUTOUPDATE=1 /LANG=" +
+                LocalizationService.InstallerLanguage + " " + (perMachine ? "/ALLUSERS" : "/CURRENTUSER");
             var verb = perMachine ? " -Verb RunAs" : string.Empty;
             var script =
                 $"Wait-Process -Id {Environment.ProcessId} -ErrorAction SilentlyContinue; " +

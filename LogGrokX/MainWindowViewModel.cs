@@ -11,6 +11,7 @@ using System.Windows;
 using System.Windows.Input;
 using LogGrokX.AvalonDockExtensions;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 using LogGrokX.MergedView;
 using LogGrokX.Search;
@@ -207,7 +208,7 @@ namespace LogGrokX
                     _lastFailedProfile = profile;
                     Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
                     if (Application.Current != null)
-                        MessageBox.Show($"Cannot apply profile '{profile.Name}': {e.Message}", "Profile change failed",
+                        MessageBox.Show(Strings.Format("ProfileChangeError", profile.Name, e.Message), Strings.Get("ProfileChangeFailed"),
                             MessageBoxButton.OK, MessageBoxImage.Warning);
                 }
                 return false;
@@ -316,7 +317,7 @@ namespace LogGrokX
             var dialog = new OpenFileDialog
             {
                 DefaultExt = "log",
-                Filter = "All Files|*.*|Log files(*.log)|*.log|Text files(*.txt)|*.txt",
+                Filter = Strings.Get("OpenFileFilter"),
                 Multiselect = true
             };
 

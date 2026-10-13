@@ -173,8 +173,8 @@ namespace LogGrokX.Tests
             var errors = list.GetValidationErrors().ToList();
 
             Assert.AreEqual(2, errors.Count);
-            StringAssert.Contains(errors[0], "without a value");
-            StringAssert.Contains(errors[1], "duplicate values: 1");
+            Assert.AreEqual(Localization.Strings.Format("MappingValueMissing", "Types"), errors[0]);
+            Assert.AreEqual(Localization.Strings.Format("MappingDuplicates", "Types", "1"), errors[1]);
         }
 
         [TestMethod]

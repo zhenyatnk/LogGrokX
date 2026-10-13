@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="AddFormat">
+    <value>Adicionar formato</value>
+  </data>
+  <data xml:space="preserve" name="AddList">
+    <value>Adicionar lista</value>
+  </data>
+  <data xml:space="preserve" name="AddRule">
+    <value>Adicionar regra</value>
+  </data>
+  <data xml:space="preserve" name="AddValue">
+    <value>Adicionar valor</value>
+  </data>
+  <data xml:space="preserve" name="Architecture">
+    <value>Arquitetura</value>
+  </data>
+  <data xml:space="preserve" name="AutomaticUpdates">
+    <value>Atualizações automáticas</value>
+  </data>
+  <data xml:space="preserve" name="AvailableTitle">
+    <value>LogGrokX {0} está disponível</value>
+  </data>
+  <data xml:space="preserve" name="Background">
+    <value>Cor de fundo</value>
+  </data>
+  <data xml:space="preserve" name="Base64Text">
+    <value>Texto Base64</value>
+  </data>
+  <data xml:space="preserve" name="BigLineBreak">
+    <value>Quebrar linha</value>
+  </data>
+  <data xml:space="preserve" name="BigLineHandling">
+    <value>Tratamento de linhas longas</value>
+  </data>
+  <data xml:space="preserve" name="BigLinePrune">
+    <value>Truncar</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSize">
+    <value>Limite de linhas longas</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSizeInvalid">
+    <value>O limite de linhas longas deve ser um inteiro positivo.</value>
+  </data>
+  <data xml:space="preserve" name="BinaryDataDetection">
+    <value>Detecção de dados binários</value>
+  </data>
+  <data xml:space="preserve" name="Branch">
+    <value>Branch</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>Cancelar</value>
+  </data>
+  <data xml:space="preserve" name="CheckForUpdates">
+    <value>Verificar atualizações</value>
+  </data>
+  <data xml:space="preserve" name="CheckingUpdates">
+    <value>Verificando atualizações...</value>
+  </data>
+  <data xml:space="preserve" name="ChecksumMismatch">
+    <value>A soma de verificação do instalador baixado não corresponde.</value>
+  </data>
+  <data xml:space="preserve" name="ClearAll">
+    <value>Limpar tudo</value>
+  </data>
+  <data xml:space="preserve" name="ClearAllFilters">
+    <value>Limpar todos os filtros</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>Fechar</value>
+  </data>
+  <data xml:space="preserve" name="CollapseAll">
+    <value>Recolher tudo</value>
+  </data>
+  <data xml:space="preserve" name="CollapseRecursively">
+    <value>Recolher recursivamente</value>
+  </data>
+  <data xml:space="preserve" name="ColorInvalid">
+    <value>Uma regra tem uma cor inválida.</value>
+  </data>
+  <data xml:space="preserve" name="ColorRegexInvalid">
+    <value>Uma regra de cor tem uma expressão regular inválida.</value>
+  </data>
+  <data xml:space="preserve" name="Colors">
+    <value>Cores</value>
+  </data>
+  <data xml:space="preserve" name="ColorsHint">
+    <value>As linhas correspondentes são coloridas. Use um nome de cor ou #AARRGGBB. A primeira regra correspondente prevalece.</value>
+  </data>
+  <data xml:space="preserve" name="Commit">
+    <value>Commit</value>
+  </data>
+  <data xml:space="preserve" name="Copy">
+    <value>Copiar</value>
+  </data>
+  <data xml:space="preserve" name="CopyDiagnostics">
+    <value>Copiar diagnóstico</value>
+  </data>
+  <data xml:space="preserve" name="CopyFilename">
+    <value>Copiar nome do arquivo</value>
+  </data>
+  <data xml:space="preserve" name="CopyFullPath">
+    <value>Copiar caminho completo</value>
+  </data>
+  <data xml:space="preserve" name="CopyLines">
+    <value>Copiar linhas</value>
+  </data>
+  <data xml:space="preserve" name="CopyNative">
+    <value>Copiar texto original</value>
+  </data>
+  <data xml:space="preserve" name="CurrentSearchName">
+    <value>Nome da pesquisa atual</value>
+  </data>
+  <data xml:space="preserve" name="CurrentVersion">
+    <value>Versão atual:</value>
+  </data>
+  <data xml:space="preserve" name="Debug">
+    <value>Depuração</value>
+  </data>
+  <data xml:space="preserve" name="DebugHint">
+    <value>As configurações de depuração são aplicadas na próxima inicialização.</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBase64">
+    <value>Decodificar Base64</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBinary">
+    <value>Decodificar conteúdo binário</value>
+  </data>
+  <data xml:space="preserve" name="DecodeHex">
+    <value>Decodificar HEX</value>
+  </data>
+  <data xml:space="preserve" name="DecodePem">
+    <value>Decodificar PEM</value>
+  </data>
+  <data xml:space="preserve" name="DecreaseTextSize">
+    <value>Diminuir texto (Ctrl+-)</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>Excluir</value>
+  </data>
+  <data xml:space="preserve" name="DeselectAll">
+    <value>Desmarcar tudo</value>
+  </data>
+  <data xml:space="preserve" name="DetectBinary">
+    <value>Detectar dados binários (BIN)</value>
+  </data>
+  <data xml:space="preserve" name="Diagnostics">
+    <value>Diagnóstico</value>
+  </data>
+  <data xml:space="preserve" name="DownloadLatestRelease">
+    <value>Baixar a versão mais recente</value>
+  </data>
+  <data xml:space="preserve" name="DownloadingUpdate">
+    <value>Baixando atualização...</value>
+  </data>
+  <data xml:space="preserve" name="DurationDays">
+    <value>{0} d</value>
+  </data>
+  <data xml:space="preserve" name="DurationHours">
+    <value>{0} h</value>
+  </data>
+  <data xml:space="preserve" name="DurationMilliseconds">
+    <value>{0} ms</value>
+  </data>
+  <data xml:space="preserve" name="DurationMinutes">
+    <value>{0} min</value>
+  </data>
+  <data xml:space="preserve" name="DurationSeconds">
+    <value>{0} s</value>
+  </data>
+  <data xml:space="preserve" name="Edit">
+    <value>Editar</value>
+  </data>
+  <data xml:space="preserve" name="EnableCrashDumps">
+    <value>Ativar dumps de falha</value>
+  </data>
+  <data xml:space="preserve" name="Enabled">
+    <value>Ativado</value>
+  </data>
+  <data xml:space="preserve" name="Exclude">
+    <value>Excluir</value>
+  </data>
+  <data xml:space="preserve" name="ExcludeAllBut">
+    <value>Excluir tudo exceto</value>
+  </data>
+  <data xml:space="preserve" name="ExpandAll">
+    <value>Expandir tudo</value>
+  </data>
+  <data xml:space="preserve" name="ExpandRecursively">
+    <value>Expandir recursivamente</value>
+  </data>
+  <data xml:space="preserve" name="ExportAll">
+    <value>Exportar tudo...</value>
+  </data>
+  <data xml:space="preserve" name="ExportAllValueMappings">
+    <value>Exportar todos os mapeamentos</value>
+  </data>
+  <data xml:space="preserve" name="ExportDone">
+    <value>{0} lista(s) exportada(s) para {1}.</value>
+  </data>
+  <data xml:space="preserve" name="ExportFailed">
+    <value>Não foi possível exportar: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ExportList">
+    <value>Exportar lista...</value>
+  </data>
+  <data xml:space="preserve" name="ExportListDone">
+    <value>“{0}” exportado para {1}.</value>
+  </data>
+  <data xml:space="preserve" name="ExportValueMapping">
+    <value>Exportar mapeamento de valores</value>
+  </data>
+  <data xml:space="preserve" name="FieldsLabel">
+    <value>Campos:</value>
+  </data>
+  <data xml:space="preserve" name="FilterSavedSearches">
+    <value>Filtrar pesquisas salvas...</value>
+  </data>
+  <data xml:space="preserve" name="Folding">
+    <value>Recolhimento</value>
+  </data>
+  <data xml:space="preserve" name="Foreground">
+    <value>Cor do texto</value>
+  </data>
+  <data xml:space="preserve" name="FormatsHint">
+    <value>Os formatos são testados em ordem ao abrir um log. Os campos indexados e as transformações são editados um por linha.</value>
+  </data>
+  <data xml:space="preserve" name="GroupByThread">
+    <value>Agrupar por thread</value>
+  </data>
+  <data xml:space="preserve" name="HiddenValues">
+    <value>{0}: {1} ocultos</value>
+  </data>
+  <data xml:space="preserve" name="IgnoreCase">
+    <value>Ignorar maiúsculas e minúsculas</value>
+  </data>
+  <data xml:space="preserve" name="ImportDone">
+    <value>Listas importadas: {0}, valores: {1}. Salve para aplicar.</value>
+  </data>
+  <data xml:space="preserve" name="ImportFailed">
+    <value>Não foi possível importar {0}: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ImportJson">
+    <value>Importar JSON...</value>
+  </data>
+  <data xml:space="preserve" name="ImportReplaced">
+    <value>Listas importadas: {0}, valores: {1}, substituídas pelo nome: {2}. Salve para aplicar.</value>
+  </data>
+  <data xml:space="preserve" name="ImportValueMappings">
+    <value>Importar mapeamentos de valores</value>
+  </data>
+  <data xml:space="preserve" name="IncreaseTextSize">
+    <value>Aumentar texto (Ctrl+=)</value>
+  </data>
+  <data xml:space="preserve" name="IndexedFields">
+    <value>Campos indexados (um por linha)</value>
+  </data>
+  <data xml:space="preserve" name="InstallUpdatesAutomatically">
+    <value>Instalar atualizações automaticamente</value>
+  </data>
+  <data xml:space="preserve" name="InstallerUnavailable">
+    <value>Não há instalador para esta versão.</value>
+  </data>
+  <data xml:space="preserve" name="JsonFilter">
+    <value>Arquivos JSON (*.json)|*.json|Todos os arquivos (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>Idioma</value>
+  </data>
+  <data xml:space="preserve" name="LanguageRestart">
+    <value>O idioma muda após reiniciar o aplicativo.</value>
+  </data>
+  <data xml:space="preserve" name="LanguageSystem">
+    <value>Idioma do sistema</value>
+  </data>
+  <data xml:space="preserve" name="Later">
+    <value>Mais tarde</value>
+  </data>
+  <data xml:space="preserve" name="LatestVersion">
+    <value>Você tem a versão mais recente.</value>
+  </data>
+  <data xml:space="preserve" name="LineCountFew">
+    <value>{0} linhas</value>
+  </data>
+  <data xml:space="preserve" name="LineCountMany">
+    <value>{0} linhas</value>
+  </data>
+  <data xml:space="preserve" name="LineCountOne">
+    <value>{0} linha</value>
+  </data>
+  <data xml:space="preserve" name="LineNumber">
+    <value>Linha {0}</value>
+  </data>
+  <data xml:space="preserve" name="Links">
+    <value>Links</value>
+  </data>
+  <data xml:space="preserve" name="LogFontSize">
+    <value>Tamanho da fonte do log</value>
+  </data>
+  <data xml:space="preserve" name="LogFormat">
+    <value>Formato de log</value>
+  </data>
+  <data xml:space="preserve" name="LogFormats">
+    <value>Formatos de log</value>
+  </data>
+  <data xml:space="preserve" name="LogRegexInvalid">
+    <value>Um formato de log tem uma expressão regular inválida.</value>
+  </data>
+  <data xml:space="preserve" name="Mapping">
+    <value>Mapeamento</value>
+  </data>
+  <data xml:space="preserve" name="MappingDuplicates">
+    <value>A lista “{0}” contém valores duplicados: {1}.</value>
+  </data>
+  <data xml:space="preserve" name="MappingFields">
+    <value>Campos (separados por vírgula, vazio = todos)</value>
+  </data>
+  <data xml:space="preserve" name="MappingValueMissing">
+    <value>A lista “{0}” contém um item sem valor.</value>
+  </data>
+  <data xml:space="preserve" name="MappingsHint">
+    <value>Os valores nos campos indicados são exibidos como valor(mapeamento), por exemplo 0x00001(tipo 1). Deixe Campos vazio para aplicar a lista a todos os campos. As listas são importadas e exportadas em JSON.</value>
+  </data>
+  <data xml:space="preserve" name="MarkedLines">
+    <value>Linhas marcadas</value>
+  </data>
+  <data xml:space="preserve" name="MatchCase">
+    <value>Diferenciar maiúsculas e minúsculas</value>
+  </data>
+  <data xml:space="preserve" name="MatchCount">
+    <value>Correspondências: {0}</value>
+  </data>
+  <data xml:space="preserve" name="MatchPosition">
+    <value>{0} de {1}</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsCount">
+    <value>Número máximo de dumps</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsInvalid">
+    <value>O número máximo de dumps deve ser um inteiro positivo.</value>
+  </data>
+  <data xml:space="preserve" name="MergeFiles">
+    <value>Mesclar linhas de vários arquivos por horário</value>
+  </data>
+  <data xml:space="preserve" name="MergedFiles">
+    <value>Arquivos mesclados</value>
+  </data>
+  <data xml:space="preserve" name="MergedFilesView">
+    <value>Exibição de arquivos mesclados</value>
+  </data>
+  <data xml:space="preserve" name="MoreLines">
+    <value>Mais linhas: {0} &gt;&gt;&gt;</value>
+  </data>
+  <data xml:space="preserve" name="Name">
+    <value>Nome</value>
+  </data>
+  <data xml:space="preserve" name="New">
+    <value>Novo</value>
+  </data>
+  <data xml:space="preserve" name="NewMapping">
+    <value>Novo mapeamento</value>
+  </data>
+  <data xml:space="preserve" name="NewProfile">
+    <value>Novo perfil</value>
+  </data>
+  <data xml:space="preserve" name="NoReleaseNotes">
+    <value>Sem notas da versão.</value>
+  </data>
+  <data xml:space="preserve" name="Ok">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="OpenContainingFolder">
+    <value>Abrir pasta do arquivo</value>
+  </data>
+  <data xml:space="preserve" name="OpenDownloadPage">
+    <value>Abrir página de download</value>
+  </data>
+  <data xml:space="preserve" name="OpenFileFilter">
+    <value>Todos os arquivos|*.*|Arquivos de log (*.log)|*.log|Arquivos de texto (*.txt)|*.txt</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogFile">
+    <value>Abrir arquivo de log (Ctrl+O)</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogsFolder">
+    <value>Abrir pasta de logs</value>
+  </data>
+  <data xml:space="preserve" name="OpenReleasePage">
+    <value>Abrir página da versão</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettings">
+    <value>Abrir configurações</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettingsFile">
+    <value>Abrir appsettings.yaml</value>
+  </data>
+  <data xml:space="preserve" name="Os">
+    <value>Sistema operacional</value>
+  </data>
+  <data xml:space="preserve" name="Pattern">
+    <value>Padrão</value>
+  </data>
+  <data xml:space="preserve" name="PemDetection">
+    <value>Blocos PEM, certificados e chaves</value>
+  </data>
+  <data xml:space="preserve" name="Preview">
+    <value>Prévia</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeError">
+    <value>Não foi possível aplicar o perfil “{0}”: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeFailed">
+    <value>Falha ao alterar o perfil</value>
+  </data>
+  <data xml:space="preserve" name="ProfileCopy">
+    <value>{0} cópia</value>
+  </data>
+  <data xml:space="preserve" name="ProfileHint">
+    <value>Perfil de análise e destaque. Alterá-lo recarrega todos os arquivos abertos.</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNameRequired">
+    <value>Cada perfil deve ter um nome.</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNamesUnique">
+    <value>Os nomes dos perfis devem ser únicos.</value>
+  </data>
+  <data xml:space="preserve" name="Profiles">
+    <value>Perfis</value>
+  </data>
+  <data xml:space="preserve" name="ProfilesHint">
+    <value>Cada perfil tem seus formatos e regras de cor. Salvar aplica o perfil selecionado a todos os arquivos abertos e os recarrega preservando as linhas marcadas.</value>
+  </data>
+  <data xml:space="preserve" name="Regex">
+    <value>Expressão regular</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseInfoUnavailable">
+    <value>Não foi possível obter informações da versão.</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseNotesUnavailable">
+    <value>Não foi possível carregar as notas do GitHub. Abra a página da versão para lê-las.</value>
+  </data>
+  <data xml:space="preserve" name="Remove">
+    <value>Remover</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFilter">
+    <value>Remover filtro</value>
+  </data>
+  <data xml:space="preserve" name="RemoveList">
+    <value>Remover lista</value>
+  </data>
+  <data xml:space="preserve" name="RemoveValue">
+    <value>Remover valor</value>
+  </data>
+  <data xml:space="preserve" name="ReportIssue">
+    <value>Relatar um problema</value>
+  </data>
+  <data xml:space="preserve" name="ResetAll">
+    <value>Redefinir tudo</value>
+  </data>
+  <data xml:space="preserve" name="ResetTextSize">
+    <value>Redefinir tamanho do texto (Ctrl+0)</value>
+  </data>
+  <data xml:space="preserve" name="ResetToDefault">
+    <value>Restaurar padrão</value>
+  </data>
+  <data xml:space="preserve" name="RestartHint">
+    <value>Reinicie o aplicativo ou reabra o log para aplicar estas configurações.</value>
+  </data>
+  <data xml:space="preserve" name="RestartRequired">
+    <value>Reinicialização necessária</value>
+  </data>
+  <data xml:space="preserve" name="Runtime">
+    <value>Ambiente de execução</value>
+  </data>
+  <data xml:space="preserve" name="SampleText">
+    <value>Texto de exemplo</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>Salvar</value>
+  </data>
+  <data xml:space="preserve" name="SaveSettingsFailed">
+    <value>Não foi possível salvar as configurações: {0}</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearches">
+    <value>Pesquisas salvas</value>
+  </data>
+  <data xml:space="preserve" name="SearchPlaceholder">
+    <value>Pesquisar...</value>
+  </data>
+  <data xml:space="preserve" name="SearchResultsOnly">
+    <value>Somente resultados da pesquisa</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelected">
+    <value>Pesquisar “{0}”</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelection">
+    <value>Pesquisar seleção</value>
+  </data>
+  <data xml:space="preserve" name="SelectAll">
+    <value>Selecionar tudo</value>
+  </data>
+  <data xml:space="preserve" name="Settings">
+    <value>Configurações</value>
+  </data>
+  <data xml:space="preserve" name="ShowOriginal">
+    <value>Mostrar original</value>
+  </data>
+  <data xml:space="preserve" name="ShowThreadGroupSeparators">
+    <value>Mostrar separadores de grupos de threads</value>
+  </data>
+  <data xml:space="preserve" name="SkipVersion">
+    <value>Ignorar esta versão</value>
+  </data>
+  <data xml:space="preserve" name="SourceCode">
+    <value>Código-fonte no GitHub</value>
+  </data>
+  <data xml:space="preserve" name="Support">
+    <value>Suporte</value>
+  </data>
+  <data xml:space="preserve" name="ThreadGrouping">
+    <value>Agrupar linhas consecutivas por thread</value>
+  </data>
+  <data xml:space="preserve" name="TimeField">
+    <value>Campo de horário</value>
+  </data>
+  <data xml:space="preserve" name="TimeFormat">
+    <value>Formato de data e hora</value>
+  </data>
+  <data xml:space="preserve" name="TimelineAtTop">
+    <value>Linha do tempo no topo</value>
+  </data>
+  <data xml:space="preserve" name="TimelinePlacement">
+    <value>Colocar linha do tempo no topo</value>
+  </data>
+  <data xml:space="preserve" name="ToggleMarks">
+    <value>Alternar marcações</value>
+  </data>
+  <data xml:space="preserve" name="ToggleTheme">
+    <value>Alternar tema claro / escuro</value>
+  </data>
+  <data xml:space="preserve" name="Transformations">
+    <value>Transformações (uma por linha)</value>
+  </data>
+  <data xml:space="preserve" name="Unnamed">
+    <value>(sem nome)</value>
+  </data>
+  <data xml:space="preserve" name="Update">
+    <value>Atualizar</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailable">
+    <value>Atualização disponível</value>
+  </data>
+  <data xml:space="preserve" name="UpdateCheckFailed">
+    <value>Falha ao verificar atualizações: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateFailed">
+    <value>Falha na atualização: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateReady">
+    <value>LogGrokX {0} será instalado automaticamente ao fechar o aplicativo.</value>
+  </data>
+  <data xml:space="preserve" name="UpdatedTitle">
+    <value>Atualizado para LogGrokX {0}</value>
+  </data>
+  <data xml:space="preserve" name="Updates">
+    <value>Atualizações</value>
+  </data>
+  <data xml:space="preserve" name="UpdatesDisabled">
+    <value>Não verificar atualizações</value>
+  </data>
+  <data xml:space="preserve" name="UseRegex">
+    <value>Usar expressões regulares</value>
+  </data>
+  <data xml:space="preserve" name="Value">
+    <value>Valor</value>
+  </data>
+  <data xml:space="preserve" name="ValueMappings">
+    <value>Mapeamentos de valores</value>
+  </data>
+  <data xml:space="preserve" name="Values">
+    <value>Valores</value>
+  </data>
+  <data xml:space="preserve" name="Version">
+    <value>Versão</value>
+  </data>
+  <data xml:space="preserve" name="VersionAvailable">
+    <value>A versão {0} está disponível.</value>
+  </data>
+  <data xml:space="preserve" name="View">
+    <value>Exibição</value>
+  </data>
+  <data xml:space="preserve" name="ViewHint">
+    <value>O tratamento de linhas longas e o agrupamento são aplicados ao abrir um log. A detecção binária e os mapeamentos de valores são aplicados às linhas exibidas após salvar; reabra o log para atualizar todas as linhas. A posição da linha do tempo, o agrupamento, a exibição mesclada e a fonte mudam imediatamente.</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNew">
+    <value>Novidades</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNewHint">
+    <value>Veja o que mudou nesta versão.</value>
+  </data>
+  <data xml:space="preserve" name="XorMask">
+    <value>Máscara XOR</value>
+  </data>
+  <data xml:space="preserve" name="XorMaskInvalid">
+    <value>Um formato de log tem uma máscara XOR inválida.</value>
+  </data>
+</root>

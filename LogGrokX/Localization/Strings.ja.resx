@@ -1,0 +1,618 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data xml:space="preserve" name="AddFormat">
+    <value>形式を追加</value>
+  </data>
+  <data xml:space="preserve" name="AddList">
+    <value>リストを追加</value>
+  </data>
+  <data xml:space="preserve" name="AddRule">
+    <value>ルールを追加</value>
+  </data>
+  <data xml:space="preserve" name="AddValue">
+    <value>値を追加</value>
+  </data>
+  <data xml:space="preserve" name="Architecture">
+    <value>アーキテクチャ</value>
+  </data>
+  <data xml:space="preserve" name="AutomaticUpdates">
+    <value>自動更新</value>
+  </data>
+  <data xml:space="preserve" name="AvailableTitle">
+    <value>LogGrokX {0} が利用できます</value>
+  </data>
+  <data xml:space="preserve" name="Background">
+    <value>背景色</value>
+  </data>
+  <data xml:space="preserve" name="Base64Text">
+    <value>Base64 テキスト</value>
+  </data>
+  <data xml:space="preserve" name="BigLineBreak">
+    <value>折り返し</value>
+  </data>
+  <data xml:space="preserve" name="BigLineHandling">
+    <value>長い行の処理</value>
+  </data>
+  <data xml:space="preserve" name="BigLinePrune">
+    <value>切り詰め</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSize">
+    <value>長い行のしきい値</value>
+  </data>
+  <data xml:space="preserve" name="BigLineSizeInvalid">
+    <value>行のしきい値は正の整数にしてください。</value>
+  </data>
+  <data xml:space="preserve" name="BinaryDataDetection">
+    <value>バイナリデータの検出</value>
+  </data>
+  <data xml:space="preserve" name="Branch">
+    <value>ブランチ</value>
+  </data>
+  <data xml:space="preserve" name="Cancel">
+    <value>キャンセル</value>
+  </data>
+  <data xml:space="preserve" name="CheckForUpdates">
+    <value>更新を確認</value>
+  </data>
+  <data xml:space="preserve" name="CheckingUpdates">
+    <value>更新を確認中...</value>
+  </data>
+  <data xml:space="preserve" name="ChecksumMismatch">
+    <value>ダウンロードしたインストーラーのチェックサムが一致しません。</value>
+  </data>
+  <data xml:space="preserve" name="ClearAll">
+    <value>すべてクリア</value>
+  </data>
+  <data xml:space="preserve" name="ClearAllFilters">
+    <value>すべてのフィルターをクリア</value>
+  </data>
+  <data xml:space="preserve" name="Close">
+    <value>閉じる</value>
+  </data>
+  <data xml:space="preserve" name="CollapseAll">
+    <value>すべて折りたたむ</value>
+  </data>
+  <data xml:space="preserve" name="CollapseRecursively">
+    <value>再帰的に折りたたむ</value>
+  </data>
+  <data xml:space="preserve" name="ColorInvalid">
+    <value>色のルールに無効な色があります。</value>
+  </data>
+  <data xml:space="preserve" name="ColorRegexInvalid">
+    <value>色のルールの正規表現が無効です。</value>
+  </data>
+  <data xml:space="preserve" name="Colors">
+    <value>色</value>
+  </data>
+  <data xml:space="preserve" name="ColorsHint">
+    <value>ルールに一致する行に色を付けます。色名または #AARRGGBB を指定してください。最初に一致したルールを適用します。</value>
+  </data>
+  <data xml:space="preserve" name="Commit">
+    <value>コミット</value>
+  </data>
+  <data xml:space="preserve" name="Copy">
+    <value>コピー</value>
+  </data>
+  <data xml:space="preserve" name="CopyDiagnostics">
+    <value>診断情報をコピー</value>
+  </data>
+  <data xml:space="preserve" name="CopyFilename">
+    <value>ファイル名をコピー</value>
+  </data>
+  <data xml:space="preserve" name="CopyFullPath">
+    <value>完全なパスをコピー</value>
+  </data>
+  <data xml:space="preserve" name="CopyLines">
+    <value>行をコピー</value>
+  </data>
+  <data xml:space="preserve" name="CopyNative">
+    <value>元のテキストをコピー</value>
+  </data>
+  <data xml:space="preserve" name="CurrentSearchName">
+    <value>現在の検索の名前</value>
+  </data>
+  <data xml:space="preserve" name="CurrentVersion">
+    <value>現在のバージョン:</value>
+  </data>
+  <data xml:space="preserve" name="Debug">
+    <value>デバッグ</value>
+  </data>
+  <data xml:space="preserve" name="DebugHint">
+    <value>デバッグ設定は次回の起動時に適用されます。</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBase64">
+    <value>Base64 をデコード</value>
+  </data>
+  <data xml:space="preserve" name="DecodeBinary">
+    <value>バイナリ内容をデコード</value>
+  </data>
+  <data xml:space="preserve" name="DecodeHex">
+    <value>HEX をデコード</value>
+  </data>
+  <data xml:space="preserve" name="DecodePem">
+    <value>PEM をデコード</value>
+  </data>
+  <data xml:space="preserve" name="DecreaseTextSize">
+    <value>文字を小さくする (Ctrl+-)</value>
+  </data>
+  <data xml:space="preserve" name="Delete">
+    <value>削除</value>
+  </data>
+  <data xml:space="preserve" name="DeselectAll">
+    <value>すべて選択解除</value>
+  </data>
+  <data xml:space="preserve" name="DetectBinary">
+    <value>バイナリデータを検出 (BIN)</value>
+  </data>
+  <data xml:space="preserve" name="Diagnostics">
+    <value>診断</value>
+  </data>
+  <data xml:space="preserve" name="DownloadLatestRelease">
+    <value>最新バージョンをダウンロード</value>
+  </data>
+  <data xml:space="preserve" name="DownloadingUpdate">
+    <value>更新をダウンロード中...</value>
+  </data>
+  <data xml:space="preserve" name="DurationDays">
+    <value>{0} 日</value>
+  </data>
+  <data xml:space="preserve" name="DurationHours">
+    <value>{0} 時間</value>
+  </data>
+  <data xml:space="preserve" name="DurationMilliseconds">
+    <value>{0} ミリ秒</value>
+  </data>
+  <data xml:space="preserve" name="DurationMinutes">
+    <value>{0} 分</value>
+  </data>
+  <data xml:space="preserve" name="DurationSeconds">
+    <value>{0} 秒</value>
+  </data>
+  <data xml:space="preserve" name="Edit">
+    <value>編集</value>
+  </data>
+  <data xml:space="preserve" name="EnableCrashDumps">
+    <value>クラッシュダンプを有効化</value>
+  </data>
+  <data xml:space="preserve" name="Enabled">
+    <value>有効</value>
+  </data>
+  <data xml:space="preserve" name="Exclude">
+    <value>除外</value>
+  </data>
+  <data xml:space="preserve" name="ExcludeAllBut">
+    <value>これ以外を除外</value>
+  </data>
+  <data xml:space="preserve" name="ExpandAll">
+    <value>すべて展開</value>
+  </data>
+  <data xml:space="preserve" name="ExpandRecursively">
+    <value>再帰的に展開</value>
+  </data>
+  <data xml:space="preserve" name="ExportAll">
+    <value>すべてエクスポート...</value>
+  </data>
+  <data xml:space="preserve" name="ExportAllValueMappings">
+    <value>全マッピングをエクスポート</value>
+  </data>
+  <data xml:space="preserve" name="ExportDone">
+    <value>{0} 個のリストを {1} にエクスポートしました。</value>
+  </data>
+  <data xml:space="preserve" name="ExportFailed">
+    <value>エクスポートできません: {0}</value>
+  </data>
+  <data xml:space="preserve" name="ExportList">
+    <value>リストをエクスポート...</value>
+  </data>
+  <data xml:space="preserve" name="ExportListDone">
+    <value>「{0}」を {1} にエクスポートしました。</value>
+  </data>
+  <data xml:space="preserve" name="ExportValueMapping">
+    <value>値のマッピングをエクスポート</value>
+  </data>
+  <data xml:space="preserve" name="FieldsLabel">
+    <value>フィールド:</value>
+  </data>
+  <data xml:space="preserve" name="FilterSavedSearches">
+    <value>保存した検索を絞り込み...</value>
+  </data>
+  <data xml:space="preserve" name="Folding">
+    <value>折りたたみ</value>
+  </data>
+  <data xml:space="preserve" name="Foreground">
+    <value>文字色</value>
+  </data>
+  <data xml:space="preserve" name="FormatsHint">
+    <value>ログを開くと、形式を順番に試します。インデックス対象のフィールドと変換は 1 行に 1 項目ずつ入力してください。</value>
+  </data>
+  <data xml:space="preserve" name="GroupByThread">
+    <value>スレッドでグループ化</value>
+  </data>
+  <data xml:space="preserve" name="HiddenValues">
+    <value>{0}: {1} 個を非表示</value>
+  </data>
+  <data xml:space="preserve" name="IgnoreCase">
+    <value>大文字と小文字を区別しない</value>
+  </data>
+  <data xml:space="preserve" name="ImportDone">
+    <value>{0} 個のリスト、{1} 個の値をインポートしました。保存して適用してください。</value>
+  </data>
+  <data xml:space="preserve" name="ImportFailed">
+    <value>{0} をインポートできません: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ImportJson">
+    <value>JSON をインポート...</value>
+  </data>
+  <data xml:space="preserve" name="ImportReplaced">
+    <value>{0} 個のリスト、{1} 個の値をインポートし、名前で {2} 個を置き換えました。保存して適用してください。</value>
+  </data>
+  <data xml:space="preserve" name="ImportValueMappings">
+    <value>値のマッピングをインポート</value>
+  </data>
+  <data xml:space="preserve" name="IncreaseTextSize">
+    <value>文字を大きくする (Ctrl+=)</value>
+  </data>
+  <data xml:space="preserve" name="IndexedFields">
+    <value>インデックス対象のフィールド (1 行に 1 つ)</value>
+  </data>
+  <data xml:space="preserve" name="InstallUpdatesAutomatically">
+    <value>更新を自動インストール</value>
+  </data>
+  <data xml:space="preserve" name="InstallerUnavailable">
+    <value>このリリースのインストーラーはありません。</value>
+  </data>
+  <data xml:space="preserve" name="JsonFilter">
+    <value>JSON ファイル (*.json)|*.json|すべてのファイル (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="Language">
+    <value>言語</value>
+  </data>
+  <data xml:space="preserve" name="LanguageRestart">
+    <value>表示言語はアプリの再起動後に変更されます。</value>
+  </data>
+  <data xml:space="preserve" name="LanguageSystem">
+    <value>システムの言語</value>
+  </data>
+  <data xml:space="preserve" name="Later">
+    <value>後で</value>
+  </data>
+  <data xml:space="preserve" name="LatestVersion">
+    <value>最新バージョンです。</value>
+  </data>
+  <data xml:space="preserve" name="LineCountFew">
+    <value>{0} 行</value>
+  </data>
+  <data xml:space="preserve" name="LineCountMany">
+    <value>{0} 行</value>
+  </data>
+  <data xml:space="preserve" name="LineCountOne">
+    <value>{0} 行</value>
+  </data>
+  <data xml:space="preserve" name="LineNumber">
+    <value>行 {0}</value>
+  </data>
+  <data xml:space="preserve" name="Links">
+    <value>リンク</value>
+  </data>
+  <data xml:space="preserve" name="LogFontSize">
+    <value>ログのフォントサイズ</value>
+  </data>
+  <data xml:space="preserve" name="LogFormat">
+    <value>ログ形式</value>
+  </data>
+  <data xml:space="preserve" name="LogFormats">
+    <value>ログ形式</value>
+  </data>
+  <data xml:space="preserve" name="LogRegexInvalid">
+    <value>ログ形式の正規表現が無効です。</value>
+  </data>
+  <data xml:space="preserve" name="Mapping">
+    <value>マッピング</value>
+  </data>
+  <data xml:space="preserve" name="MappingDuplicates">
+    <value>マッピングリスト「{0}」に重複する値があります: {1}。</value>
+  </data>
+  <data xml:space="preserve" name="MappingFields">
+    <value>フィールド (カンマ区切り、空欄 = 全フィールド)</value>
+  </data>
+  <data xml:space="preserve" name="MappingValueMissing">
+    <value>マッピングリスト「{0}」に値のない項目があります。</value>
+  </data>
+  <data xml:space="preserve" name="MappingsHint">
+    <value>指定したフィールドの値を 値(マッピング) として表示します。例: 0x00001(種類 1)。フィールドを空にすると全フィールドに適用します。リストは JSON でインポート・エクスポートします。</value>
+  </data>
+  <data xml:space="preserve" name="MarkedLines">
+    <value>マークした行</value>
+  </data>
+  <data xml:space="preserve" name="MatchCase">
+    <value>大文字と小文字を区別</value>
+  </data>
+  <data xml:space="preserve" name="MatchCount">
+    <value>一致: {0} 件</value>
+  </data>
+  <data xml:space="preserve" name="MatchPosition">
+    <value>{1} 件中 {0} 件目</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsCount">
+    <value>ダンプの最大数</value>
+  </data>
+  <data xml:space="preserve" name="MaxDumpsInvalid">
+    <value>ダンプの最大数は正の整数にしてください。</value>
+  </data>
+  <data xml:space="preserve" name="MergeFiles">
+    <value>複数ファイルの行を時刻順に統合</value>
+  </data>
+  <data xml:space="preserve" name="MergedFiles">
+    <value>統合ファイル</value>
+  </data>
+  <data xml:space="preserve" name="MergedFilesView">
+    <value>ファイルの統合表示</value>
+  </data>
+  <data xml:space="preserve" name="MoreLines">
+    <value>さらに {0} 行 &gt;&gt;&gt;</value>
+  </data>
+  <data xml:space="preserve" name="Name">
+    <value>名前</value>
+  </data>
+  <data xml:space="preserve" name="New">
+    <value>新規</value>
+  </data>
+  <data xml:space="preserve" name="NewMapping">
+    <value>新しいマッピング</value>
+  </data>
+  <data xml:space="preserve" name="NewProfile">
+    <value>新しいプロファイル</value>
+  </data>
+  <data xml:space="preserve" name="NoReleaseNotes">
+    <value>リリースノートはありません。</value>
+  </data>
+  <data xml:space="preserve" name="Ok">
+    <value>OK</value>
+  </data>
+  <data xml:space="preserve" name="OpenContainingFolder">
+    <value>保存先フォルダーを開く</value>
+  </data>
+  <data xml:space="preserve" name="OpenDownloadPage">
+    <value>ダウンロードページを開く</value>
+  </data>
+  <data xml:space="preserve" name="OpenFileFilter">
+    <value>すべてのファイル|*.*|ログファイル (*.log)|*.log|テキストファイル (*.txt)|*.txt</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogFile">
+    <value>ログファイルを開く (Ctrl+O)</value>
+  </data>
+  <data xml:space="preserve" name="OpenLogsFolder">
+    <value>ログフォルダーを開く</value>
+  </data>
+  <data xml:space="preserve" name="OpenReleasePage">
+    <value>リリースページを開く</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettings">
+    <value>設定を開く</value>
+  </data>
+  <data xml:space="preserve" name="OpenSettingsFile">
+    <value>appsettings.yaml を開く</value>
+  </data>
+  <data xml:space="preserve" name="Os">
+    <value>OS</value>
+  </data>
+  <data xml:space="preserve" name="Pattern">
+    <value>パターン</value>
+  </data>
+  <data xml:space="preserve" name="PemDetection">
+    <value>PEM ブロック、証明書、鍵</value>
+  </data>
+  <data xml:space="preserve" name="Preview">
+    <value>プレビュー</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeError">
+    <value>プロファイル「{0}」を適用できません: {1}</value>
+  </data>
+  <data xml:space="preserve" name="ProfileChangeFailed">
+    <value>プロファイルの変更に失敗しました</value>
+  </data>
+  <data xml:space="preserve" name="ProfileCopy">
+    <value>{0} のコピー</value>
+  </data>
+  <data xml:space="preserve" name="ProfileHint">
+    <value>解析と強調表示のプロファイルです。変更すると開いている全ファイルを再読み込みします。</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNameRequired">
+    <value>各プロファイルに名前が必要です。</value>
+  </data>
+  <data xml:space="preserve" name="ProfileNamesUnique">
+    <value>プロファイル名は重複できません。</value>
+  </data>
+  <data xml:space="preserve" name="Profiles">
+    <value>プロファイル</value>
+  </data>
+  <data xml:space="preserve" name="ProfilesHint">
+    <value>各プロファイルには独自の形式と色のルールがあります。保存すると、選択したプロファイルが開いている全ファイルに適用され、マークした行を保持して再読み込みします。</value>
+  </data>
+  <data xml:space="preserve" name="Regex">
+    <value>正規表現</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseInfoUnavailable">
+    <value>リリース情報を取得できませんでした。</value>
+  </data>
+  <data xml:space="preserve" name="ReleaseNotesUnavailable">
+    <value>GitHub からリリースノートを読み込めませんでした。リリースページで確認してください。</value>
+  </data>
+  <data xml:space="preserve" name="Remove">
+    <value>削除</value>
+  </data>
+  <data xml:space="preserve" name="RemoveFilter">
+    <value>フィルターを削除</value>
+  </data>
+  <data xml:space="preserve" name="RemoveList">
+    <value>リストを削除</value>
+  </data>
+  <data xml:space="preserve" name="RemoveValue">
+    <value>値を削除</value>
+  </data>
+  <data xml:space="preserve" name="ReportIssue">
+    <value>問題を報告</value>
+  </data>
+  <data xml:space="preserve" name="ResetAll">
+    <value>すべてリセット</value>
+  </data>
+  <data xml:space="preserve" name="ResetTextSize">
+    <value>文字サイズをリセット (Ctrl+0)</value>
+  </data>
+  <data xml:space="preserve" name="ResetToDefault">
+    <value>既定値に戻す</value>
+  </data>
+  <data xml:space="preserve" name="RestartHint">
+    <value>設定を適用するには、アプリを再起動するかログを開き直してください。</value>
+  </data>
+  <data xml:space="preserve" name="RestartRequired">
+    <value>再起動が必要</value>
+  </data>
+  <data xml:space="preserve" name="Runtime">
+    <value>ランタイム</value>
+  </data>
+  <data xml:space="preserve" name="SampleText">
+    <value>サンプルテキスト</value>
+  </data>
+  <data xml:space="preserve" name="Save">
+    <value>保存</value>
+  </data>
+  <data xml:space="preserve" name="SaveSettingsFailed">
+    <value>設定を保存できません: {0}</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearches">
+    <value>保存した検索</value>
+  </data>
+  <data xml:space="preserve" name="SearchPlaceholder">
+    <value>検索...</value>
+  </data>
+  <data xml:space="preserve" name="SearchResultsOnly">
+    <value>検索結果のみ</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelected">
+    <value>「{0}」を検索</value>
+  </data>
+  <data xml:space="preserve" name="SearchSelection">
+    <value>選択したテキストを検索</value>
+  </data>
+  <data xml:space="preserve" name="SelectAll">
+    <value>すべて選択</value>
+  </data>
+  <data xml:space="preserve" name="Settings">
+    <value>設定</value>
+  </data>
+  <data xml:space="preserve" name="ShowOriginal">
+    <value>元の内容を表示</value>
+  </data>
+  <data xml:space="preserve" name="ShowThreadGroupSeparators">
+    <value>スレッドグループの区切りを表示</value>
+  </data>
+  <data xml:space="preserve" name="SkipVersion">
+    <value>このバージョンをスキップ</value>
+  </data>
+  <data xml:space="preserve" name="SourceCode">
+    <value>GitHub のソースコード</value>
+  </data>
+  <data xml:space="preserve" name="Support">
+    <value>サポート</value>
+  </data>
+  <data xml:space="preserve" name="ThreadGrouping">
+    <value>連続する行をスレッドでグループ化</value>
+  </data>
+  <data xml:space="preserve" name="TimeField">
+    <value>時刻フィールド</value>
+  </data>
+  <data xml:space="preserve" name="TimeFormat">
+    <value>時刻形式</value>
+  </data>
+  <data xml:space="preserve" name="TimelineAtTop">
+    <value>タイムラインを上に表示</value>
+  </data>
+  <data xml:space="preserve" name="TimelinePlacement">
+    <value>タイムラインを上に配置</value>
+  </data>
+  <data xml:space="preserve" name="ToggleMarks">
+    <value>マークを切り替え</value>
+  </data>
+  <data xml:space="preserve" name="ToggleTheme">
+    <value>ライト / ダークテーマを切り替え</value>
+  </data>
+  <data xml:space="preserve" name="Transformations">
+    <value>変換 (1 行に 1 つ)</value>
+  </data>
+  <data xml:space="preserve" name="Unnamed">
+    <value>(名前なし)</value>
+  </data>
+  <data xml:space="preserve" name="Update">
+    <value>更新</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailable">
+    <value>更新があります</value>
+  </data>
+  <data xml:space="preserve" name="UpdateCheckFailed">
+    <value>更新の確認に失敗しました: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateFailed">
+    <value>更新に失敗しました: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateReady">
+    <value>アプリを終了すると LogGrokX {0} が自動インストールされます。</value>
+  </data>
+  <data xml:space="preserve" name="UpdatedTitle">
+    <value>LogGrokX {0} に更新しました</value>
+  </data>
+  <data xml:space="preserve" name="Updates">
+    <value>更新</value>
+  </data>
+  <data xml:space="preserve" name="UpdatesDisabled">
+    <value>更新を確認しない</value>
+  </data>
+  <data xml:space="preserve" name="UseRegex">
+    <value>正規表現を使用</value>
+  </data>
+  <data xml:space="preserve" name="Value">
+    <value>値</value>
+  </data>
+  <data xml:space="preserve" name="ValueMappings">
+    <value>値のマッピング</value>
+  </data>
+  <data xml:space="preserve" name="Values">
+    <value>値</value>
+  </data>
+  <data xml:space="preserve" name="Version">
+    <value>バージョン</value>
+  </data>
+  <data xml:space="preserve" name="VersionAvailable">
+    <value>バージョン {0} が利用できます。</value>
+  </data>
+  <data xml:space="preserve" name="View">
+    <value>表示</value>
+  </data>
+  <data xml:space="preserve" name="ViewHint">
+    <value>長い行の処理とグループ化はログを開いたときに適用されます。バイナリ検出と値のマッピングは保存後に表示される行に適用されます。全行に適用するにはログを開き直してください。タイムラインの位置、グループ化の切り替え、統合表示、文字サイズはすぐに適用されます。</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNew">
+    <value>更新内容</value>
+  </data>
+  <data xml:space="preserve" name="WhatsNewHint">
+    <value>このバージョンでの変更内容です。</value>
+  </data>
+  <data xml:space="preserve" name="XorMask">
+    <value>XOR マスク</value>
+  </data>
+  <data xml:space="preserve" name="XorMaskInvalid">
+    <value>ログ形式の XOR マスクが無効です。</value>
+  </data>
+</root>

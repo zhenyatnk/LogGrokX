@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Settings
 {
     public sealed class ViewSettingsViewModel : ViewModelBase
     {
+        private string _language;
         private ViewSettings.ViewBigLine _bigLine;
         private string _bigLineSizeText;
         private bool _timelineAtTop;
@@ -21,6 +23,7 @@ namespace LogGrokX.Settings
 
         public ViewSettingsViewModel(ViewSettings settings)
         {
+            _language = LocalizationService.NormalizeLanguage(settings.Language);
             _bigLine = settings.BigLine;
             _bigLineSizeText = settings.BigLineSize.ToString(CultureInfo.InvariantCulture);
             _timelineAtTop = settings.TimelineAtTop;
@@ -35,8 +38,27 @@ namespace LogGrokX.Settings
             _updateMode = settings.UpdateMode;
         }
 
-        public IReadOnlyList<ViewSettings.ViewBigLine> BigLineOptions { get; } =
-            new[] { ViewSettings.ViewBigLine.Prune, ViewSettings.ViewBigLine.Break };
+        public IReadOnlyList<LanguageOption> LanguageOptions => LocalizationService.Languages;
+
+        public string Language
+        {
+            get => _language;
+            set
+            {
+                var language = LocalizationService.NormalizeLanguage(value);
+                if (_language == language)
+                    return;
+                _language = language;
+                InvokePropertyChanged();
+            }
+        }
+
+        public IReadOnlyList<BigLineOption> BigLineOptions { get; } =
+            new[]
+            {
+                new BigLineOption(ViewSettings.ViewBigLine.Prune, Strings.Get("BigLinePrune")),
+                new BigLineOption(ViewSettings.ViewBigLine.Break, Strings.Get("BigLineBreak"))
+            };
 
         public ViewSettings.ViewBigLine BigLine
         {
@@ -176,9 +198,9 @@ namespace LogGrokX.Settings
         public IReadOnlyList<UpdateModeOption> UpdateModeOptions { get; } =
             new[]
             {
-                new UpdateModeOption(ViewSettings.UpdateModeKind.Disabled, "Do not check for updates"),
-                new UpdateModeOption(ViewSettings.UpdateModeKind.Check, "Check for updates"),
-                new UpdateModeOption(ViewSettings.UpdateModeKind.Install, "Install updates automatically")
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Disabled, Strings.Get("UpdatesDisabled")),
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Check, Strings.Get("CheckForUpdates")),
+                new UpdateModeOption(ViewSettings.UpdateModeKind.Install, Strings.Get("InstallUpdatesAutomatically"))
             };
 
         public ViewSettings.UpdateModeKind UpdateMode
@@ -195,4 +217,5 @@ namespace LogGrokX.Settings
     }
 
     public sealed record UpdateModeOption(ViewSettings.UpdateModeKind Value, string Title);
+    public sealed record BigLineOption(ViewSettings.ViewBigLine Value, string Title);
 }

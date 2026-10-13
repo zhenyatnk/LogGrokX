@@ -77,7 +77,7 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 
 [Registry]
 Root: HKA; Subkey: "Software\Classes\.log\OpenWithProgids"; ValueType: string; ValueName: "LogGrokX.log"; ValueData: ""; Flags: uninsdeletevalue; Tasks: fileassoc_log
-Root: HKA; Subkey: "Software\Classes\LogGrokX.log"; ValueType: string; ValueName: ""; ValueData: "Log File"; Flags: uninsdeletekey; Tasks: fileassoc_log
+Root: HKA; Subkey: "Software\Classes\LogGrokX.log"; ValueType: string; ValueName: ""; ValueData: "{cm:LogFile}"; Flags: uninsdeletekey; Tasks: fileassoc_log
 Root: HKA; Subkey: "Software\Classes\LogGrokX.log\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\{#MyAppExeName},0"; Tasks: fileassoc_log
 Root: HKA; Subkey: "Software\Classes\LogGrokX.log\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\{#MyAppExeName}"" ""%1"""; Tasks: fileassoc_log
 
@@ -85,6 +85,14 @@ Root: HKA; Subkey: "Software\Classes\LogGrokX.log\shell\open\command"; ValueType
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
 [CustomMessages]
+english.LogFile=Log File
+russian.LogFile=Файл журнала
+german.LogFile=Protokolldatei
+french.LogFile=Fichier journal
+spanish.LogFile=Archivo de registro
+japanese.LogFile=ログファイル
+polish.LogFile=Plik dziennika
+brazilianportuguese.LogFile=Arquivo de log
 english.FileAssoc=File associations:
 english.AssocLog=Associate with .log files
 russian.FileAssoc=Ассоциации файлов:
@@ -119,6 +127,24 @@ brazilianportuguese.Updates=Atualizações:
 brazilianportuguese.AutoInstallUpdates=Instalar atualizações automaticamente
 
 [Code]
+var
+  HadSettingsBeforeInstall: Boolean;
+
+function AppLanguage: String;
+begin
+  case ActiveLanguage of
+    'russian': Result := 'ru';
+    'german': Result := 'de';
+    'french': Result := 'fr';
+    'spanish': Result := 'es';
+    'japanese': Result := 'ja';
+    'polish': Result := 'pl';
+    'brazilianportuguese': Result := 'pt-BR';
+  else
+    Result := 'en';
+  end;
+end;
+
 function IsAutoUpdateRun: Boolean;
 begin
   Result := ExpandConstant('{param:AUTOUPDATE|0}') = '1';
@@ -166,6 +192,9 @@ procedure CurStepChanged(CurStep: TSetupStep);
 var
   Value: String;
 begin
+  if CurStep = ssInstall then
+    HadSettingsBeforeInstall := FileExists(ExpandConstant('{app}\appsettings.yaml'));
+
   if (CurStep <> ssPostInstall) or IsAutoUpdateRun then
     Exit;
 
@@ -174,4 +203,6 @@ begin
   else
     Value := 'check';
   SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'UpdateMode', Value);
+  if not HadSettingsBeforeInstall then
+    SetViewSetting(ExpandConstant('{app}\appsettings.yaml'), 'Language', AppLanguage);
 end;

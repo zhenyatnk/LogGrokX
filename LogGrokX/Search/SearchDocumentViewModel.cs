@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Input;
+using LogGrokX.Localization;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
@@ -123,8 +124,8 @@ namespace LogGrokX.Search
                     return string.Empty;
 
                 return CurrentItemIndex is { } current
-                    ? $"{current + 1} of {count}"
-                    : $"{count} matches";
+                    ? Strings.Format("MatchPosition", current + 1, count)
+                    : Strings.Format("MatchCount", count);
             }
         }
 

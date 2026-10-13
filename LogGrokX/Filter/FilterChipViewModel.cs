@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.Data.Index;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Filter
 {
@@ -22,7 +23,7 @@ namespace LogGrokX.Filter
 
             DisplayText = excludedValues.Count == 1
                 ? $"{fieldName}: {excludedValues.First()}"
-                : $"{fieldName}: {excludedValues.Count} hidden";
+                : Strings.Format("HiddenValues", fieldName, excludedValues.Count);
 
             RemoveCommand = new DelegateCommand(
                 () => _filterSettings.SetExclusions(_indexedComponentIndex, Enumerable.Empty<string>()));

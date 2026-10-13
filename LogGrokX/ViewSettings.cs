@@ -3,6 +3,8 @@ namespace LogGrokX
 {
     public class ViewSettings
     {
+        public string Language { get; set; } = "system";
+
         public enum ViewBigLine
         {
             Prune = 0,

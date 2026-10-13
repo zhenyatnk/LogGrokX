@@ -11,6 +11,7 @@ using LogGrokX.Controls.ListControls;
 using LogGrokX.Data;
 using LogGrokX.Data.Virtualization;
 using LogGrokX.Search;
+using LogGrokX.Localization;
 
 namespace LogGrokX.MergedView
 {
@@ -101,8 +102,8 @@ namespace LogGrokX.MergedView
             _matchedIndices.Length == 0
                 ? string.Empty
                 : CurrentItemIndex is { } current
-                    ? $"{current + 1} of {_matchedIndices.Length}"
-                    : $"{_matchedIndices.Length} matches";
+                    ? Strings.Format("MatchPosition", current + 1, _matchedIndices.Length)
+                    : Strings.Format("MatchCount", _matchedIndices.Length);
 
         public int CurrentMatchLine =>
             CurrentItemIndex is { } index && index >= 0 && index < _matchedIndices.Length

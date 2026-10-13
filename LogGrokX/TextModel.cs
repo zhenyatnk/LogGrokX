@@ -122,7 +122,7 @@ public class TextModel : IReadOnlyList<StringRange>
 
                 _substitutions = new Dictionary<int, StringRange>()
                 {
-                    { CollapseToLines, StringRange.FromString($"More {linesToCollapse} lines >>>") }
+                    { CollapseToLines, StringRange.FromString(Localization.Strings.Format("MoreLines", linesToCollapse)) }
                 };
 
             }

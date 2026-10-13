@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Settings
 {
@@ -26,6 +27,7 @@ namespace LogGrokX.Settings
         private string _valueMappingMessage = string.Empty;
         private string _savedValueMappings;
         private ViewSettings.ViewBigLine _savedBigLine;
+        private string _savedLanguage = string.Empty;
         private string _savedBigLineSizeText = string.Empty;
         private ViewSettings.UpdateModeKind _savedUpdateMode;
         private bool _savedDetectBinary;
@@ -79,7 +81,7 @@ namespace LogGrokX.Settings
             RemoveLogFormatCommand = DelegateCommand.Create<LogFormatViewModel>(format => LogFormats.Remove(format));
             AddValueMappingCommand = new DelegateCommand(() =>
             {
-                var list = new ValueMappingListViewModel(new ValueMappingList { Name = GetUniqueValueMappingName("New mapping") });
+                var list = new ValueMappingListViewModel(new ValueMappingList { Name = GetUniqueValueMappingName(Strings.Get("NewMapping")) });
                 ValueMappings.Add(list);
                 SelectedValueMapping = list;
             });
@@ -201,7 +203,7 @@ namespace LogGrokX.Settings
 
         private void AddProfile(bool duplicate)
         {
-            var name = duplicate ? SelectedProfile.Name + " copy" : "New profile";
+            var name = duplicate ? Strings.Format("ProfileCopy", SelectedProfile.Name) : Strings.Get("NewProfile");
             var uniqueName = name;
             for (var suffix = 2; Profiles.Any(profile => string.Equals(profile.Name, uniqueName,
                      StringComparison.OrdinalIgnoreCase)); suffix++)
@@ -239,7 +241,7 @@ namespace LogGrokX.Settings
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException or
                                               System.Text.Json.JsonException or FormatException)
                 {
-                    ValueMappingMessage = $"Cannot import {Path.GetFileName(fileName)}: {e.Message}";
+                    ValueMappingMessage = Strings.Format("ImportFailed", Path.GetFileName(fileName), e.Message);
                     return false;
                 }
             }
@@ -276,8 +278,8 @@ namespace LogGrokX.Settings
 
             var items = lists.Sum(list => list.Items.Length);
             ValueMappingMessage = replaced > 0
-                ? $"Imported {lists.Count} list(s) with {items} value(s), {replaced} replaced by name. Save to apply."
-                : $"Imported {lists.Count} list(s) with {items} value(s). Save to apply.";
+                ? Strings.Format("ImportReplaced", lists.Count, items, replaced)
+                : Strings.Format("ImportDone", lists.Count, items);
         }
 
         public bool ExportValueMappings(string fileName, bool all)
@@ -287,19 +289,19 @@ namespace LogGrokX.Settings
                 if (all)
                 {
                     File.WriteAllText(fileName, ValueMappingJson.Serialize(GetValueMappingsData()));
-                    ValueMappingMessage = $"Exported {ValueMappings.Count} list(s) to {Path.GetFileName(fileName)}.";
+                    ValueMappingMessage = Strings.Format("ExportDone", ValueMappings.Count, Path.GetFileName(fileName));
                 }
                 else if (_selectedValueMapping != null)
                 {
                     File.WriteAllText(fileName, ValueMappingJson.Serialize(_selectedValueMapping.ToData()));
-                    ValueMappingMessage = $"Exported \"{_selectedValueMapping.DisplayName}\" to {Path.GetFileName(fileName)}.";
+                    ValueMappingMessage = Strings.Format("ExportListDone", _selectedValueMapping.DisplayName, Path.GetFileName(fileName));
                 }
 
                 return true;
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                ValueMappingMessage = $"Cannot export: {e.Message}";
+                ValueMappingMessage = Strings.Format("ExportFailed", e.Message);
                 return false;
             }
         }
@@ -345,6 +347,7 @@ namespace LogGrokX.Settings
             var maxDumpsCount = int.Parse(Debug.MaxDumpsCountText.Trim(), CultureInfo.InvariantCulture);
 
             _applicationSettings.ViewSettings.BigLine = View.BigLine;
+            _applicationSettings.ViewSettings.Language = View.Language;
             _applicationSettings.ViewSettings.BigLineSize = bigLineSize;
             _applicationSettings.ViewSettings.UpdateMode = View.UpdateMode;
             _applicationSettings.DebugSettings.EnableCrashDumps = Debug.EnableCrashDumps;
@@ -366,6 +369,7 @@ namespace LogGrokX.Settings
             file.SetScalar("DebugSettings", "EnableCrashDumps", Debug.EnableCrashDumps ? "true" : "false");
             file.SetScalar("DebugSettings", "MaxDumpsCount", maxDumpsCount.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "BigLine", View.BigLine == ViewSettings.ViewBigLine.Prune ? "prune" : "break");
+            file.SetScalar("ViewSettings", "Language", View.Language);
             file.SetScalar("ViewSettings", "BigLineSize", bigLineSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "TimelineAtTop", View.TimelineAtTop ? "true" : "false");
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
@@ -396,7 +400,7 @@ namespace LogGrokX.Settings
             }
             catch (Exception e) when (e is IOException or UnauthorizedAccessException)
             {
-                ValidationMessage = $"Cannot save settings: {e.Message}";
+                ValidationMessage = Strings.Format("SaveSettingsFailed", e.Message);
                 return false;
             }
             _savedProfiles = profiles;
@@ -415,6 +419,7 @@ namespace LogGrokX.Settings
 
         private void CaptureRestartSettings()
         {
+            _savedLanguage = View.Language;
             _savedBigLine = View.BigLine;
             _savedBigLineSizeText = View.BigLineSizeText;
             _savedUpdateMode = View.UpdateMode;
@@ -451,6 +456,7 @@ namespace LogGrokX.Settings
         private void UpdateRequiresRestart()
         {
             RequiresRestart =
+                View.Language != _savedLanguage ||
                 View.BigLine != _savedBigLine ||
                 View.BigLineSizeText != _savedBigLineSizeText ||
                 View.UpdateMode != _savedUpdateMode ||
@@ -474,31 +480,31 @@ namespace LogGrokX.Settings
             var errors = new List<string>();
 
             if (!int.TryParse(View.BigLineSizeText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var bigLineSize) || bigLineSize <= 0)
-                errors.Add("Big line size must be a positive integer.");
+                errors.Add(Strings.Get("BigLineSizeInvalid"));
 
             if (!int.TryParse(Debug.MaxDumpsCountText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxDumpsCount) || maxDumpsCount <= 0)
-                errors.Add("Max dumps count must be a positive integer.");
+                errors.Add(Strings.Get("MaxDumpsInvalid"));
 
             if (Profiles.Any(profile => string.IsNullOrWhiteSpace(profile.Name)))
-                errors.Add("Every profile must have a name.");
+                errors.Add(Strings.Get("ProfileNameRequired"));
             if (Profiles.Select(profile => profile.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Profiles.Count)
-                errors.Add("Profile names must be unique.");
+                errors.Add(Strings.Get("ProfileNamesUnique"));
 
             foreach (var format in Profiles.SelectMany(profile => profile.LogFormats))
             {
                 if (!format.IsValid)
-                    errors.Add("A log format has an invalid regular expression.");
+                    errors.Add(Strings.Get("LogRegexInvalid"));
                 if (!format.TryGetXorMask(out _))
-                    errors.Add("A log format has an invalid XOR mask.");
+                    errors.Add(Strings.Get("XorMaskInvalid"));
             }
 
             foreach (var rule in Profiles.SelectMany(profile => profile.ColorRules))
             {
                 if (!rule.IsRegexValid)
-                    errors.Add("A color rule has an invalid regular expression.");
+                    errors.Add(Strings.Get("ColorRegexInvalid"));
                 if ((!string.IsNullOrWhiteSpace(rule.ForegroundColor) && rule.ForegroundBrush == null) ||
                     (!string.IsNullOrWhiteSpace(rule.BackgroundColor) && rule.BackgroundBrush == null))
-                    errors.Add("A color rule has an invalid color.");
+                    errors.Add(Strings.Get("ColorInvalid"));
             }
 
             foreach (var list in ValueMappings)

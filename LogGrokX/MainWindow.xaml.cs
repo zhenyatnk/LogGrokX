@@ -28,7 +28,7 @@ namespace LogGrokX
                     <LayoutAnchorable 
                         AutoHideMinWidth=""100"" 
                         AutoHideMinHeight=""100"" 
-                        Title=""Marked lines"" 
+                        Title=""""
                         IsSelected=""True"" 
                         ContentId=""###MarkedLinesContentId"" 
                         CanClose=""False"" 
@@ -149,7 +149,7 @@ namespace LogGrokX
 
             _mergedDocument = new LayoutDocument
             {
-                Title = "Merged files",
+                Title = Localization.Strings.Get("MergedFiles"),
                 ContentId = Constants.MergedViewContentId,
                 CanClose = false,
                 Content = new ContentControl
@@ -187,6 +187,9 @@ namespace LogGrokX
             
             layoutSerializer.LayoutSerializationCallback += (_, args) =>
             {
+                if (args.Model.ContentId == Constants.MarkedLinesContentId)
+                    args.Model.Title = Localization.Strings.Get("MarkedLines");
+
                 if (args.Model is LayoutDocument)
                 {
                     args.Cancel = true;

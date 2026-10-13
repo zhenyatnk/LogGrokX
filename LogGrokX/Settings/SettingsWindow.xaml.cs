@@ -2,12 +2,13 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using Microsoft.Win32;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Settings
 {
     public partial class SettingsWindow
     {
-        private const string JsonFilter = "JSON files (*.json)|*.json|All files (*.*)|*.*";
+        private static string JsonFilter => Strings.Get("JsonFilter");
 
         public SettingsWindow(SettingsViewModel viewModel)
         {
@@ -33,7 +34,7 @@ namespace LogGrokX.Settings
 
             var dialog = new OpenFileDialog
             {
-                Title = "Import value mappings",
+                Title = Strings.Get("ImportValueMappings"),
                 Filter = JsonFilter,
                 Multiselect = true
             };
@@ -59,7 +60,7 @@ namespace LogGrokX.Settings
             var fileName = new string(name.Select(c => invalid.Contains(c) ? '_' : c).ToArray()).Trim();
             var dialog = new SaveFileDialog
             {
-                Title = all ? "Export all value mappings" : "Export value mapping",
+                Title = all ? Strings.Get("ExportAllValueMappings") : Strings.Get("ExportValueMapping"),
                 Filter = JsonFilter,
                 DefaultExt = ".json",
                 FileName = (fileName.Length > 0 ? fileName : "value-mappings") + ".json"

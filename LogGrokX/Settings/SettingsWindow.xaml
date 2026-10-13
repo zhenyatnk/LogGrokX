@@ -1,8 +1,9 @@
 <ui:FluentWindow x:Class="LogGrokX.Settings.SettingsWindow"
                  xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:loc="clr-namespace:LogGrokX.Localization"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
-                 Title="Settings"
+                 Title="{loc:Loc Settings}"
                  Width="860"
                  Height="700"
                  MinWidth="680"
@@ -15,6 +16,9 @@
                  ShowInTaskbar="False">
     <ui:FluentWindow.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
     </ui:FluentWindow.Resources>
 
     <Grid>
@@ -25,18 +29,18 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="Settings">
+        <ui:TitleBar Grid.Row="0" Title="{loc:Loc Settings}">
             <ui:TitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
             </ui:TitleBar.Icon>
         </ui:TitleBar>
 
         <TabControl Grid.Row="1" Margin="12,4,12,0">
-            <TabItem Header="View">
+            <TabItem Header="{loc:Loc View}">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <Grid Margin="12" MaxWidth="620" HorizontalAlignment="Left">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180" />
+                            <ColumnDefinition Width="230" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
@@ -50,35 +54,49 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0"
-                                   Grid.Column="0"
-                                   Margin="0,0,12,10"
-                                   VerticalAlignment="Center"
-                                   Text="Big line handling" />
-                        <ComboBox Grid.Row="0"
-                                  Grid.Column="1"
-                                  Margin="0,0,0,10"
-                                  ItemsSource="{Binding View.BigLineOptions}"
-                                  SelectedItem="{Binding View.BigLine, Mode=TwoWay}" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Margin="0,0,12,10"
+                                   VerticalAlignment="Center" Text="{loc:Loc Language}" />
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,10">
+                            <ComboBox ItemsSource="{Binding View.LanguageOptions}"
+                                      DisplayMemberPath="Title" SelectedValuePath="Value"
+                                      SelectedValue="{Binding View.Language, Mode=TwoWay}" />
+                            <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Text="{loc:Loc LanguageRestart}" />
+                        </StackPanel>
 
                         <TextBlock Grid.Row="1"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Big line size" />
-                        <ui:TextBox Grid.Row="1"
-                                    Grid.Column="1"
-                                    Margin="0,0,0,10"
-                                    Text="{Binding View.BigLineSizeText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                   Text="{loc:Loc BigLineHandling}" />
+                        <ComboBox Grid.Row="1"
+                                  Grid.Column="1"
+                                  Margin="0,0,0,10"
+                                  ItemsSource="{Binding View.BigLineOptions}"
+                                  DisplayMemberPath="Title"
+                                  SelectedValuePath="Value"
+                                  SelectedValue="{Binding View.BigLine, Mode=TwoWay}" />
 
                         <TextBlock Grid.Row="2"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Log font size" />
-                        <DockPanel Grid.Row="2" Grid.Column="1" Margin="0,0,0,10">
+                                   Text="{loc:Loc BigLineSize}" />
+                        <ui:TextBox Grid.Row="2"
+                                    Grid.Column="1"
+                                    Margin="0,0,0,10"
+                                    Text="{Binding View.BigLineSizeText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+
+                        <TextBlock Grid.Row="3"
+                                   Grid.Column="0"
+                                   Margin="0,0,12,10"
+                                   VerticalAlignment="Center"
+                                   Text="{loc:Loc LogFontSize}" />
+                        <DockPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,10">
                             <TextBlock DockPanel.Dock="Right"
                                        Width="36"
                                        Margin="8,0,0,0"
@@ -92,66 +110,66 @@
                                     Value="{Binding View.LogFontSize, Mode=TwoWay}" />
                         </DockPanel>
 
-                        <TextBlock Grid.Row="3"
+                        <TextBlock Grid.Row="4"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Timeline at top" />
-                        <CheckBox Grid.Row="3"
+                                   Text="{loc:Loc TimelineAtTop}" />
+                        <CheckBox Grid.Row="4"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.TimelineAtTop, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="4"
+                        <TextBlock Grid.Row="5"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Group by thread" />
-                        <CheckBox Grid.Row="4"
+                                   Text="{loc:Loc GroupByThread}" />
+                        <CheckBox Grid.Row="5"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.GroupByThread, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="5"
+                        <TextBlock Grid.Row="6"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Show thread group separators" />
-                        <CheckBox Grid.Row="5"
+                                   Text="{loc:Loc ShowThreadGroupSeparators}" />
+                        <CheckBox Grid.Row="6"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.ShowThreadGroupSeparators, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="6"
+                        <TextBlock Grid.Row="7"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Merged files view" />
-                        <CheckBox Grid.Row="6"
+                                   Text="{loc:Loc MergedFilesView}" />
+                        <CheckBox Grid.Row="7"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   VerticalAlignment="Center"
                                   IsChecked="{Binding View.MergedFilesView, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="7"
+                        <TextBlock Grid.Row="8"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Top"
-                                   Text="Binary data detection" />
-                        <StackPanel Grid.Row="7"
+                                   Text="{loc:Loc BinaryDataDetection}" />
+                        <StackPanel Grid.Row="8"
                                     Grid.Column="1"
                                     Margin="0,0,0,10">
-                            <CheckBox Content="Detect binary data (BIN)"
+                            <CheckBox Content="{loc:Loc DetectBinary}"
                                       IsChecked="{Binding View.DetectBinary, Mode=TwoWay}" />
                             <StackPanel Margin="24,4,0,0"
                                         IsEnabled="{Binding View.DetectBinary}">
-                                <CheckBox Content="PEM blocks, certificates and keys"
+                                <CheckBox Content="{loc:Loc PemDetection}"
                                           IsChecked="{Binding View.DetectPem, Mode=TwoWay}" />
                                 <CheckBox Margin="0,4,0,0"
-                                          Content="Base64 text"
+                                          Content="{loc:Loc Base64Text}"
                                           IsChecked="{Binding View.DetectBase64, Mode=TwoWay}" />
                                 <CheckBox Margin="0,4,0,0"
                                           Content="HEX"
@@ -159,12 +177,12 @@
                             </StackPanel>
                         </StackPanel>
 
-                        <TextBlock Grid.Row="8"
+                        <TextBlock Grid.Row="9"
                                    Grid.Column="0"
                                    Margin="0,0,12,10"
                                    VerticalAlignment="Center"
-                                   Text="Automatic updates" />
-                        <ComboBox Grid.Row="8"
+                                   Text="{loc:Loc AutomaticUpdates}" />
+                        <ComboBox Grid.Row="9"
                                   Grid.Column="1"
                                   Margin="0,0,0,10"
                                   ItemsSource="{Binding View.UpdateModeOptions}"
@@ -172,18 +190,18 @@
                                   SelectedValuePath="Value"
                                   SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
-                        <TextBlock Grid.Row="9"
+                        <TextBlock Grid.Row="10"
                                    Grid.Column="0"
                                    Grid.ColumnSpan="2"
                                    Margin="0,6,0,0"
                                    TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                   Text="Big line handling and grouping are applied when a log file is opened. Binary data detection and value mappings apply to lines shown after saving; reopen the log to apply them to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately." />
+                                   Text="{loc:Loc ViewHint}" />
                     </Grid>
                 </ScrollViewer>
             </TabItem>
 
-            <TabItem Header="Profiles">
+            <TabItem Header="{loc:Loc Profiles}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -195,21 +213,21 @@
                         <ComboBox Width="200" Margin="0,0,12,0"
                                   ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
                                   SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" />
-                        <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" Text="Name" />
+                        <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" Text="{loc:Loc Name}" />
                         <ui:TextBox Width="180"
                                     Text="{Binding SelectedProfile.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                       </StackPanel>
                       <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
-                        <ui:Button Command="{Binding AddProfileCommand}" Content="New" />
-                        <ui:Button Margin="8,0,0,0" Command="{Binding DuplicateProfileCommand}" Content="Copy" />
-                        <ui:Button Margin="8,0,0,0" Command="{Binding RemoveProfileCommand}" Content="Remove" />
+                        <ui:Button Command="{Binding AddProfileCommand}" Content="{loc:Loc New}" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding DuplicateProfileCommand}" Content="{loc:Loc Copy}" />
+                        <ui:Button Margin="8,0,0,0" Command="{Binding RemoveProfileCommand}" Content="{loc:Loc Remove}" />
                       </StackPanel>
                     </WrapPanel>
                     <TextBlock Grid.Row="1" Margin="0,10,0,8" TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Each profile has its own formats and color rules. Save applies the selected profile to all open files and reloads them while preserving marked lines." />
+                               Text="{loc:Loc ProfilesHint}" />
                     <TabControl Grid.Row="2">
-                        <TabItem Header="Colors">
+                        <TabItem Header="{loc:Loc Colors}">
                             <Grid Margin="12">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -221,7 +239,7 @@
                                            Margin="0,0,0,8"
                                            TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Text="Lines matching a rule are colored. Use a color name or #AARRGGBB. The first matching rule wins." />
+                                           Text="{loc:Loc ColorsHint}" />
 
                                 <DataGrid x:Name="ColorRulesGrid"
                                           Grid.Row="1"
@@ -235,15 +253,15 @@
                                           ItemsSource="{Binding ColorRules}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Width="*" MinWidth="240"
-                                                            Header="Regex"
+                                                            Header="{loc:Loc Regex}"
                                                             Binding="{Binding RegexString, UpdateSourceTrigger=PropertyChanged}" />
                                         <DataGridTextColumn Width="150"
-                                                            Header="Foreground"
+                                                            Header="{loc:Loc Foreground}"
                                                             Binding="{Binding ForegroundColor, UpdateSourceTrigger=PropertyChanged}" />
                                         <DataGridTextColumn Width="150"
-                                                            Header="Background"
+                                                            Header="{loc:Loc Background}"
                                                             Binding="{Binding BackgroundColor, UpdateSourceTrigger=PropertyChanged}" />
-                                        <DataGridTemplateColumn Width="90" Header="Preview">
+                                        <DataGridTemplateColumn Width="90" Header="{loc:Loc Preview}">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
                                                     <Border Margin="2"
@@ -266,21 +284,21 @@
                                     <ui:Button Command="{Binding AddColorRuleCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add rule" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc AddRule}" />
                                         </StackPanel>
                                     </ui:Button>
                                     <ui:Button Margin="8,0,0,0"
                                                Command="{Binding RemoveColorRuleCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Remove}" />
                                         </StackPanel>
                                     </ui:Button>
                                 </StackPanel>
                             </Grid>
                         </TabItem>
 
-                        <TabItem Header="Log formats">
+                        <TabItem Header="{loc:Loc LogFormats}">
                             <Grid Margin="12">
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="Auto" />
@@ -292,7 +310,7 @@
                                            Margin="0,0,0,8"
                                            TextWrapping="Wrap"
                                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Text="Formats are tried in order when a log file is opened. Indexed fields and transformations are edited one entry per line." />
+                                           Text="{loc:Loc FormatsHint}" />
 
                                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                     <ItemsControl ItemsSource="{Binding LogFormats}">
@@ -323,14 +341,14 @@
                                                                    Grid.Column="0"
                                                                    Margin="0,0,0,6"
                                                                    FontWeight="SemiBold"
-                                                                   Text="Log format" />
+                                                                   Text="{loc:Loc LogFormat}" />
 
                                                         <TextBlock Grid.Row="0"
                                                                    Grid.Column="1"
                                                                    MaxWidth="350"
                                                                    TextWrapping="Wrap"
                                                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}">
-                                                            <Run Text="Fields:" />
+                                                            <Run Text="{loc:Loc FieldsLabel}" />
                                                             <Run Text="{Binding FieldNames, Mode=OneWay}" />
                                                         </TextBlock>
 
@@ -349,7 +367,7 @@
                                                                    Grid.Column="0"
                                                                    Grid.ColumnSpan="2"
                                                                    Margin="0,0,0,2"
-                                                                   Text="Indexed fields (one per line)" />
+                                                                   Text="{loc:Loc IndexedFields}" />
                                                         <ui:TextBox Grid.Row="3"
                                                                     Grid.Column="0"
                                                                     Grid.ColumnSpan="2"
@@ -369,15 +387,15 @@
                                                                 <ColumnDefinition Width="120" />
                                                             </Grid.ColumnDefinitions>
                                                             <StackPanel Grid.Column="0">
-                                                                <TextBlock Margin="0,0,0,2" Text="Time field" />
+                                                                <TextBlock Margin="0,0,0,2" Text="{loc:Loc TimeField}" />
                                                                 <ui:TextBox Text="{Binding TimeField, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                                             </StackPanel>
                                                             <StackPanel Grid.Column="2">
-                                                                <TextBlock Margin="0,0,0,2" Text="Time format" />
+                                                                <TextBlock Margin="0,0,0,2" Text="{loc:Loc TimeFormat}" />
                                                                 <ui:TextBox Text="{Binding TimeFormat, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                                             </StackPanel>
                                                             <StackPanel Grid.Column="4">
-                                                                <TextBlock Margin="0,0,0,2" Text="XOR mask" />
+                                                                <TextBlock Margin="0,0,0,2" Text="{loc:Loc XorMask}" />
                                                                 <ui:TextBox Text="{Binding XorMask, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                                             </StackPanel>
                                                         </Grid>
@@ -386,7 +404,7 @@
                                                                    Grid.Column="0"
                                                                    Grid.ColumnSpan="2"
                                                                    Margin="0,8,0,2"
-                                                                   Text="Transformations (one per line)" />
+                                                                   Text="{loc:Loc Transformations}" />
                                                         <ui:TextBox Grid.Row="6"
                                                                     Grid.Column="0"
                                                                     Grid.ColumnSpan="2"
@@ -404,7 +422,7 @@
                                                                    CommandParameter="{Binding}">
                                                             <StackPanel Orientation="Horizontal">
                                                                 <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove" />
+                                                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc Remove}" />
                                                             </StackPanel>
                                                         </ui:Button>
                                                     </Grid>
@@ -418,7 +436,7 @@
                                     <ui:Button Command="{Binding AddLogFormatCommand}">
                                         <StackPanel Orientation="Horizontal">
                                             <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add format" />
+                                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc AddFormat}" />
                                         </StackPanel>
                                     </ui:Button>
                                 </StackPanel>
@@ -429,7 +447,7 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Value mappings">
+            <TabItem Header="{loc:Loc ValueMappings}">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -449,7 +467,7 @@
                                Margin="0,0,0,8"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Values found in the listed fields are shown as value(mapping), for example 0x00001(type 1). Leave Fields empty to apply a list to every field. Lists are imported and exported as JSON." />
+                               Text="{loc:Loc MappingsHint}" />
 
                     <ListBox Grid.Row="1"
                              Grid.Column="0"
@@ -463,7 +481,7 @@
                                     <CheckBox MinWidth="0"
                                               Margin="0,0,4,0"
                                               VerticalAlignment="Center"
-                                              ToolTip="Enabled"
+                                              ToolTip="{loc:Loc Enabled}"
                                               IsChecked="{Binding Enabled, Mode=TwoWay}" />
                                     <TextBlock VerticalAlignment="Center"
                                                Text="{Binding DisplayName}"
@@ -492,11 +510,11 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,0,8">
-                            <TextBlock Margin="0,0,0,2" Text="Name" />
+                            <TextBlock Margin="0,0,0,2" Text="{loc:Loc Name}" />
                             <ui:TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </StackPanel>
                         <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
-                            <TextBlock Margin="0,0,0,2" Text="Fields (comma separated, empty = all fields)" />
+                            <TextBlock Margin="0,0,0,2" Text="{loc:Loc MappingFields}" />
                             <ui:TextBox Text="{Binding Fields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         </StackPanel>
 
@@ -505,9 +523,9 @@
                                     Grid.ColumnSpan="3"
                                     Margin="0,0,0,8"
                                     Orientation="Horizontal">
-                            <CheckBox Content="Enabled" IsChecked="{Binding Enabled, Mode=TwoWay}" />
+                            <CheckBox Content="{loc:Loc Enabled}" IsChecked="{Binding Enabled, Mode=TwoWay}" />
                             <CheckBox Margin="16,0,0,0"
-                                      Content="Ignore case"
+                                      Content="{loc:Loc IgnoreCase}"
                                       IsChecked="{Binding IgnoreCase, Mode=TwoWay}" />
                         </StackPanel>
 
@@ -515,7 +533,7 @@
                                    Grid.Column="0"
                                    Grid.ColumnSpan="3"
                                    Margin="0,0,0,2"
-                                   Text="Values" />
+                                   Text="{loc:Loc Values}" />
                         <DataGrid Grid.Row="3"
                                   Grid.Column="0"
                                   Grid.ColumnSpan="3"
@@ -529,10 +547,10 @@
                                   ItemsSource="{Binding Items}">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Width="*"
-                                                    Header="Value"
+                                                    Header="{loc:Loc Value}"
                                                     Binding="{Binding Value, UpdateSourceTrigger=PropertyChanged}" />
                                 <DataGridTextColumn Width="2*"
-                                                    Header="Mapping"
+                                                    Header="{loc:Loc Mapping}"
                                                     Binding="{Binding Mapping, UpdateSourceTrigger=PropertyChanged}" />
                             </DataGrid.Columns>
                         </DataGrid>
@@ -545,13 +563,13 @@
                             <ui:Button Command="{Binding AddItemCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add value" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc AddValue}" />
                                 </StackPanel>
                             </ui:Button>
                             <ui:Button Margin="8,0,0,0" Command="{Binding RemoveItemCommand}">
                                 <StackPanel Orientation="Horizontal">
                                     <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove value" />
+                                    <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc RemoveValue}" />
                                 </StackPanel>
                             </ui:Button>
                         </StackPanel>
@@ -566,10 +584,10 @@
                             <TextBlock Grid.Column="0"
                                        Margin="0,0,8,0"
                                        VerticalAlignment="Center"
-                                       Text="Preview" />
+                                       Text="{loc:Loc Preview}" />
                             <ui:TextBox Grid.Column="1"
                                         FontFamily="{StaticResource JetBrainsMono}"
-                                        PlaceholderText="Sample text"
+                                        PlaceholderText="{loc:Loc SampleText}"
                                         Text="{Binding SampleText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             <TextBlock Grid.Column="3"
                                        VerticalAlignment="Center"
@@ -587,19 +605,19 @@
                         <ui:Button Command="{Binding AddValueMappingCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Add24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Add list" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc AddList}" />
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Margin="8,0,0,0" Command="{Binding RemoveValueMappingCommand}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="Delete24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Remove list" />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc RemoveList}" />
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Margin="24,0,0,0" Click="OnImportValueMappingsClick">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowImport24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Import JSON..." />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc ImportJson}" />
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Margin="8,0,0,0"
@@ -607,13 +625,13 @@
                                    IsEnabled="{Binding HasSelectedValueMapping}">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export list..." />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc ExportList}" />
                             </StackPanel>
                         </ui:Button>
                         <ui:Button Margin="8,0,0,0" Click="OnExportAllValueMappingsClick">
                             <StackPanel Orientation="Horizontal">
                                 <ui:SymbolIcon Symbol="ArrowExportLtr24" FontSize="16" />
-                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Export all..." />
+                                <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc ExportAll}" />
                             </StackPanel>
                         </ui:Button>
                     </StackPanel>
@@ -628,19 +646,19 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Debug">
+            <TabItem Header="{loc:Loc Debug}">
                 <StackPanel Margin="12" MaxWidth="620" HorizontalAlignment="Left">
                     <CheckBox VerticalAlignment="Center"
-                              Content="Enable crash dumps"
+                              Content="{loc:Loc EnableCrashDumps}"
                               IsChecked="{Binding Debug.EnableCrashDumps, Mode=TwoWay}" />
-                    <TextBlock Margin="0,10,0,2" Text="Max dumps count" />
+                    <TextBlock Margin="0,10,0,2" Text="{loc:Loc MaxDumpsCount}" />
                     <ui:TextBox MaxWidth="200"
                                 HorizontalAlignment="Left"
                                 Text="{Binding Debug.MaxDumpsCountText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                     <TextBlock Margin="0,12,0,0"
                                TextWrapping="Wrap"
                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="Debug settings are applied on the next start of the application." />
+                               Text="{loc:Loc DebugHint}" />
                 </StackPanel>
             </TabItem>
         </TabControl>
@@ -650,9 +668,9 @@
                     HorizontalAlignment="Stretch"
                     IsClosable="False"
                     IsOpen="{Binding RequiresRestart, Mode=OneWay}"
-                    Message="Restart the application (or reopen the log) to apply these settings."
+                    Message="{loc:Loc RestartHint}"
                     Severity="Warning"
-                    Title="Restart required" />
+                    Title="{loc:Loc RestartRequired}" />
 
         <Grid Grid.Row="3" Margin="12">
             <Grid.ColumnDefinitions>
@@ -666,7 +684,7 @@
                 <ui:Button HorizontalAlignment="Left" Command="{Binding OpenFileCommand}">
                     <StackPanel Orientation="Horizontal">
                         <ui:SymbolIcon Symbol="DocumentText24" FontSize="16" />
-                        <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="Open appsettings.yaml" />
+                        <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc OpenSettingsFile}" />
                     </StackPanel>
                 </ui:Button>
                 <TextBlock Margin="0,4,0,0"
@@ -680,12 +698,12 @@
                        Margin="0,0,8,0"
                        VerticalAlignment="Bottom"
                        Click="OnCancelClick"
-                       Content="Cancel" />
+                       Content="{loc:Loc Cancel}" />
             <ui:Button Grid.Column="2"
                        VerticalAlignment="Bottom"
                        Appearance="Primary"
                        Click="OnSaveClick"
-                       Content="Save" />
+                       Content="{loc:Loc Save}" />
             <TextBlock Grid.Column="3" Width="1" />
         </Grid>
     </Grid>

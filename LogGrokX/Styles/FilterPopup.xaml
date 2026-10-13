@@ -1,4 +1,5 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:loc="clr-namespace:LogGrokX.Localization"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                     xmlns:componentModel="clr-namespace:System.ComponentModel;assembly=WindowsBase"
@@ -52,7 +53,7 @@
                                      ClearButtonEnabled="True"
                                      Text="{Binding TextFilter,
                                                             UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="Search..."
+                                     PlaceholderText="{loc:Loc SearchPlaceholder}"
                                      controls:RoutedCommandBehavior.RoutedCommandToCommandBinding="{controls:RoutedCommandToCommandBinding 
                                                     Command={Binding 
                                                         Source={x:Static filterPopup:TextBoxCommands.Clear}},
@@ -73,7 +74,7 @@
                                            Command="{Binding SelectAllCommand}"
                                            CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                           Content="Select All" />
+                                           Content="{loc:Loc SelectAll}" />
                                 <ui:Button Margin="0,0,6,0"
                                            Padding="8,2"
                                            FontSize="12"
@@ -81,14 +82,14 @@
                                            Command="{Binding DeselectAllCommand}"
                                            CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                           Content="Deselect All" />
+                                           Content="{loc:Loc DeselectAll}" />
                                 <ui:Button Padding="8,2"
                                            FontSize="12"
                                            Appearance="Secondary"
                                            Command="{Binding SelectOnlySearchResultsCommand}"
                                            CommandParameter="{Binding Items,
                                                                        ElementName=ListBox}"
-                                           Content="Search Results Only" />
+                                           Content="{loc:Loc SearchResultsOnly}" />
                             </WrapPanel>
                             <ListBox x:Name="ListBox"
                                      Grid.Row="2"

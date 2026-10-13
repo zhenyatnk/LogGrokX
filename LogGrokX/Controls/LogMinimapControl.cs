@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 
 namespace LogGrokX.Controls
 {
@@ -417,7 +418,7 @@ namespace LogGrokX.Controls
                 return TimestampParser.Format(ticks);
             }
 
-            return $"Line {(line + 1).ToString(CultureInfo.InvariantCulture)}";
+            return Strings.Format("LineNumber", line + 1);
         }
 
         private void DrawMatchLine(DrawingContext drawingContext, double width, double height)
@@ -971,7 +972,7 @@ namespace LogGrokX.Controls
         }
 
         private static string FormatLineCount(long count) =>
-            count == 1 ? "1 line" : $"{count} lines";
+            Strings.LineCount(count);
 
         private static double CenterOf(int index, int count, double width) =>
             index * width / count;
