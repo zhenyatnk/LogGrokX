@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
+using System.Windows;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
 
@@ -36,6 +38,9 @@ namespace LogGrokX.Theming
                     isDark ? ApplicationTheme.Dark : ApplicationTheme.Light,
                     WindowBackdropType.None,
                     true);
+
+                foreach (var resources in Application.Current.Resources.MergedDictionaries.OfType<DockThemeResources>())
+                    resources.Apply(isDark);
 
                 CurrentTheme = themeName;
                 Save();

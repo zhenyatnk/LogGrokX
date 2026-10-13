@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -21,7 +21,8 @@ namespace LogGrokX.Diagnostics
               Win32Exception e => IsKnown(e, KnownWin32ExceptionMethods),
               FileNotFoundException e => e.FileName != null && KnownSerializationAssemblies.Any(k => e.FileName.Contains(k)),
               TaskCanceledException => true,
-              OperationCanceledException e => e.StackTrace?.Contains(typeof(Pipeline).FullName!) ?? false,
+              OperationCanceledException e => e.CancellationToken.IsCancellationRequested ||
+                  (e.StackTrace?.Contains(typeof(Pipeline).FullName!) ?? false),
               _ when exception.GetType().Name == "TypeNameParserException" => true,
               _ => false
           };

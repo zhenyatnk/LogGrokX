@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.ExceptionServices;
+using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -159,6 +161,33 @@ public class HexTextTests
         Assert.IsFalse(HexText.ContainsDecodableHex(source));
         Assert.IsFalse(HexText.TryDecode(source, out var decoded));
         Assert.AreEqual(source, decoded);
+    }
+
+    [TestMethod]
+    [DataRow("B9DBB9DBB9DBB9DBB9DB")]
+    [DataRow("48656C6C6F20776F72FF")]
+    [DataRow("00D800D800D800D800D8")]
+    public void InvalidTextEncodingsDoNotThrowDecoderExceptions(string source)
+    {
+        var threadId = Environment.CurrentManagedThreadId;
+        var decoderExceptions = 0;
+        void OnFirstChance(object sender, FirstChanceExceptionEventArgs args)
+        {
+            if (Environment.CurrentManagedThreadId == threadId && args.Exception is DecoderFallbackException)
+                decoderExceptions++;
+        }
+
+        AppDomain.CurrentDomain.FirstChanceException += OnFirstChance;
+        try
+        {
+            Assert.IsFalse(HexText.TryDecode(source, out var decoded));
+            Assert.AreEqual(source, decoded);
+            Assert.AreEqual(0, decoderExceptions);
+        }
+        finally
+        {
+            AppDomain.CurrentDomain.FirstChanceException -= OnFirstChance;
+        }
     }
 
     [TestMethod]

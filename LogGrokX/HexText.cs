@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
 using LogGrokX.Data;
 
 namespace LogGrokX;
@@ -174,8 +175,8 @@ public static partial class HexText
         if (bytes.Length < MinBytes)
             return false;
 
-        if (TryGetPrintableText(bytes, StrictUtf8, char.MaxValue, out text) ||
-            (bytes.Length % 2 == 0 && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text)))
+        if ((Utf8.IsValid(bytes) && TryGetPrintableText(bytes, StrictUtf8, char.MaxValue, out text)) ||
+            (IsSupportedUtf16(bytes) && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text)))
             return true;
 
         return Base64Detector.TryDescribeBinaryKeyFromBytes(bytes, out text);
@@ -231,17 +232,7 @@ public static partial class HexText
     private static bool TryGetPrintableText(byte[] bytes, Encoding encoding, char maxChar, out string text)
     {
         text = string.Empty;
-        string decoded;
-        try
-        {
-            decoded = encoding.GetString(bytes);
-        }
-        catch (DecoderFallbackException)
-        {
-            return false;
-        }
-
-        decoded = decoded.TrimEnd('\0');
+        var decoded = encoding.GetString(bytes).TrimEnd('\0');
         if (decoded.Length == 0)
             return false;
 
@@ -261,6 +252,20 @@ public static partial class HexText
             return false;
 
         text = decoded;
+        return true;
+    }
+
+    private static bool IsSupportedUtf16(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length % 2 != 0)
+            return false;
+
+        for (var i = 1; i < bytes.Length; i += 2)
+        {
+            if (bytes[i] > (MaxUtf16Char >> 8))
+                return false;
+        }
+
         return true;
     }
 }

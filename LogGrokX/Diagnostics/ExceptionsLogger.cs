@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.ExceptionServices;
 using System.Threading;
@@ -15,21 +15,21 @@ namespace LogGrokX.Diagnostics
       
       private static void OnFirstChanceException(object? _, FirstChanceExceptionEventArgs args)
       {
-          OnException(args.Exception, "first chance exception");
+          OnException(args.Exception, "first chance exception", true);
       }
       
       private static void OnUnhandledException(object? _, UnhandledExceptionEventArgs args)
       {
-          OnException(args.ExceptionObject, "unhandled exception");
+          OnException(args.ExceptionObject, "unhandled exception", false);
       }
       
-      private static void OnException(object exceptionObj, string exceptionType)
+      private static void OnException(object exceptionObj, string exceptionType, bool isFirstChance)
       {
           var exception = GetException(exceptionObj);
           try
           {
               if (Interlocked.Increment(ref _isProcessingException) >= MaxRecursionDeep ||
-                  FirstChanceExceptionsFilter.IsKnown(exception)) return;
+                  (isFirstChance && FirstChanceExceptionsFilter.IsKnown(exception))) return;
               Logger.Error("{0}: {1}", exceptionType, exception); 
               Logger.Flush();
           }

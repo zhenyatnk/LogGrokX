@@ -2,13 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             xmlns:theming="clr-namespace:LogGrokX.Theming"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
+                <theming:DockThemeResources />
                 <ResourceDictionary Source="/LogGrokX;component/Styles/FluentStyles.xaml" />
+                <ResourceDictionary Source="/LogGrokX;component/Styles/LogGridViewCellStyle.xaml" />
             </ResourceDictionary.MergedDictionaries>
             <FontFamily x:Key="JetBrainsMono">pack://application:,,,/LogGrokX;component/Fonts/#JetBrains Mono</FontFamily>
 
