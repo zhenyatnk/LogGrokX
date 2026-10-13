@@ -17,6 +17,11 @@
             <system:Double x:Key="DefaultIconFontSize">14</system:Double>
             <system:Double x:Key="ListViewItemMinHeight">24</system:Double>
             <system:Double x:Key="LogFontSize">12</system:Double>
+            <Style TargetType="ScrollBar" BasedOn="{StaticResource AppScrollBarStyle}" />
+            <Style x:Key="UiScrollBar" TargetType="ScrollBar" BasedOn="{StaticResource AppScrollBarStyle}" />
+            <Style TargetType="ScrollViewer" BasedOn="{StaticResource AppScrollViewerStyle}" />
+            <Style x:Key="UiScrollViewer" TargetType="ScrollViewer" BasedOn="{StaticResource AppScrollViewerStyle}" />
+            <Style TargetType="{x:Type ui:PassiveScrollViewer}" BasedOn="{StaticResource AppScrollViewerStyle}" />
             <Style TargetType="{x:Type TextBlock}"
                    BasedOn="{StaticResource {x:Type TextBlock}}">
                 <Setter Property="FontFamily" Value="{StaticResource AppFontFamily}" />
