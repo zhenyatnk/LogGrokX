@@ -24,8 +24,7 @@
                 </DataTrigger.Setters>
             </DataTrigger>
             <DataTrigger
-                Binding="{Binding CanFilter, 
-                Converter={StaticResource BooleanToVisibilityConverter}}"
+                Binding="{Binding CanFilter}"
                 Value="False">
                 <DataTrigger.Setters>
                     <Setter Property="Visibility" Value="Collapsed" />

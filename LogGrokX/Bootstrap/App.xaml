@@ -20,6 +20,7 @@
             <system:Double x:Key="DefaultIconFontSize">14</system:Double>
             <system:Double x:Key="ListViewItemMinHeight">24</system:Double>
             <system:Double x:Key="LogFontSize">12</system:Double>
+            <Style TargetType="CheckBox" BasedOn="{StaticResource FluentCheckBoxStyle}" />
             <Style TargetType="ScrollBar" BasedOn="{StaticResource AppScrollBarStyle}" />
             <Style x:Key="UiScrollBar" TargetType="ScrollBar" BasedOn="{StaticResource AppScrollBarStyle}" />
             <Style TargetType="ScrollViewer" BasedOn="{StaticResource AppScrollViewerStyle}" />

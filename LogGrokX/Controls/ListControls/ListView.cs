@@ -351,7 +351,7 @@ namespace LogGrokX.Controls.ListControls
         {
             void ResetWidth(System.Windows.Controls.GridView view)
             {
-                Trace.TraceInformation($"Reset width: {Items.Count}");
+                Trace.TraceInformation($"Reset column widths (items: {Items.Count})");
                 foreach (var column in view.Columns)
                 {
                     column.Width = 1;

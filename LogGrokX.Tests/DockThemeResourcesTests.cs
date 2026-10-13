@@ -1,6 +1,8 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,8 +16,43 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace LogGrokX.Tests;
 
 [TestClass]
+[DoNotParallelize]
 public sealed class DockThemeResourcesTests
 {
+    [TestMethod]
+    public void DetachedDocumentMenuResolvesOverflowIconAcrossThemeChanges()
+    {
+        RunOnSta(() =>
+        {
+            var icon = new System.Windows.Shapes.Path { Resources = new DockThemeResources() };
+            var resources = (DockThemeResources)icon.Resources;
+            PresentationTraceSources.Refresh();
+            using var output = new StringWriter();
+            using var listener = new TextWriterTraceListener(output);
+            var trace = PresentationTraceSources.ResourceDictionarySource;
+            var previousLevel = trace.Switch.Level;
+            trace.Switch.Level = SourceLevels.Warning;
+            trace.Listeners.Add(listener);
+            try
+            {
+                icon.SetResourceReference(System.Windows.Shapes.Path.DataProperty, "PinDocMenu");
+                foreach (var isDark in new[] { false, true, false })
+                {
+                    resources.Apply(isDark);
+                    Assert.IsNotNull(icon.Data);
+                    Assert.IsGreaterThan(0.0, icon.Data.GetArea());
+                }
+
+                Assert.AreEqual(string.Empty, output.ToString());
+            }
+            finally
+            {
+                trace.Listeners.Remove(listener);
+                trace.Switch.Level = previousLevel;
+            }
+        });
+    }
+
     [TestMethod]
     public void DetachedControlsResolveDockBrushesAcrossThemeChanges()
     {

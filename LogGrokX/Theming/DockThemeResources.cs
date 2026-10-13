@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Windows;
 using System.Windows.Media;
@@ -7,7 +8,14 @@ namespace LogGrokX.Theming;
 
 public sealed class DockThemeResources : ResourceDictionary
 {
-    public DockThemeResources() => Apply(false);
+    public DockThemeResources()
+    {
+        MergedDictionaries.Add(new ResourceDictionary
+        {
+            Source = new Uri("/AvalonDock.Themes.VS2013;component/Themes/Icons/IconGeometry.xaml", UriKind.Relative)
+        });
+        Apply(false);
+    }
 
     public void Apply(bool isDark)
     {
