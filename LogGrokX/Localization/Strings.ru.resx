@@ -540,9 +540,6 @@
   <data xml:space="preserve" name="TimelineAtTop">
     <value>Шкала времени сверху</value>
   </data>
-  <data xml:space="preserve" name="TimelinePlacement">
-    <value>Разместить шкалу времени сверху</value>
-  </data>
   <data xml:space="preserve" name="ToggleMarks">
     <value>Переключить отметки</value>
   </data>
@@ -625,7 +622,7 @@
     <value>Открыть файл лога</value>
   </data>
   <data xml:space="preserve" name="WelcomeShortcuts">
-    <value>Ctrl+O — открыть файл · Ctrl+F — поиск</value>
+    <value>Ctrl+O — открыть файл · или перетащите его сюда</value>
   </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Таймлайн</value>

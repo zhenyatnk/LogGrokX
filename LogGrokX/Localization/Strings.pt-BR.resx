@@ -540,9 +540,6 @@
   <data xml:space="preserve" name="TimelineAtTop">
     <value>Linha do tempo no topo</value>
   </data>
-  <data xml:space="preserve" name="TimelinePlacement">
-    <value>Colocar linha do tempo no topo</value>
-  </data>
   <data xml:space="preserve" name="ToggleMarks">
     <value>Alternar marcações</value>
   </data>
@@ -625,7 +622,7 @@
     <value>Abrir arquivo de log</value>
   </data>
   <data xml:space="preserve" name="WelcomeShortcuts">
-    <value>Ctrl+O para abrir · Ctrl+F para pesquisar</value>
+    <value>Ctrl+O para abrir · ou arraste o arquivo aqui</value>
   </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Linha do tempo</value>

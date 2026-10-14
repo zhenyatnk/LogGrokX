@@ -540,9 +540,6 @@
   <data xml:space="preserve" name="TimelineAtTop">
     <value>Timeline at top</value>
   </data>
-  <data xml:space="preserve" name="TimelinePlacement">
-    <value>Place the timeline at the top</value>
-  </data>
   <data xml:space="preserve" name="ToggleMarks">
     <value>Toggle marks</value>
   </data>
@@ -625,7 +622,7 @@
     <value>Open log file</value>
   </data>
   <data xml:space="preserve" name="WelcomeShortcuts">
-    <value>Ctrl+O to open a file · Ctrl+F to search</value>
+    <value>Ctrl+O to open a file · or drag and drop it here</value>
   </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Timeline</value>

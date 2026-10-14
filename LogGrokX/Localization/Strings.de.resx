@@ -540,9 +540,6 @@
   <data xml:space="preserve" name="TimelineAtTop">
     <value>Zeitleiste oben</value>
   </data>
-  <data xml:space="preserve" name="TimelinePlacement">
-    <value>Zeitleiste oben platzieren</value>
-  </data>
   <data xml:space="preserve" name="ToggleMarks">
     <value>Markierungen umschalten</value>
   </data>
@@ -625,7 +622,7 @@
     <value>Protokolldatei öffnen</value>
   </data>
   <data xml:space="preserve" name="WelcomeShortcuts">
-    <value>Strg+O zum Öffnen · Strg+F zum Suchen</value>
+    <value>Strg+O zum Öffnen · oder die Datei hierher ziehen</value>
   </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Zeitleiste</value>

@@ -1,4 +1,4 @@
-
+﻿
 namespace LogGrokX
 {
     public class ViewSettings

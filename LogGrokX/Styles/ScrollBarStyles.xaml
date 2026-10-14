@@ -1,6 +1,8 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:system="clr-namespace:System;assembly=System.Runtime">
+                    xmlns:system="clr-namespace:System;assembly=System.Runtime"
+                    xmlns:controls="clr-namespace:LogGrokX.Controls">
+    <controls:LogScrollBarViewportSizeConverter x:Key="LogScrollBarViewportSizeConverter" />
     <Style x:Key="ScrollBarPageButtonStyle" TargetType="RepeatButton">
         <Setter Property="Focusable" Value="False" />
         <Setter Property="IsTabStop" Value="False" />
@@ -78,6 +80,16 @@
                       Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RepeatButton}}" />
             </RepeatButton>
             <Track x:Name="PART_Track" Grid.Row="1" IsDirectionReversed="True">
+                <Track.ViewportSize>
+                    <MultiBinding Converter="{StaticResource LogScrollBarViewportSizeConverter}">
+                        <Binding Path="ViewportSize" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                        <Binding Path="Maximum" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                        <Binding Path="ActualHeight" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                        <Binding Path="TemplatedParent.TemplatedParent" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                        <Binding Path="TemplatedParent.TemplatedParent.(TextElement.FontSize)" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                        <Binding Path="TemplatedParent.TemplatedParent.(TextElement.FontFamily)" RelativeSource="{RelativeSource AncestorType=ScrollBar}" />
+                    </MultiBinding>
+                </Track.ViewportSize>
                 <Track.Resources>
                     <!-- WPF uses half of this metric as the minimum thumb length. -->
                     <system:Double x:Key="{x:Static SystemParameters.VerticalScrollBarButtonHeightKey}">64</system:Double>

@@ -540,9 +540,6 @@
   <data xml:space="preserve" name="TimelineAtTop">
     <value>タイムラインを上に表示</value>
   </data>
-  <data xml:space="preserve" name="TimelinePlacement">
-    <value>タイムラインを上に配置</value>
-  </data>
   <data xml:space="preserve" name="ToggleMarks">
     <value>マークを切り替え</value>
   </data>
@@ -625,7 +622,7 @@
     <value>ログファイルを開く</value>
   </data>
   <data xml:space="preserve" name="WelcomeShortcuts">
-    <value>Ctrl+O：ファイルを開く · Ctrl+F：検索</value>
+    <value>Ctrl+O：ファイルを開く · またはここにドラッグ＆ドロップ</value>
   </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>タイムライン</value>
