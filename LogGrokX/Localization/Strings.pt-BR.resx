@@ -648,4 +648,13 @@
   <data xml:space="preserve" name="NewSearch">
     <value>Nova pesquisa</value>
   </data>
+  <data xml:space="preserve" name="FilterColumn">
+    <value>Filtrar coluna</value>
+  </data>
+  <data xml:space="preserve" name="HexText">
+    <value>Texto HEX</value>
+  </data>
+  <data xml:space="preserve" name="Unknown">
+    <value>desconhecido</value>
+  </data>
 </root>

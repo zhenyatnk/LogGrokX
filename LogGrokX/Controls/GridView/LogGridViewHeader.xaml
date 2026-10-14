@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+             xmlns:loc="clr-namespace:LogGrokX.Localization"
              xmlns:gridView="clr-namespace:LogGrokX.Controls.GridView"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=gridView:HeaderViewModel, IsDesignTimeCreatable=False}">
@@ -18,7 +19,7 @@
     </UserControl.Resources>
     <DockPanel>
         <ToggleButton x:Name="CategoriesSearchButton"
-                      ToolTip="Filter column"
+                      ToolTip="{loc:Loc FilterColumn}"
                       Margin="2"
                       Background="Transparent"
                       Visibility="{Binding IsFilteredField, 

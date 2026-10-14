@@ -106,7 +106,7 @@ namespace LogGrokX
         private static string ShortCommit(string commit)
         {
             if (string.IsNullOrEmpty(commit) || commit.Trim('0').Length == 0)
-                return "unknown";
+                return Strings.Get("Unknown");
             return commit.Substring(0, Math.Min(8, commit.Length));
         }
 

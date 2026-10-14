@@ -176,7 +176,7 @@
                                               Content="{loc:Loc Base64Text}"
                                               IsChecked="{Binding View.DetectBase64, Mode=TwoWay}" />
                                     <CheckBox Margin="0,4,0,0"
-                                              Content="HEX"
+                                              Content="{loc:Loc HexText}"
                                               IsChecked="{Binding View.DetectHex, Mode=TwoWay}" />
                                 </StackPanel>
                             </StackPanel>

@@ -2,6 +2,9 @@ using System;
 using System.Linq;
 using System.Globalization;
 using System.Threading;
+using System.Windows.Automation;
+using System.Windows.Controls.Primitives;
+using System.Windows.Threading;
 using System.Windows.Controls;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
@@ -91,6 +94,37 @@ namespace LogGrokX.Tests
             var parser = new RegexBasedLineParser(meta);
             return new LineViewModel(0, source, parser, new Selection(),
                 new TransformationPerformer(Array.Empty<string>()));
+        }
+
+        [TestMethod]
+        [DataRow("en", "Filter column")]
+        [DataRow("ru", "Фильтр столбца")]
+        [DataRow("de", "Spalte filtern")]
+        [DataRow("fr", "Filtrer la colonne")]
+        [DataRow("es", "Filtrar columna")]
+        [DataRow("ja", "列のフィルター")]
+        [DataRow("pl", "Filtruj kolumnę")]
+        [DataRow("pt-BR", "Filtrar coluna")]
+        public void ColumnFilterToolTipAndAutomationNameUseSelectedLanguage(string language, string expected)
+        {
+            RunOnSta(() =>
+            {
+                var previous = CultureInfo.CurrentUICulture;
+                try
+                {
+                    CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(language);
+                    var header = new LogGridViewHeader { DataContext = new HeaderViewModel("Level", null) };
+                    var button = (ToggleButton)header.FindName("CategoriesSearchButton");
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+
+                    Assert.AreEqual(expected, button.ToolTip);
+                    Assert.AreEqual(expected, AutomationProperties.GetName(button));
+                }
+                finally
+                {
+                    CultureInfo.CurrentUICulture = previous;
+                }
+            });
         }
 
         private static void RunOnSta(Action action)

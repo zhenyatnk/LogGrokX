@@ -648,4 +648,13 @@
   <data xml:space="preserve" name="NewSearch">
     <value>新しい検索</value>
   </data>
+  <data xml:space="preserve" name="FilterColumn">
+    <value>列のフィルター</value>
+  </data>
+  <data xml:space="preserve" name="HexText">
+    <value>HEX テキスト</value>
+  </data>
+  <data xml:space="preserve" name="Unknown">
+    <value>不明</value>
+  </data>
 </root>
