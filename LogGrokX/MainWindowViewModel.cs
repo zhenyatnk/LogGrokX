@@ -97,6 +97,9 @@ namespace LogGrokX
             ZoomInCommand = new DelegateCommand(() => _textZoomService.Increase());
             ZoomOutCommand = new DelegateCommand(() => _textZoomService.Decrease());
             ResetZoomCommand = new DelegateCommand(() => _textZoomService.Reset());
+            ActivateSearchCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.Activate, document => document.SearchViewModel.Activate));
+            FindNextCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindNextCommand, document => document.FindNextCommand));
+            FindPreviousCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindPreviousCommand, document => document.FindPreviousCommand));
 
             MarkedLinesViewModel.NavigationRequested += (document, index) =>
             {
@@ -240,6 +243,23 @@ namespace LogGrokX
         public ICommand ZoomOutCommand { get; }
 
         public ICommand ResetZoomCommand { get; }
+
+        public ICommand ActivateSearchCommand { get; }
+
+        public ICommand FindNextCommand { get; }
+
+        public ICommand FindPreviousCommand { get; }
+
+        private void ExecuteActiveSearchCommand(Func<SearchViewModel, ICommand> mergedCommand,
+            Func<DocumentViewModel, ICommand> documentCommand)
+        {
+            var command = IsMergedViewActive && IsMergedView
+                ? mergedCommand(MergedViewModel.Search)
+                : CurrentDocument is { } document ? documentCommand(document) : null;
+
+            if (command?.CanExecute(null) == true)
+                command.Execute(null);
+        }
 
         public bool IsDarkTheme => _themeService.IsDark;
 

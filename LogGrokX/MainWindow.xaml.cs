@@ -98,6 +98,16 @@ namespace LogGrokX
             LoadLayout();
             DockingManager.ActiveContentChanged += (_, _) => UpdateMergedViewActive();
             UpdateMergedDocument();
+            Dispatcher.BeginInvoke(new Action(EnsureKeyboardFocus), System.Windows.Threading.DispatcherPriority.ContextIdle);
+        }
+
+        private void EnsureKeyboardFocus()
+        {
+            if (System.Windows.Input.Keyboard.FocusedElement is DependencyObject focused &&
+                ReferenceEquals(GetWindow(focused), this))
+                return;
+
+            System.Windows.Input.Keyboard.Focus(this);
         }
 
         private void UpdateMergedDocument()

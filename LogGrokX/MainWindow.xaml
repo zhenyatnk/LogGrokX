@@ -54,6 +54,9 @@
         <KeyBinding Command="{Binding ZoomInCommand}" Gesture="CTRL+SHIFT+OemPlus" />
         <KeyBinding Command="{Binding ZoomOutCommand}" Gesture="CTRL+OemMinus" />
         <KeyBinding Command="{Binding ResetZoomCommand}" Gesture="CTRL+D0" />
+        <KeyBinding Command="{Binding ActivateSearchCommand}" Gesture="CTRL+F" />
+        <KeyBinding Command="{Binding FindNextCommand}" Gesture="F3" />
+        <KeyBinding Command="{Binding FindPreviousCommand}" Gesture="SHIFT+F3" />
     </ui:FluentWindow.InputBindings>
 
     <Grid UseLayoutRounding="True">

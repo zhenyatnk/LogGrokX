@@ -295,6 +295,13 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `YamlSettingsFile.EnsureKey` adds a missing `ValueMappings:` key to older
   files first. Covered by `ValueMapperTests`/`ValueMappingJsonTests`
   (`LogGrokX.Data.Tests`) and `ValueMappingTests` (`LogGrokX.Tests`).
+- **Search shortcuts** (#65): `Ctrl+F` / `F3` / `Shift+F3` are bound both in the document
+  templates (`DocumentTemplate.xaml`, `MergedViewTemplate.xaml`) and on `MainWindow`
+  (`ActivateSearchCommand`, `FindNextCommand`, `FindPreviousCommand`), which route to the
+  merged view search when `IsMergedViewActive` or to `CurrentDocument`. The window-level
+  bindings handle the case when keyboard focus is not inside a document (e.g. right
+  after start); `MainWindow.EnsureKeyboardFocus` focuses the window after loading if
+  nothing in it has keyboard focus.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

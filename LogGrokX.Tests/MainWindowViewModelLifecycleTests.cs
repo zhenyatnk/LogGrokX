@@ -146,6 +146,62 @@ public class MainWindowViewModelLifecycleTests
         });
     }
 
+    [TestMethod]
+    public void ActivateSearchCommand_FocusesSearchOfCurrentDocument()
+    {
+        RunOnSta(() =>
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            File.WriteAllText(fileName, "2026-01-01 00:00:00 INFO 1 Test Message");
+            try
+            {
+                using var viewModel = CreateViewModel();
+                viewModel.ActivateSearchCommand.Execute(null);
+
+                viewModel.AddDocument(fileName);
+                var document = viewModel.CurrentDocument!;
+                var focusRequests = 0;
+                document.SearchViewModel.SetFocusRequest.SetFocus += () => focusRequests++;
+
+                viewModel.ActivateSearchCommand.Execute(null);
+
+                Assert.AreEqual(1, focusRequests);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        });
+    }
+
+    [TestMethod]
+    [DoNotParallelize]
+    public void ActivateSearchCommand_FocusesMergedSearchWhenMergedViewIsActive()
+    {
+        RunOnSta(() =>
+        {
+            var settingsPath = Path.Combine(Path.GetTempPath(), $"loggrokx-merged-{Guid.NewGuid():N}.yaml");
+            File.WriteAllText(settingsPath, "Settings:\n  ViewSettings:\n    MergedFilesView: true\n");
+            try
+            {
+                var settings = new ApplicationSettings(settingsPath);
+                settings.ViewSettings.MergedFilesView = true;
+                using var viewModel = CreateViewModel(settings);
+                viewModel.IsMergedViewActive = true;
+                var focusRequests = 0;
+                viewModel.MergedViewModel.Search.SetFocusRequest.SetFocus += () => focusRequests++;
+
+                viewModel.ActivateSearchCommand.Execute(null);
+
+                Assert.AreEqual(1, focusRequests);
+            }
+            finally
+            {
+                File.Delete(settingsPath);
+            }
+        });
+    }
+
     private static MainWindowViewModel CreateViewModel(ApplicationSettings? settings = null)
     {
         settings ??= ApplicationSettings.Instance();
