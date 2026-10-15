@@ -11,7 +11,7 @@
     <ApplicationManifest>LogGrokX.manifest</ApplicationManifest>
     <ApplicationIcon>app.ico</ApplicationIcon>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <Version>2.1</Version>
+    <Version>0.0</Version>
     <GitVersion>false</GitVersion>
     <!-- <PublishTrimmed>true</PublishTrimmed> -->
   </PropertyGroup>
@@ -104,9 +104,9 @@
   <Target Name="GenerateBuildInfo" BeforeTargets="CoreCompile">
     <PropertyGroup>
       <_BuildInfoVersion>$(Version)</_BuildInfoVersion>
-      <_BuildInfoVersion Condition="'$(_BuildInfoVersion)' == ''">2.1</_BuildInfoVersion>
+      <_BuildInfoVersion Condition="'$(_BuildInfoVersion)' == ''">0.0</_BuildInfoVersion>
       <_BuildInfoVersionNumeric>$([System.Text.RegularExpressions.Regex]::Match('$(_BuildInfoVersion)', '^\d+(\.\d+){0,3}').Value)</_BuildInfoVersionNumeric>
-      <_BuildInfoVersionNumeric Condition="'$(_BuildInfoVersionNumeric)' == ''">2.1</_BuildInfoVersionNumeric>
+      <_BuildInfoVersionNumeric Condition="'$(_BuildInfoVersionNumeric)' == ''">0.0</_BuildInfoVersionNumeric>
       <_BuildInfoFile>$(IntermediateOutputPath)BuildInfo.g.cs</_BuildInfoFile>
       <_VersionInfoFile>$(IntermediateOutputPath)VersionInfo.g.cs</_VersionInfoFile>
     </PropertyGroup>

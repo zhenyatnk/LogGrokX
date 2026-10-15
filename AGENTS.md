@@ -55,7 +55,7 @@ loading (`LoaderBenchmark`) and the merge core (`MergeBenchmark`:
 
 The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
 **AvalonDock 5** for docking. Branding/window title is **LogGrokX** plus the
-build version: `BuildInfo.Version` (release `-p:Version`, default `2.1`).
+build version: `BuildInfo.Version` (release `-p:Version`, default `0.0`).
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
 JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
@@ -175,7 +175,8 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   release page. The mode is `ViewSettings.UpdateMode` (`disabled`/`check`/`install`,
   Settings -> View); `install` downloads without a dialog. The installer task
   `autoinstallupdates` writes `install`/`check` to `appsettings.yaml` except during
-  `/AUTOUPDATE=1` runs. Local builds default to `2.1`, so they never prompt.
+  `/AUTOUPDATE=1` runs. Local builds default to `0.0`, so they are older than
+  any release and prompt when updates are enabled.
   When an installer is downloaded, its release notes are saved to
   `%LOCALAPPDATA%\LogGrokX\Data\pending-update.json`; on the next launch
   `App.OnStartup` calls `UpdateCheckService.TakePendingReleaseForCurrentVersion`,
@@ -260,7 +261,10 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `LinePartViewModel` snapshots `Current` in its constructor unless `detection`
   is passed explicitly; `detectBase64: false` forces `None`. Parts that captured
   `Current` follow changes live: every set of `BinaryDetectionOptions.Current`
-  bumps `CurrentVersion` and raises a weak static `CurrentChanged`, and the part
+  bumps `CurrentVersion` and raises a weak static `CurrentChanged` (the part
+  keeps the handler in `_onDisplaySettingsChanged` — a `WeakReference` to an
+  unrooted delegate is collected, and visible rows then update only after
+  re-virtualization), and the part
   refreshes its detection caches, decoded models and `TextModel`, re-raising
   `IsPem` / `IsBase64` / `IsHex` / `IsDecoded` / `TextModel` (via the event,
   marshalled to the UI dispatcher, or lazily on next access).

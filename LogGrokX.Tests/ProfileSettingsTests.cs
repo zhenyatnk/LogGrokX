@@ -133,7 +133,7 @@ public class ProfileSettingsTests
         editor.View.DetectPem = false;
         editor.View.DetectBase64 = false;
         editor.View.DetectHex = false;
-        Assert.IsTrue(editor.RequiresRestart);
+        Assert.IsFalse(editor.RequiresRestart);
         Assert.IsTrue(editor.Save(), editor.ValidationMessage);
         Assert.IsFalse(editor.RequiresRestart);
 

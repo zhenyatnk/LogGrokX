@@ -257,4 +257,66 @@ public class LiveSettingsRefreshTests
             BinaryDetectionOptions.Current = previous;
         }
     }
+
+    [TestMethod]
+    public void PartStillNotifiesDetectionChangesAfterGarbageCollection()
+    {
+        var previous = BinaryDetectionOptions.Current;
+        try
+        {
+            BinaryDetectionOptions.Current = BinaryDetectionOptions.All;
+            var part = new LinePartViewModel(1, Encode("Hello, World!"));
+            var changed = new List<string>();
+            ((INotifyPropertyChanged)part).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            BinaryDetectionOptions.Current = BinaryDetectionOptions.None;
+
+            CollectionAssert.Contains(changed, nameof(LinePartViewModel.IsBase64));
+            Assert.IsFalse(part.IsBase64);
+            GC.KeepAlive(part);
+        }
+        finally
+        {
+            BinaryDetectionOptions.Current = previous;
+        }
+    }
+
+    [TestMethod]
+    public void PartStillNotifiesMappingChangesAfterGarbageCollection()
+    {
+        var previous = ValueMapper.Current;
+        try
+        {
+            ValueMapper.Current = ValueMapper.Empty;
+            var part = new LinePartViewModel(1, "status 0x00001",
+                valueMapperResolver: () => ValueMapper.Current.ForField(null));
+            var changed = new List<string>();
+            ((INotifyPropertyChanged)part).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            ValueMapper.Current = new ValueMapper(new[]
+            {
+                new ValueMappingList
+                {
+                    Name = "codes",
+                    Items = new[] { new ValueMappingItem { Value = "0x00001", Mapping = "type 1" } }
+                }
+            });
+
+            CollectionAssert.Contains(changed, nameof(LinePartViewModel.TextModel));
+            Assert.AreEqual("status 0x00001(type 1)", part.TextModel.GetDisplayedText(null));
+            GC.KeepAlive(part);
+        }
+        finally
+        {
+            ValueMapper.Current = previous;
+        }
+    }
 }

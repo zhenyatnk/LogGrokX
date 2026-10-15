@@ -71,7 +71,7 @@
                       Style="{StaticResource Base64ToggleButtonStyle}"
                       HorizontalAlignment="Center"
                       IsChecked="{Binding IsDecoded, Mode=TwoWay}"
-                      Visibility="{Binding IsDecodable, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                      Visibility="{Binding IsDecodable, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}"/>
     </DataTemplate>
     <DataTemplate x:Key="NormalTemplate" DataType="{x:Type logGrokCore:LinePartViewModel}">
         <textRender:TextView 

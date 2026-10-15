@@ -11,6 +11,8 @@ public class LinePartViewModel : ViewModelBase
     private readonly int _uniqueId;
     private readonly bool _followDetectionChanges;
     private readonly Func<FieldValueMapper>? _valueMapperResolver;
+    // Keeps the handler alive: the static weak events hold only a WeakReference to the delegate.
+    private readonly Action? _onDisplaySettingsChanged;
     private BinaryDetectionOptions _detection;
     private FieldValueMapper _valueMapper;
     private int _detectionVersion;
@@ -40,8 +42,9 @@ public class LinePartViewModel : ViewModelBase
         OriginalText = source;
         if (_followDetectionChanges || valueMapperResolver != null)
         {
-            BinaryDetectionOptions.CurrentChanged += OnDisplaySettingsChanged;
-            ValueMapper.CurrentChanged += OnDisplaySettingsChanged;
+            _onDisplaySettingsChanged = OnDisplaySettingsChanged;
+            BinaryDetectionOptions.CurrentChanged += _onDisplaySettingsChanged;
+            ValueMapper.CurrentChanged += _onDisplaySettingsChanged;
         }
     }
 

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
@@ -29,11 +28,6 @@ namespace LogGrokX.Settings
         private ViewSettings.ViewBigLine _savedBigLine;
         private string _savedLanguage = string.Empty;
         private string _savedBigLineSizeText = string.Empty;
-        private ViewSettings.UpdateModeKind _savedUpdateMode;
-        private bool _savedDetectBinary;
-        private bool _savedDetectPem;
-        private bool _savedDetectBase64;
-        private bool _savedDetectHex;
         private bool _savedEnableCrashDumps;
         private string _savedMaxDumpsCountText = string.Empty;
         private string[] _savedProfiles;
@@ -69,9 +63,6 @@ namespace LogGrokX.Settings
 
             View.PropertyChanged += OnTrackedPropertyChanged;
             Debug.PropertyChanged += OnTrackedPropertyChanged;
-            ValueMappings.CollectionChanged += OnTrackedCollectionChanged;
-            foreach (var list in ValueMappings)
-                list.PropertyChanged += OnTrackedPropertyChanged;
 
             SaveCommand = new DelegateCommand(() => Save());
             OpenFileCommand = new DelegateCommand(OpenSettingsFile);
@@ -423,11 +414,6 @@ namespace LogGrokX.Settings
             _savedLanguage = View.Language;
             _savedBigLine = View.BigLine;
             _savedBigLineSizeText = View.BigLineSizeText;
-            _savedUpdateMode = View.UpdateMode;
-            _savedDetectBinary = View.DetectBinary;
-            _savedDetectPem = View.DetectPem;
-            _savedDetectBase64 = View.DetectBase64;
-            _savedDetectHex = View.DetectHex;
             _savedEnableCrashDumps = Debug.EnableCrashDumps;
             _savedMaxDumpsCountText = Debug.MaxDumpsCountText;
         }
@@ -437,37 +423,14 @@ namespace LogGrokX.Settings
             UpdateRequiresRestart();
         }
 
-        private void OnTrackedCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
-        {
-            if (e.OldItems != null)
-            {
-                foreach (var item in e.OldItems.OfType<ViewModelBase>())
-                    item.PropertyChanged -= OnTrackedPropertyChanged;
-            }
-
-            if (e.NewItems != null)
-            {
-                foreach (var item in e.NewItems.OfType<ViewModelBase>())
-                    item.PropertyChanged += OnTrackedPropertyChanged;
-            }
-
-            UpdateRequiresRestart();
-        }
-
         private void UpdateRequiresRestart()
         {
             RequiresRestart =
                 View.Language != _savedLanguage ||
                 View.BigLine != _savedBigLine ||
                 View.BigLineSizeText != _savedBigLineSizeText ||
-                View.UpdateMode != _savedUpdateMode ||
-                View.DetectBinary != _savedDetectBinary ||
-                View.DetectPem != _savedDetectPem ||
-                View.DetectBase64 != _savedDetectBase64 ||
-                View.DetectHex != _savedDetectHex ||
                 Debug.EnableCrashDumps != _savedEnableCrashDumps ||
-                Debug.MaxDumpsCountText != _savedMaxDumpsCountText ||
-                GetValueMappingsSignature(GetValueMappingsData()) != _savedValueMappings;
+                Debug.MaxDumpsCountText != _savedMaxDumpsCountText;
         }
 
         private void RemoveSelectedColorRule()
