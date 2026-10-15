@@ -63,7 +63,7 @@ namespace LogGrokX
                 indexAndString => 
                     new LineViewModel(indexAndString.index, indexAndString.str, _lineParser,
                         _markedLines, _transformationPerformer,
-                        ValueMapper.Current.ForFields(_fieldNames)));
+                        valueMappersResolver: () => ValueMapper.Current.ForFields(_fieldNames)));
         }
 
         private (IItemProvider<(int index, string str)> itemProvider, Func<int, int> GetIndexByValue) GetLineProvider(

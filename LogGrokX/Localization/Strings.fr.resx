@@ -598,7 +598,7 @@
     <value>Affichage</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>Le traitement des longues lignes et le regroupement s’appliquent à l’ouverture d’un journal. La détection binaire et les correspondances de valeurs s’appliquent aux lignes affichées après l’enregistrement ; rouvrez le journal pour les appliquer partout. La position de la chronologie, le regroupement, la vue fusionnée et la taille de police changent immédiatement.</value>
+    <value>Le traitement des longues lignes et le regroupement s’appliquent à l’ouverture d’un journal. La détection binaire et les correspondances de valeurs s’appliquent immédiatement après l’enregistrement. La position de la chronologie, le regroupement, la vue fusionnée et la taille de police changent immédiatement.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>Nouveautés</value>

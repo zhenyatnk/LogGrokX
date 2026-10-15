@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows;
 using LogGrokX.Data;
 
 namespace LogGrokX;
@@ -8,9 +9,13 @@ namespace LogGrokX;
 public class LinePartViewModel : ViewModelBase
 {
     private readonly int _uniqueId;
-    private readonly BinaryDetectionOptions _detection;
-    private readonly FieldValueMapper _valueMapper;
-    private readonly TextModel _originalTextModel;
+    private readonly bool _followDetectionChanges;
+    private readonly Func<FieldValueMapper>? _valueMapperResolver;
+    private BinaryDetectionOptions _detection;
+    private FieldValueMapper _valueMapper;
+    private int _detectionVersion;
+    private int _valueMapperVersion;
+    private TextModel _originalTextModel;
     private const int HexDecodedFlag = (int)Base64Content.All + 1;
 
     private readonly TextModel?[] _decodedTextModels = new TextModel?[HexDecodedFlag * 2];
@@ -21,32 +26,75 @@ public class LinePartViewModel : ViewModelBase
     private bool _isHexDecoded;
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true,
-        BinaryDetectionOptions? detection = null, FieldValueMapper? valueMapper = null)
+        BinaryDetectionOptions? detection = null, FieldValueMapper? valueMapper = null,
+        Func<FieldValueMapper>? valueMapperResolver = null)
     {
         _uniqueId = uniqueId;
-        _valueMapper = valueMapper ?? FieldValueMapper.None;
+        _valueMapperResolver = valueMapperResolver;
+        _valueMapper = valueMapperResolver?.Invoke() ?? valueMapper ?? FieldValueMapper.None;
+        _valueMapperVersion = ValueMapper.CurrentVersion;
         _originalTextModel = new TextModel(uniqueId, ValueMappingText.Apply(source, _valueMapper));
+        _followDetectionChanges = detectBase64 && detection == null;
         _detection = detectBase64 ? detection ?? BinaryDetectionOptions.Current : BinaryDetectionOptions.None;
+        _detectionVersion = BinaryDetectionOptions.CurrentVersion;
         OriginalText = source;
+        if (_followDetectionChanges || valueMapperResolver != null)
+        {
+            BinaryDetectionOptions.CurrentChanged += OnDisplaySettingsChanged;
+            ValueMapper.CurrentChanged += OnDisplaySettingsChanged;
+        }
     }
 
-    public TextModel TextModel => IsDecoded
-        ? _decodedTextModels[DecodedKey] ?? _originalTextModel
-        : _originalTextModel;
+    public TextModel TextModel
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return IsDecoded
+                ? _decodedTextModels[DecodedKey] ?? _originalTextModel
+                : _originalTextModel;
+        }
+    }
 
     public string OriginalText { get; }
 
-    public bool IsBase64 => Content.HasFlag(Base64Content.Base64);
+    public bool IsBase64
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return Content.HasFlag(Base64Content.Base64);
+        }
+    }
 
-    public bool IsPem => Content.HasFlag(Base64Content.Pem);
+    public bool IsPem
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return Content.HasFlag(Base64Content.Pem);
+        }
+    }
 
-    public bool IsHex => _isHex ??= _detection.Hex && HexText.ContainsDecodableHex(OriginalText);
+    public bool IsHex
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _isHex ??= _detection.Hex && HexText.ContainsDecodableHex(OriginalText);
+        }
+    }
 
     public bool IsDecoded
     {
-        get => _decoded != Base64Content.None || _isHexDecoded;
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _decoded != Base64Content.None || _isHexDecoded;
+        }
         set
         {
+            RefreshSettingsIfNeeded();
             SetDecoded(Base64Content.Pem, value);
             SetDecoded(Base64Content.Base64, value);
             IsHexDecoded = value;
@@ -55,9 +103,14 @@ public class LinePartViewModel : ViewModelBase
 
     public bool IsHexDecoded
     {
-        get => _isHexDecoded;
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _isHexDecoded;
+        }
         set
         {
+            RefreshSettingsIfNeeded();
             if (value && !IsHex)
                 value = false;
             if (_isHexDecoded == value)
@@ -73,20 +126,42 @@ public class LinePartViewModel : ViewModelBase
 
     public bool IsBase64Decoded
     {
-        get => _decoded.HasFlag(Base64Content.Base64);
-        set => SetDecoded(Base64Content.Base64, value);
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _decoded.HasFlag(Base64Content.Base64);
+        }
+        set
+        {
+            RefreshSettingsIfNeeded();
+            SetDecoded(Base64Content.Base64, value);
+        }
     }
 
     public bool IsPemDecoded
     {
-        get => _decoded.HasFlag(Base64Content.Pem);
-        set => SetDecoded(Base64Content.Pem, value);
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _decoded.HasFlag(Base64Content.Pem);
+        }
+        set
+        {
+            RefreshSettingsIfNeeded();
+            SetDecoded(Base64Content.Pem, value);
+        }
     }
 
-    private Base64Content Content =>
-        _content ??= _detection.Base64Kinds != Base64Content.None
-            ? Base64Detector.Detect(OriginalText, StructuredSpans) & _detection.Base64Kinds
-            : Base64Content.None;
+    private Base64Content Content
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _content ??= _detection.Base64Kinds != Base64Content.None
+                ? Base64Detector.Detect(OriginalText, StructuredSpans) & _detection.Base64Kinds
+                : Base64Content.None;
+        }
+    }
 
     private IReadOnlyList<StructuredSpan> StructuredSpans =>
         _structuredSpans ??= TextOperations.GetStructuredRanges(OriginalText)
@@ -124,6 +199,65 @@ public class LinePartViewModel : ViewModelBase
 
         _decodedTextModels[key] = new TextModel(
             HashCode.Combine(_uniqueId, nameof(Base64Content), key), text);
+    }
+
+    private void OnDisplaySettingsChanged()
+    {
+        var dispatcher = Application.Current?.Dispatcher;
+        if (dispatcher == null || dispatcher.CheckAccess())
+        {
+            RefreshSettingsIfNeeded();
+            return;
+        }
+
+        try
+        {
+            dispatcher.BeginInvoke(RefreshSettingsIfNeeded);
+        }
+        catch (InvalidOperationException)
+        {
+            // The dispatcher is shutting down; the part refreshes lazily on next access.
+        }
+    }
+
+    private void RefreshSettingsIfNeeded()
+    {
+        var detectionVersion = BinaryDetectionOptions.CurrentVersion;
+        var valueMapperVersion = ValueMapper.CurrentVersion;
+        var detectionChanged = _followDetectionChanges && detectionVersion != _detectionVersion;
+        var valueMappingChanged = _valueMapperResolver != null && valueMapperVersion != _valueMapperVersion;
+        if (!detectionChanged && !valueMappingChanged)
+            return;
+
+        _detectionVersion = detectionVersion;
+        _valueMapperVersion = valueMapperVersion;
+        if (detectionChanged)
+            _detection = BinaryDetectionOptions.Current;
+        if (valueMappingChanged)
+            _valueMapper = _valueMapperResolver?.Invoke() ?? FieldValueMapper.None;
+        if (detectionChanged)
+        {
+            _content = null;
+            _structuredSpans = null;
+            _isHex = null;
+        }
+
+        Array.Clear(_decodedTextModels);
+        _originalTextModel = new TextModel(_uniqueId, ValueMappingText.Apply(OriginalText, _valueMapper));
+        if (detectionChanged)
+        {
+            _decoded &= Content;
+            _isHexDecoded = _isHexDecoded && IsHex;
+        }
+
+        InvokePropertyChanged(nameof(IsPem));
+        InvokePropertyChanged(nameof(IsBase64));
+        InvokePropertyChanged(nameof(IsHex));
+        InvokePropertyChanged(nameof(IsDecoded));
+        InvokePropertyChanged(nameof(IsPemDecoded));
+        InvokePropertyChanged(nameof(IsBase64Decoded));
+        InvokePropertyChanged(nameof(IsHexDecoded));
+        InvokePropertyChanged(nameof(TextModel));
     }
 
     public override string ToString() => OriginalText;

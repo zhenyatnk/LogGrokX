@@ -27,7 +27,8 @@ namespace LogGrokX.MergedView
                 source.ColorIndex,
                 componentIndex);
 
-            Text = new LinePartViewModel(uniqueId, _transformedText, valueMapper: ValueMapper.Current.ForField(null));
+            Text = new LinePartViewModel(uniqueId, _transformedText,
+                valueMapperResolver: () => ValueMapper.Current.ForField(null));
             TimeText = ticks >= 0 ? TimestampParser.Format(ticks) : string.Empty;
         }
 
@@ -123,10 +124,16 @@ namespace LogGrokX.MergedView
                 ? HashCode.Combine(Index, sourceFieldIndex)
                 : HashCode.Combine(Index, -1, mergedFieldIndex);
             var fieldNames = Source.FieldNames;
-            var valueMapper = sourceFieldIndex >= 0 && sourceFieldIndex < fieldNames.Length
-                ? ValueMapper.Current.ForField(fieldNames[sourceFieldIndex])
-                : null;
-            var part = new LinePartViewModel(uniqueId, text, valueMapper: valueMapper);
+            LinePartViewModel part;
+            if (sourceFieldIndex >= 0 && sourceFieldIndex < fieldNames.Length)
+            {
+                part = new LinePartViewModel(uniqueId, text,
+                    valueMapperResolver: () => ValueMapper.Current.ForField(fieldNames[sourceFieldIndex]));
+            }
+            else
+            {
+                part = new LinePartViewModel(uniqueId, text);
+            }
             if (mergedFieldIndex >= 0 && mergedFieldIndex < _parts.Length)
                 _parts[mergedFieldIndex] = part;
 

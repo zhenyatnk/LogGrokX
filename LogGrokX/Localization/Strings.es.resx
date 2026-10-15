@@ -598,7 +598,7 @@
     <value>Vista</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>El tratamiento de líneas largas y la agrupación se aplican al abrir un registro. La detección binaria y las correspondencias de valores se aplican a las líneas mostradas tras guardar; vuelva a abrir el registro para aplicarlas a todas. La posición de la cronología, la agrupación, la vista combinada y la fuente cambian inmediatamente.</value>
+    <value>El tratamiento de líneas largas y la agrupación se aplican al abrir un registro. La detección binaria y las correspondencias de valores se aplican inmediatamente tras guardar. La posición de la cronología, la agrupación, la vista combinada y la fuente cambian inmediatamente.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>Novedades</value>

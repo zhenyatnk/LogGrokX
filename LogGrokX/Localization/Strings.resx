@@ -598,7 +598,7 @@
     <value>View</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>Big line handling and grouping are applied when a log file is opened. Binary data detection and value mappings apply to lines shown after saving; reopen the log to apply them to every line. Timeline placement, grouping toggle, merged files view and font size apply immediately.</value>
+    <value>Big line handling and grouping are applied when a log file is opened. Binary data detection and value mappings apply immediately after saving. Timeline placement, grouping toggle, merged files view and font size apply immediately.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>What's new</value>

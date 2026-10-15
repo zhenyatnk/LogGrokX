@@ -538,8 +538,8 @@ detection** it can be switched off completely (**Detect binary data (BIN)**) or
 per kind: **PEM blocks, certificates and keys** (PEM blocks plus Base64 DER
 certificates, public keys and CryptoAPI key blobs), **Base64 text** and **HEX**.
 A disabled kind is not detected, so it does not show the `BIN` toggle or its
-**Decode …** context menu item. The choice is applied to lines shown after
-saving; reopen the log to apply it to every line.
+**Decode …** context menu item. The choice is applied to every open document
+immediately after saving.
 
 ```yaml
   ViewSettings:
@@ -586,7 +586,7 @@ is left unchanged, so folding keeps working. JSON comments written by mappings
 are tolerated from `JsonCommentHandling.Skip` and preserved when the fragment is
 formatted and folded. Mappings change only what is displayed (and copied):
 search, filters, color rules and indexes work on the original values. Changes
-apply to lines shown after saving; reopen the log to apply them to every line.
+apply to every open document immediately after saving.
 
 ```yaml
   ValueMappings:

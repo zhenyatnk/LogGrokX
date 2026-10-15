@@ -16,13 +16,18 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         private readonly string _transformResult;
         private readonly LinePartViewModel?[] _parts;
         private readonly FieldValueMapper[]? _valueMappers;
+        private readonly Func<FieldValueMapper[]>? _valueMappersResolver;
+        private FieldValueMapper[]? _resolvedValueMappers;
+        private int _resolvedValueMappersVersion = -1;
 
         public LineViewModel(int index, string sourceString, ILineParser parser, Selection markedLines,
-            TransformationPerformer transformationPerformer, FieldValueMapper[]? valueMappers = null)
+            TransformationPerformer transformationPerformer, FieldValueMapper[]? valueMappers = null,
+            Func<FieldValueMapper[]>? valueMappersResolver = null)
             : base(index, markedLines)
         {
             _sourceString = sourceString;
             _valueMappers = valueMappers;
+            _valueMappersResolver = valueMappersResolver;
             _transformResult = transformationPerformer.Transform(sourceString); 
             _parseResult = parser.Parse(
                 _transformResult);
@@ -70,15 +75,33 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             var text = _transformResult.Substring(lineMeta.ComponentStart(index),
                 lineMeta.ComponentLength(index));
 
-            var part = new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index));
+            var part = _valueMappersResolver != null
+                ? new LinePartViewModel(uniqueId, text,
+                    valueMapperResolver: () => GetValueMapper(index) ?? FieldValueMapper.None)
+                : new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index));
             if (index >= 0 && index < _parts.Length)
                 _parts[index] = part;
 
             return part;
         }
 
-        private FieldValueMapper? GetValueMapper(int index) =>
-            _valueMappers != null && index >= 0 && index < _valueMappers.Length ? _valueMappers[index] : null;
+        private FieldValueMapper? GetValueMapper(int index)
+        {
+            var mappers = _valueMappers;
+            if (_valueMappersResolver != null)
+            {
+                if (_resolvedValueMappers == null ||
+                    _resolvedValueMappersVersion != ValueMapper.CurrentVersion)
+                {
+                    _resolvedValueMappers = _valueMappersResolver();
+                    _resolvedValueMappersVersion = ValueMapper.CurrentVersion;
+                }
+
+                mappers = _resolvedValueMappers;
+            }
+
+            return mappers != null && index >= 0 && index < mappers.Length ? mappers[index] : null;
+        }
 
         public override bool Equals(object? o)
         {

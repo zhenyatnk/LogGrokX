@@ -24,7 +24,33 @@ public sealed class ValueMapper
 
     public static ValueMapper Empty { get; } = new(null);
 
-    public static ValueMapper Current { get; set; } = Empty;
+    private static readonly List<WeakReference<Action>> CurrentChangedHandlers = new();
+    private static ValueMapper _current = Empty;
+
+    public static ValueMapper Current
+    {
+        get => _current;
+        set
+        {
+            _current = value;
+            CurrentVersion++;
+            RaiseCurrentChanged();
+        }
+    }
+
+    public static int CurrentVersion { get; private set; }
+
+    public static event Action CurrentChanged
+    {
+        add
+        {
+            if (value == null)
+                return;
+            lock (CurrentChangedHandlers)
+                CurrentChangedHandlers.Add(new WeakReference<Action>(value));
+        }
+        remove { }
+    }
 
     public bool IsEmpty => _lists.Count == 0;
 
@@ -55,6 +81,30 @@ public sealed class ValueMapper
 
         return fieldName != null &&
                fields.Any(f => string.Equals(f.Trim(), fieldName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void RaiseCurrentChanged()
+    {
+        List<WeakReference<Action>>? dead = null;
+        Action[] targets;
+        lock (CurrentChangedHandlers)
+        {
+            targets = new Action[CurrentChangedHandlers.Count];
+            for (var i = 0; i < CurrentChangedHandlers.Count; i++)
+            {
+                if (CurrentChangedHandlers[i].TryGetTarget(out var target))
+                    targets[i] = target;
+                else
+                    (dead ??= new List<WeakReference<Action>>()).Add(CurrentChangedHandlers[i]);
+            }
+
+            if (dead != null)
+                foreach (var weak in dead)
+                    CurrentChangedHandlers.Remove(weak);
+        }
+
+        foreach (var target in targets)
+            target?.Invoke();
     }
 }
 

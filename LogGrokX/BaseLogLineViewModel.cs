@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -99,6 +99,15 @@ namespace LogGrokX
 
         private void OnPartPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName is nameof(LinePartViewModel.IsPem)
+                or nameof(LinePartViewModel.IsBase64)
+                or nameof(LinePartViewModel.IsHex))
+            {
+                InvokePropertyChanged(e.PropertyName);
+                InvokePropertyChanged(nameof(IsDecodable));
+                return;
+            }
+
             if (e.PropertyName is nameof(LinePartViewModel.IsPemDecoded)
                 or nameof(LinePartViewModel.IsBase64Decoded)
                 or nameof(LinePartViewModel.IsHexDecoded)

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using LogGrokX.Colors;
 using LogGrokX.Controls.TextRender;
@@ -18,7 +18,8 @@ namespace LogGrokX.MarkedLines
             Document = document;
 
             var uniqueId = HashCode.Combine(lineNumber, document.GetFoldingComponentIndex(text));
-            Text = new LinePartViewModel(uniqueId, text, valueMapper: ValueMapper.Current.ForField(null));
+            Text = new LinePartViewModel(uniqueId, text,
+                valueMapperResolver: () => ValueMapper.Current.ForField(null));
             ColorSettings = document.ColorSettings;
         }
 

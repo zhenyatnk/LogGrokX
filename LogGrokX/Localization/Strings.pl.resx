@@ -598,7 +598,7 @@
     <value>Widok</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>Obsługa długich wierszy i grupowanie są stosowane przy otwieraniu dziennika. Wykrywanie danych binarnych i mapowanie wartości dotyczą wierszy wyświetlonych po zapisie; otwórz dziennik ponownie, aby zastosować je wszędzie. Położenie osi czasu, przełącznik grupowania, widok połączony i rozmiar czcionki zmieniają się od razu.</value>
+    <value>Obsługa długich wierszy i grupowanie są stosowane przy otwieraniu dziennika. Wykrywanie danych binarnych i mapowanie wartości są stosowane natychmiast po zapisie. Położenie osi czasu, przełącznik grupowania, widok połączony i rozmiar czcionki zmieniają się od razu.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>Co nowego</value>

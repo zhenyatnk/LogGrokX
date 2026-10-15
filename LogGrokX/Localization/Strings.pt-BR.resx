@@ -598,7 +598,7 @@
     <value>Exibição</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>O tratamento de linhas longas e o agrupamento são aplicados ao abrir um log. A detecção binária e os mapeamentos de valores são aplicados às linhas exibidas após salvar; reabra o log para atualizar todas as linhas. A posição da linha do tempo, o agrupamento, a exibição mesclada e a fonte mudam imediatamente.</value>
+    <value>O tratamento de linhas longas e o agrupamento são aplicados ao abrir um log. A detecção binária e os mapeamentos de valores são aplicados imediatamente após salvar. A posição da linha do tempo, o agrupamento, a exibição mesclada e a fonte mudam imediatamente.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>Novidades</value>

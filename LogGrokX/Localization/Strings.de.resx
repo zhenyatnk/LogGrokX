@@ -598,7 +598,7 @@
     <value>Ansicht</value>
   </data>
   <data xml:space="preserve" name="ViewHint">
-    <value>Lange Zeilen und Gruppierung werden beim Öffnen eines Protokolls berücksichtigt. Binärdatenerkennung und Wertzuordnungen gelten für nach dem Speichern angezeigte Zeilen; öffnen Sie das Protokoll erneut, um alle Zeilen zu aktualisieren. Zeitleistenposition, Gruppierungsschalter, zusammengeführte Ansicht und Schriftgröße gelten sofort.</value>
+    <value>Lange Zeilen und Gruppierung werden beim Öffnen eines Protokolls berücksichtigt. Binärdatenerkennung und Wertzuordnungen gelten unmittelbar nach dem Speichern. Zeitleistenposition, Gruppierungsschalter, zusammengeführte Ansicht und Schriftgröße gelten sofort.</value>
   </data>
   <data xml:space="preserve" name="WhatsNew">
     <value>Neuerungen</value>

@@ -407,7 +407,7 @@ namespace LogGrokX.Search
                     filteredLineWithOriginalLineNumber, indexAndString =>
                         new LineViewModel(indexAndString.originalLogLineNumber, indexAndString.str, lineParser, 
                             _markedLines, _transformationPerformer,
-                            ValueMapper.Current.ForFields(fieldNames)));
+                            valueMappersResolver: () => ValueMapper.Current.ForFields(fieldNames)));
         } 
         
         private DateTime _isSearchingShowStartTime = DateTime.Now;
