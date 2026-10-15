@@ -22,6 +22,7 @@
     <Style x:Key="MergedItemContainerStyle" TargetType="{x:Type ListViewItem}"
            BasedOn="{StaticResource ItemContainerStyle}">
         <Setter Property="Margin" Value="0" />
+        <Setter Property="listControls:BaseLogListViewItem.HighlightMarkedRows" Value="True" />
         <Setter Property="Background"
                 Value="{Binding Content.BackgroundBrush,
                         RelativeSource={RelativeSource Self}}" />

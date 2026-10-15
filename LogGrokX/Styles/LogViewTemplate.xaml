@@ -119,7 +119,7 @@
                                     ReadonlySelectedItems="{Binding SelectedItems,
                                                             Mode=OneWayToSource}"
                                     View="{Binding CustomView}"
-                                    ItemContainerStyle="{StaticResource ItemContainerStyle}"
+                                    ItemContainerStyle="{StaticResource LogGridItemContainerStyle}"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.CanContentScroll="True"
                                     VirtualizingStackPanel.IsVirtualizing="True"

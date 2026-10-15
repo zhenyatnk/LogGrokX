@@ -11,9 +11,6 @@
     <SolidColorBrush x:Key="LogLineSelectionBrush"
                      Color="{DynamicResource SystemAccentColorPrimary}"
                      Opacity="0.35" />
-    <SolidColorBrush x:Key="LogLineSelectionBorderBrush"
-                     Color="{DynamicResource SystemAccentColorPrimary}"
-                     Opacity="0.6" />
     <SolidColorBrush x:Key="LogLineDefaultDarkForegroundBrush" Color="#FFD2E4F4" />
 
     <ControlTemplate x:Key="LogLineControlTemplate" 
@@ -24,6 +21,30 @@
             <Border BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="1"
                     SnapsToDevicePixels="True" />
+            <Border x:Name="MarkedOverlay"
+                    Background="{DynamicResource SystemFillColorAttentionBrush}"
+                    Opacity="0.2"
+                    IsHitTestVisible="False"
+                    SnapsToDevicePixels="True">
+                <Border.Style>
+                    <Style TargetType="{x:Type Border}">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                        <Style.Triggers>
+                            <MultiDataTrigger>
+                                <MultiDataTrigger.Conditions>
+                                    <Condition Binding="{Binding Content.IsMarked,
+                                                RelativeSource={RelativeSource AncestorType={x:Type ListViewItem}}}"
+                                               Value="True" />
+                                    <Condition Binding="{Binding Path=(listControls:BaseLogListViewItem.HighlightMarkedRows),
+                                                RelativeSource={RelativeSource AncestorType={x:Type ListViewItem}}}"
+                                               Value="True" />
+                                </MultiDataTrigger.Conditions>
+                                <Setter Property="Visibility" Value="Visible" />
+                            </MultiDataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+            </Border>
             <GridViewRowPresenter x:Name="RowPresenter"
                                   Margin="2,0,-4,0"
                                   VerticalAlignment="Stretch"
@@ -72,6 +93,7 @@
     <Style x:Key="ItemContainerStyle" TargetType="{x:Type ListViewItem}">
         <Setter Property="SnapsToDevicePixels" Value="True" />
         <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Margin" Value="0" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Stretch"/>
@@ -98,7 +120,6 @@
             </DataTrigger>
             <Trigger Property="IsSelected" Value="True">
                 <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
             </Trigger>
             <MultiTrigger>
                 <MultiTrigger.Conditions>
@@ -108,19 +129,16 @@
                 <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
             </MultiTrigger>
-            <MultiTrigger>
-                <MultiTrigger.Conditions>
-                    <Condition Property="IsMouseOver" Value="True" />
-                    <Condition Property="IsSelected" Value="True" />
-                </MultiTrigger.Conditions>
-                <Setter Property="Background" Value="{StaticResource LogLineSelectionBrush}" />
-                <Setter Property="BorderBrush" Value="{StaticResource LogLineSelectionBorderBrush}" />
-            </MultiTrigger>
             <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
                          RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
                          Value="True">
                 <Setter Property="Foreground" Value="{StaticResource LogLineDefaultDarkForegroundBrush}" />
             </DataTrigger>
         </Style.Triggers>
+    </Style>
+
+    <Style x:Key="LogGridItemContainerStyle" TargetType="{x:Type ListViewItem}"
+           BasedOn="{StaticResource ItemContainerStyle}">
+        <Setter Property="listControls:BaseLogListViewItem.HighlightMarkedRows" Value="True" />
     </Style>
 </ResourceDictionary>
