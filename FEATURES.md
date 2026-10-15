@@ -343,6 +343,11 @@ marked line centers the target row in the grid (see
 [Centered navigation](#-centered-navigation)), and the marks also appear on the
 timeline strip.
 
+Marked rows are highlighted directly in the grids too: the whole row gets a soft
+attention-colored background (`SystemFillColorAttentionBrush`, 20 % opacity) in
+both the single-log grid and the merged view, so a marked line stands out while
+scrolling without opening the dedicated view.
+
 ## 🔠 Text zoom
 
 **Business value.** Operators work on different monitors and at different
@@ -713,6 +718,10 @@ navigation comfortable:
 - **Centered, keyboard-driven navigation** — arrow keys move the current line,
   `F3`/`Shift+F3` step through search hits, all centering the target row (see
   [Centered navigation](#-centered-navigation)).
+- **Row selection** — selected rows are filled with the theme accent color
+  (no border), and the text selection inside a cell uses the accent as well.
+- **Seamless rows** — adjacent rows tile without gaps, so the grid reads as a
+  continuous surface instead of a striped one.
 
 ## ⚙️ Settings
 

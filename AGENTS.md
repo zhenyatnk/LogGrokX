@@ -85,6 +85,18 @@ uses `Indexer.IsLineComponentEqual` or parses the line when `Thread` is not
 indexed. The support window is `SupportWindow.xaml` /
 `SupportViewModel` (opened through `OpenSupportCommand`).
 
+Row visuals live in `Styles/ListViewItemStyle.xaml`: `LogLineControlTemplate`
+overlays a `MarkedOverlay` border on marked rows (`SystemFillColorAttentionBrush`,
+opacity `0.2`), shown while `Content.IsMarked` is `true` and the
+`BaseLogListViewItem.HighlightMarkedRows` attached property is set. The latter is
+`True` in `LogGridItemContainerStyle` (single log, `LogViewTemplate.xaml`) and in
+the merged view's `MergedItemContainerStyle`, so marked rows are highlighted
+across the full row width in both grids. The item container sets `Margin=0`: the
+custom `VirtualizingStackPanel` reserves the margin box, so any margin left a
+background seam between rows. Selection is painted with the theme accent
+(`LogLineSelectionBrush`) and has no border; the text selection brush
+(`LogGridViewCellStyle.xaml`'s `Selection`) uses the accent too.
+
 The timeline/minimap strip is `Controls/LogMinimapControl.cs` (a
 `FrameworkElement` that draws the time-range handles, markers, search matches and
 a hover readout). Hovering shows a vertical guide line plus the timestamp under
