@@ -130,10 +130,12 @@ public static partial class Base64Detector
         var decodeBase64 = decode.HasFlag(Base64Content.Base64);
 
         var (start, length) = GetWholeTextRange(source);
-        if (length >= MinWholeTextLength && TryDecodeToken(source.AsSpan(start, length), out var whole))
+        if (length >= MinWholeTextLength && TryDecodeTokenDeep(source.AsSpan(start, length), out var whole, out var wholePem))
         {
             found |= Base64Content.Base64;
-            if (decodeBase64)
+            if (wholePem)
+                found |= Base64Content.Pem;
+            if (decodeBase64 || decodePem && wholePem)
                 replacements.Add((start, length, whole));
             return;
         }
@@ -331,10 +333,12 @@ public static partial class Base64Detector
 
             var index = start + match.Index;
             var token = source.AsSpan(index, match.Length);
-            if (TryDecodeToken(token, out var text))
+            if (TryDecodeTokenDeep(token, out var text, out var tokenPem))
             {
                 found |= Base64Content.Base64;
-                if (decodeBase64)
+                if (tokenPem)
+                    found |= Base64Content.Pem;
+                if (decodeBase64 || decodePem && tokenPem)
                     replacements.Add((index, match.Length, text));
             }
             else if (TryDescribeBinaryKey(token, out text))
@@ -343,10 +347,12 @@ public static partial class Base64Detector
                 if (decodePem)
                     replacements.Add((index, match.Length, text));
             }
-            else if (TryDecodeGluedToken(token, out var gluedOffset, out var gluedLength, out text))
+            else if (TryDecodeGluedToken(token, out var gluedOffset, out var gluedLength, out text, out var gluedPem))
             {
                 found |= Base64Content.Base64;
-                if (decodeBase64)
+                if (gluedPem)
+                    found |= Base64Content.Pem;
+                if (decodeBase64 || decodePem && gluedPem)
                     replacements.Add((index + gluedOffset, gluedLength, text));
             }
 
@@ -447,16 +453,18 @@ public static partial class Base64Detector
     }
 
     private static bool TryDecodeGluedToken(ReadOnlySpan<char> candidate, out int offset, out int length,
-        out string decoded)
+        out string decoded, out bool decodedPem)
     {
         offset = 0;
         length = 0;
         decoded = string.Empty;
+        decodedPem = false;
         var bestScore = int.MinValue;
 
-        void Consider(ReadOnlySpan<char> token, int tokenOffset, ref int offset, ref int length, ref string decoded)
+        void Consider(ReadOnlySpan<char> token, int tokenOffset,
+            ref int offset, ref int length, ref string decoded, ref bool decodedPem)
         {
-            if (!TryDecodeToken(token, out var text))
+            if (!TryDecodeTokenDeep(token, out var text, out var pem))
                 return;
 
             var score = GetTextScore(text);
@@ -467,6 +475,7 @@ public static partial class Base64Detector
             offset = tokenOffset;
             length = token.Length;
             decoded = text;
+            decodedPem = pem;
         }
 
         var attempts = 0;
@@ -476,7 +485,7 @@ public static partial class Base64Detector
                 continue;
 
             attempts++;
-            Consider(candidate[(i + 1)..], i + 1, ref offset, ref length, ref decoded);
+            Consider(candidate[(i + 1)..], i + 1, ref offset, ref length, ref decoded, ref decodedPem);
         }
 
         attempts = 0;
@@ -487,7 +496,7 @@ public static partial class Base64Detector
                 continue;
 
             attempts++;
-            Consider(candidate[..i], 0, ref offset, ref length, ref decoded);
+            Consider(candidate[..i], 0, ref offset, ref length, ref decoded, ref decodedPem);
         }
 
         return bestScore != int.MinValue;
@@ -642,6 +651,37 @@ public static partial class Base64Detector
     {
         decoded = string.Empty;
         return TryDecodeBase64Bytes(token, out var data) && TryGetReadableText(data, out decoded);
+    }
+
+    public static bool TryDecodePemBlocks(string text, out string decoded)
+    {
+        decoded = text;
+        if (string.IsNullOrEmpty(text) || !text.Contains(PemBeginMarker, StringComparison.Ordinal))
+            return false;
+
+        var replacements = new List<(int index, int length, string text)>();
+        var found = Base64Content.None;
+        CollectPlain(text, Base64Content.Pem, replacements, ref found);
+        if (replacements.Count == 0)
+            return false;
+
+        decoded = Apply(text, replacements);
+        return true;
+    }
+
+    private static bool TryDecodeTokenDeep(ReadOnlySpan<char> token, out string decoded, out bool decodedPem)
+    {
+        decodedPem = false;
+        if (!TryDecodeToken(token, out decoded))
+            return false;
+
+        if (TryDecodePemBlocks(decoded, out var pemDecoded))
+        {
+            decoded = pemDecoded;
+            decodedPem = true;
+        }
+
+        return true;
     }
 
     private static bool TryDecodeBase64Bytes(ReadOnlySpan<char> token, out byte[] data)

@@ -177,7 +177,11 @@ public static partial class HexText
 
         if ((Utf8.IsValid(bytes) && TryGetPrintableText(bytes, StrictUtf8, char.MaxValue, out text)) ||
             (IsSupportedUtf16(bytes) && TryGetPrintableText(bytes, StrictUtf16, MaxUtf16Char, out text)))
+        {
+            if (Base64Detector.TryDecodePemBlocks(text, out var pemText))
+                text = pemText;
             return true;
+        }
 
         return Base64Detector.TryDescribeBinaryKeyFromBytes(bytes, out text);
     }

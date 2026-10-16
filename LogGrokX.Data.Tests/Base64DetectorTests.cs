@@ -245,6 +245,73 @@ public class Base64DetectorTests
     }
 
     [TestMethod]
+    public void PemInsideBase64IsFullyDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = Encode(certificate.ExportCertificatePem());
+
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source));
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.StartsWith(decoded, "-----BEGIN CERTIFICATE-----\nSubject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.Contains(decoded, $"Thumbprint (SHA-1): {certificate.Thumbprint}");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE-----");
+    }
+
+    [TestMethod]
+    public void PemInsideBase64IsDecodedByPemFlagOnly()
+    {
+        using var certificate = CreateCertificate();
+        var source = Encode(certificate.ExportCertificatePem());
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var decoded, out var found));
+        Assert.AreEqual(Base64Content.All, found);
+        StringAssert.Contains(decoded, $"Thumbprint (SHA-1): {certificate.Thumbprint}");
+    }
+
+    [TestMethod]
+    public void PemInsideBase64FragmentIsFullyDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"certificate: {Encode(certificate.ExportCertificatePem())} verified";
+
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source));
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        StringAssert.StartsWith(decoded, "certificate: -----BEGIN CERTIFICATE-----\nSubject: ");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE----- verified");
+    }
+
+    [TestMethod]
+    public void PemInsideBase64JsonValueIsFullyDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"{{\"certificate\":\"{Encode(certificate.ExportCertificatePem())}\",\"id\":7}}";
+
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source, Json(source)));
+        var decoded = DecodeAll(source, Json(source));
+
+        using var document = JsonDocument.Parse(decoded);
+        var lines = document.RootElement.GetProperty("certificate").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual("-----BEGIN CERTIFICATE-----", lines[0]);
+        Assert.AreEqual("-----END CERTIFICATE-----", lines[^1]);
+        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+        Assert.AreEqual(7, document.RootElement.GetProperty("id").GetInt32());
+    }
+
+    [TestMethod]
+    public void PemInsideBase64XmlValueIsFullyDecoded()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"<Signature><Cert>{Encode(certificate.ExportCertificatePem())}</Cert></Signature>";
+
+        Assert.AreEqual(Base64Content.All, Base64Detector.Detect(source, Xml(source)));
+        var decoded = DecodeAll(source, Xml(source));
+
+        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.StartsWith(decoded, "<Signature><Cert>-----BEGIN CERTIFICATE-----\n");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE-----</Cert></Signature>");
+    }
+
+    [TestMethod]
     public void PemWithMismatchedLabelsIsNotDecoded()
     {
         var source = WrapPem("CERTIFICATE", new byte[] { 1, 2, 3 }).Replace("END CERTIFICATE", "END PRIVATE KEY");

@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.ExceptionServices;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -104,6 +106,41 @@ public class HexTextTests
 
         StringAssert.Contains(part.TextModel.GetDisplayedText(null),
             "RSA public key (CryptoAPI PUBLICKEYBLOB)");
+    }
+
+    [TestMethod]
+    public void DecodesHexPemCertificate()
+    {
+        using var certificate = CreateCertificate();
+        var hex = Convert.ToHexString(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+
+        Assert.IsTrue(HexText.ContainsDecodableHex(hex));
+        Assert.IsTrue(HexText.TryDecode(hex, out var decoded));
+        StringAssert.StartsWith(decoded, "-----BEGIN CERTIFICATE-----\nSubject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.Contains(decoded, $"Thumbprint (SHA-1): {certificate.Thumbprint}");
+        StringAssert.EndsWith(decoded, "-----END CERTIFICATE-----");
+    }
+
+    [TestMethod]
+    public void DecodesHexPemCertificateInsideJson()
+    {
+        using var certificate = CreateCertificate();
+        var hex = Convert.ToHexString(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+        var source = $"{{\"certificate\":\"{hex}\",\"id\":1}}";
+
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
+        StringAssert.Contains(decoded, "-----BEGIN CERTIFICATE-----");
+        Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+    }
+
+    private static X509Certificate2 CreateCertificate()
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest("CN=loggrokx.test, O=LogGrokX", rsa,
+            HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        return request.CreateSelfSigned(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero),
+            new DateTimeOffset(2027, 1, 2, 3, 4, 5, TimeSpan.Zero));
     }
 
     private static string CreateCryptoApiRsaPublicKeyHex(int modulusBytes = 128)
