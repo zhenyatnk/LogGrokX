@@ -144,6 +144,13 @@ namespace LogGrokX.Controls.ListControls
 
         public static bool GetIsOtherThread(DependencyObject element) => (bool)element.GetValue(IsOtherThreadProperty);
 
+        public static readonly DependencyProperty HighlightMarkedRowsProperty = DependencyProperty.RegisterAttached(
+            "HighlightMarkedRows", typeof(bool), typeof(BaseLogListViewItem), new PropertyMetadata(false));
+
+        public static void SetHighlightMarkedRows(DependencyObject element, bool value) => element.SetValue(HighlightMarkedRowsProperty, value);
+
+        public static bool GetHighlightMarkedRows(DependencyObject element) => (bool)element.GetValue(HighlightMarkedRowsProperty);
+
         public static readonly DependencyProperty IsCurrentItemProperty = DependencyProperty.Register(
             "IsCurrentItem", typeof(bool), typeof(BaseLogListViewItem), 
             new PropertyMetadata(false));

@@ -104,7 +104,8 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   their folding.
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
-- **Marked lines** — mark interesting lines and browse them in a dedicated view.
+- **Marked lines** — mark interesting lines; they are highlighted across the full
+  row in the grid (and merged view) and can be browsed in a dedicated view.
 - **Text zoom** — scale log text with `Ctrl` + mouse wheel or `Ctrl` + `+`/`-`,
   and reset with `Ctrl` + `0`; the size is persisted in `appsettings.yaml`.
 - **Centered navigation** — jumping to a search hit (including `F3`) or a marked
