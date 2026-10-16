@@ -246,13 +246,13 @@ public class ProfileSettingsTests
     [DataRow("\tERR\t fatal", "Red", null)]
     [DataRow("\tWRN\t warning", "Chocolate", null)]
     [DataRow("fatal problem", null, "#FFCD5C5C")]
-    public void KasperskyHighlightingKeepsMatchingAndRulePriority(string line,
+    public void ClassicHighlightingKeepsMatchingAndRulePriority(string line,
         string? foreground, string? background)
     {
         var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
             "..", "..", "..", "..", "LogGrokX", "appsettings.yaml"));
         var profile = ApplicationSettings.LoadFromFile(path).GetProfiles()
-            .Single(profile => profile.Name == "Kaspersky");
+            .Single(profile => profile.Name == "Classic");
         var colors = new Colors.ColorSettings(profile.ColorSettings!);
         var match = colors.Rules.FirstOrDefault(rule => rule.IsMatch(line));
 
