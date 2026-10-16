@@ -12,11 +12,14 @@ namespace LogGrokX.MergedView
         private readonly string _transformedText;
         private ParseResult? _parseResult;
         private LinePartViewModel?[]? _parts;
+        private readonly DecodedPartsState? _decodedParts;
 
-        public MergedLineViewModel(MergedDocumentItem source, int lineNumber, long ticks, int mergedIndex = -1)
+        public MergedLineViewModel(MergedDocumentItem source, int lineNumber, long ticks, int mergedIndex = -1,
+            DecodedPartsState? decodedParts = null)
             : base(lineNumber, source.Document.MarkedLines)
         {
             Source = source;
+            _decodedParts = decodedParts;
             MergedIndex = mergedIndex;
 
             _transformedText = source.Document.GetTransformedLine(lineNumber);
@@ -128,7 +131,8 @@ namespace LogGrokX.MergedView
             if (sourceFieldIndex >= 0 && sourceFieldIndex < fieldNames.Length)
             {
                 part = new LinePartViewModel(uniqueId, text,
-                    valueMapperResolver: () => ValueMapper.Current.ForField(fieldNames[sourceFieldIndex]));
+                    valueMapperResolver: () => ValueMapper.Current.ForField(fieldNames[sourceFieldIndex]),
+                    decodedState: _decodedParts?.For(Source.Document, Index, sourceFieldIndex));
             }
             else
             {

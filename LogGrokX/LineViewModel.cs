@@ -17,14 +17,16 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         private readonly LinePartViewModel?[] _parts;
         private readonly FieldValueMapper[]? _valueMappers;
         private readonly Func<FieldValueMapper[]>? _valueMappersResolver;
+        private readonly DecodedPartsState? _decodedParts;
         private FieldValueMapper[]? _resolvedValueMappers;
         private int _resolvedValueMappersVersion = -1;
 
         public LineViewModel(int index, string sourceString, ILineParser parser, Selection markedLines,
             TransformationPerformer transformationPerformer, FieldValueMapper[]? valueMappers = null,
-            Func<FieldValueMapper[]>? valueMappersResolver = null)
+            Func<FieldValueMapper[]>? valueMappersResolver = null, DecodedPartsState? decodedParts = null)
             : base(index, markedLines)
         {
+            _decodedParts = decodedParts;
             _sourceString = sourceString;
             _valueMappers = valueMappers;
             _valueMappersResolver = valueMappersResolver;
@@ -75,10 +77,13 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             var text = _transformResult.Substring(lineMeta.ComponentStart(index),
                 lineMeta.ComponentLength(index));
 
+            var decodedState = _decodedParts?.For(base.Index, index);
             var part = _valueMappersResolver != null
                 ? new LinePartViewModel(uniqueId, text,
-                    valueMapperResolver: () => GetValueMapper(index) ?? FieldValueMapper.None)
-                : new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index));
+                    valueMapperResolver: () => GetValueMapper(index) ?? FieldValueMapper.None,
+                    decodedState: decodedState)
+                : new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index),
+                    decodedState: decodedState);
             if (index >= 0 && index < _parts.Length)
                 _parts[index] = part;
 

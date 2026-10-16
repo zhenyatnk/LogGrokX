@@ -16,6 +16,7 @@ namespace LogGrokX
         private readonly TransformationPerformer _transformationPerformer;
         private readonly TimeIndex _timeIndex;
         private readonly string[] _fieldNames;
+        private readonly DecodedPartsState _decodedParts = new();
 
         public LineViewModelCollectionProvider(
             IItemProvider<(int index, string str)> lineProvider,
@@ -63,7 +64,8 @@ namespace LogGrokX
                 indexAndString => 
                     new LineViewModel(indexAndString.index, indexAndString.str, _lineParser,
                         _markedLines, _transformationPerformer,
-                        valueMappersResolver: () => ValueMapper.Current.ForFields(_fieldNames)));
+                        valueMappersResolver: () => ValueMapper.Current.ForFields(_fieldNames),
+                        decodedParts: _decodedParts));
         }
 
         private (IItemProvider<(int index, string str)> itemProvider, Func<int, int> GetIndexByValue) GetLineProvider(

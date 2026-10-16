@@ -11,6 +11,8 @@ public class LinePartViewModel : ViewModelBase
     private readonly int _uniqueId;
     private readonly bool _followDetectionChanges;
     private readonly Func<FieldValueMapper>? _valueMapperResolver;
+    private readonly DecodedPartKey? _decodedState;
+    private int _decodedStateVersion = -1;
     // Keeps the handler alive: the static weak events hold only a WeakReference to the delegate.
     private readonly Action? _onDisplaySettingsChanged;
     private BinaryDetectionOptions _detection;
@@ -29,9 +31,10 @@ public class LinePartViewModel : ViewModelBase
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true,
         BinaryDetectionOptions? detection = null, FieldValueMapper? valueMapper = null,
-        Func<FieldValueMapper>? valueMapperResolver = null)
+        Func<FieldValueMapper>? valueMapperResolver = null, DecodedPartKey? decodedState = null)
     {
         _uniqueId = uniqueId;
+        _decodedState = decodedState;
         _valueMapperResolver = valueMapperResolver;
         _valueMapper = valueMapperResolver?.Invoke() ?? valueMapper ?? FieldValueMapper.None;
         _valueMapperVersion = ValueMapper.CurrentVersion;
@@ -53,9 +56,11 @@ public class LinePartViewModel : ViewModelBase
         get
         {
             RefreshSettingsIfNeeded();
-            return IsDecoded
-                ? _decodedTextModels[DecodedKey] ?? _originalTextModel
-                : _originalTextModel;
+            if (!IsDecoded)
+                return _originalTextModel;
+
+            EnsureDecodedTextModel();
+            return _decodedTextModels[DecodedKey] ?? _originalTextModel;
         }
     }
 
@@ -120,6 +125,7 @@ public class LinePartViewModel : ViewModelBase
                 return;
 
             _isHexDecoded = value;
+            SaveDecodedState();
             EnsureDecodedTextModel();
             InvokePropertyChanged();
             InvokePropertyChanged(nameof(IsDecoded));
@@ -179,8 +185,46 @@ public class LinePartViewModel : ViewModelBase
             return;
 
         _decoded = value ? _decoded | kind : _decoded & ~kind;
+        SaveDecodedState();
         EnsureDecodedTextModel();
         InvokePropertyChanged(kind == Base64Content.Pem ? nameof(IsPemDecoded) : nameof(IsBase64Decoded));
+        InvokePropertyChanged(nameof(IsDecoded));
+        InvokePropertyChanged(nameof(TextModel));
+    }
+
+    private void SaveDecodedState()
+    {
+        if (_decodedState is not { } key)
+            return;
+
+        key.Set(new DecodedPartState(_decoded, _isHexDecoded));
+        _decodedStateVersion = key.State.Version;
+    }
+
+    // Another view model of the same line (re-created by virtualization or a collection reset) may have
+    // changed the shared state, so it is re-read whenever the state version changes (#78).
+    private void SyncDecodedState()
+    {
+        if (_decodedState is not { } key || key.State.Version == _decodedStateVersion)
+            return;
+
+        _decodedStateVersion = key.State.Version;
+        var state = key.Get();
+        var decoded = state.Base64 & Content;
+        var isHexDecoded = state.Hex && IsHex;
+        var changedKinds = decoded ^ _decoded;
+        var hexChanged = isHexDecoded != _isHexDecoded;
+        if (changedKinds == Base64Content.None && !hexChanged)
+            return;
+
+        _decoded = decoded;
+        _isHexDecoded = isHexDecoded;
+        if (changedKinds.HasFlag(Base64Content.Pem))
+            InvokePropertyChanged(nameof(IsPemDecoded));
+        if (changedKinds.HasFlag(Base64Content.Base64))
+            InvokePropertyChanged(nameof(IsBase64Decoded));
+        if (hexChanged)
+            InvokePropertyChanged(nameof(IsHexDecoded));
         InvokePropertyChanged(nameof(IsDecoded));
         InvokePropertyChanged(nameof(TextModel));
     }
@@ -225,6 +269,12 @@ public class LinePartViewModel : ViewModelBase
 
     private void RefreshSettingsIfNeeded()
     {
+        RefreshDisplaySettingsIfNeeded();
+        SyncDecodedState();
+    }
+
+    private void RefreshDisplaySettingsIfNeeded()
+    {
         var detectionVersion = BinaryDetectionOptions.CurrentVersion;
         var valueMapperVersion = ValueMapper.CurrentVersion;
         var detectionChanged = _followDetectionChanges && detectionVersion != _detectionVersion;
@@ -251,6 +301,7 @@ public class LinePartViewModel : ViewModelBase
         {
             _decoded &= Content;
             _isHexDecoded = _isHexDecoded && IsHex;
+            SaveDecodedState();
         }
 
         InvokePropertyChanged(nameof(IsPem));

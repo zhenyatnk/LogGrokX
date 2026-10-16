@@ -254,6 +254,21 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   The index column is created with `detectBase64: false`.
   `LineViewModel.GetDisplayText` uses the decoded model for decoded parts, so
   "Copy" copies what is shown.
+  The decoded state of a cell is **not** owned by the row view model: rows are
+  re-created by `VirtualList` page eviction (24 pages of 128 rows) and by every
+  `GrowingLogLinesCollection.Reset` (filters, merged view rebuilds), while the
+  panel keeps already shown containers whose `Content.Equals` the new row
+  (`LineViewModel.Equals` compares line index and text). So the state lives in a
+  per-view `DecodedPartsState` keyed by (source document, original line number,
+  field index) (#78): `LineViewModelCollectionProvider` (main grid),
+  `SearchDocumentViewModel`, `MergedViewModel` and
+  `MergedSearchDocumentViewModel` each own one and pass it to
+  `LineViewModel` / `MergedLineViewModel` (`decodedParts:`), which give every
+  part a `DecodedPartKey`. `LinePartViewModel` saves `_decoded` /
+  `_isHexDecoded` on every change and re-reads its entry whenever
+  `DecodedPartsState.Version` changed (`SyncDecodedState`, called from
+  `RefreshSettingsIfNeeded`), so an old row still on screen and its replacement
+  stay in sync; the restored kinds are masked by the current detection.
 - **HEX to text** (#48): `HexText` detects and decodes HEX runs (more than 64 bits, i.e. from 9 bytes, `MinBytes`;
   contiguous or separated by space/`-`/`:`/`,`, optional `0x`; UTF-8, then
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable

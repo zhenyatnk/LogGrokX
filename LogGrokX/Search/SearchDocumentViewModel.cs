@@ -52,6 +52,7 @@ namespace LogGrokX.Search
         private SearchLineIndex? _currentSearchLineIndex;
         private readonly Selection _markedLines;
         private readonly TransformationPerformer _transformationPerformer;
+        private readonly DecodedPartsState _decodedParts = new();
 
         public SearchDocumentViewModel(LogModelFacade logModelFacade,
             FilterSettings filterSettings,
@@ -407,7 +408,8 @@ namespace LogGrokX.Search
                     filteredLineWithOriginalLineNumber, indexAndString =>
                         new LineViewModel(indexAndString.originalLogLineNumber, indexAndString.str, lineParser, 
                             _markedLines, _transformationPerformer,
-                            valueMappersResolver: () => ValueMapper.Current.ForFields(fieldNames)));
+                            valueMappersResolver: () => ValueMapper.Current.ForFields(fieldNames),
+                            decodedParts: _decodedParts));
         } 
         
         private DateTime _isSearchingShowStartTime = DateTime.Now;

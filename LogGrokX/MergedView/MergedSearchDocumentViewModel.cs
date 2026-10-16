@@ -21,6 +21,7 @@ namespace LogGrokX.MergedView
 
         private readonly MergedViewModel _merged;
         private readonly object _ctsLock = new();
+        private readonly DecodedPartsState _decodedParts = new();
 
         private CancellationTokenSource? _cts;
         private CancellationTokenSource? _threadFilterCts;
@@ -373,7 +374,7 @@ namespace LogGrokX.MergedView
         {
             var line = _buffer[mergedIndex];
             return new MergedLineViewModel(_sources[line.SourceIndex], line.LineNumber, line.Ticks,
-                MapToFull(mergedIndex));
+                MapToFull(mergedIndex), _decodedParts);
         }
 
         private int MapToFull(int visibleIndex) =>

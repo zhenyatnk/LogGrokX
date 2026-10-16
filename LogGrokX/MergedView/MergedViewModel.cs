@@ -38,6 +38,7 @@ namespace LogGrokX.MergedView
         private readonly List<int> _visibleToFull = new();
         private readonly List<MergeSource> _mergeSources = new();
         private readonly TimeIndex _mergedTimeIndex = new();
+        private readonly DecodedPartsState _decodedParts = new();
         private readonly DispatcherTimer _rebuildTimer;
         private ColorRules _colorSettings;
 
@@ -385,7 +386,8 @@ namespace LogGrokX.MergedView
         }
 
         private ItemViewModel CreateLine(MergedLineRef line) =>
-            new MergedLineViewModel(_selectedSources[line.SourceIndex], line.LineNumber, line.Ticks);
+            new MergedLineViewModel(_selectedSources[line.SourceIndex], line.LineNumber, line.Ticks,
+                decodedParts: _decodedParts);
 
         private void OnThreadGroupingChanged()
         {
