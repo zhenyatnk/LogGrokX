@@ -290,10 +290,7 @@ public class Base64DetectorTests
         var decoded = DecodeAll(source, Json(source));
 
         using var document = JsonDocument.Parse(decoded);
-        var lines = document.RootElement.GetProperty("certificate").EnumerateArray().Select(e => e.GetString()).ToList();
-        Assert.AreEqual("-----BEGIN CERTIFICATE-----", lines[0]);
-        Assert.AreEqual("-----END CERTIFICATE-----", lines[^1]);
-        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+        AssertCertificateFields(document.RootElement.GetProperty("certificate"), "CERTIFICATE", certificate);
         Assert.AreEqual(7, document.RootElement.GetProperty("id").GetInt32());
     }
 
@@ -439,7 +436,7 @@ public class Base64DetectorTests
     }
 
     [TestMethod]
-    public void JsonPemValueBecomesArrayOfLines()
+    public void JsonPemValueBecomesObjectWithFields()
     {
         using var certificate = CreateCertificate();
         var source = $"{{\"certificate\":{JsonSerializer.Serialize(certificate.ExportCertificatePem())},\"id\":7}}";
@@ -448,11 +445,99 @@ public class Base64DetectorTests
         var decoded = DecodeAll(source, Json(source));
 
         using var document = JsonDocument.Parse(decoded);
-        var lines = document.RootElement.GetProperty("certificate").EnumerateArray().Select(e => e.GetString()).ToList();
-        Assert.AreEqual("-----BEGIN CERTIFICATE-----", lines[0]);
-        Assert.AreEqual("-----END CERTIFICATE-----", lines[^1]);
-        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+        AssertCertificateFields(document.RootElement.GetProperty("certificate"), "CERTIFICATE", certificate);
         Assert.AreEqual(7, document.RootElement.GetProperty("id").GetInt32());
+    }
+
+    [TestMethod]
+    public void JsonPemChainBecomesArrayOfObjects()
+    {
+        using var first = CreateCertificate();
+        using var second = CreateCertificate();
+        var chain = first.ExportCertificatePem() + "\n" + second.ExportCertificatePem();
+        var source = $"{{\"chain\":{JsonSerializer.Serialize(chain)}}}";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var blocks = document.RootElement.GetProperty("chain").EnumerateArray().ToList();
+        Assert.AreEqual(2, blocks.Count);
+        AssertCertificateFields(blocks[0], "CERTIFICATE", first);
+        AssertCertificateFields(blocks[1], "CERTIFICATE", second);
+    }
+
+    [TestMethod]
+    public void JsonPemWithBinaryPayloadKeepsHexDumpAsContent()
+    {
+        var pem = WrapPem("PRIVATE KEY", Enumerable.Range(0, 40).Select(i => (byte)i).ToArray());
+        var source = $"{{\"key\":{JsonSerializer.Serialize(Encode(pem))}}}";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var key = document.RootElement.GetProperty("key");
+        Assert.AreEqual("PRIVATE KEY", key.GetProperty("Type").GetString());
+        var lines = key.GetProperty("Content").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual(3, lines.Count);
+        StringAssert.StartsWith(lines[0], "00000000  00 01 02 03");
+    }
+
+    [TestMethod]
+    public void JsonPemWithJsonPayloadKeepsNestedJson()
+    {
+        var pem = WrapPem("MESSAGE", Encoding.UTF8.GetBytes("{\"user\":\"admin\",\"roles\":[\"a\",\"b\"]}"));
+        var source = $"{{\"message\":{JsonSerializer.Serialize(Encode(pem))}}}";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var message = document.RootElement.GetProperty("message");
+        Assert.AreEqual("MESSAGE", message.GetProperty("Type").GetString());
+        Assert.AreEqual("admin", message.GetProperty("Content").GetProperty("user").GetString());
+    }
+
+    [TestMethod]
+    public void JsonValueWithTextAroundPemStaysArrayOfLines()
+    {
+        using var certificate = CreateCertificate();
+        var value = "server certificate:\n" + certificate.ExportCertificatePem();
+        var source = $"{{\"certificate\":{JsonSerializer.Serialize(value)}}}";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var lines = document.RootElement.GetProperty("certificate").EnumerateArray().Select(e => e.GetString()).ToList();
+        Assert.AreEqual("server certificate:", lines[0]);
+        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
+    }
+
+    [TestMethod]
+    public void DecodedTextWithFieldsIsNotTurnedIntoObject()
+    {
+        var source = $"{{\"headers\":\"{Encode("Host: example.com\nAccept: */*")}\"}}";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        var lines = document.RootElement.GetProperty("headers").EnumerateArray().Select(e => e.GetString()).ToList();
+        CollectionAssert.AreEqual(new[] { "Host: example.com", "Accept: */*" }, lines);
+    }
+
+    [TestMethod]
+    public void KeyDescriptionTextIsFormattedAsJson()
+    {
+        Assert.IsTrue(Base64Detector.TryFormatKeyDescriptionAsJson(
+            "Public key (SubjectPublicKeyInfo): RSA 2048 bits", out var json));
+        Assert.AreEqual("{\"Type\":\"Public key (SubjectPublicKeyInfo)\",\"Public key\":\"RSA 2048 bits\"}", json);
+
+        Assert.IsFalse(Base64Detector.TryFormatKeyDescriptionAsJson("plain text", out _));
+        Assert.IsFalse(Base64Detector.TryFormatKeyDescriptionAsJson(
+            "-----BEGIN CERTIFICATE-----\nSubject: CN=a\n-----END CERTIFICATE----- tail", out _));
+    }
+
+    private static void AssertCertificateFields(JsonElement element, string type, X509Certificate2 certificate)
+    {
+        Assert.AreEqual(JsonValueKind.Object, element.ValueKind, element.ToString());
+        Assert.AreEqual(type, element.GetProperty("Type").GetString());
+        Assert.AreEqual("CN=loggrokx.test, O=LogGrokX", element.GetProperty("Subject").GetString());
+        Assert.AreEqual("CN=loggrokx.test, O=LogGrokX", element.GetProperty("Issuer").GetString());
+        Assert.AreEqual(certificate.SerialNumber, element.GetProperty("Serial number").GetString());
+        Assert.AreEqual("2026-01-02 03:04:05 UTC", element.GetProperty("Not before").GetString());
+        Assert.AreEqual("2027-01-02 03:04:05 UTC", element.GetProperty("Not after").GetString());
+        Assert.AreEqual(certificate.Thumbprint, element.GetProperty("Thumbprint (SHA-1)").GetString());
+        Assert.AreEqual("RSA 2048 bits", element.GetProperty("Public key").GetString());
+        CollectionAssert.AreEqual(new[] { "loggrokx.test", "www.loggrokx.test" },
+            element.GetProperty("Subject alternative names").EnumerateArray().Select(e => e.GetString()).ToList());
     }
 
     [TestMethod]
@@ -560,13 +645,8 @@ public class Base64DetectorTests
         Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Pem, out var decoded, out _, Json(source)));
 
         using var document = JsonDocument.Parse(decoded["response=".Length..]);
-        var lines = document.RootElement.GetProperty("certificates")[0].GetProperty("data")
-            .EnumerateArray().Select(e => e.GetString()).ToList();
-        Assert.AreEqual("X.509 certificate", lines[0]);
-        CollectionAssert.Contains(lines, "Subject: CN=loggrokx.test, O=LogGrokX");
-        CollectionAssert.Contains(lines, "Not after: 2027-01-02 03:04:05 UTC");
-        CollectionAssert.Contains(lines, "Thumbprint (SHA-1): " + certificate.Thumbprint);
-        CollectionAssert.Contains(lines, "Public key: RSA 2048 bits");
+        AssertCertificateFields(document.RootElement.GetProperty("certificates")[0].GetProperty("data"),
+            "X.509 certificate", certificate);
     }
 
     [TestMethod]
@@ -589,12 +669,13 @@ public class Base64DetectorTests
 
         Assert.AreEqual(Base64Content.Pem, Base64Detector.Detect(source, Json(source)));
         using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
-        var lines = document.RootElement.GetProperty("publicKey").GetProperty("data")
-            .EnumerateArray().Select(e => e.GetString()).ToList();
-        Assert.AreEqual("RSA public key (CryptoAPI PUBLICKEYBLOB)", lines[0]);
-        CollectionAssert.Contains(lines, "Algorithm: CALG_RSA_KEYX");
-        CollectionAssert.Contains(lines, "Key size: 2048 bits");
-        CollectionAssert.Contains(lines, "Public exponent: 65537");
+        var data = document.RootElement.GetProperty("publicKey").GetProperty("data");
+        Assert.AreEqual("RSA public key (CryptoAPI PUBLICKEYBLOB)", data.GetProperty("Type").GetString());
+        Assert.AreEqual("CALG_RSA_KEYX", data.GetProperty("Algorithm").GetString());
+        Assert.AreEqual("2048 bits", data.GetProperty("Key size").GetString());
+        Assert.AreEqual("65537", data.GetProperty("Public exponent").GetString());
+        Assert.AreEqual(40, data.GetProperty("Modulus SHA-1").GetString()!.Length);
+        Assert.AreEqual(8, data.GetProperty("Modulus").GetArrayLength());
         Assert.AreEqual(29, document.RootElement.GetProperty("publicKey").GetProperty("keyId").GetInt32());
     }
 

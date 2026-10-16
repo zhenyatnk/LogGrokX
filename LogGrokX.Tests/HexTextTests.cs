@@ -3,6 +3,7 @@ using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Text.Json;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -129,9 +130,74 @@ public class HexTextTests
         var source = $"{{\"certificate\":\"{hex}\",\"id\":1}}";
 
         Assert.IsTrue(HexText.TryDecode(source, out var decoded));
-        StringAssert.Contains(decoded, "Subject: CN=loggrokx.test, O=LogGrokX");
-        StringAssert.Contains(decoded, "-----BEGIN CERTIFICATE-----");
         Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+
+        using var document = JsonDocument.Parse(decoded);
+        var fields = document.RootElement.GetProperty("certificate");
+        Assert.AreEqual("CERTIFICATE", fields.GetProperty("Type").GetString());
+        Assert.AreEqual("CN=loggrokx.test, O=LogGrokX", fields.GetProperty("Subject").GetString());
+        Assert.AreEqual(certificate.Thumbprint, fields.GetProperty("Thumbprint (SHA-1)").GetString());
+        Assert.AreEqual("RSA 2048 bits", fields.GetProperty("Public key").GetString());
+        Assert.AreEqual(1, document.RootElement.GetProperty("id").GetInt32());
+    }
+
+    [TestMethod]
+    public void DecodesHexDerCertificateInsideJsonAsFields()
+    {
+        using var certificate = CreateCertificate();
+        var source = $"{{\"certificate\": \"{Convert.ToHexString(certificate.RawData)}\"}}";
+
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+
+        using var document = JsonDocument.Parse(decoded);
+        var fields = document.RootElement.GetProperty("certificate");
+        Assert.AreEqual("X.509 certificate", fields.GetProperty("Type").GetString());
+        Assert.AreEqual("CN=loggrokx.test, O=LogGrokX", fields.GetProperty("Issuer").GetString());
+    }
+
+    [TestMethod]
+    public void DecodesHexPublicKeyBlobInsideJsonAsFields()
+    {
+        var source = $"{{\"data\":\"{CreateCryptoApiRsaPublicKeyHex()}\",\"id\":2}}";
+
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+
+        using var document = JsonDocument.Parse(decoded);
+        var fields = document.RootElement.GetProperty("data");
+        Assert.AreEqual("RSA public key (CryptoAPI PUBLICKEYBLOB)", fields.GetProperty("Type").GetString());
+        Assert.AreEqual("1024 bits", fields.GetProperty("Key size").GetString());
+        Assert.AreEqual("65537", fields.GetProperty("Public exponent").GetString());
+        Assert.AreEqual(4, fields.GetProperty("Modulus").GetArrayLength());
+        Assert.AreEqual(2, document.RootElement.GetProperty("id").GetInt32());
+    }
+
+    [TestMethod]
+    public void HexPemInsideJsonStringWithTextStaysString()
+    {
+        using var certificate = CreateCertificate();
+        var hex = Convert.ToHexString(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+        var source = $"{{\"certificate\":\"pem {hex}\"}}";
+
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+
+        using var document = JsonDocument.Parse(decoded);
+        StringAssert.StartsWith(document.RootElement.GetProperty("certificate").GetString(),
+            "pem -----BEGIN CERTIFICATE-----\nSubject: CN=loggrokx.test, O=LogGrokX");
+    }
+
+    [TestMethod]
+    public void LinePartShowsHexPemInsideJsonAsFields()
+    {
+        using var certificate = CreateCertificate();
+        var hex = Convert.ToHexString(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+        var part = new LinePartViewModel(1, $"{{\"certificate\":\"{hex}\"}}");
+
+        Assert.IsTrue(part.IsHex);
+        part.IsHexDecoded = true;
+
+        var text = part.TextModel.GetDisplayedText(null);
+        StringAssert.Contains(text, "\"Subject\": \"CN=loggrokx.test, O=LogGrokX\"");
+        Assert.IsFalse(text.Contains("-----BEGIN CERTIFICATE-----"), text);
     }
 
     [TestMethod]

@@ -231,6 +231,9 @@ public static partial class Base64Detector
             }
         }
 
+        if (TryFormatKeyDescriptionAsJson(value, out var description))
+            return description;
+
         if (value.Contains('\n'))
         {
             var lines = value.Replace("\r\n", "\n").TrimEnd('\n').Split('\n');

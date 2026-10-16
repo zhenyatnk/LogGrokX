@@ -230,7 +230,16 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `TextOperations.GetStructuredRanges`, mapped in `LinePartViewModel`):
   `CollectJson` decodes only string values (not keys) after
   `JsonSerializer.Deserialize<string>` and writes back nested JSON / an array of
-  lines / an escaped string (`EncodeJsonValue`); `CollectXml` handles element
+  lines / an escaped string (`EncodeJsonValue`). A value that is one or more
+  decoded PEM blocks or a key description (`X.509 certificate`, CryptoAPI
+  `PUBLICKEYBLOB`, SubjectPublicKeyInfo) is written as a JSON object with one
+  property per field (`Base64Detector.TryFormatKeyDescriptionAsJson` in
+  `Base64Detector.Json.cs`, #77): `Type` (PEM label or title), then
+  `Name: value` lines; a `Name:` line followed by plain lines becomes an array
+  (`Modulus`), subject alternative names are split into an array, several PEM
+  blocks become an array, and a PEM body that is not `Name: value` lines goes to
+  `Content` (nested JSON, array of lines or string). Other text with
+  `Name: value` lines (e.g. decoded HTTP headers) stays an array of lines; `CollectXml` handles element
   text, attribute values and CDATA via `WebUtility.HtmlDecode` and re-escapes.
   Text outside the spans goes through the plain path.
   `Base64Detector.Detect` returns `Base64Content` flags (`Pem`, `Base64`), and
@@ -262,6 +271,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   HEX that decodes to a PEM block is unfolded via
   `Base64Detector.TryDecodePemBlocks`, so the certificate summary shows instead
   of the raw PEM text (also inside JSON/XML).
+  When a HEX run is the whole JSON string (not a property name) and decodes to
+  such a certificate / key, the string literal is replaced by the JSON object from
+  `Base64Detector.TryFormatKeyDescriptionAsJson` (#77).
   Shorter runs are numbers; `IsHexNumber` also skips a
   contiguous run of digits 0-9 only (optionally `0x`-prefixed). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
   only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is

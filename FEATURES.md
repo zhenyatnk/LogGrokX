@@ -302,7 +302,9 @@ Binary payloads are not decoded to text, but a HEX-encoded X.509 certificate,
 SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` is recognized and shown as a
 key description (like the Base64 path). HEX that decodes to a **PEM** block is
 unfolded further — the certificate summary (or text / hex dump) is shown instead
-of the raw PEM text, also inside JSON strings and XML. "Copy" copies
+of the raw PEM text, also inside JSON strings and XML. When the whole JSON string
+is such a certificate / key, it is replaced by a JSON object with one property
+per field (see [Base64 and PEM decoding](#-base64-and-pem-decoding)). "Copy" copies
 the value as displayed; "Copy as native" keeps the original HEX.
 
 ## 🎨 Color rules
@@ -515,9 +517,13 @@ are formatted and folded). Values are unescaped first — JSON escapes such as
 `\u002B`, `\/`, `\n` and XML entities such as `&#xA;` or `&amp;` — and the
 decoded value is written back so the document stays valid and keeps folding:
 
-- JSON: a value that decodes to JSON becomes a nested object/array, a
-  multi-line result (e.g. a PEM certificate summary) becomes an array of lines,
-  anything else stays an escaped string; keys are never decoded;
+- JSON: a value that decodes to JSON becomes a nested object/array; a PEM
+  block, an X.509 certificate or a public key description becomes a JSON
+  object with one property per field (`Type`, `Subject`, `Issuer`, `Not after`,
+  `Thumbprint (SHA-1)`, …; subject alternative names and the RSA modulus are
+  arrays, several PEM blocks become an array of objects, and a PEM body that is
+  not a certificate goes to `Content`); any other multi-line result becomes an
+  array of lines, anything else stays an escaped string; keys are never decoded;
 - XML: element text, attribute values and CDATA are decoded and re-escaped
   (`&lt;`, `&amp;`, `&quot;` …).
 
@@ -530,6 +536,13 @@ the `BIN` toggle and either **Decode …** menu item reveal the summary.
 ```text
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInNlciI6ImVtcHR5In0","n":1}
 → {"token":{"alg":"HS256","typ":"JWT","ser":"empty"},"n":1}
+
+{"certificate":"LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUM...","id":7}
+→ {"certificate":{"Type":"CERTIFICATE","Subject":"CN=loggrokx.test, O=LogGrokX",
+   "Issuer":"CN=loggrokx.test, O=LogGrokX","Serial number":"00F1A0D918B23B6CFE",
+   "Not before":"2026-01-02 03:04:05 UTC","Not after":"2027-01-02 03:04:05 UTC",
+   "Thumbprint (SHA-1)":"DACF47B0…","Signature algorithm":"sha256RSA",
+   "Public key":"RSA 2048 bits"},"id":7}
 ```
 
 Both the standard (`+/`) and URL-safe (`-_`) alphabets are accepted, with or

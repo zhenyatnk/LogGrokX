@@ -90,26 +90,63 @@ public static partial class HexText
     {
         var jsonStrings = kind == StructuredTextKind.Json ? GetJsonStringContents(fragment) : null;
         var found = false;
-        var decoded = HexRunRegex().Replace(fragment, match =>
+        var decoded = new StringBuilder(fragment.Length);
+        var position = 0;
+        foreach (Match match in HexRunRegex().Matches(fragment))
         {
-            if (jsonStrings != null && !IsInside(jsonStrings, match.Index, match.Length))
-                return match.Value;
+            var jsonString = jsonStrings != null ? FindRange(jsonStrings, match.Index, match.Length) : null;
+            if (jsonStrings != null && jsonString == null)
+                continue;
 
             if (!TryDecodeRun(match.ValueSpan, out var text))
-                return match.Value;
+                continue;
 
             found = true;
-            return kind == StructuredTextKind.Json ? EscapeJson(text) : SecurityElement.Escape(text);
-        });
+            var start = match.Index;
+            var end = match.Index + match.Length;
+            string? replacement;
+            if (kind != StructuredTextKind.Json)
+            {
+                replacement = SecurityElement.Escape(text);
+            }
+            else if (jsonString is var (stringStart, stringEnd) && stringStart == start && stringEnd == end &&
+                     !IsJsonPropertyName(fragment, stringEnd) &&
+                     Base64Detector.TryFormatKeyDescriptionAsJson(text, out var json))
+            {
+                start--;
+                end++;
+                replacement = json;
+            }
+            else
+            {
+                replacement = EscapeJson(text);
+            }
 
-        if (found && IsSameStructure(decoded, kind))
+            decoded.Append(fragment, position, start - position).Append(replacement);
+            position = end;
+        }
+
+        if (found)
         {
-            builder.Append(decoded);
-            return true;
+            decoded.Append(fragment, position, fragment.Length - position);
+            var result = decoded.ToString();
+            if (IsSameStructure(result, kind))
+            {
+                builder.Append(result);
+                return true;
+            }
         }
 
         builder.Append(fragment);
         return false;
+    }
+
+    private static bool IsJsonPropertyName(string json, int closingQuote)
+    {
+        var next = closingQuote + 1;
+        while (next < json.Length && char.IsWhiteSpace(json[next]))
+            next++;
+        return next < json.Length && json[next] == ':';
     }
 
     private static bool IsSameStructure(string fragment, StructuredTextKind kind)
@@ -154,15 +191,15 @@ public static partial class HexText
         return result;
     }
 
-    private static bool IsInside(List<(int start, int end)> ranges, int start, int length)
+    private static (int start, int end)? FindRange(List<(int start, int end)> ranges, int start, int length)
     {
         foreach (var range in ranges)
         {
             if (start >= range.start && start + length <= range.end)
-                return true;
+                return range;
         }
 
-        return false;
+        return null;
     }
 
     private static bool TryDecodeRun(ReadOnlySpan<char> run, out string text)
