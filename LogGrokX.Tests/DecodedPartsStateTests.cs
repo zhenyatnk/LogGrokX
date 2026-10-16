@@ -31,15 +31,15 @@ public class DecodedPartsStateTests
 
     private static string Encode(string text) => Convert.ToBase64String(Encoding.UTF8.GetBytes(text));
 
-    private static LineViewModel CreateLine(int index, string source, DecodedPartsState state)
+    private static readonly RegexBasedLineParser Parser = new(new LogMetaInformation(new LogFormat
     {
-        var meta = new LogMetaInformation(new LogFormat
-        {
-            Regex = @"^(?<Level>[^\s]+)\s+(?<Message>.*)$"
-        });
-        return new LineViewModel(index, source, new RegexBasedLineParser(meta), new Selection(),
-            new TransformationPerformer(Array.Empty<string>()), decodedParts: state);
-    }
+        Regex = @"^(?<Level>[^\s]+)\s+(?<Message>.*)$"
+    }));
+
+    private static readonly TransformationPerformer NoTransformations = new(Array.Empty<string>());
+
+    private static LineViewModel CreateLine(int index, string source, DecodedPartsState state) =>
+        new(index, source, Parser, new Selection(), NoTransformations, decodedParts: state);
 
     [TestMethod]
     public void RecreatedLineKeepsBinToggle()
