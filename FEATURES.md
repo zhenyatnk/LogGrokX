@@ -300,7 +300,9 @@ escaped (`\"`, `\n`, `&lt;`, `&amp;`, ...), so the payload stays valid and keeps
 its JSON/XML folding. HEX that decodes to JSON or XML is formatted as well.
 Binary payloads are not decoded to text, but a HEX-encoded X.509 certificate,
 SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` is recognized and shown as a
-key description (like the Base64 path). "Copy" copies
+key description (like the Base64 path). HEX that decodes to a **PEM** block is
+unfolded further — the certificate summary (or text / hex dump) is shown instead
+of the raw PEM text, also inside JSON strings and XML. "Copy" copies
 the value as displayed; "Copy as native" keeps the original HEX.
 
 ## 🎨 Color rules
@@ -518,6 +520,12 @@ decoded value is written back so the document stays valid and keeps folding:
   anything else stays an escaped string; keys are never decoded;
 - XML: element text, attribute values and CDATA are decoded and re-escaped
   (`&lt;`, `&amp;`, `&quot;` …).
+
+When a Base64 value itself decodes to a **PEM** block (a PEM certificate stored
+Base64-encoded), the PEM is unfolded as well: instead of the raw PEM text the
+same certificate summary / text / hex dump is shown, in plain text and inside
+JSON/XML values alike. Such a cell reports both the PEM and the Base64 kind, so
+the `BIN` toggle and either **Decode …** menu item reveal the summary.
 
 ```text
 {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsInNlciI6ImVtcHR5In0","n":1}

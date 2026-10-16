@@ -139,6 +139,33 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void PemInsideBase64IsDetectedAndFullyDecoded()
+        {
+            using var certificate = CreateCertificate();
+            var part = new LinePartViewModel(1, Encode(certificate.ExportCertificatePem()));
+
+            Assert.IsTrue(part.IsBase64);
+            Assert.IsTrue(part.IsPem);
+            part.IsBase64Decoded = true;
+
+            var text = part.TextModel.GetDisplayedText(null);
+            StringAssert.StartsWith(text, "-----BEGIN CERTIFICATE-----");
+            StringAssert.Contains(text, "Subject: CN=loggrokx.test, O=LogGrokX");
+        }
+
+        [TestMethod]
+        public void RowBinToggleUnfoldsPemInsideBase64()
+        {
+            using var certificate = CreateCertificate();
+            var line = new TestLine("INFO", Encode(certificate.ExportCertificatePem()));
+
+            Assert.IsTrue(line.IsDecodable);
+            line.IsDecoded = true;
+
+            StringAssert.Contains(line[1].TextModel.GetDisplayedText(null), "Subject: CN=loggrokx.test, O=LogGrokX");
+        }
+
+        [TestMethod]
         public void PemInsideXmlIsDetected()
         {
             var part = new LinePartViewModel(1, $"<root><cert>{Pem.Replace("\n", "&#xA;")}</cert></root>");

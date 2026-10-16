@@ -217,6 +217,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `..._v2`) is retried as its suffixes/prefixes at those separators; the split
   with the best `GetTextScore` wins (a misaligned split decodes to junk such as
   `)#~` and loses).
+  A Base64 token that decodes to a PEM block is unfolded further
+  (`TryDecodeTokenDeep` -> `TryDecodePemBlocks`), so the certificate summary (or
+  text / hex dump) shows in place of the raw PEM text, in plain text and inside
+  JSON/XML values alike; such content reports both `Base64Content.Pem` and
+  `Base64Content.Base64`.
   Binary Base64 without markers is accepted only by `TryDescribeBinaryKey`
   (token from 64 chars starting with `MI`/`Bg`): DER X.509 certificate, DER
   SubjectPublicKeyInfo or CryptoAPI `PUBLICKEYBLOB` (`RSA1`); it is reported as
@@ -254,6 +259,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   UTF-16LE limited to chars below U+0800 to avoid CJK-looking noise; printable
   text with a letter only, or a binary X.509 certificate / SubjectPublicKeyInfo /
   CryptoAPI `PUBLICKEYBLOB` described by `Base64Detector.TryDescribeBinaryKeyFromBytes`).
+  HEX that decodes to a PEM block is unfolded via
+  `Base64Detector.TryDecodePemBlocks`, so the certificate summary shows instead
+  of the raw PEM text (also inside JSON/XML).
   Shorter runs are numbers; `IsHexNumber` also skips a
   contiguous run of digits 0-9 only (optionally `0x`-prefixed). Inside JSON/XML ranges (`TextOperations.GetStructuredRanges`)
   only HEX in JSON string literals is decoded and JSON-escaped; in XML the text is

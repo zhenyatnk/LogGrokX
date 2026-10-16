@@ -134,6 +134,21 @@ public class HexTextTests
         Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
     }
 
+    [TestMethod]
+    public void LinePartUnfoldsPemInsideHex()
+    {
+        using var certificate = CreateCertificate();
+        var hex = Convert.ToHexString(Encoding.UTF8.GetBytes(certificate.ExportCertificatePem()));
+        var part = new LinePartViewModel(1, $"data {hex}");
+
+        Assert.IsTrue(part.IsHex);
+        part.IsHexDecoded = true;
+
+        var text = part.TextModel.GetDisplayedText(null);
+        StringAssert.StartsWith(text, "data -----BEGIN CERTIFICATE-----");
+        StringAssert.Contains(text, "Subject: CN=loggrokx.test, O=LogGrokX");
+    }
+
     private static X509Certificate2 CreateCertificate()
     {
         using var rsa = RSA.Create(2048);
