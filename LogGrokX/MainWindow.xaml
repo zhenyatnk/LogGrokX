@@ -65,11 +65,11 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="{Binding WindowTitle}">
-            <ui:TitleBar.Icon>
+        <localControls:StableTitleBar Grid.Row="0" Title="{Binding WindowTitle}">
+            <localControls:StableTitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
-            </ui:TitleBar.Icon>
-            <ui:TitleBar.TrailingContent>
+            </localControls:StableTitleBar.Icon>
+            <localControls:StableTitleBar.TrailingContent>
                 <StackPanel Margin="0,0,8,0" Orientation="Horizontal" VerticalAlignment="Center">
                     <ComboBox Width="150" Margin="4,0,8,0" VerticalAlignment="Center"
                               ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
@@ -153,8 +153,8 @@
                         <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
                     </ui:Button>
                 </StackPanel>
-            </ui:TitleBar.TrailingContent>
-        </ui:TitleBar>
+            </localControls:StableTitleBar.TrailingContent>
+        </localControls:StableTitleBar>
 
         <Border Grid.Row="1" Margin="2,0,2,2" Padding="0"
                 Style="{StaticResource FluentCardStyle}">

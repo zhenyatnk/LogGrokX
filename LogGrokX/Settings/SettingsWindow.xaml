@@ -3,6 +3,7 @@
                  xmlns:loc="clr-namespace:LogGrokX.Localization"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:localControls="clr-namespace:LogGrokX.Controls"
                  Title="{loc:Loc Settings}"
                  Width="860"
                  Height="700"
@@ -31,11 +32,11 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0" Title="{loc:Loc Settings}">
-            <ui:TitleBar.Icon>
+        <localControls:StableTitleBar Grid.Row="0" Title="{loc:Loc Settings}">
+            <localControls:StableTitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
+            </localControls:StableTitleBar.Icon>
+        </localControls:StableTitleBar>
 
         <Border Grid.Row="1" Margin="12,4,12,8" Padding="8" Style="{StaticResource FluentCardStyle}">
             <TabControl>

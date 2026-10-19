@@ -3,6 +3,7 @@
                  xmlns:loc="clr-namespace:LogGrokX.Localization"
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:localControls="clr-namespace:LogGrokX.Controls"
                  Title="{loc:Loc Support}"
                  Width="480"
                  SizeToContent="Height"
@@ -21,14 +22,14 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <ui:TitleBar Grid.Row="0"
+        <localControls:StableTitleBar Grid.Row="0"
                      Title="{loc:Loc Support}"
                      ShowMinimize="False"
                      ShowMaximize="False">
-            <ui:TitleBar.Icon>
+            <localControls:StableTitleBar.Icon>
                 <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
-            </ui:TitleBar.Icon>
-        </ui:TitleBar>
+            </localControls:StableTitleBar.Icon>
+        </localControls:StableTitleBar>
 
         <ScrollViewer Grid.Row="1"
                       Padding="24,8,24,24"
