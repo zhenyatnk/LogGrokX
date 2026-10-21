@@ -20,7 +20,13 @@
     <DockPanel>
         <ToggleButton x:Name="CategoriesSearchButton"
                       ToolTip="{loc:Loc FilterColumn}"
-                      Margin="2"
+                      Width="22"
+                      Height="22"
+                      MinWidth="0"
+                      MinHeight="0"
+                      Margin="0,0,2,0"
+                      Padding="2"
+                      VerticalAlignment="Center"
                       Background="Transparent"
                       Visibility="{Binding IsFilteredField, 
                         Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -54,7 +60,7 @@
 
         <TextBlock VerticalAlignment="Center"
                    Text="{Binding Path=FieldHeader}"
-                   FontWeight="SemiBold" MinWidth="36"
+                   FontWeight="SemiBold"
                    Width="Auto"/>
     </DockPanel>
 </UserControl>
