@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 
 namespace LogGrokX.Data
 {
@@ -23,8 +24,10 @@ namespace LogGrokX.Data
         public static List<MergedLineRef> Build(IReadOnlyList<MergeSource> sources) =>
             Build(sources, new List<MergedLineRef>());
 
-        public static List<MergedLineRef> Build(IReadOnlyList<MergeSource> sources, List<MergedLineRef> result)
+        public static List<MergedLineRef> Build(IReadOnlyList<MergeSource> sources, List<MergedLineRef> result,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             result.Clear();
 
             var total = 0;
@@ -42,6 +45,8 @@ namespace LogGrokX.Data
 
             while (queue.TryDequeue(out var cursor, out _))
             {
+                if ((result.Count & 1023) == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
                 result.Add(new MergedLineRef(cursor.Source, cursor.Line, cursor.Ticks));
 
                 var next = cursor.Line + 1;
@@ -55,11 +60,17 @@ namespace LogGrokX.Data
         public static TimeIndex BuildTimeIndex(IReadOnlyList<MergedLineRef> lines) =>
             BuildTimeIndex(lines, new TimeIndex());
 
-        public static TimeIndex BuildTimeIndex(IReadOnlyList<MergedLineRef> lines, TimeIndex target)
+        public static TimeIndex BuildTimeIndex(IReadOnlyList<MergedLineRef> lines, TimeIndex target,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             target.Clear();
             for (var i = 0; i < lines.Count; i++)
+            {
+                if ((i & 1023) == 0)
+                    cancellationToken.ThrowIfCancellationRequested();
                 target.Add(lines[i].Ticks);
+            }
 
             return target;
         }

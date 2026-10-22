@@ -28,9 +28,8 @@ namespace LogGrokX.MergedView
         private SearchPattern _searchPattern;
         private int[] _allMatchedIndices = Array.Empty<int>();
         private int[] _matchedIndices = Array.Empty<int>();
-        private MergedLineRef[] _buffer = Array.Empty<MergedLineRef>();
-        private int[]? _fullIndexMap;
-        private MergedDocumentItem[] _sources = Array.Empty<MergedDocumentItem>();
+        private MergedViewSnapshot _snapshot = MergedViewSnapshot.Empty;
+        private SearchMatches? _cachedMatches;
         private bool[] _matchBuckets = Array.Empty<bool>();
         private int? _currentItemIndex;
         private IEnumerable<object>? _selectedItems;
@@ -61,6 +60,10 @@ namespace LogGrokX.MergedView
         public Action<int>? NavigateToIndexRequested { get; set; }
 
         public GrowingLogLinesCollection Lines { get; }
+
+        internal MergedViewSnapshot Snapshot => _snapshot;
+
+        private sealed record SearchMatches(MergedDataSnapshot Data, SearchPattern Pattern, HashSet<int>[] BySource);
 
         public ViewBase CustomView => _merged.CreateSearchView();
 
@@ -213,9 +216,8 @@ namespace LogGrokX.MergedView
             {
                 _allMatchedIndices = Array.Empty<int>();
                 _matchedIndices = Array.Empty<int>();
-                _buffer = Array.Empty<MergedLineRef>();
-                _fullIndexMap = null;
-                _sources = Array.Empty<MergedDocumentItem>();
+                _snapshot = MergedViewSnapshot.Empty;
+                _cachedMatches = null;
                 Lines.Reset(Array.Empty<ItemViewModel>(), Array.Empty<ItemViewModel>());
                 MatchBuckets = Array.Empty<bool>();
                 CurrentItemIndex = null;
@@ -228,52 +230,64 @@ namespace LogGrokX.MergedView
                 return;
             }
 
-            var buffer = _merged.VisibleLines.ToArray();
-            var sources = _merged.Sources.ToArray();
-            var fullIndexMap = _merged.GetVisibleFullIndexMap();
+            var snapshot = _merged.GetSearchSnapshot();
             var regex = _searchPattern.GetRegex(RegexOptions.Compiled);
             var token = newCts.Token;
 
-            _buffer = buffer;
-            _sources = sources;
+            if (!ReferenceEquals(snapshot, _snapshot))
+            {
+                _allMatchedIndices = Array.Empty<int>();
+                _matchedIndices = Array.Empty<int>();
+                Lines.Reset(Array.Empty<ItemViewModel>(), Array.Empty<ItemViewModel>());
+                SelectedItems = null;
+                MatchBuckets = Array.Empty<bool>();
+            }
+            _snapshot = snapshot;
             IsSearching = true;
             IsIndeterminateProgress = true;
             SearchProgress = 0;
             CurrentItemIndex = null;
 
-            _ = RunSearchAsync(buffer, sources, fullIndexMap, regex, token);
+            _ = RunSearchAsync(snapshot, _searchPattern, regex, token);
         }
 
-        private async Task RunSearchAsync(MergedLineRef[] buffer, MergedDocumentItem[] sources, int[]? fullIndexMap,
-            Regex regex, CancellationToken token)
+        private async Task RunSearchAsync(MergedViewSnapshot snapshot, SearchPattern pattern, Regex regex,
+            CancellationToken token)
         {
+            var cached = _cachedMatches;
             try
             {
-                var matched = await Task.Run(() =>
+                var (matched, matches) = await Task.Run(() =>
                 {
-                    var sourceMatches = new HashSet<int>[sources.Length];
-                    for (var i = 0; i < sources.Length; i++)
+                    var matches = cached;
+                    if (matches == null || !ReferenceEquals(matches.Data, snapshot.Data) || !matches.Pattern.Equals(pattern))
                     {
-                        token.ThrowIfCancellationRequested();
-                        sourceMatches[i] = new HashSet<int>(sources[i].Document.FindMatchingLines(regex, token));
+                        var sourceMatches = new HashSet<int>[snapshot.Sources.Length];
+                        for (var i = 0; i < snapshot.Sources.Length; i++)
+                        {
+                            token.ThrowIfCancellationRequested();
+                            sourceMatches[i] = new HashSet<int>(snapshot.Sources[i].Document.FindMatchingLines(regex, token));
+                        }
+                        matches = new SearchMatches(snapshot.Data, pattern, sourceMatches);
                     }
 
                     var result = new List<int>();
-                    for (var i = 0; i < buffer.Length; i++)
+                    for (var i = 0; i < snapshot.Lines.Length; i++)
                     {
                         token.ThrowIfCancellationRequested();
-                        if (sourceMatches[buffer[i].SourceIndex].Contains(buffer[i].LineNumber))
+                        var line = snapshot.Lines[i];
+                        if (matches.BySource[line.SourceIndex].Contains(line.LineNumber))
                             result.Add(i);
                     }
 
-                    return result;
+                    return (result, matches);
                 }, token);
 
                 if (token.IsCancellationRequested)
                     return;
 
+                _cachedMatches = matches;
                 _allMatchedIndices = matched.ToArray();
-                _fullIndexMap = fullIndexMap;
                 await ApplyThreadFilterAsync(_allMatchedIndices);
             }
             catch (OperationCanceledException)
@@ -309,8 +323,8 @@ namespace LogGrokX.MergedView
             }
 
             var token = cts.Token;
-            var buffer = _buffer;
-            var sources = _sources;
+            var buffer = _snapshot.Lines;
+            var sources = _snapshot.Sources;
             var thread = _merged.CurrentThread;
             var threadFieldIndex = _merged.ThreadFieldIndex;
 
@@ -372,13 +386,13 @@ namespace LogGrokX.MergedView
 
         private ItemViewModel CreateResult(int mergedIndex)
         {
-            var line = _buffer[mergedIndex];
-            return new MergedLineViewModel(_sources[line.SourceIndex], line.LineNumber, line.Ticks,
+            var line = _snapshot.Lines[mergedIndex];
+            return new MergedLineViewModel(_snapshot.Sources[line.SourceIndex], line.LineNumber, line.Ticks,
                 MapToFull(mergedIndex), _decodedParts);
         }
 
         private int MapToFull(int visibleIndex) =>
-            _fullIndexMap is { } map && visibleIndex >= 0 && visibleIndex < map.Length
+            _snapshot.FullIndexMap is { } map && visibleIndex >= 0 && visibleIndex < map.Length
                 ? map[visibleIndex]
                 : visibleIndex;
 

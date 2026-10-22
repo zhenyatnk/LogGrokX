@@ -2,7 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -32,12 +35,14 @@ namespace LogGrokX.MergedView
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly TimelinePlacementService _timelinePlacementService;
         private readonly HashSet<DocumentViewModel> _subscribed = new();
-        private readonly List<MergedDocumentItem> _selectedSources = new();
-        private readonly List<MergedLineRef> _mergedBuffer = new();
-        private readonly List<MergedLineRef> _visibleBuffer = new();
-        private readonly List<int> _visibleToFull = new();
-        private readonly List<MergeSource> _mergeSources = new();
-        private readonly TimeIndex _mergedTimeIndex = new();
+        private MergedViewSnapshot _snapshot = MergedViewSnapshot.Empty;
+        private MergedDataSnapshot? _cachedData;
+        private MergedSchema? _cachedSchema;
+        private int _cachedDataRevision = -1;
+        private int _dataRevision;
+        private int _requestVersion;
+        private CancellationTokenSource? _rebuildCts;
+        private bool _disposed;
         private readonly DecodedPartsState _decodedParts = new();
         private readonly DispatcherTimer _rebuildTimer;
         private ColorRules _colorSettings;
@@ -49,7 +54,6 @@ namespace LogGrokX.MergedView
         private GridViewFactory? _searchViewFactory;
 
         private bool _isActive;
-        private bool _isFiltered;
         private int _nextColorIndex;
         private int _currentItemIndex;
         private int _firstVisibleIndex = -1;
@@ -80,7 +84,7 @@ namespace LogGrokX.MergedView
             Search.CurrentLineChanged += NavigateToCentered;
 
             TimeRangeFilter = new MergedTimeRangeFilterViewModel();
-            TimeRangeFilter.Changed += ScheduleRebuild;
+            TimeRangeFilter.Changed += ScheduleFilter;
 
             ColumnSettings = applicationSettings.GetColumnSettings(ColumnSettingsKey);
 
@@ -91,13 +95,11 @@ namespace LogGrokX.MergedView
             _rebuildTimer.Tick += (_, _) =>
             {
                 _rebuildTimer.Stop();
-                Rebuild();
+                _ = RebuildAsync();
             };
 
             Lines = new GrowingLogLinesCollection(
-                Array.Empty<ItemViewModel>(),
-                new VirtualList<MergedLineRef, ItemViewModel>(
-                    new ListItemProvider<MergedLineRef>(Array.Empty<MergedLineRef>()), CreateLine));
+                Array.Empty<ItemViewModel>(), Array.Empty<ItemViewModel>());
 
             _schema = MergedSchema.Build(Array.Empty<MergedDocumentItem>());
             CreateSchemaDependencies();
@@ -148,8 +150,11 @@ namespace LogGrokX.MergedView
         {
             _colorSettings = settings;
             InvokePropertyChanged(nameof(ColorSettings));
-            _rebuildTimer.Stop();
-            Rebuild();
+            if (_rebuildTimer.IsEnabled)
+            {
+                _rebuildTimer.Stop();
+                _ = RebuildAsync();
+            }
         }
 
         public LogMetaInformation MetaInformation => _schema.MetaInformation;
@@ -203,11 +208,9 @@ namespace LogGrokX.MergedView
 
         public event Action? Rebuilt;
 
-        internal IReadOnlyList<MergedLineRef> VisibleLines => _isFiltered ? _visibleBuffer : _mergedBuffer;
+        private IReadOnlyList<MergedDocumentItem> Sources => _snapshot.Sources;
 
-        internal int[]? GetVisibleFullIndexMap() => _isFiltered ? _visibleToFull.ToArray() : null;
-
-        internal IReadOnlyList<MergedDocumentItem> Sources => _selectedSources;
+        internal MergedViewSnapshot GetSearchSnapshot() => _snapshot;
 
         internal int Revision { get; private set; }
 
@@ -219,7 +222,7 @@ namespace LogGrokX.MergedView
 
         public DelegateCommand NavigateToMarkerCommand { get; }
 
-        public bool IsLoading => _rebuildTimer.IsEnabled || IsAnySourceLoading();
+        public bool IsLoading => _rebuildTimer.IsEnabled || _rebuildCts != null || IsAnySourceLoading();
 
         public bool IsActive
         {
@@ -234,16 +237,21 @@ namespace LogGrokX.MergedView
 
                 if (value)
                 {
-                    Rebuild();
+                    _dataRevision++;
+                    _requestVersion++;
+                    _ = RebuildAsync();
                 }
                 else
                 {
                     _rebuildTimer.Stop();
+                    _requestVersion++;
+                    _rebuildCts?.Cancel();
                 }
+                InvokePropertyChanged(nameof(IsLoading));
             }
         }
 
-        public TimeIndex MergedTimeIndex => _mergedTimeIndex;
+        public TimeIndex MergedTimeIndex => _snapshot.Data.TimeIndex;
 
         public IReadOnlyList<TimelineSegment> TimelineSegments
         {
@@ -327,9 +335,9 @@ namespace LogGrokX.MergedView
         public bool TryNavigateToDocumentLine(DocumentViewModel document, int lineNumber)
         {
             var sourceIndex = -1;
-            for (var i = 0; i < _selectedSources.Count; i++)
+            for (var i = 0; i < Sources.Count; i++)
             {
-                if (_selectedSources[i].Document == document)
+                if (Sources[i].Document == document)
                 {
                     sourceIndex = i;
                     break;
@@ -339,9 +347,10 @@ namespace LogGrokX.MergedView
             if (sourceIndex < 0)
                 return false;
 
-            for (var i = 0; i < _mergedBuffer.Count; i++)
+            var mergedLines = _snapshot.Data.Lines;
+            for (var i = 0; i < mergedLines.Length; i++)
             {
-                var line = _mergedBuffer[i];
+                var line = mergedLines[i];
                 if (line.SourceIndex == sourceIndex && line.LineNumber == lineNumber)
                 {
                     NavigateToCentered(i);
@@ -354,11 +363,14 @@ namespace LogGrokX.MergedView
 
         public void Dispose()
         {
+            _disposed = true;
+            _requestVersion++;
+            _rebuildCts?.Cancel();
             _rebuildTimer.Stop();
             _documents.CollectionChanged -= OnDocumentsChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
-            TimeRangeFilter.Changed -= ScheduleRebuild;
+            TimeRangeFilter.Changed -= ScheduleFilter;
             _filterSettings.ExclusionsChanged -= OnFilterChanged;
             Search.CurrentLineChanged -= NavigateToCentered;
             _viewFactory.Dispose();
@@ -388,10 +400,6 @@ namespace LogGrokX.MergedView
             return new DataTemplate(typeof(DependencyObject)) { VisualTree = border };
         }
 
-        private ItemViewModel CreateLine(MergedLineRef line) =>
-            new MergedLineViewModel(_selectedSources[line.SourceIndex], line.LineNumber, line.Ticks,
-                decodedParts: _decodedParts);
-
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(GroupByThread));
@@ -408,7 +416,7 @@ namespace LogGrokX.MergedView
         {
             RefreshActiveFilters();
             InvokePropertyChanged(nameof(HaveExclusions));
-            ScheduleRebuild();
+            ScheduleFilter();
         }
 
         private void OnDocumentsChanged(object? sender, EventArgs e)
@@ -467,7 +475,15 @@ namespace LogGrokX.MergedView
 
         private void ScheduleRebuild()
         {
-            if (!_isActive)
+            _dataRevision++;
+            ScheduleFilter();
+        }
+
+        private void ScheduleFilter()
+        {
+            _requestVersion++;
+            _rebuildCts?.Cancel();
+            if (!_isActive || _disposed)
                 return;
 
             if (_rebuildTimer.IsEnabled)
@@ -475,7 +491,7 @@ namespace LogGrokX.MergedView
 
             _rebuildTimer.Interval = IsAnySourceLoading()
                 ? TimeSpan.FromMilliseconds(1000)
-                : TimeSpan.FromMilliseconds(300);
+                : TimeSpan.FromMilliseconds(50);
             _rebuildTimer.Start();
             InvokePropertyChanged(nameof(IsLoading));
         }
@@ -491,71 +507,103 @@ namespace LogGrokX.MergedView
             return false;
         }
 
-        private void Rebuild()
+        private async Task RebuildAsync()
         {
-            if (!_isActive)
+            if (!_isActive || _disposed)
                 return;
 
-            _selectedSources.Clear();
-            foreach (var item in AvailableDocuments)
-            {
-                if (item.IsSelected)
-                    _selectedSources.Add(item);
-            }
-
-            _selectedSources.Sort(static (left, right) => left.ColorIndex.CompareTo(right.ColorIndex));
-
-            var schemaChanged = EnsureSchema();
-            _componentIndexer.UpdateSources(_selectedSources);
-
-            _mergeSources.Clear();
-            foreach (var item in _selectedSources)
-                _mergeSources.Add(new MergeSource(item.Document.LineCount, item.Document.TimeIndex));
-
-            MergedLineOrder.Build(_mergeSources, _mergedBuffer);
-            MergedLineOrder.BuildTimeIndex(_mergedBuffer, _mergedTimeIndex);
-            _isFiltered = BuildVisibleBuffer();
-
-            var visibleLines = _isFiltered ? _visibleBuffer : _mergedBuffer;
-            Lines.Reset(
-                Array.Empty<ItemViewModel>(),
-                new VirtualList<MergedLineRef, ItemViewModel>(new ListItemProvider<MergedLineRef>(visibleLines),
-                    CreateLine));
-
-            TimeRangeFilter.Refresh(_mergedTimeIndex, _mergedBuffer.Count);
-            TimelineSegments = BuildSegments(_mergedBuffer, _selectedSources);
-            TotalLineCount = _mergedBuffer.Count;
-            UpdateScrollPosition();
-            Revision++;
-            if (schemaChanged)
-            {
-                ColumnSettings.ColumnWidths = null;
-                InvokePropertyChanged(nameof(CustomView));
-                InvokePropertyChanged(nameof(MetaInformation));
-                InvokePropertyChanged(nameof(ColumnSettings));
-            }
-
+            _rebuildCts?.Cancel();
+            using var cts = new CancellationTokenSource();
+            _rebuildCts = cts;
+            var token = cts.Token;
+            var version = _requestVersion;
+            var dataRevision = _dataRevision;
             InvokePropertyChanged(nameof(IsLoading));
-            UpdateCurrentThread();
-            Rebuilt?.Invoke();
+            try
+            {
+                var data = _cachedDataRevision == dataRevision ? _cachedData : null;
+                var schema = data != null ? _cachedSchema! : MergedSchema.Build(AvailableDocuments);
+                var schemaChanged = !HasSameSchema(schema);
+                var exclusions = schemaChanged
+                    ? new Dictionary<int, IEnumerable<string>>()
+                    : _filterSettings.Exclusions.ToDictionary(pair => pair.Key,
+                        pair => (IEnumerable<string>)pair.Value.ToArray());
+                var range = CaptureRange();
+                if (data == null)
+                {
+                    var sources = AvailableDocuments.Where(item => item.IsSelected).OrderBy(item => item.ColorIndex)
+                        .Select(item => new MergedDocumentItem(item.Document, item.ColorIndex)).ToArray();
+                    schema.ApplyTo(sources);
+                    var mergeSources = sources.Select(item =>
+                        new MergeSource(item.Document.LineCount, item.Document.TimeIndex)).ToArray();
+                    data = await Task.Run(() => BuildData(sources, mergeSources, token), token);
+                    token.ThrowIfCancellationRequested();
+                    _cachedData = data;
+                    _cachedSchema = schema;
+                    _cachedDataRevision = dataRevision;
+                }
+
+                var sourceExclusions = BuildSourceExclusions(exclusions, data.Sources, schema.MetaInformation);
+                var snapshot = await Task.Run(() => BuildVisibleSnapshot(data, sourceExclusions, range, token), token);
+                if (token.IsCancellationRequested || version != _requestVersion || !_isActive || _disposed)
+                    return;
+
+                _snapshot = snapshot;
+                if (schemaChanged)
+                {
+                    _schema = schema;
+                    CreateSchemaDependencies();
+                    ColumnSettings.ColumnWidths = null;
+                }
+                _componentIndexer.UpdateSources(snapshot.Sources);
+                TimeRangeFilter.Refresh(data.TimeIndex, data.Lines.Length);
+                TotalLineCount = data.Lines.Length;
+                TimelineSegments = data.TimelineSegments;
+                Lines.Reset(Array.Empty<ItemViewModel>(),
+                    new VirtualList<MergedLineRef, ItemViewModel>(new ListItemProvider<MergedLineRef>(snapshot.Lines),
+                        line => new MergedLineViewModel(snapshot.Sources[line.SourceIndex], line.LineNumber, line.Ticks,
+                            decodedParts: _decodedParts)));
+                if (schemaChanged)
+                {
+                    InvokePropertyChanged(nameof(CustomView));
+                    InvokePropertyChanged(nameof(MetaInformation));
+                    InvokePropertyChanged(nameof(ColumnSettings));
+                    InvokePropertyChanged(nameof(ThreadFieldIndex));
+                }
+                InvokePropertyChanged(nameof(MergedTimeIndex));
+                UpdateScrollPosition();
+                Revision++;
+                UpdateCurrentThread();
+                Rebuilt?.Invoke();
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested)
+            {
+            }
+            catch (Exception exception)
+            {
+                Trace.TraceError($"Cannot rebuild merged view: {exception}");
+            }
+            finally
+            {
+                if (ReferenceEquals(_rebuildCts, cts))
+                {
+                    _rebuildCts = null;
+                    InvokePropertyChanged(nameof(IsLoading));
+                }
+            }
         }
 
-        private bool EnsureSchema()
+        private bool HasSameSchema(MergedSchema schema) =>
+            schema.Fields.SequenceEqual(_schema.Fields) &&
+            schema.MetaInformation.IndexedFieldNumbers.SequenceEqual(_schema.MetaInformation.IndexedFieldNumbers);
+
+        private static MergedDataSnapshot BuildData(MergedDocumentItem[] sources, MergeSource[] mergeSources,
+            CancellationToken token)
         {
-            var schema = MergedSchema.Build(AvailableDocuments);
-
-            if (schema.Fields.SequenceEqual(_schema.Fields) &&
-                schema.MetaInformation.IndexedFieldNumbers.SequenceEqual(_schema.MetaInformation.IndexedFieldNumbers))
-            {
-                _schema.ApplyTo(AvailableDocuments);
-                return false;
-            }
-
-            _schema = schema;
-            _schema.ApplyTo(AvailableDocuments);
-            CreateSchemaDependencies();
-            InvokePropertyChanged(nameof(ThreadFieldIndex));
-            return true;
+            var lines = MergedLineOrder.Build(mergeSources, new List<MergedLineRef>(), token).ToArray();
+            var timeIndex = MergedLineOrder.BuildTimeIndex(lines, new TimeIndex(), token);
+            return new MergedDataSnapshot(lines, sources, timeIndex, BuildSegments(lines, sources, token),
+                mergeSources.All(source => source.HasTime));
         }
 
         private void CreateSchemaDependencies()
@@ -602,53 +650,77 @@ namespace LogGrokX.MergedView
             return lines.Select(line => line[fieldIndex].OriginalText ?? string.Empty).Distinct();
         }
 
-        private bool BuildVisibleBuffer()
+        private (bool Active, double Lower, double Upper) CaptureRange() =>
+            (TimeRangeFilter.IsAvailable && (TimeRangeFilter.LowerValue > TimeRangeFilter.Minimum ||
+                                            TimeRangeFilter.UpperValue < TimeRangeFilter.Maximum),
+                TimeRangeFilter.LowerValue, TimeRangeFilter.UpperValue);
+
+        private static MergedViewSnapshot BuildVisibleSnapshot(MergedDataSnapshot data,
+            IReadOnlyDictionary<int, IReadOnlyDictionary<int, IEnumerable<string>>> sourceExclusions,
+            (bool Active, double Lower, double Upper) range, CancellationToken token)
         {
-            _visibleBuffer.Clear();
-            _visibleToFull.Clear();
+            token.ThrowIfCancellationRequested();
+            var hasTime = data.TimeIndex.HasTime && data.TimeIndex.IsMonotonic &&
+                          data.TimeIndex.Count > 0 && data.TimeIndex.MaxTicks > data.TimeIndex.MinTicks;
+            var minimum = hasTime ? (double)data.TimeIndex.MinTicks : 0;
+            var maximum = hasTime ? (double)data.TimeIndex.MaxTicks : data.Lines.Length;
+            var lower = range.Active ? Math.Clamp(range.Lower, minimum, maximum) : minimum;
+            var upper = range.Active ? Math.Clamp(range.Upper, minimum, maximum) : maximum;
+            var hasRange = lower > minimum || upper < maximum;
+            if (sourceExclusions.Count == 0 && !hasRange)
+                return new MergedViewSnapshot(data, data.Lines, null);
 
-            var exclusions = _filterSettings.Exclusions;
-            var timeRange = TimeRangeFilter.TimeRange;
-            var lineRange = TimeRangeFilter.LineRange;
-
-            if (exclusions.Count == 0 && timeRange == null && lineRange == null)
-                return false;
-
-            var sourceExclusions = BuildSourceExclusions(exclusions);
-
-            for (var i = 0; i < _mergedBuffer.Count; i++)
+            var lines = new List<MergedLineRef>();
+            var fullIndexMap = new List<int>();
+            var start = 0;
+            var end = data.Lines.Length;
+            if (hasRange)
             {
-                var line = _mergedBuffer[i];
+                if (!hasTime)
+                {
+                    start = (int)lower;
+                    end = (int)upper;
+                }
+                else if (data.AllSourcesHaveTime &&
+                         data.TimeIndex.FindLineRange((long)lower, (long)upper) is { } timeRange)
+                {
+                    start = timeRange.StartLine;
+                    end = timeRange.EndLine;
+                }
+            }
 
-                if (lineRange is { } range && (i < range.From || i >= range.To))
-                    continue;
-
-                if (timeRange is { } time && line.Ticks >= 0 && (line.Ticks < time.From || line.Ticks > time.To))
+            for (var i = start; i < end; i++)
+            {
+                if ((i & 1023) == 0)
+                    token.ThrowIfCancellationRequested();
+                var line = data.Lines[i];
+                if (hasRange && hasTime && line.Ticks >= 0 && (line.Ticks < (long)lower || line.Ticks > (long)upper))
                     continue;
 
                 if (sourceExclusions.TryGetValue(line.SourceIndex, out var documentExclusions) &&
                     documentExclusions.Count > 0 &&
-                    !_selectedSources[line.SourceIndex].Document.Indexer.IsLineIncluded(line.LineNumber, documentExclusions))
+                    !data.Sources[line.SourceIndex].Document.Indexer.IsLineIncluded(line.LineNumber, documentExclusions))
                     continue;
 
-                _visibleBuffer.Add(line);
-                _visibleToFull.Add(i);
+                lines.Add(line);
+                fullIndexMap.Add(i);
             }
 
-            return true;
+            return new MergedViewSnapshot(data, lines.ToArray(), fullIndexMap.ToArray());
         }
 
-        private Dictionary<int, IReadOnlyDictionary<int, IEnumerable<string>>> BuildSourceExclusions(
-            IReadOnlyDictionary<int, IEnumerable<string>> exclusions)
+        private static Dictionary<int, IReadOnlyDictionary<int, IEnumerable<string>>> BuildSourceExclusions(
+            IReadOnlyDictionary<int, IEnumerable<string>> exclusions, IReadOnlyList<MergedDocumentItem> sources,
+            LogMetaInformation metaInformation)
         {
             var result = new Dictionary<int, IReadOnlyDictionary<int, IEnumerable<string>>>();
             if (exclusions.Count == 0)
                 return result;
 
-            var mergedIndexedFields = MetaInformation.IndexedFieldNumbers;
-            for (var sourceIndex = 0; sourceIndex < _selectedSources.Count; sourceIndex++)
+            var mergedIndexedFields = metaInformation.IndexedFieldNumbers;
+            for (var sourceIndex = 0; sourceIndex < sources.Count; sourceIndex++)
             {
-                var item = _selectedSources[sourceIndex];
+                var item = sources[sourceIndex];
                 Dictionary<int, IEnumerable<string>>? translated = null;
 
                 foreach (var (mergedIndexedFieldIndex, values) in exclusions)
@@ -685,33 +757,33 @@ namespace LogGrokX.MergedView
                 return;
             }
 
-            if (_isFiltered)
+            if (_snapshot.FullIndexMap is { } map)
             {
-                ScrollPosition = firstVisible < _visibleToFull.Count ? _visibleToFull[firstVisible] : -1;
+                ScrollPosition = firstVisible < map.Length ? map[firstVisible] : -1;
                 return;
             }
 
-            ScrollPosition = firstVisible < _mergedBuffer.Count ? firstVisible : -1;
+            ScrollPosition = firstVisible < _snapshot.Data.Lines.Length ? firstVisible : -1;
         }
 
         private int GetVisibleIndex(int mergedIndex)
         {
-            if (!_isFiltered)
+            if (_snapshot.FullIndexMap is not { } map)
                 return mergedIndex;
 
-            if (_visibleToFull.Count == 0)
+            if (map.Length == 0)
                 return -1;
 
-            var index = _visibleToFull.BinarySearch(mergedIndex);
+            var index = Array.BinarySearch(map, mergedIndex);
             if (index >= 0)
                 return index;
 
             var insertion = ~index;
-            return insertion < _visibleToFull.Count ? insertion : _visibleToFull.Count - 1;
+            return insertion < map.Length ? insertion : map.Length - 1;
         }
 
         private static IReadOnlyList<TimelineSegment> BuildSegments(IReadOnlyList<MergedLineRef> lines,
-            IReadOnlyList<MergedDocumentItem> sources)
+            IReadOnlyList<MergedDocumentItem> sources, CancellationToken token)
         {
             if (lines.Count == 0 || sources.Count == 0)
                 return Array.Empty<TimelineSegment>();
@@ -722,13 +794,15 @@ namespace LogGrokX.MergedView
 
             for (var i = 1; i <= lines.Count; i++)
             {
+                if ((i & 1023) == 0)
+                    token.ThrowIfCancellationRequested();
                 var sourceIndex = i < lines.Count ? lines[i].SourceIndex : -1;
                 if (sourceIndex == current)
                     continue;
 
                 segments.Add(new TimelineSegment(start, i, sources[current].TimelineBrush));
                 if (segments.Count > MaxTimelineSegments)
-                    return BuildDownsampledSegments(lines, sources);
+                    return BuildDownsampledSegments(lines, sources, token);
 
                 start = i;
                 current = sourceIndex;
@@ -738,7 +812,7 @@ namespace LogGrokX.MergedView
         }
 
         private static IReadOnlyList<TimelineSegment> BuildDownsampledSegments(IReadOnlyList<MergedLineRef> lines,
-            IReadOnlyList<MergedDocumentItem> sources)
+            IReadOnlyList<MergedDocumentItem> sources, CancellationToken token)
         {
             var lineCount = lines.Count;
             var bucketCount = Math.Min(MaxTimelineSegments, lineCount);
@@ -750,6 +824,7 @@ namespace LogGrokX.MergedView
 
             for (var bucket = 0; bucket < bucketCount; bucket++)
             {
+                token.ThrowIfCancellationRequested();
                 var bucketEnd = bucket == bucketCount - 1
                     ? lineCount
                     : (int)Math.Round((bucket + 1) * bucketSize);

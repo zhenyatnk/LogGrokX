@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Data.Tests;
@@ -8,6 +9,77 @@ namespace LogGrokX.Data.Tests;
 [TestClass]
 public class MergedLineOrderTests
 {
+    [TestMethod]
+    public void CancelledBuildLeavesExistingResultUntouched()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var result = new List<MergedLineRef> { new(0, 0, At(1)) };
+
+        Assert.Throws<OperationCanceledException>(() =>
+            MergedLineOrder.Build(new[] { new MergeSource(1, Timed(1)) }, result, cancellation.Token));
+
+        Assert.AreEqual(1, result.Count);
+        Assert.AreEqual(At(1), result[0].Ticks);
+    }
+
+    [TestMethod]
+    public void BuildObservesCancellationDuringMerge()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var sources = new ObservedList<MergeSource>(new[] { new MergeSource(5000, new TimeIndex()) },
+            reads => { if (reads == 50) cancellation.Cancel(); });
+        var result = new List<MergedLineRef>();
+
+        Assert.Throws<OperationCanceledException>(() => MergedLineOrder.Build(sources, result, cancellation.Token));
+
+        Assert.IsGreaterThan(0, result.Count);
+        Assert.IsLessThan(5000, result.Count);
+    }
+
+    [TestMethod]
+    public void BuildTimeIndexObservesCancellationDuringTraversal()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var lines = new ObservedList<MergedLineRef>(Enumerable.Range(0, 5000)
+                .Select(line => new MergedLineRef(0, line, At(line))).ToArray(),
+            reads => { if (reads == 50) cancellation.Cancel(); });
+        var target = new TimeIndex();
+
+        Assert.Throws<OperationCanceledException>(() => MergedLineOrder.BuildTimeIndex(lines, target, cancellation.Token));
+
+        Assert.IsGreaterThan(0, target.Count);
+        Assert.IsLessThan(5000, target.Count);
+    }
+
+    [TestMethod]
+    public void CapturedSourceKeepsPublishedPrefixWhileTimeIndexGrows()
+    {
+        var timeIndex = Timed(10, 20);
+        var source = new MergeSource(2, timeIndex);
+        timeIndex.Add(At(5));
+
+        var result = MergedLineOrder.Build(new[] { source });
+
+        CollectionAssert.AreEqual(new[] { At(10), At(20) }, result.Select(line => line.Ticks).ToArray());
+    }
+
+    private sealed class ObservedList<T>(T[] items, Action<int> onRead) : IReadOnlyList<T>
+    {
+        private int _reads;
+        public int Count => items.Length;
+        public T this[int index]
+        {
+            get
+            {
+                onRead(++_reads);
+                return items[index];
+            }
+        }
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)items).GetEnumerator();
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+
     private static long At(int seconds) => new DateTime(2024, 1, 1).AddSeconds(seconds).Ticks;
 
     private static TimeIndex Timed(params int[] seconds)

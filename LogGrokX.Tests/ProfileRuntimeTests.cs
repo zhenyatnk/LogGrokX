@@ -367,6 +367,7 @@ public class ProfileRuntimeTests
                 var second = main.CurrentDocument!;
                 WaitFor(() => !second.LogViewModel.IsLoading);
                 WaitFor(() => main.Documents.All(document => !document.LogViewModel.IsLoading));
+                WaitFor(() => !main.MergedViewModel.IsLoading && main.MergedViewModel.TotalLineCount == 1);
                 Assert.AreNotSame(originalCurrent, second);
                 Assert.AreEqual(otherPath, second.DocumentId);
                 Assert.AreEqual(2, main.Documents.Count);

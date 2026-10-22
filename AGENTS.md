@@ -164,11 +164,19 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   just the affected lines. `TextModel.GetCollapsedTextSubstitution` memoizes the
   inlined text of collapsed regions. Avoid reintroducing full re-creation of all
   lines on every folding change — it makes expanding large JSON sluggish (#38).
-- **Merged timeline range**: `MergedViewModel` keeps the **full** merged buffer
-  (`_mergedBuffer`) and derives the timeline axis (`Minimum`/`Maximum`,
-  `TotalLineCount`, `TimelineSegments`, `TimeRangeFilter.Refresh`) from it, while
-  the grid/search run on the filtered `_visibleBuffer` mapped back through
-  `_visibleToFull` (`VisibleLines`, `GetVisibleFullIndexMap`, `GetVisibleIndex`).
+- **Merged snapshots**: `MergedViewModel` builds merge order, time index, timeline
+  segments and filtering on worker tasks, then publishes an immutable
+  `MergedViewSnapshot` on the UI dispatcher. Source changes invalidate the full
+  `MergedDataSnapshot`; column/time filters reuse it. Request versions and
+  cancellation prevent stale results from publishing. `MergeSource` captures the
+  line count and time availability on the UI thread; workers only read that
+  already-published prefix of the append-only source indexes. Never mutate a
+  published snapshot: searches share its arrays and cache source matches by
+  data snapshot and query, so filters do not reread the files.
+- **Merged timeline range**: derive the timeline axis (`Minimum`/`Maximum`,
+  `TotalLineCount`, `TimelineSegments`, `TimeRangeFilter.Refresh`) from the full
+  `MergedDataSnapshot`, while the grid/search use `MergedViewSnapshot.Lines`
+  mapped back through `FullIndexMap` (`GetVisibleIndex`).
   Deriving the axis from the filtered buffer makes
   `MergedTimeRangeFilterViewModel.Refresh` clamp the handles to the shrunken
   bounds and silently reset the time range.
