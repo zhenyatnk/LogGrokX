@@ -38,8 +38,9 @@ namespace LogGrokX
         {
             _sourceCollection = sourceCollection;
             _headerCollection = headerCollection;
-            SourceChanged?.Invoke();
             UpdateCount();
+            CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            SourceChanged?.Invoke();
         }
         
         public void UpdateCount()
@@ -86,9 +87,7 @@ namespace LogGrokX
 
         public object SyncRoot =>  throw new NotSupportedException();
         
-#pragma warning disable CS0067
         public event NotifyCollectionChangedEventHandler? CollectionChanged;
-#pragma warning restore
         
         public event PropertyChangedEventHandler? PropertyChanged;
 

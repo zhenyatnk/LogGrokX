@@ -280,6 +280,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                 {
                     oldItems.Remove(foundItem);
                     itemToAdd = foundItem.Element;
+                    ListView.PrepareItemContainer(itemToAdd, Items[index]!);
                     itemToAdd.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 }
                 else
@@ -303,7 +304,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
         private IList Items => ItemsControl.GetItemsOwner(this)?.Items ?? (IList)new ArrayList();
 
-        private void InsertAndMeasureItem(ListViewItem item, int itemIndex, bool isNewElement)
+        private void InsertAndMeasureItem(ListViewItem item, int itemIndex)
         {
             if (!InternalChildren.Cast<UIElement>().Contains(item))
                 AddInternalChild(item);
@@ -322,15 +323,8 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
                 itm.Measure(new Size(Double.PositiveInfinity, Double.PositiveInfinity));
             }
 
-            if (isNewElement)
-            {
-                ListView.PrepareItemContainer(item, Items[itemIndex]!);
-                UpdateItem(item);
-            }
-            else
-            {
-                UpdateItem(item);
-            }
+            ListView.PrepareItemContainer(item, Items[itemIndex]!);
+            UpdateItem(item);
             
         }
 
@@ -521,12 +515,12 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
             {
                 newItem = _recycled.Pop();
                 newItem.Visibility = Visibility.Visible;
-                InsertAndMeasureItem(newItem, currentIndex, false);
+                InsertAndMeasureItem(newItem, currentIndex);
             }
             else
             {
                 newItem = ListView.GetContainerForItem();
-                InsertAndMeasureItem(newItem, currentIndex, true);
+                InsertAndMeasureItem(newItem, currentIndex);
             }
 
             PerfProbe.RecordElementAlloc(GC.GetAllocatedBytesForCurrentThread() - allocStart);

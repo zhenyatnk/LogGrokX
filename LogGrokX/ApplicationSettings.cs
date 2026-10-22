@@ -144,7 +144,6 @@ namespace LogGrokX
                 return;
 
             ViewSettings.MergedFilesView = mergedFilesView;
-            SaveViewSettingValue("MergedFilesView", mergedFilesView ? "true" : "false");
         }
 
         public void SetBinaryDetection(bool detectBinary, bool detectPem, bool detectBase64, bool detectHex)

@@ -47,7 +47,6 @@ namespace LogGrokX.MergedView
         private IFilterSettings _filterSettings = null!;
         private GridViewFactory _viewFactory = null!;
         private GridViewFactory? _searchViewFactory;
-        private IReadOnlyList<string> _lastFields = Array.Empty<string>();
 
         private bool _isActive;
         private bool _isFiltered;
@@ -110,10 +109,12 @@ namespace LogGrokX.MergedView
             });
 
             ExcludeCommand = DelegateCommand.Create(
-                (int fieldIndex) => _filterSettings.AddExclusions(fieldIndex, GetComponentsInSelectedLines(fieldIndex)));
+                (int fieldIndex) => _filterSettings.AddExclusions(
+                    MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex), GetComponentsInSelectedLines(fieldIndex)));
 
             ExcludeAllButCommand = DelegateCommand.Create(
-                (int fieldIndex) => _filterSettings.ExcludeAllExcept(fieldIndex, GetComponentsInSelectedLines(fieldIndex)));
+                (int fieldIndex) => _filterSettings.ExcludeAllExcept(
+                    MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex), GetComponentsInSelectedLines(fieldIndex)));
 
             ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions());
 
@@ -526,6 +527,7 @@ namespace LogGrokX.MergedView
             Revision++;
             if (schemaChanged)
             {
+                ColumnSettings.ColumnWidths = null;
                 InvokePropertyChanged(nameof(CustomView));
                 InvokePropertyChanged(nameof(MetaInformation));
                 InvokePropertyChanged(nameof(ColumnSettings));
@@ -538,18 +540,17 @@ namespace LogGrokX.MergedView
 
         private bool EnsureSchema()
         {
-            var fields = MergedSchema.BuildFields(AvailableDocuments);
+            var schema = MergedSchema.Build(AvailableDocuments);
 
-            if (fields.SequenceEqual(_lastFields))
+            if (schema.Fields.SequenceEqual(_schema.Fields) &&
+                schema.MetaInformation.IndexedFieldNumbers.SequenceEqual(_schema.MetaInformation.IndexedFieldNumbers))
             {
                 _schema.ApplyTo(AvailableDocuments);
                 return false;
             }
 
-            _lastFields = fields;
-            _schema = MergedSchema.Build(AvailableDocuments);
+            _schema = schema;
             _schema.ApplyTo(AvailableDocuments);
-            ColumnSettings.ColumnWidths = null;
             CreateSchemaDependencies();
             InvokePropertyChanged(nameof(ThreadFieldIndex));
             return true;
@@ -573,16 +574,17 @@ namespace LogGrokX.MergedView
         private void RefreshActiveFilters()
         {
             ActiveFilters.Clear();
-            foreach (var (mergedFieldIndex, values) in _filterSettings.Exclusions)
+            foreach (var (indexedFieldIndex, values) in _filterSettings.Exclusions)
             {
                 var excludedValues = values.ToList();
                 if (excludedValues.Count == 0)
                     continue;
 
-                if (mergedFieldIndex < 0 || mergedFieldIndex >= _schema.Fields.Count)
+                var fieldName = MetaInformation.GetFieldNameByIndexedFieldIndex(indexedFieldIndex);
+                if (string.IsNullOrEmpty(fieldName))
                     continue;
 
-                ActiveFilters.Add(new FilterChipViewModel(_schema.Fields[mergedFieldIndex], mergedFieldIndex,
+                ActiveFilters.Add(new FilterChipViewModel(fieldName, indexedFieldIndex,
                     excludedValues, _filterSettings));
             }
 
@@ -638,16 +640,18 @@ namespace LogGrokX.MergedView
             if (exclusions.Count == 0)
                 return result;
 
+            var mergedIndexedFields = MetaInformation.IndexedFieldNumbers;
             for (var sourceIndex = 0; sourceIndex < _selectedSources.Count; sourceIndex++)
             {
                 var item = _selectedSources[sourceIndex];
                 Dictionary<int, IEnumerable<string>>? translated = null;
 
-                foreach (var (mergedFieldIndex, values) in exclusions)
+                foreach (var (mergedIndexedFieldIndex, values) in exclusions)
                 {
-                    if (mergedFieldIndex < 0 || mergedFieldIndex >= _schema.Fields.Count)
+                    if (mergedIndexedFieldIndex < 0 || mergedIndexedFieldIndex >= mergedIndexedFields.Length)
                         continue;
 
+                    var mergedFieldIndex = mergedIndexedFields[mergedIndexedFieldIndex];
                     var sourceFieldIndex = item.GetSourceFieldIndex(mergedFieldIndex);
                     if (sourceFieldIndex < 0)
                         continue;

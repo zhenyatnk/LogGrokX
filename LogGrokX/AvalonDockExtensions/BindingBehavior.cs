@@ -21,6 +21,8 @@ public static class BindingBehavior
     public static readonly DependencyProperty ObservableCollectionFactoryLinkProperty;
 
     public static readonly DependencyProperty OnDocumentCloseCommandProperty;
+    private static readonly DependencyProperty UpdatingCurrentDocumentProperty = DependencyProperty.RegisterAttached(
+        "UpdatingCurrentDocument", typeof(bool), typeof(BindingBehavior), new PropertyMetadata(false));
 
     static BindingBehavior()
     {
@@ -94,6 +96,8 @@ public static class BindingBehavior
     private static void OnCurrentDocumentChanged(DependencyObject d, DependencyPropertyChangedEventArgs args)
     {
         var dockingManager = (DockingManager)d;
+        if ((bool)dockingManager.GetValue(UpdatingCurrentDocumentProperty))
+            return;
 
         var documentToDocumentViewLink =
             (ObservableCollectionFactoryLink<UIElement>?)GetObservableCollectionFactoryLink(dockingManager);
@@ -108,11 +112,29 @@ public static class BindingBehavior
     {
         DockingManager dockingManager = (DockingManager)d;
 
-        void SetDocumentsSourceWithViewFactory(IList documentsSource, Func<object, UIElement> factory)
+        void SetDocumentsSourceWithViewFactory(IList documentsSource, Func<object, UIElement> factory,
+            Action<ContentControl, object> updateView)
         {
             var targetCollection = new ObservableCollection<UIElement>();
             var documentToDocumentViewLink =
-                new ObservableCollectionFactoryLink<UIElement>(documentsSource, targetCollection, factory);
+                new ObservableCollectionFactoryLink<UIElement>(documentsSource, targetCollection, factory, (view, source) =>
+                {
+                    var control = (ContentControl)view;
+                    var wasCurrent = ReferenceEquals(dockingManager.GetValue(CurrentDocumentProperty), control.Content);
+                    updateView(control, source);
+                    if (!wasCurrent)
+                        return;
+
+                    dockingManager.SetValue(UpdatingCurrentDocumentProperty, true);
+                    try
+                    {
+                        dockingManager.SetCurrentValue(CurrentDocumentProperty, source);
+                    }
+                    finally
+                    {
+                        dockingManager.SetValue(UpdatingCurrentDocumentProperty, false);
+                    }
+                });
 
             SetObservableCollectionFactoryLink(dockingManager, documentToDocumentViewLink);
 
@@ -146,7 +168,7 @@ public static class BindingBehavior
                 return new ContentControl() { Content = doc, ContentTemplate = datatemplate};
             }
 
-            SetDocumentsSourceWithViewFactory(documents, DocumentViewFactory);
+            SetDocumentsSourceWithViewFactory(documents, DocumentViewFactory, (view, source) => view.Content = source);
         }
 
         void SetDocumentsSourceWithTemplateSelector(IList documents, DataTemplateSelector templateSelector)
@@ -157,7 +179,11 @@ public static class BindingBehavior
                     ContentTemplate = templateSelector.SelectTemplate(doc, null) };
             }
 
-            SetDocumentsSourceWithViewFactory(documents, DocumentViewFactory);
+            SetDocumentsSourceWithViewFactory(documents, DocumentViewFactory, (view, source) =>
+            {
+                view.Content = source;
+                view.ContentTemplate = templateSelector.SelectTemplate(source, null);
+            });
         }
 
         var (ds, dt, dts) =

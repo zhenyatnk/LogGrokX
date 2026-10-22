@@ -23,6 +23,42 @@ public sealed class LogScrollBarTests
     [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
+    public void ReplacingViewUpdatesVisibleAndRecycledRows(bool useDefaultTemplate)
+    {
+        RunOnSta(() =>
+        {
+            WithList(CreateRows(90), (window, list, _, panel, _) =>
+            {
+                var original = new GridView();
+                original.Columns.Add(new GridViewColumn { Width = 100 });
+                list.View = original;
+                FlushLayout(window);
+                panel.SetVerticalOffset(30);
+                FlushLayout(window);
+
+                var replacement = new GridView();
+                replacement.Columns.Add(new GridViewColumn { Width = 100 });
+                replacement.Columns.Add(new GridViewColumn { Width = 100 });
+                list.View = replacement;
+                FlushLayout(window);
+
+                foreach (var offset in new[] { 30, 0, 60 })
+                {
+                    panel.SetVerticalOffset(offset);
+                    FlushLayout(window);
+                    var rows = Descendants<ListViewItem>(panel)
+                        .Where(item => item.Visibility == Visibility.Visible).ToArray();
+                    Assert.IsNotEmpty(rows);
+                    foreach (var row in rows)
+                        Assert.AreSame(replacement.Columns, GridView.GetColumnCollection(row));
+                }
+            }, useDefaultTemplate);
+        });
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
     public void ThumbSizeStaysStableAcrossMultilineRecords(bool useDefaultTemplate)
     {
         RunOnSta(() =>

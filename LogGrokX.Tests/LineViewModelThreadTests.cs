@@ -15,6 +15,33 @@ namespace LogGrokX.Tests
             "2024-01-15 08:32:11.482 INFO ThreadA Component1 hello world";
 
         [TestMethod]
+        [DataRow(-1)]
+        [DataRow(0)]
+        [DataRow(5)]
+        public void PlainRowReturnsEmptyForObsoleteColumnBinding(int index)
+        {
+            var line = CreateLine(new LogMetaInformation(new LogFormat { Regex = "^.*$" }));
+
+            Assert.AreEqual(string.Empty, line[index].OriginalText);
+            Assert.IsFalse(line[index].IsBase64 || line[index].IsPem || line[index].IsHex);
+        }
+
+        [TestMethod]
+        public void RowsWithDifferentParsersAreNotReusedAfterProfileChange()
+        {
+            var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+            var parser = new RegexBasedLineParser(meta);
+            var transformation = new TransformationPerformer(Array.Empty<string>());
+            var line = new LineViewModel(0, Source, parser, new Selection(), transformation);
+            var equivalent = new LineViewModel(0, Source, parser, new Selection(), transformation);
+            var replacement = CreateLine(new LogMetaInformation(new LogFormat { Regex = "^.*$" }));
+
+            Assert.AreEqual(line, equivalent);
+            Assert.AreEqual(line.GetHashCode(), equivalent.GetHashCode());
+            Assert.AreNotEqual(line, replacement);
+        }
+
+        [TestMethod]
         public void GetComponentSpanReturnsThreadComponent()
         {
             var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });

@@ -11,6 +11,7 @@ namespace LogGrokX
 public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
 {
         private readonly string _sourceString;
+        private readonly ILineParser _parser;
 
         private readonly ParseResult _parseResult;
         private readonly string _transformResult;
@@ -20,6 +21,7 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         private readonly DecodedPartsState? _decodedParts;
         private FieldValueMapper[]? _resolvedValueMappers;
         private int _resolvedValueMappersVersion = -1;
+        private LinePartViewModel? _emptyPart;
 
         public LineViewModel(int index, string sourceString, ILineParser parser, Selection markedLines,
             TransformationPerformer transformationPerformer, FieldValueMapper[]? valueMappers = null,
@@ -27,6 +29,7 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             : base(index, markedLines)
         {
             _decodedParts = decodedParts;
+            _parser = parser;
             _sourceString = sourceString;
             _valueMappers = valueMappers;
             _valueMappersResolver = valueMappersResolver;
@@ -69,13 +72,15 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
 
         private LinePartViewModel GetValue(int index)
         {
-            if (index >= 0 && index < _parts.Length && _parts[index] is { } cached)
+            if (index < 0 || index >= _parts.Length)
+                return _emptyPart ??= new LinePartViewModel(HashCode.Combine(Index, -1), string.Empty,
+                    detectBase64: false);
+
+            if (_parts[index] is { } cached)
                 return cached;
 
             var uniqueId = HashCode.Combine(base.Index, index);
-            var lineMeta = _parseResult.Get().ParsedLineComponents;
-            var text = _transformResult.Substring(lineMeta.ComponentStart(index),
-                lineMeta.ComponentLength(index));
+            var text = GetComponentSpan(index).ToString();
 
             var decodedState = _decodedParts?.For(base.Index, index);
             var part = _valueMappersResolver != null
@@ -84,8 +89,7 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
                     decodedState: decodedState)
                 : new LinePartViewModel(uniqueId, text, valueMapper: GetValueMapper(index),
                     decodedState: decodedState);
-            if (index >= 0 && index < _parts.Length)
-                _parts[index] = part;
+            _parts[index] = part;
 
             return part;
         }
@@ -111,13 +115,14 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
         public override bool Equals(object? o)
         {
             if (o is LineViewModel other)
-                return other.Index == Index && other._sourceString == _sourceString;
+                return other.Index == Index && other._sourceString == _sourceString
+                    && ReferenceEquals(other._parser, _parser);
             return false;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Index, _sourceString);
+            return HashCode.Combine(Index, _sourceString, _parser);
         }
 
         public override string ToString()

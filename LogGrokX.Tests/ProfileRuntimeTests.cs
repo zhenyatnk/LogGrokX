@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Threading;
+using System.Windows;
+using LogGrokX.Controls.GridView;
 using LogGrokX.Colors.Configuration;
 using LogGrokX.Data;
 using LogGrokX.MarkedLines;
@@ -20,6 +22,149 @@ namespace LogGrokX.Tests;
 [TestClass]
 public class ProfileRuntimeTests
 {
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void MergedVennFiltersHideRowsAcrossThreeDocuments(bool useColumnFilter)
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"loggrokx-merged-filters-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            var settingsPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                "..", "..", "..", "..", "LogGrokX", "appsettings.yaml"));
+            var paths = Enumerable.Range(0, 3).Select(i => Path.Combine(directory, $"sample-{i}.log")).ToArray();
+            try
+            {
+                var settings = ApplicationSettings.LoadFromFile(settingsPath);
+                settings.SelectedProfile = "Venn";
+                using var main = CreateMain(settings);
+                main.IsMergedView = true;
+                foreach (var path in paths)
+                {
+                    File.WriteAllText(path,
+                        "2026-10-22 13:24:55.848 - [TRAC] - [1:20404:20396:M:U] - [msrdc.exe] - [IPC] - first\n" +
+                        "2026-10-22 13:24:55.849 - [WARN] - [2:20405:20397:M:U] - [other.exe] - [FS] - second\n");
+                    main.AddDocument(path);
+                }
+
+                WaitFor(() => main.Documents.All(document => !document.LogViewModel.IsLoading));
+                var merged = main.MergedViewModel;
+                WaitFor(() => !merged.IsLoading && merged.Lines.Count == 6);
+                foreach (var field in new[] { "Time", "Context", "Message" })
+                    Assert.IsFalse(merged.MetaInformation.IsFieldIndexed(field));
+                var list = new System.Windows.Controls.ListView { ItemsSource = merged.Lines };
+                Assert.AreEqual(6, list.Items.Count);
+                _ = list.Items[0];
+
+                foreach (var field in new[] { "Level", "Sid", "Pid", "Thread", "Process", "Source" })
+                {
+                    var fieldIndex = Array.IndexOf(merged.MetaInformation.FieldNames, field);
+                    var selected = (MergedLineViewModel)merged.Lines[0];
+                    var excludedValue = selected.GetFieldText(fieldIndex);
+                    var revision = merged.Revision;
+                    if (useColumnFilter)
+                    {
+                        var view = (System.Windows.Controls.GridView)merged.CustomView;
+                        foreach (var column in view.Columns)
+                            column.HeaderTemplate.Seal();
+                        var header = view.Columns.Select(column => ((FrameworkElement)column.HeaderTemplate.LoadContent())
+                                .DataContext).OfType<HeaderViewModel>()
+                            .Single(item => item.FieldHeader == field);
+                        Assert.IsNotNull(header.FilterViewModel);
+                        header.FilterViewModel.Elements.Single(element => element.Name == excludedValue).IsActive = false;
+                    }
+                    else
+                    {
+                        merged.SelectedItems = new[] { selected };
+                        merged.ExcludeCommand.Execute(fieldIndex);
+                    }
+
+                    WaitFor(() => merged.Revision > revision && !merged.IsLoading);
+                    Assert.AreEqual(3, merged.Lines.Count, $"Filter on {field} did not hide rows.");
+                    Assert.AreEqual(3, list.Items.Count, $"Table count did not change for {field}.");
+                    Assert.IsTrue(list.Items.Cast<MergedLineViewModel>()
+                        .All(line => line.GetFieldText(fieldIndex) != excludedValue), $"Table still shows excluded {field}.");
+                    Assert.IsTrue(merged.Lines.Cast<MergedLineViewModel>()
+                        .All(line => line.GetFieldText(fieldIndex) != excludedValue));
+                    Assert.AreEqual(6, merged.TotalLineCount);
+                    revision = merged.Revision;
+                    merged.ClearFiltersCommand.Execute(null);
+                    WaitFor(() => merged.Revision > revision && !merged.IsLoading);
+                    Assert.AreEqual(6, merged.Lines.Count);
+                }
+            }
+            finally
+            {
+                foreach (var path in paths)
+                    File.Delete(path);
+                Directory.Delete(directory);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void SwitchingProfileWithSameColumnsRefreshesMergedFilters()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"loggrokx-merged-profile-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "sample.log");
+            var settingsPath = Path.Combine(directory, "appsettings.yaml");
+            File.WriteAllText(path, "INFO IPC first\nWARN FIL second\n");
+            try
+            {
+                var levelProfile = Profile("Level", "^(?<Level>\\w+) (?<Source>\\w+) (?<Message>.*)", "Gray");
+                levelProfile.LogFormats![0].IndexedFields = ["Level"];
+                var sourceProfile = Profile("Source", levelProfile.LogFormats[0].Regex, "Gray");
+                sourceProfile.LogFormats![0].IndexedFields = ["Source"];
+                var settings = new ApplicationSettings(settingsPath)
+                {
+                    Profiles = [levelProfile, sourceProfile],
+                    SelectedProfile = "Level"
+                };
+                using var main = CreateMain(settings);
+                main.IsMergedView = true;
+                main.AddDocument(path);
+                var merged = main.MergedViewModel;
+                WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading && !merged.IsLoading && merged.Lines.Count == 2);
+                var originalFields = merged.MetaInformation.FieldNames;
+                var viewChanges = 0;
+                merged.PropertyChanged += (_, args) =>
+                {
+                    if (args.PropertyName == nameof(merged.CustomView))
+                        viewChanges++;
+                };
+
+                main.SelectedProfile = main.Profiles[1];
+                WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading && !merged.IsLoading && merged.Lines.Count == 2);
+
+                CollectionAssert.AreEqual(originalFields, merged.MetaInformation.FieldNames);
+                Assert.IsGreaterThan(0, viewChanges);
+                Assert.IsFalse(merged.MetaInformation.IsFieldIndexed("Level"));
+                Assert.IsTrue(merged.MetaInformation.IsFieldIndexed("Source"));
+                var view = (System.Windows.Controls.GridView)merged.CustomView;
+                var template = view.Columns[3 + Array.IndexOf(merged.MetaInformation.FieldNames, "Source")].HeaderTemplate;
+                template.Seal();
+                var header = (HeaderViewModel)((FrameworkElement)template.LoadContent()).DataContext;
+                Assert.IsNotNull(header.FilterViewModel);
+                var revision = merged.Revision;
+                header.FilterViewModel.Elements.Single(element => element.Name == "IPC").IsActive = false;
+                WaitFor(() => merged.Revision > revision && !merged.IsLoading);
+                Assert.AreEqual(1, merged.Lines.Count);
+                Assert.AreEqual("Source", merged.ActiveFilters.Single().FieldName);
+                Assert.AreEqual("FIL", ((MergedLineViewModel)merged.Lines[0]).GetFieldText(1));
+            }
+            finally
+            {
+                File.Delete(path);
+                File.Delete(settingsPath);
+                Directory.Delete(directory);
+            }
+        });
+    }
+
     [TestMethod]
     public void InvalidIndexedFieldFromYamlFallsBackToPlainText()
     {
@@ -208,8 +353,8 @@ public class ProfileRuntimeTests
                         Profile("Text", "^(?'Text'.*)", "Blue")],
                     SelectedProfile = "Structured"
                 };
-                settings.ViewSettings.MergedFilesView = true;
                 using var main = CreateMain(settings);
+                main.IsMergedView = true;
                 main.AddDocument(path);
                 var first = main.CurrentDocument!;
                 WaitFor(() => !first.LogViewModel.IsLoading);

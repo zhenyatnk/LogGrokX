@@ -1,12 +1,15 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Threading;
 using LogGrokX.Controls.TextRender;
+using LogGrokX.Theming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Markup;
@@ -17,6 +20,40 @@ namespace LogGrokX.Tests;
 [DoNotParallelize]
 public sealed class LogGridViewSelectionBrushTests
 {
+    [TestMethod]
+    public void DetachedTextViewUsesApplicationThemeWithoutAncestorBindingErrors()
+    {
+        RunOnSta(() =>
+        {
+            _ = new Border();
+            var resources = new ResourceDictionary
+            {
+                Source = new Uri("pack://application:,,,/LogGrokX;component/Styles/LogGridViewCellStyle.xaml")
+            };
+            using var errors = new StringWriter();
+            using var listener = new TextWriterTraceListener(errors);
+            var bindingTrace = PresentationTraceSources.DataBindingSource;
+            var previousLevel = bindingTrace.Switch.Level;
+            bindingTrace.Switch.Level = SourceLevels.Error;
+            bindingTrace.Listeners.Add(listener);
+            try
+            {
+                var text = new TextView { Style = (Style)resources[typeof(TextView)] };
+                text.Measure(new Size(200, 100));
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+
+                var expected = ThemeState.Current.IsDark ? "SearchHighlightDarkBrush" : "SearchHighlightBrush";
+                Assert.AreSame(resources[expected], text.HighlightBrush);
+                Assert.AreEqual(string.Empty, errors.ToString());
+            }
+            finally
+            {
+                bindingTrace.Listeners.Remove(listener);
+                bindingTrace.Switch.Level = previousLevel;
+            }
+        });
+    }
+
     [TestMethod]
     public void TextViewSelectionBrushUsesThemeAccentAcrossThemeChanges()
     {

@@ -4,6 +4,7 @@
                     xmlns:gridView="clr-namespace:LogGrokX.Controls.GridView"
                     xmlns:listControls="clr-namespace:LogGrokX.Controls.ListControls"
                     xmlns:logGrokCore="clr-namespace:LogGrokX"
+                    xmlns:theming="clr-namespace:LogGrokX.Theming"
                     xmlns:textRender="clr-namespace:LogGrokX.Controls.TextRender">
     
     <ResourceDictionary.MergedDictionaries>
@@ -21,8 +22,7 @@
             <Setter Property="ContextMenu" Value="{StaticResource LogViewContextMenu}"/>
         </Style.Setters>
         <Style.Triggers>
-            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
-                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+            <DataTrigger Binding="{Binding IsDark, Source={x:Static theming:ThemeState.Current}}"
                          Value="True">
                 <Setter Property="HighlightBrush" Value="{StaticResource SearchHighlightDarkBrush}"/>
             </DataTrigger>

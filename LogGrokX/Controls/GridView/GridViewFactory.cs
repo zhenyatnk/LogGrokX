@@ -46,7 +46,8 @@ namespace LogGrokX.Controls.GridView
         public ViewBase CreateView(double[]? widths, DataTemplate? leadingCellTemplate, string? sharedFoldingStatePath)
         {
             var columnCount = _meta.FieldNames.Length + 2 + (leadingCellTemplate != null ? 1 : 0);
-            if (widths != null && widths.Length != columnCount)
+            if (widths != null && (widths.Length != columnCount ||
+                                  widths.Any(width => !double.IsFinite(width) || width <= 0)))
                 widths = null;
 
             var indexFieldName = "Index";
@@ -61,7 +62,7 @@ namespace LogGrokX.Controls.GridView
                     VisualTree = new FrameworkElementFactory(typeof(PinGridViewhHeader))
                 },
                 CellTemplate =  CreatePinCellTemplate(componentFieldName == null),
-                Width = widths == null ? 0 : Math.Max(widths[0], PinColumnMinWidth + PinColumnPadding)
+                Width = widths == null ? double.NaN : Math.Max(widths[0], PinColumnMinWidth + PinColumnPadding)
             });
 
             var columnIndex = 1;
@@ -71,7 +72,7 @@ namespace LogGrokX.Controls.GridView
                 {
                     HeaderTemplate = CreateHeaderTemplate("", null),
                     CellTemplate = leadingCellTemplate,
-                    Width = widths == null ? 0 : widths[columnIndex++]
+                    Width = widths == null ? double.NaN : widths[columnIndex++]
                 });
             }
 
@@ -162,18 +163,14 @@ namespace LogGrokX.Controls.GridView
                 {  
                     HeaderTemplate = BuildHeaderTemplate(),
                     CellTemplate = CreateCellTemplate(),
-                    Width = widths == null ? 0 : widths[columnIndex++],
-                    FitToContent = IsMessageField(fieldHeader),
+                    Width = widths == null ? double.NaN : widths[columnIndex++],
+                    FitToContent = true,
                     ContentTextProvider = contentTextProvider
                 });
             }
 
             return view;
         }
-
-        private static bool IsMessageField(string fieldHeader) =>
-            fieldHeader.Equals("Message", StringComparison.OrdinalIgnoreCase) ||
-            fieldHeader.Equals("Text", StringComparison.OrdinalIgnoreCase);
 
         private static DataTemplate CreateHeaderTemplate(string fieldHeader, FilterViewModel? filterViewModel)
         {

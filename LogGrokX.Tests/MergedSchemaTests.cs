@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using LogGrokX.Data;
 using LogGrokX.MergedView;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -7,6 +8,31 @@ namespace LogGrokX.Tests
     [TestClass]
     public class MergedSchemaTests
     {
+        [TestMethod]
+        public void BuildIndexesOnlyFieldsIndexedBySourceFormats()
+        {
+            var schema = MergedSchema.Build(new[]
+            {
+                new LogMetaInformation(new LogFormat
+                {
+                    Regex = "^(?<Time>)(?<Level>)(?<Context>)(?<Message>)",
+                    IndexedFields = new[] { "Level" }
+                }),
+                new LogMetaInformation(new LogFormat
+                {
+                    Regex = "^(?<time>)(?<Severity>)(?<Source>)(?<message>)",
+                    IndexedFields = new[] { "Severity", "Source" }
+                })
+            });
+
+            Assert.IsFalse(schema.MetaInformation.IsFieldIndexed("Time"));
+            Assert.IsFalse(schema.MetaInformation.IsFieldIndexed("Context"));
+            Assert.IsFalse(schema.MetaInformation.IsFieldIndexed("Message"));
+            Assert.IsTrue(schema.MetaInformation.IsFieldIndexed("Severity"));
+            Assert.IsTrue(schema.MetaInformation.IsFieldIndexed("Source"));
+            CollectionAssert.AreEqual(new[] { 1, 4 }, schema.MetaInformation.IndexedFieldNumbers);
+        }
+
         private static IReadOnlyList<IReadOnlyList<string>> FieldSets(params string[][] sets)
         {
             var result = new List<IReadOnlyList<string>>();

@@ -69,10 +69,17 @@ namespace LogGrokX.MergedView
             return fields;
         }
 
-        public static MergedSchema Build(IReadOnlyList<MergedDocumentItem> documents)
+        public static MergedSchema Build(IReadOnlyList<MergedDocumentItem> documents) =>
+            Build(documents.Select(document => document.Document.MetaInformation).ToArray());
+
+        internal static MergedSchema Build(IReadOnlyList<LogMetaInformation> sources)
         {
-            var fields = BuildFields(documents);
-            return new MergedSchema(fields, CreateMetaInformation(fields));
+            var fields = BuildFields(sources.Select(source => (IReadOnlyList<string>)source.FieldNames).ToArray());
+            var indexedKeys = sources.SelectMany(source => source.IndexedFieldNumbers
+                    .Select(index => GetFieldKey(source.FieldNames[index])))
+                .ToHashSet(StringComparer.Ordinal);
+            var indexedFields = fields.Where(field => indexedKeys.Contains(GetFieldKey(field))).ToArray();
+            return new MergedSchema(fields, CreateMetaInformation(fields, indexedFields));
         }
 
         internal static int FindSourceFieldIndex(IReadOnlyList<string> fieldNames, string mergedFieldName)
@@ -119,7 +126,7 @@ namespace LogGrokX.MergedView
                 document.UpdateFieldMap(Fields);
         }
 
-        private static LogMetaInformation CreateMetaInformation(IReadOnlyList<string> fields)
+        private static LogMetaInformation CreateMetaInformation(IReadOnlyList<string> fields, string[] indexedFields)
         {
             var builder = new StringBuilder("^");
             foreach (var field in fields)
@@ -128,7 +135,7 @@ namespace LogGrokX.MergedView
             var format = new LogFormat
             {
                 Regex = builder.ToString(),
-                IndexedFields = fields.ToArray()
+                IndexedFields = indexedFields
             };
 
             return new LogMetaInformation(format);

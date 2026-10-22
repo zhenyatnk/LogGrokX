@@ -1,8 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows;
 using System.Windows.Threading;
 using LogGrokX.Data;
 using LogGrokX.Data.Index;
@@ -15,6 +16,8 @@ namespace LogGrokX.Filter
         private readonly IComponentIndexer _indexer;
         private string? _textFilter;
         private readonly int _indexedFieldIndex;
+        private readonly Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
+        private readonly HashSet<string> _knownComponents = new(StringComparer.Ordinal);
 
         public FilterViewModel(
             string fieldName,
@@ -28,15 +31,14 @@ namespace LogGrokX.Filter
             
             _indexer = indexer;
             _indexedFieldIndex = metaInformation.GetIndexedFieldIndexByName(fieldName);
+            _indexer.ComponentAdded += OnNewComponentAdded;
 
             var fieldValues =
                 _indexer.GetAllComponents(_indexedFieldIndex);
 
 
             Elements = new ObservableCollection<ElementViewModel>(
-                fieldValues.Select(CreateElementViewModel));
-
-            _indexer.ComponentAdded += OnNewComponentAdded;
+                fieldValues.Where(_knownComponents.Add).Select(CreateElementViewModel));
         }
 
         private readonly ConcurrentBag<(int componentNumber, string value)> _newComponentsQueue = new();
@@ -68,13 +70,15 @@ namespace LogGrokX.Filter
                 while (_newComponentsQueue.TryTake(out var valueTuple))
                 {
                     var (componentNumber, componentValue) = valueTuple;
+                    if (!_knownComponents.Add(componentValue))
+                        continue;
                     var newElement = CreateElementViewModel(componentValue);
                     Elements.Add(newElement);
                 }
             }
 
             _addComponentDispatcherOperation ??=
-                Application.Current.Dispatcher.BeginInvoke(() =>
+                _dispatcher.BeginInvoke(() =>
                 {
                     ProcessNewComponents();
                     _addComponentDispatcherOperation = null;

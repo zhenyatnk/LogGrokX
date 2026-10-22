@@ -40,6 +40,7 @@ namespace LogGrokX.Controls.ListControls
         private System.Windows.Controls.GridView? _settingsGridView;
 
         private readonly DispatcherTimer _contentFitTimer;
+        private DispatcherOperation? _resetColumnsWidthOperation;
 
         private readonly List<(INotifyPropertyChanged Column, PropertyChangedEventHandler Handler)> _columnWidthHandlers = new();
         
@@ -47,7 +48,8 @@ namespace LogGrokX.Controls.ListControls
             DependencyProperty.Register(nameof(ReadonlySelectedItems), typeof(IEnumerable), typeof(ListView));
 
         public static readonly DependencyProperty ColumnSettingsProperty = DependencyProperty.Register(
-            "ColumnSettings", typeof(ColumnSettings), typeof(ListView), new PropertyMetadata(default(ColumnSettings)));
+            "ColumnSettings", typeof(ColumnSettings), typeof(ListView),
+            new PropertyMetadata(default(ColumnSettings), OnColumnSettingsChanged));
 
         public static readonly DependencyProperty IsLoadingProperty = DependencyProperty.Register(
             nameof(IsLoading), typeof(bool), typeof(ListView), new PropertyMetadata(false, OnIsLoadingChanged));
@@ -77,6 +79,19 @@ namespace LogGrokX.Controls.ListControls
                 _contentFitTimer.Stop();
                 TryFitColumnsToContent();
             };
+            Loaded += (_, _) => ScheduleRemeasure(0);
+            IsVisibleChanged += (_, args) =>
+            {
+                if (args.NewValue is true)
+                    ScheduleRemeasure(0);
+                else
+                    _contentFitTimer.Stop();
+            };
+            Unloaded += (_, _) =>
+            {
+                _contentFitTimer.Stop();
+                _panel = null;
+            };
 
             CommandBindings.Add(new CommandBinding(RoutedCommands.ToggleMarks,
                 (_, args) =>
@@ -104,10 +119,26 @@ namespace LogGrokX.Controls.ListControls
         {
             var itemContainerStyle = ItemContainerStyle;
             if (container.ReadLocalValue(FrameworkElement.StyleProperty) is Style style
-                && style == itemContainerStyle)
+                && style == itemContainerStyle
+                && ReferenceEquals(System.Windows.Controls.GridView.GetColumnCollection(container),
+                    (View as System.Windows.Controls.GridView)?.Columns))
                 return;
+            container.Content = null;
             container.Style = itemContainerStyle;
             PrepareContainerForItemOverride(container, item);
+            container.Content = item;
+        }
+
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            if (e.Property != ViewProperty)
+                return;
+
+            _headerAdjusted = false;
+            _contentFitDone = false;
+            _previousItemCount = 0;
+            ScheduleRemeasure(0);
         }
 
         public IEnumerable<object>? ReadonlySelectedItems
@@ -157,29 +188,24 @@ namespace LogGrokX.Controls.ListControls
 
         protected override void OnItemsSourceChanged(IEnumerable? oldValue, IEnumerable? newValue)
         {
+            if (oldValue is IGrowingCollection oldCollection)
+                oldCollection.CollectionGrown -= ScheduleRemeasure;
+
             base.OnItemsSourceChanged(oldValue, newValue);
 
+            _previousItemCount = 0;
+            _headerAdjusted = false;
+            _contentFitDone = false;
+
             if (newValue == null)
-            {
-                _previousItemCount = 0;
-                _contentFitDone = false;
                 return;
-            }
-            
-           
+
             if (newValue is IGrowingCollection growingCollection)
             {
-                _headerAdjusted = false;
-                _contentFitDone = false;
                 growingCollection.CollectionGrown += ScheduleRemeasure;
                 ScheduleMandatoryRemeasure();
             }
             
-            if (oldValue is IGrowingCollection oldCollection)
-            {
-                oldCollection.CollectionGrown -= ScheduleRemeasure;
-            }
-
             ScheduleRemeasure(0);
         }
         
@@ -225,9 +251,19 @@ namespace LogGrokX.Controls.ListControls
                 listView.ScheduleContentFit();
         }
 
+        private static void OnColumnSettingsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var listView = (ListView)d;
+            listView.DetachColumnWidthHandlers();
+            listView._settingsGridView = null;
+            listView._haveExternalColumnSettings = null;
+            listView._contentFitDone = false;
+            listView.ScheduleContentFit();
+        }
+
         private void ScheduleContentFit()
         {
-            if (_contentFitDone || IsLoading)
+            if (_contentFitDone || IsLoading || !IsLoaded || !IsVisible)
                 return;
 
             _contentFitTimer.Stop();
@@ -236,7 +272,7 @@ namespace LogGrokX.Controls.ListControls
 
         private void TryFitColumnsToContent()
         {
-            if (_contentFitDone || IsLoading)
+            if (_contentFitDone || IsLoading || !IsLoaded || !IsVisible)
                 return;
 
             if (View is not System.Windows.Controls.GridView gridView || Items.Count <= 0)
@@ -244,7 +280,9 @@ namespace LogGrokX.Controls.ListControls
 
             if (!EnsureColumnSettings(gridView))
             {
+                EnsureHeaderWidths(gridView);
                 _contentFitDone = true;
+                StoreColumnWidths(gridView);
                 return;
             }
 
@@ -253,6 +291,7 @@ namespace LogGrokX.Controls.ListControls
 
             _contentFitDone = true;
             _headerAdjusted = true;
+            StoreColumnWidths(gridView);
         }
 
         private bool FitColumnsToContent(System.Windows.Controls.GridView gridView)
@@ -271,7 +310,10 @@ namespace LogGrokX.Controls.ListControls
             }
 
             if (!hasFitColumns)
+            {
+                EnsureHeaderWidths(gridView);
                 return true;
+            }
 
             if (!TryGetGlyphTypeface(FontFamily, out var typeface))
                 return false;
@@ -330,7 +372,41 @@ namespace LogGrokX.Controls.ListControls
                 columns[c].Width = Math.Max(widths[c] + HorizontalPadding, MinColumnWidth);
             }
 
+            EnsureHeaderWidths(gridView);
             return true;
+        }
+
+        private void EnsureHeaderWidths(System.Windows.Controls.GridView gridView)
+        {
+            var headers = this.GetVisualChildren<GridViewColumnHeader>().ToArray();
+            foreach (var column in gridView.Columns)
+            {
+                var header = headers.FirstOrDefault(item => ReferenceEquals(item.Column, column)) ?? new GridViewColumnHeader
+                {
+                    Content = column.Header ?? string.Empty,
+                    ContentTemplate = column.HeaderTemplate ?? gridView.ColumnHeaderTemplate,
+                    Style = column.HeaderContainerStyle ?? gridView.ColumnHeaderContainerStyle
+                        ?? TryFindResource("UiGridViewColumnHeaderStyle") as Style
+                        ?? TryFindResource(typeof(GridViewColumnHeader)) as Style
+                };
+                var content = header.GetVisualChildren<ContentPresenter>()
+                    .FirstOrDefault(item => ReferenceEquals(item.TemplatedParent, header));
+                double desiredWidth;
+                if (content != null)
+                {
+                    content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    desiredWidth = content.DesiredSize.Width + header.Padding.Left + header.Padding.Right
+                                   + header.BorderThickness.Left + header.BorderThickness.Right;
+                }
+                else
+                {
+                    header.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                    desiredWidth = header.DesiredSize.Width;
+                }
+                var width = double.IsNaN(column.Width) ? column.ActualWidth : column.Width;
+                if (width < desiredWidth)
+                    column.Width = Math.Ceiling(desiredWidth);
+            }
         }
 
         private static bool TryGetGlyphTypeface(FontFamily? fontFamily, out GlyphTypeface typeface)
@@ -349,6 +425,9 @@ namespace LogGrokX.Controls.ListControls
        
         private void ScheduleResetColumnsWidth()
         {
+            if (_resetColumnsWidthOperation?.Status == DispatcherOperationStatus.Pending)
+                return;
+
             void ResetWidth(System.Windows.Controls.GridView view)
             {
                 Trace.TraceInformation($"Reset column widths (items: {Items.Count})");
@@ -359,14 +438,12 @@ namespace LogGrokX.Controls.ListControls
                 }
             }
 
-            _ = Dispatcher.BeginInvoke(() =>
+            _resetColumnsWidthOperation = Dispatcher.BeginInvoke(() =>
             {
-                if (View is not System.Windows.Controls.GridView gridView || GetPanel() == null ||
-                    Items.Count <= 0)
-                {
-                    ScheduleResetColumnsWidth();
+                _resetColumnsWidthOperation = null;
+                if (_contentFitDone || !IsLoaded || !IsVisible ||
+                    View is not System.Windows.Controls.GridView gridView || GetPanel() == null || Items.Count <= 0)
                     return;
-                }
 
                 if (!EnsureColumnSettings(gridView))
                     return;
@@ -398,11 +475,11 @@ namespace LogGrokX.Controls.ListControls
                     columnSettings.ColumnWidths = null;
                 }
 
-                _haveExternalColumnSettings = columnSettings?.ColumnWidths != null;
+                _haveExternalColumnSettings = gridView.Columns.All(column =>
+                    double.IsFinite(column.Width) && column.Width > 0);
 
                 if (columnSettings != null)
                 {
-                    columnSettings.ColumnWidths ??= gridView.Columns.Select(c => c.Width).ToArray();
                     foreach (var column in gridView.Columns)
                     {
                         if (column is not INotifyPropertyChanged notifyPropertyChanged)
@@ -417,8 +494,7 @@ namespace LogGrokX.Controls.ListControls
                             if (!ReferenceEquals(capturedGridView, View))
                                 return;
 
-                            columnSettings.ColumnWidths =
-                                capturedGridView.Columns.Select(gridViewColumn => gridViewColumn.ActualWidth).ToArray();
+                            StoreColumnWidths(capturedGridView);
                         };
                         notifyPropertyChanged.PropertyChanged += handler;
                         _columnWidthHandlers.Add((notifyPropertyChanged, handler));
@@ -427,6 +503,17 @@ namespace LogGrokX.Controls.ListControls
             }
 
             return _haveExternalColumnSettings != true;
+        }
+
+        private void StoreColumnWidths(System.Windows.Controls.GridView gridView)
+        {
+            if (!_contentFitDone || !IsLoaded || !IsVisible || ColumnSettings is not { } settings)
+                return;
+
+            var widths = gridView.Columns.Select(column =>
+                double.IsNaN(column.Width) ? column.ActualWidth : column.Width).ToArray();
+            if (widths.All(width => double.IsFinite(width) && width > 0))
+                settings.ColumnWidths = widths;
         }
 
         private void DetachColumnWidthHandlers()

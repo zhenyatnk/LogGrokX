@@ -85,15 +85,21 @@ namespace LogGrokX.MergedView
         private void OnComponentAdded(DocumentViewModel document, int indexedFieldIndex, IndexKey key)
         {
             var fieldName = document.MetaInformation.GetFieldNameByIndexedFieldIndex(indexedFieldIndex);
-            var mergedIndex = _schema.IndexOf(fieldName);
-            if (mergedIndex < 0)
+            var mergedFieldIndex = _schema.IndexOf(fieldName);
+            var mergedIndexedFieldIndex = _schema.MetaInformation.GetIndexedFieldIndexByFieldIndex(mergedFieldIndex);
+            if (mergedIndexedFieldIndex < 0)
                 return;
 
-            ComponentAdded?.Invoke(mergedIndex, key.GetComponent(indexedFieldIndex).ToString());
+            ComponentAdded?.Invoke(mergedIndexedFieldIndex, key.GetComponent(indexedFieldIndex).ToString());
         }
 
-        private static int GetIndexedFieldIndex(MergedDocumentItem source, int mergedFieldIndex)
+        private int GetIndexedFieldIndex(MergedDocumentItem source, int mergedIndexedFieldIndex)
         {
+            var indexedFields = _schema.MetaInformation.IndexedFieldNumbers;
+            if (mergedIndexedFieldIndex < 0 || mergedIndexedFieldIndex >= indexedFields.Length)
+                return -1;
+
+            var mergedFieldIndex = indexedFields[mergedIndexedFieldIndex];
             var sourceFieldIndex = source.GetSourceFieldIndex(mergedFieldIndex);
             if (sourceFieldIndex < 0)
                 return -1;

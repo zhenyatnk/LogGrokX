@@ -113,7 +113,7 @@ formats; `MergedSearchDocumentViewModel` and `MergedTimeRangeFilterViewModel`
 mirror the single-log search and time-range panes; `MergedViewPalette` supplies
 per-source colors; `MergedLineViewModel`/`ListItemProvider` adapt merged rows to
 the grid. The view is toggled by `MergedFilesViewService` (title bar / Settings,
-persisted as `ViewSettings.MergedFilesView`) and rendered by
+enabled only for the current session) and rendered by
 `Styles/MergedViewTemplate.xaml`. Cross-format rules: identical column names are
 aligned case-insensitively, plain-text/unrecognized lines put the whole line into
 `Message`, and `Level`/`Severity` are unified into a single `Severity` column.

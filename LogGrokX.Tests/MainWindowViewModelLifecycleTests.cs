@@ -185,8 +185,8 @@ public class MainWindowViewModelLifecycleTests
             try
             {
                 var settings = new ApplicationSettings(settingsPath);
-                settings.ViewSettings.MergedFilesView = true;
                 using var viewModel = CreateViewModel(settings);
+                viewModel.IsMergedView = true;
                 viewModel.IsMergedViewActive = true;
                 var focusRequests = 0;
                 viewModel.MergedViewModel.Search.SetFocusRequest.SetFocus += () => focusRequests++;

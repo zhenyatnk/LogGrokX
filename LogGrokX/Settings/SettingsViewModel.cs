@@ -45,7 +45,10 @@ namespace LogGrokX.Settings
             _mergedFilesViewService = mergedFilesViewService;
             _textZoomService = textZoomService;
 
-            View = new ViewSettingsViewModel(applicationSettings.ViewSettings);
+            View = new ViewSettingsViewModel(applicationSettings.ViewSettings)
+            {
+                MergedFilesView = mergedFilesViewService.IsEnabled
+            };
             Debug = new DebugSettingsViewModel(applicationSettings.DebugSettings);
 
             foreach (var list in applicationSettings.ValueMappings)
@@ -367,7 +370,6 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
             file.SetScalar("ViewSettings", "ShowThreadGroupSeparators", View.ShowThreadGroupSeparators ? "true" : "false");
-            file.SetScalar("ViewSettings", "MergedFilesView", View.MergedFilesView ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectBinary", View.DetectBinary ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectPem", View.DetectPem ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectBase64", View.DetectBase64 ? "true" : "false");

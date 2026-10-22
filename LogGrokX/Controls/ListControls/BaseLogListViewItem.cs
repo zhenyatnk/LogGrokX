@@ -237,7 +237,7 @@ namespace LogGrokX.Controls.ListControls
 
         private void UpdateIsCurrentProperty()
         {
-            IsCurrentItem = Content.Equals(_itemsControl.Items.CurrentItem);
+            IsCurrentItem = Content?.Equals(_itemsControl.Items.CurrentItem) == true;
         }
     }
 }

@@ -5,6 +5,7 @@
                     xmlns:listControls="clr-namespace:LogGrokX.Controls.ListControls"
                     xmlns:markedLines="clr-namespace:LogGrokX.MarkedLines"
                     xmlns:mergedView="clr-namespace:LogGrokX.MergedView"
+                    xmlns:theming="clr-namespace:LogGrokX.Theming"
                     xmlns:gridView="clr-namespace:LogGrokX.Controls.GridView">
     <controls:ObjectToTypeConverter x:Key="ObjectToTypeConverter" />
 
@@ -129,8 +130,7 @@
                 <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
                 <Setter Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
             </MultiTrigger>
-            <DataTrigger Binding="{Binding DataContext.IsDarkTheme,
-                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+            <DataTrigger Binding="{Binding IsDark, Source={x:Static theming:ThemeState.Current}}"
                          Value="True">
                 <Setter Property="Foreground" Value="{StaticResource LogLineDefaultDarkForegroundBrush}" />
             </DataTrigger>

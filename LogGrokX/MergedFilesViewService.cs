@@ -9,7 +9,7 @@ namespace LogGrokX
         public MergedFilesViewService(ApplicationSettings applicationSettings)
         {
             _applicationSettings = applicationSettings;
-            IsEnabled = applicationSettings.ViewSettings.MergedFilesView;
+            applicationSettings.SetMergedFilesView(false);
         }
 
         public bool IsEnabled { get; private set; }

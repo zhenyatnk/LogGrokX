@@ -18,7 +18,7 @@ public class ObservableCollectionFactoryLink<TTarget> where TTarget : class
     private readonly Dictionary<object, TTarget> _sourceToTargetMapping = new();
         
     public ObservableCollectionFactoryLink(IList source, ObservableCollection<TTarget> target, 
-        Func<object,TTarget> factory)
+        Func<object,TTarget> factory, Action<TTarget, object>? updateTarget = null)
     {
         SourceCollection = source;
         TargetCollection = target;
@@ -74,7 +74,25 @@ public class ObservableCollectionFactoryLink<TTarget> where TTarget : class
             }
         }
 
-        ((INotifyCollectionChanged)SourceCollection).CollectionChanged += (_, __) => SyncSourceChanges(SourceCollection, TargetCollection);
+        ((INotifyCollectionChanged)SourceCollection).CollectionChanged += (_, args) =>
+        {
+            if (args.Action == NotifyCollectionChangedAction.Replace && updateTarget != null &&
+                args.OldItems != null && args.NewItems != null && args.OldItems.Count == args.NewItems.Count)
+            {
+                for (var i = 0; i < args.OldItems.Count; i++)
+                {
+                    var oldSource = args.OldItems[i]!;
+                    var newSource = args.NewItems[i]!;
+                    if (!_sourceToTargetMapping.Remove(oldSource, out var existingTarget))
+                        continue;
+
+                    _sourceToTargetMapping[newSource] = existingTarget;
+                    updateTarget(existingTarget, newSource);
+                }
+            }
+
+            SyncSourceChanges(SourceCollection, TargetCollection);
+        };
         TargetCollection.CollectionChanged += (_, __) => SyncTargetChanges(SourceCollection, TargetCollection);
     }
 
