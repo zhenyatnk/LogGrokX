@@ -660,4 +660,10 @@
   <data xml:space="preserve" name="LogFormatError">
     <value>Profil „{0}“, Protokollformat {1}: {2}</value>
   </data>
+  <data name="MergedViewFailed" xml:space="preserve">
+    <value>Die zusammengeführte Ansicht konnte nicht aktualisiert werden. Versuchen Sie es erneut.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Erneut versuchen</value>
+  </data>
 </root>

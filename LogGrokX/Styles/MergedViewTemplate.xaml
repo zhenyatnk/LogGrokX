@@ -95,6 +95,25 @@
                 </Grid.RowDefinitions>
 
                 <StackPanel Grid.Row="0">
+                    <Border Margin="4,2" Padding="8"
+                            Background="{DynamicResource ControlFillColorDefaultBrush}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding RebuildError}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <DockPanel LastChildFill="True">
+                            <ui:Button DockPanel.Dock="Right" Margin="8,0,0,0"
+                                       Content="{loc:Loc Retry}" Command="{Binding RetryRebuildCommand}" />
+                            <TextBlock VerticalAlignment="Center" TextWrapping="Wrap"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                       Text="{Binding RebuildError}" />
+                        </DockPanel>
+                    </Border>
                     <ItemsControl Margin="4,2"
                                   ItemsSource="{Binding AvailableDocuments}">
                         <ItemsControl.ItemsPanel>

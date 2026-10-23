@@ -660,4 +660,10 @@
   <data xml:space="preserve" name="LogFormatError">
     <value>Профиль «{0}», формат №{1}: {2}</value>
   </data>
+  <data name="MergedViewFailed" xml:space="preserve">
+    <value>Не удалось обновить объединённый просмотр. Повторите попытку.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Повторить</value>
+  </data>
 </root>

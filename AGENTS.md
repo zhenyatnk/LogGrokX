@@ -173,6 +173,15 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   already-published prefix of the append-only source indexes. Never mutate a
   published snapshot: searches share its arrays and cache source matches by
   data snapshot and query, so filters do not reread the files.
+  Append-only growth queues a follow-up rebuild without cancelling the current
+  one; source/schema/filter changes invalidate and cancel it. Only one rebuild
+  runs at a time, so loading sources can publish intermediate snapshots.
+  `MergeSource` captures a `TimeIndexPrefix` under the index lock in O(1).
+  Its backing-array prefix is never overwritten, including across `Clear`;
+  merge workers do not read the mutable `TimeIndex`. Snapshot source adapters
+  have independent field maps; compare their identity by `Document`/`ColorIndex`,
+  not adapter reference. Rebuild failures keep the previous view and expose
+  `RebuildError` with a retry command.
 - **Merged timeline range**: derive the timeline axis (`Minimum`/`Maximum`,
   `TotalLineCount`, `TimelineSegments`, `TimeRangeFilter.Refresh`) from the full
   `MergedDataSnapshot`, while the grid/search use `MergedViewSnapshot.Lines`

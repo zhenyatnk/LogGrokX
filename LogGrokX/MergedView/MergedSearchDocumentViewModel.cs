@@ -365,7 +365,7 @@ namespace LogGrokX.MergedView
                 token.ThrowIfCancellationRequested();
                 var line = buffer[index];
                 var source = sources[line.SourceIndex];
-                if (ReferenceEquals(source, current.Source)
+                if (source.HasSameSource(current.Source)
                     && source.IsLineInThread(line.LineNumber, threadFieldIndex, current.Thread))
                     result.Add(index);
             }

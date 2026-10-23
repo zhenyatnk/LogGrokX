@@ -660,4 +660,10 @@
   <data xml:space="preserve" name="LogFormatError">
     <value>プロファイル「{0}」、ログ形式 {1}: {2}</value>
   </data>
+  <data name="MergedViewFailed" xml:space="preserve">
+    <value>結合ビューを更新できませんでした。もう一度お試しください。</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>再試行</value>
+  </data>
 </root>

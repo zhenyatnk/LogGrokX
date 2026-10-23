@@ -660,4 +660,10 @@
   <data xml:space="preserve" name="LogFormatError">
     <value>Profil « {0} », format de journal {1} : {2}</value>
   </data>
+  <data name="MergedViewFailed" xml:space="preserve">
+    <value>Impossible d’actualiser la vue fusionnée. Réessayez.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Réessayer</value>
+  </data>
 </root>

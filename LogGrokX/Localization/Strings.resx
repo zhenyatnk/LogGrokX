@@ -660,4 +660,10 @@
   <data xml:space="preserve" name="LogFormatError">
     <value>Profile '{0}', log format {1}: {2}</value>
   </data>
+  <data name="MergedViewFailed" xml:space="preserve">
+    <value>Could not refresh the merged view. Try again.</value>
+  </data>
+  <data name="Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
 </root>

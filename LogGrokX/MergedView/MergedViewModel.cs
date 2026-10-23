@@ -42,10 +42,13 @@ namespace LogGrokX.MergedView
         private int _dataRevision;
         private int _requestVersion;
         private CancellationTokenSource? _rebuildCts;
+        private bool _rebuildPending;
         private bool _disposed;
+        private readonly Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> _buildData;
         private readonly DecodedPartsState _decodedParts = new();
         private readonly DispatcherTimer _rebuildTimer;
         private ColorRules _colorSettings;
+        private string? _rebuildError;
 
         private MergedSchema _schema = null!;
         private MergedComponentIndexer _componentIndexer = null!;
@@ -68,7 +71,20 @@ namespace LogGrokX.MergedView
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
             TimelinePlacementService timelinePlacementService)
+            : this(documents, searchAutocompleteCache, savedSearchPatternStore, applicationSettings,
+                threadGroupingService, timelinePlacementService, BuildData)
         {
+        }
+
+        internal MergedViewModel(ObservableCollection<DocumentViewModel> documents,
+            SearchAutocompleteCache searchAutocompleteCache,
+            SavedSearchPatternStore savedSearchPatternStore,
+            ApplicationSettings applicationSettings,
+            ThreadGroupingService threadGroupingService,
+            TimelinePlacementService timelinePlacementService,
+            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData)
+        {
+            _buildData = buildData;
             _documents = documents;
             _applicationSettings = applicationSettings;
             _threadGroupingService = threadGroupingService;
@@ -119,6 +135,7 @@ namespace LogGrokX.MergedView
                     MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex), GetComponentsInSelectedLines(fieldIndex)));
 
             ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions());
+            RetryRebuildCommand = new DelegateCommand(ScheduleRebuild);
 
             ClearFiltersCommand = new DelegateCommand(() =>
             {
@@ -150,24 +167,27 @@ namespace LogGrokX.MergedView
         {
             _colorSettings = settings;
             InvokePropertyChanged(nameof(ColorSettings));
-            if (_rebuildTimer.IsEnabled)
-            {
-                _rebuildTimer.Stop();
-                _ = RebuildAsync();
-            }
         }
+
+        public string? RebuildError
+        {
+            get => _rebuildError;
+            private set => SetAndRaiseIfChanged(ref _rebuildError, value);
+        }
+
+        public ICommand RetryRebuildCommand { get; }
 
         public LogMetaInformation MetaInformation => _schema.MetaInformation;
 
         public ColumnSettings ColumnSettings { get; }
 
-        public ViewBase CustomView => _viewFactory.CreateView(ColumnSettings.ColumnWidths, SourceStripeTemplate,
+        public ViewBase CustomView => _viewFactory.CreateView(ColumnSettings.ColumnWidths, _sourceStripeTemplate,
             "Source.Document.FoldingState");
 
         internal ViewBase CreateSearchView()
         {
             _searchViewFactory ??= new GridViewFactory(_schema.MetaInformation, false, null);
-            return _searchViewFactory.CreateView(ColumnSettings.ColumnWidths, SourceStripeTemplate,
+            return _searchViewFactory.CreateView(ColumnSettings.ColumnWidths, _sourceStripeTemplate,
                 "Source.Document.FoldingState");
         }
 
@@ -244,6 +264,7 @@ namespace LogGrokX.MergedView
                 else
                 {
                     _rebuildTimer.Stop();
+                    _rebuildPending = false;
                     _requestVersion++;
                     _rebuildCts?.Cancel();
                 }
@@ -364,6 +385,7 @@ namespace LogGrokX.MergedView
         public void Dispose()
         {
             _disposed = true;
+            _rebuildPending = false;
             _requestVersion++;
             _rebuildCts?.Cancel();
             _rebuildTimer.Stop();
@@ -385,7 +407,7 @@ namespace LogGrokX.MergedView
             _subscribed.Clear();
         }
 
-        private static DataTemplate SourceStripeTemplate { get; } = CreateSourceStripeTemplate();
+        private readonly DataTemplate _sourceStripeTemplate = CreateSourceStripeTemplate();
 
         private static DataTemplate CreateSourceStripeTemplate()
         {
@@ -428,7 +450,8 @@ namespace LogGrokX.MergedView
         private void OnDocumentGrown(int _)
         {
             InvokePropertyChanged(nameof(IsLoading));
-            ScheduleRebuild();
+            _dataRevision++;
+            ScheduleNextRebuild();
         }
 
         private void SyncDocuments()
@@ -483,10 +506,16 @@ namespace LogGrokX.MergedView
         {
             _requestVersion++;
             _rebuildCts?.Cancel();
+            ScheduleNextRebuild();
+        }
+
+        private void ScheduleNextRebuild()
+        {
             if (!_isActive || _disposed)
                 return;
 
-            if (_rebuildTimer.IsEnabled)
+            _rebuildPending = true;
+            if (_rebuildCts != null || _rebuildTimer.IsEnabled)
                 return;
 
             _rebuildTimer.Interval = IsAnySourceLoading()
@@ -512,7 +541,13 @@ namespace LogGrokX.MergedView
             if (!_isActive || _disposed)
                 return;
 
-            _rebuildCts?.Cancel();
+            if (_rebuildCts != null)
+            {
+                _rebuildPending = true;
+                return;
+            }
+            _rebuildPending = false;
+            RebuildError = null;
             using var cts = new CancellationTokenSource();
             _rebuildCts = cts;
             var token = cts.Token;
@@ -536,7 +571,7 @@ namespace LogGrokX.MergedView
                     schema.ApplyTo(sources);
                     var mergeSources = sources.Select(item =>
                         new MergeSource(item.Document.LineCount, item.Document.TimeIndex)).ToArray();
-                    data = await Task.Run(() => BuildData(sources, mergeSources, token), token);
+                    data = await Task.Run(() => _buildData(sources, mergeSources, token), token);
                     token.ThrowIfCancellationRequested();
                     _cachedData = data;
                     _cachedSchema = schema;
@@ -552,6 +587,7 @@ namespace LogGrokX.MergedView
                 if (schemaChanged)
                 {
                     _schema = schema;
+                    _schema.ApplyTo(AvailableDocuments);
                     CreateSchemaDependencies();
                     ColumnSettings.ColumnWidths = null;
                 }
@@ -582,12 +618,16 @@ namespace LogGrokX.MergedView
             catch (Exception exception)
             {
                 Trace.TraceError($"Cannot rebuild merged view: {exception}");
+                if (!token.IsCancellationRequested && version == _requestVersion && _isActive && !_disposed)
+                    RebuildError = Strings.Get("MergedViewFailed");
             }
             finally
             {
                 if (ReferenceEquals(_rebuildCts, cts))
                 {
                     _rebuildCts = null;
+                    if (_rebuildPending)
+                        ScheduleNextRebuild();
                     InvokePropertyChanged(nameof(IsLoading));
                 }
             }

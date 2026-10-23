@@ -5,7 +5,14 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Threading;
+using LogGrokX.Controls;
+using LogGrokX.Controls.ListControls;
+using LogGrokX.Data;
 using LogGrokX.MarkedLines;
 using LogGrokX.MergedView;
 using LogGrokX.Search;
@@ -238,13 +245,240 @@ public class MergedRebuildTests
         });
     }
 
+    [TestMethod]
+    public void GrowingSourcesPublishAnInFlightSnapshotBeforeLoadingFinishes()
+    {
+        RunOnSta(() =>
+        {
+            using var entered = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var calls = 0;
+            var capturedToken = CancellationToken.None;
+            using var fixture = new Fixture(buildData: (sources, indexes, token) =>
+            {
+                if (Interlocked.Increment(ref calls) == 1)
+                {
+                    capturedToken = token;
+                    entered.Set();
+                    release.Wait(token);
+                }
+                return BuildSnapshot(sources, indexes, token);
+            });
+            var rows = fixture.Main.Documents.Select(document => Enumerable.Range(0, document.LogViewModel.Lines.Count)
+                .Select(index => document.LogViewModel.Lines[index]).ToArray()).ToArray();
+            foreach (var document in fixture.Main.Documents)
+            {
+                document.LogViewModel.IsLoading = true;
+                document.LogViewModel.Lines.Reset([], []);
+            }
+            var intermediate = false;
+            fixture.Merged.Rebuilt += () => intermediate |= fixture.Merged.TotalLineCount > 0
+                && fixture.Main.Documents.All(document => document.LogViewModel.IsLoading);
+            try
+            {
+                fixture.Merged.IsActive = true;
+                WaitFor(() => entered.IsSet);
+                for (var count = 1; count <= 4; count++)
+                    for (var source = 0; source < rows.Length; source++)
+                        fixture.Main.Documents[source].LogViewModel.Lines.Reset([], rows[source].Take(count).ToArray());
+                Assert.IsFalse(capturedToken.IsCancellationRequested);
+                release.Set();
+                WaitFor(() => intermediate);
+                Assert.AreEqual(12, fixture.Merged.TotalLineCount);
+                Assert.IsTrue(fixture.Merged.IsLoading);
+            }
+            finally
+            {
+                release.Set();
+                foreach (var document in fixture.Main.Documents)
+                    document.LogViewModel.IsLoading = false;
+                WaitFor(() => !fixture.Merged.IsLoading);
+            }
+            Assert.IsGreaterThanOrEqualTo(2, calls);
+            Assert.AreEqual(12, fixture.Merged.Lines.Count);
+        });
+    }
+
+    [TestMethod]
+    public void FailedRebuildKeepsPreviousSnapshotAndCanBeRetried()
+    {
+        RunOnSta(() =>
+        {
+            var fail = false;
+            using var fixture = new Fixture(buildData: (sources, indexes, token) => fail
+                ? throw new IOException("test failure") : BuildSnapshot(sources, indexes, token));
+            fixture.Enable();
+            var original = fixture.Merged.GetSearchSnapshot();
+            fixture.Merged.AvailableDocuments[2].IsSelected = false;
+            fail = true;
+            WaitFor(() => fixture.Merged.RebuildError != null && !fixture.Merged.IsLoading);
+            Assert.AreSame(original, fixture.Merged.GetSearchSnapshot());
+            Assert.AreEqual(12, fixture.Merged.Lines.Count);
+            fail = false;
+            fixture.Merged.RetryRebuildCommand.Execute(null);
+            WaitFor(() => !fixture.Merged.IsLoading && fixture.Merged.TotalLineCount == 8);
+            Assert.IsNull(fixture.Merged.RebuildError);
+            Assert.AreEqual(8, fixture.Merged.Lines.Count);
+        });
+    }
+
+    [TestMethod]
+    public void FilterChangeCancelsInFlightDataAndPublishesOnlyFilteredRows()
+    {
+        RunOnSta(() =>
+        {
+            using var entered = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var calls = 0;
+            var capturedToken = CancellationToken.None;
+            using var fixture = new Fixture(buildData: (sources, indexes, token) =>
+            {
+                if (Interlocked.Increment(ref calls) == 2)
+                {
+                    capturedToken = token;
+                    entered.Set();
+                    release.Wait(token);
+                }
+                return BuildSnapshot(sources, indexes, token);
+            });
+            fixture.Enable();
+            var merged = fixture.Merged;
+            var publishedCounts = new List<int>();
+            merged.Rebuilt += () => publishedCounts.Add(merged.Lines.Count);
+            merged.AvailableDocuments[2].IsSelected = false;
+            try
+            {
+                WaitFor(() => entered.IsSet);
+                merged.SelectedItems = new[] { merged.Lines[0] };
+                merged.ExcludeCommand.Execute(Array.IndexOf(merged.MetaInformation.FieldNames, "Source"));
+                Assert.IsTrue(capturedToken.IsCancellationRequested);
+            }
+            finally { release.Set(); }
+            WaitFor(() => !merged.IsLoading && merged.Lines.Count == 4);
+            CollectionAssert.AreEqual(new[] { 4 }, publishedCounts);
+        });
+    }
+
+    [TestMethod]
+    public void FailureFromAnInvalidatedBuildIsNotDisplayed()
+    {
+        RunOnSta(() =>
+        {
+            using var entered = new ManualResetEventSlim();
+            using var release = new ManualResetEventSlim();
+            var first = true;
+            using var fixture = new Fixture(buildData: (sources, indexes, token) =>
+            {
+                if (first)
+                {
+                    first = false;
+                    entered.Set();
+                    if (!release.Wait(TimeSpan.FromSeconds(5)))
+                        throw new TimeoutException();
+                    throw new IOException("stale failure");
+                }
+                return BuildSnapshot(sources, indexes, token);
+            });
+            fixture.Merged.IsActive = true;
+            try
+            {
+                WaitFor(() => entered.IsSet);
+                fixture.Merged.AvailableDocuments[2].IsSelected = false;
+            }
+            finally { release.Set(); }
+            WaitFor(() => !fixture.Merged.IsLoading && fixture.Merged.TotalLineCount == 8);
+            Assert.IsNull(fixture.Merged.RebuildError);
+        });
+    }
+
+    [TestMethod]
+    public void ThreadIdentityAndSearchSurviveSourceSnapshots()
+    {
+        RunOnSta(() =>
+        {
+            using var fixture = new Fixture();
+            fixture.Enable();
+            var merged = fixture.Merged;
+            fixture.Main.IsGroupByThread = true;
+            merged.CurrentItemIndex = 0;
+            var previous = (MergedLineViewModel)merged.Lines[0];
+            var thread = merged.CurrentThread!.Value;
+            fixture.Change(() => merged.AvailableDocuments[2].IsSelected = false);
+            var current = (MergedLineViewModel)merged.Lines[0];
+            Assert.AreNotSame(previous.Source, current.Source);
+            Assert.IsTrue(previous.HasSameThread(current, merged.ThreadFieldIndex));
+            var currentThread = new MergedThread(current.Source, current.GetFieldText(merged.ThreadFieldIndex));
+            Assert.AreEqual(thread, currentThread);
+            Assert.AreEqual(thread.GetHashCode(), currentThread.GetHashCode());
+            using var search = new MergedSearchDocumentViewModel(merged, new SearchPattern("match", false, false));
+            WaitFor(() => !search.IsSearching);
+            Assert.AreEqual(2, search.Lines.Count);
+            Assert.IsTrue(search.Lines.Cast<MergedLineViewModel>().All(line => line.Source.Document == previous.Source.Document));
+        });
+    }
+
+    [TestMethod]
+    public void ColorRulesUpdateExistingContainersWithoutRebuildingRows()
+    {
+        RunOnSta(() =>
+        {
+            using var fixture = new Fixture();
+            fixture.Enable();
+            var merged = fixture.Merged;
+            var snapshot = merged.GetSearchSnapshot();
+            var revision = merged.Revision;
+            merged.SetColorSettings(new Colors.ColorSettings(new Colors.Configuration.ColorSettings { Rules = [] }));
+            var list = new Controls.ListControls.ListView();
+            var row = new LogListViewItem(list) { Content = merged.Lines[0] };
+            var root = new Border { Child = row };
+            root.SetBinding(Colors.ColorSettings.ColorSettingsProperty,
+                new Binding(nameof(merged.ColorSettings)) { Source = merged });
+            var window = new Window
+            {
+                Content = root, Width = 400, Height = 100, Left = -10000, Top = -10000,
+                ShowInTaskbar = false, ShowActivated = false
+            };
+            try
+            {
+                window.Show();
+                var originalForeground = row.Foreground;
+                foreach (var color in new[] { "White", "Yellow" })
+                {
+                    merged.SetColorSettings(new Colors.ColorSettings(new Colors.Configuration.ColorSettings
+                    {
+                        Rules = [new Colors.Configuration.ColorRule
+                        { RegexString = ".*", ForegroundColor = color, BackgroundColor = "Black" }]
+                    }));
+                    window.UpdateLayout();
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+                    Assert.AreEqual((Color)ColorConverter.ConvertFromString(color), ((SolidColorBrush)row.Foreground).Color);
+                    Assert.AreEqual(System.Windows.Media.Colors.Black, ((SolidColorBrush)row.Background).Color);
+                }
+                merged.SetColorSettings(new Colors.ColorSettings(new Colors.Configuration.ColorSettings { Rules = [] }));
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
+                Assert.AreSame(originalForeground, row.Foreground);
+                Assert.AreSame(snapshot, merged.GetSearchSnapshot());
+                Assert.AreEqual(revision, merged.Revision);
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    private static MergedDataSnapshot BuildSnapshot(MergedDocumentItem[] sources, MergeSource[] indexes,
+        CancellationToken token)
+    {
+        var lines = MergedLineOrder.Build(indexes, [], token).ToArray();
+        return new MergedDataSnapshot(lines, sources, MergedLineOrder.BuildTimeIndex(lines), [], indexes.All(index => index.HasTime));
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly string _directory = Path.Combine(Path.GetTempPath(), "loggrokx-merge-rebuild-" + Guid.NewGuid().ToString("N"));
         public MainWindowViewModel Main { get; }
-        public MergedViewModel Merged => Main.MergedViewModel;
+        public MergedViewModel Merged { get; }
 
-        public Fixture(bool plainLast = false, int linesPerSource = 4, bool waitForLoading = true)
+        public Fixture(bool plainLast = false, int linesPerSource = 4, bool waitForLoading = true,
+            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot>? buildData = null)
         {
             Directory.CreateDirectory(_directory);
             var settingsPath = Path.Combine(_directory, "appsettings.yaml");
@@ -256,6 +490,9 @@ public class MergedRebuildTests
                 new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
                 new ThreadGroupingService(settings), new MergedFilesViewService(), new UpdateCheckService(settings),
                 documents => new MarkedLinesViewModel(documents));
+            Merged = buildData == null ? Main.MergedViewModel : new MergedViewModel(Main.Documents,
+                new SearchAutocompleteCache(), new SavedSearchPatternStore(), settings,
+                new ThreadGroupingService(settings), new TimelinePlacementService(settings), buildData);
             for (var source = 0; source < 3; source++)
             {
                 var path = Path.Combine(_directory, $"sample-{source}.log");
@@ -271,7 +508,10 @@ public class MergedRebuildTests
 
         public void Enable()
         {
-            Main.IsMergedView = true;
+            if (ReferenceEquals(Merged, Main.MergedViewModel))
+                Main.IsMergedView = true;
+            else
+                Merged.IsActive = true;
             WaitFor(() => !Merged.IsLoading && Merged.TotalLineCount == 12);
         }
 
@@ -284,6 +524,8 @@ public class MergedRebuildTests
 
         public void Dispose()
         {
+            if (!ReferenceEquals(Merged, Main.MergedViewModel))
+                Merged.Dispose();
             Main.Dispose();
             Directory.Delete(_directory, true);
         }

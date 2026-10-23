@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace LogGrokX.Data
 {
     public sealed class TimeIndex
     {
-        private readonly List<long> _ticks = new();
+        private readonly object _sync = new();
+        private long[] _ticks = Array.Empty<long>();
+        private int _count;
+        // Captured prefixes share this array; Clear must detach before reusing it.
+        private bool _prefixCaptured;
         private readonly List<int> _dayBoundaries = new();
         private long _lastTicks;
         private long _lastRawTicks;
@@ -14,44 +19,82 @@ namespace LogGrokX.Data
         private long _minTicks = long.MaxValue;
         private long _maxTicks = long.MinValue;
 
-        public bool HasTime { get; private set; }
+        private bool _hasTime;
+        private bool _isMonotonic = true;
 
-        public bool IsMonotonic { get; private set; } = true;
+        public bool HasTime { get { lock (_sync) return _hasTime; } }
 
-        public int Count => _ticks.Count;
+        public bool IsMonotonic { get { lock (_sync) return _isMonotonic; } }
 
-        public IReadOnlyList<int> DayBoundaries => _dayBoundaries;
+        public int Count { get { lock (_sync) return _count; } }
 
-        public long MinTicks => _minTicks;
+        public IReadOnlyList<int> DayBoundaries { get { lock (_sync) return _dayBoundaries.ToArray(); } }
 
-        public long MaxTicks => _maxTicks;
+        public long MinTicks { get { lock (_sync) return _minTicks; } }
+
+        public long MaxTicks { get { lock (_sync) return _maxTicks; } }
 
         public void Clear()
         {
-            _ticks.Clear();
-            _dayBoundaries.Clear();
-            _lastTicks = 0;
-            _lastRawTicks = 0;
-            _lastDayNumber = long.MinValue;
-            _dayOffset = 0;
-            _minTicks = long.MaxValue;
-            _maxTicks = long.MinValue;
-            HasTime = false;
-            IsMonotonic = true;
+            lock (_sync)
+            {
+                if (_prefixCaptured)
+                    _ticks = Array.Empty<long>();
+                _prefixCaptured = false;
+                _count = 0;
+                _dayBoundaries.Clear();
+                _lastTicks = 0;
+                _lastRawTicks = 0;
+                _lastDayNumber = long.MinValue;
+                _dayOffset = 0;
+                _minTicks = long.MaxValue;
+                _maxTicks = long.MinValue;
+                _hasTime = false;
+                _isMonotonic = true;
+            }
         }
 
         public void Add(long ticks)
         {
+            lock (_sync)
+                AddCore(ticks);
+        }
+
+        internal void AddRange<T>(IReadOnlyList<T> values, Func<T, long> getTicks, CancellationToken token)
+        {
+            lock (_sync)
+            {
+                for (var i = 0; i < values.Count; i++)
+                {
+                    if ((i & 1023) == 0)
+                        token.ThrowIfCancellationRequested();
+                    AddCore(getTicks(values[i]));
+                }
+            }
+        }
+
+        private void Append(long ticks)
+        {
+            if (_count == _ticks.Length)
+            {
+                Array.Resize(ref _ticks, _count == 0 ? 4 : checked(_count * 2));
+                _prefixCaptured = false;
+            }
+            _ticks[_count++] = ticks;
+        }
+
+        private void AddCore(long ticks)
+        {
             if (ticks < 0)
             {
-                _ticks.Add(_lastTicks);
+                Append(_lastTicks);
                 return;
             }
 
             var normalized = ticks;
             if (ticks < TimeSpan.TicksPerDay)
             {
-                if (_ticks.Count > 0 && ticks < _lastRawTicks &&
+                if (_count > 0 && ticks < _lastRawTicks &&
                     _lastRawTicks - ticks > TimeSpan.TicksPerHour)
                 {
                     _dayOffset += TimeSpan.TicksPerDay;
@@ -62,42 +105,64 @@ namespace LogGrokX.Data
                     normalized = _lastTicks;
             }
 
-            if (_ticks.Count > 0 && normalized < _lastTicks)
-                IsMonotonic = false;
+            if (_count > 0 && normalized < _lastTicks)
+                _isMonotonic = false;
 
             _lastRawTicks = ticks;
             _lastTicks = normalized;
-            HasTime = true;
+            _hasTime = true;
 
             var dayNumber = normalized / TimeSpan.TicksPerDay;
-            if (_ticks.Count > 0 && dayNumber != _lastDayNumber)
-                _dayBoundaries.Add(_ticks.Count);
+            if (_count > 0 && dayNumber != _lastDayNumber)
+                _dayBoundaries.Add(_count);
             _lastDayNumber = dayNumber;
 
             if (normalized < _minTicks) _minTicks = normalized;
             if (normalized > _maxTicks) _maxTicks = normalized;
 
-            _ticks.Add(normalized);
+            Append(normalized);
         }
 
-        public long GetTicksAt(int index) => _ticks[index];
+        public long GetTicksAt(int index)
+        {
+            lock (_sync)
+            {
+                ArgumentOutOfRangeException.ThrowIfNegative(index);
+                ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _count);
+                return _ticks[index];
+            }
+        }
+
+        public TimeIndexPrefix CapturePrefix(int count)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(count);
+            lock (_sync)
+            {
+                var capturedCount = Math.Min(count, _count);
+                _prefixCaptured |= capturedCount > 0;
+                return new TimeIndexPrefix(_ticks, capturedCount, _hasTime, _isMonotonic);
+            }
+        }
 
         public (int StartLine, int EndLine)? FindLineRange(long fromTicks, long toTicks)
         {
-            if (!HasTime || !IsMonotonic || _ticks.Count == 0)
-                return null;
+            lock (_sync)
+            {
+                if (!_hasTime || !_isMonotonic || _count == 0)
+                    return null;
 
-            var start = LowerBound(fromTicks);
-            var end = UpperBound(toTicks);
-            if (end < start) end = start;
+                var start = LowerBound(fromTicks);
+                var end = UpperBound(toTicks);
+                if (end < start) end = start;
 
-            return (start, end);
+                return (start, end);
+            }
         }
 
         private int LowerBound(long ticks)
         {
             var low = 0;
-            var high = _ticks.Count;
+            var high = _count;
             while (low < high)
             {
                 var mid = low + (high - low) / 2;
@@ -113,7 +178,7 @@ namespace LogGrokX.Data
         private int UpperBound(long ticks)
         {
             var low = 0;
-            var high = _ticks.Count;
+            var high = _count;
             while (low < high)
             {
                 var mid = low + (high - low) / 2;

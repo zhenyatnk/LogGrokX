@@ -76,7 +76,7 @@ namespace LogGrokX.MergedView
 
         public bool HasSameThread(IThreadGroupedItem? other, int threadFieldIndex)
         {
-            if (other is not MergedLineViewModel otherLine || !ReferenceEquals(otherLine.Source, Source))
+            if (other is not MergedLineViewModel otherLine || !Source.HasSameSource(otherLine.Source))
                 return false;
 
             return GetComponentSpan(threadFieldIndex)

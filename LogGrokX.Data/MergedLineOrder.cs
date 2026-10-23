@@ -65,12 +65,7 @@ namespace LogGrokX.Data
         {
             cancellationToken.ThrowIfCancellationRequested();
             target.Clear();
-            for (var i = 0; i < lines.Count; i++)
-            {
-                if ((i & 1023) == 0)
-                    cancellationToken.ThrowIfCancellationRequested();
-                target.Add(lines[i].Ticks);
-            }
+            target.AddRange(lines, static line => line.Ticks, cancellationToken);
 
             return target;
         }

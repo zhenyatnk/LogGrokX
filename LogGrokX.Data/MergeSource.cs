@@ -5,13 +5,13 @@ namespace LogGrokX.Data
         public MergeSource(int lineCount, TimeIndex timeIndex)
         {
             LineCount = lineCount;
-            TimeIndex = timeIndex;
-            HasTime = timeIndex.HasTime && timeIndex.IsMonotonic && timeIndex.Count >= lineCount;
+            TimeIndex = timeIndex.CapturePrefix(lineCount);
+            HasTime = TimeIndex.HasTime && TimeIndex.IsMonotonic && TimeIndex.Count >= lineCount;
         }
 
         public int LineCount { get; }
 
-        public TimeIndex TimeIndex { get; }
+        public TimeIndexPrefix TimeIndex { get; }
 
         public bool HasTime { get; }
     }

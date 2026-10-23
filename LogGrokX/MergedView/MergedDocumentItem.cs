@@ -22,6 +22,9 @@ namespace LogGrokX.MergedView
 
         public int ColorIndex { get; }
 
+        internal bool HasSameSource(MergedDocumentItem other) =>
+            ReferenceEquals(Document, other.Document) && ColorIndex == other.ColorIndex;
+
         public string Title => Document.Title;
 
         public Brush RowBackground { get; }

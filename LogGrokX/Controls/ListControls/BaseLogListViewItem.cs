@@ -200,6 +200,13 @@ namespace LogGrokX.Controls.ListControls
             UpdateColorOverride();
         }
 
+        protected override void OnPropertyChanged(DependencyPropertyChangedEventArgs e)
+        {
+            base.OnPropertyChanged(e);
+            if (e.Property == ColorSettings.ColorSettingsProperty)
+                UpdateColorOverride();
+        }
+
         private void UpdateColorOverride()
         {
             var colorSettings = ColorSettings.GetColorSettings(this);
