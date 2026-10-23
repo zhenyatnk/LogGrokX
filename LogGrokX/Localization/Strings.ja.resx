@@ -27,6 +27,30 @@
   <data xml:space="preserve" name="Architecture">
     <value>アーキテクチャ</value>
   </data>
+  <data xml:space="preserve" name="AccentBlue">
+    <value>青</value>
+  </data>
+  <data xml:space="preserve" name="AccentColor">
+    <value>アクセント カラー</value>
+  </data>
+  <data xml:space="preserve" name="AccentGreen">
+    <value>緑</value>
+  </data>
+  <data xml:space="preserve" name="AccentOrange">
+    <value>オレンジ</value>
+  </data>
+  <data xml:space="preserve" name="AccentPink">
+    <value>ピンク</value>
+  </data>
+  <data xml:space="preserve" name="AccentPurple">
+    <value>紫</value>
+  </data>
+  <data xml:space="preserve" name="AccentRed">
+    <value>赤</value>
+  </data>
+  <data xml:space="preserve" name="AccentTeal">
+    <value>ティール</value>
+  </data>
   <data xml:space="preserve" name="AutomaticUpdates">
     <value>自動更新</value>
   </data>

@@ -1,4 +1,4 @@
-﻿
+
 namespace LogGrokX
 {
     public class ViewSettings
@@ -13,6 +13,19 @@ namespace LogGrokX
 
         public ViewBigLine BigLine { get; set; } = ViewBigLine.Break;
         public int BigLineSize { get; set; } = 9728;
+
+        public enum AccentColorKind
+        {
+            Blue = 0,
+            Purple,
+            Pink,
+            Red,
+            Orange,
+            Green,
+            Teal
+        }
+
+        public AccentColorKind AccentColor { get; set; } = AccentColorKind.Blue;
 
         public bool TimelineAtTop { get; set; }
 

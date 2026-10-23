@@ -27,6 +27,30 @@
   <data xml:space="preserve" name="Architecture">
     <value>Архитектура</value>
   </data>
+  <data xml:space="preserve" name="AccentBlue">
+    <value>Синий</value>
+  </data>
+  <data xml:space="preserve" name="AccentColor">
+    <value>Акцентный цвет</value>
+  </data>
+  <data xml:space="preserve" name="AccentGreen">
+    <value>Зелёный</value>
+  </data>
+  <data xml:space="preserve" name="AccentOrange">
+    <value>Оранжевый</value>
+  </data>
+  <data xml:space="preserve" name="AccentPink">
+    <value>Розовый</value>
+  </data>
+  <data xml:space="preserve" name="AccentPurple">
+    <value>Фиолетовый</value>
+  </data>
+  <data xml:space="preserve" name="AccentRed">
+    <value>Красный</value>
+  </data>
+  <data xml:space="preserve" name="AccentTeal">
+    <value>Бирюзовый</value>
+  </data>
   <data xml:space="preserve" name="AutomaticUpdates">
     <value>Автоматические обновления</value>
   </data>

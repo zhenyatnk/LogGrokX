@@ -33,7 +33,8 @@ public class MergedFilesViewServiceTests
             Assert.IsFalse(restarted.IsEnabled);
 
             var dialog = new SettingsViewModel(settings, new TimelinePlacementService(settings),
-                new ThreadGroupingService(settings), service, new TextZoomService(settings));
+                new ThreadGroupingService(settings), service, new TextZoomService(settings),
+                new LogGrokX.Theming.UiThemeService());
             Assert.IsTrue(dialog.View.MergedFilesView);
             dialog.SaveCommand.Execute(null);
             Assert.IsTrue(service.IsEnabled);
@@ -55,7 +56,8 @@ public class MergedFilesViewServiceTests
             var settings = ApplicationSettings.LoadFromFile(path);
             var service = new MergedFilesViewService();
             var dialog = new SettingsViewModel(settings, new TimelinePlacementService(settings),
-                new ThreadGroupingService(settings), service, new TextZoomService(settings));
+                new ThreadGroupingService(settings), service, new TextZoomService(settings),
+                new LogGrokX.Theming.UiThemeService());
             dialog.View.MergedFilesView = true;
             dialog.SaveCommand.Execute(null);
             Assert.IsTrue(service.IsEnabled);

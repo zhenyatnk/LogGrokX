@@ -15,6 +15,7 @@ namespace LogGrokX.Theming
 
         private readonly string _storeFileName =
             HomeDirectoryPathProvider.GetDataFileFullPath("Theme.json");
+        private ViewSettings.AccentColorKind _accentColor = ViewSettings.AccentColorKind.Blue;
 
         public UiThemeService()
         {
@@ -25,7 +26,26 @@ namespace LogGrokX.Theming
 
         public bool IsDark => CurrentTheme.StartsWith("Dark", StringComparison.OrdinalIgnoreCase);
 
-        public void ApplySavedTheme() => Apply(CurrentTheme);
+        public void ApplySavedTheme(ViewSettings.AccentColorKind accentColor = ViewSettings.AccentColorKind.Blue)
+        {
+            _accentColor = AccentColorPalette.Normalize(accentColor);
+            Apply(CurrentTheme);
+        }
+
+        public void ApplyAccentColor(ViewSettings.AccentColorKind accentColor)
+        {
+            _accentColor = AccentColorPalette.Normalize(accentColor);
+            try
+            {
+                ApplicationAccentColorManager.Apply(
+                    AccentColorPalette.GetColor(_accentColor),
+                    ApplicationThemeManager.GetAppTheme());
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
 
         public void Apply(string themeName)
         {
@@ -38,6 +58,7 @@ namespace LogGrokX.Theming
                     isDark ? ApplicationTheme.Dark : ApplicationTheme.Light,
                     WindowBackdropType.None,
                     true);
+                ApplyAccentColor(_accentColor);
 
                 foreach (var resources in Application.Current.Resources.MergedDictionaries.OfType<DockThemeResources>())
                     resources.Apply(isDark);

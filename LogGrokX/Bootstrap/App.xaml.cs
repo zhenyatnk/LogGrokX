@@ -61,7 +61,8 @@ namespace LogGrokX.Bootstrap
 
             PerfProbe.Start();
 
-            _container.Resolve<UiThemeService>().ApplySavedTheme();
+            _container.Resolve<UiThemeService>().ApplySavedTheme(
+                ApplicationSettings.Instance().ViewSettings.AccentColor);
 
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();

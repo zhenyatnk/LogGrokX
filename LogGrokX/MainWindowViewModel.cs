@@ -329,7 +329,8 @@ namespace LogGrokX
                 _timelinePlacementService,
                 _threadGroupingService,
                 _mergedFilesViewService,
-                _textZoomService);
+                _textZoomService,
+                _themeService);
             var window = new LogGrokX.Settings.SettingsWindow(viewModel);
             if (Application.Current?.MainWindow is { } owner)
                 window.Owner = owner;

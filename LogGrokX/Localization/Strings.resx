@@ -27,6 +27,30 @@
   <data xml:space="preserve" name="Architecture">
     <value>Architecture</value>
   </data>
+  <data xml:space="preserve" name="AccentBlue">
+    <value>Blue</value>
+  </data>
+  <data xml:space="preserve" name="AccentColor">
+    <value>Accent color</value>
+  </data>
+  <data xml:space="preserve" name="AccentGreen">
+    <value>Green</value>
+  </data>
+  <data xml:space="preserve" name="AccentOrange">
+    <value>Orange</value>
+  </data>
+  <data xml:space="preserve" name="AccentPink">
+    <value>Pink</value>
+  </data>
+  <data xml:space="preserve" name="AccentPurple">
+    <value>Purple</value>
+  </data>
+  <data xml:space="preserve" name="AccentRed">
+    <value>Red</value>
+  </data>
+  <data xml:space="preserve" name="AccentTeal">
+    <value>Teal</value>
+  </data>
   <data xml:space="preserve" name="AutomaticUpdates">
     <value>Automatic updates</value>
   </data>

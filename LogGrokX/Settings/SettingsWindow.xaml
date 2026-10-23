@@ -59,6 +59,7 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
 
                             <TextBlock Grid.Row="0" Grid.Column="0" Margin="0,0,12,10"
@@ -72,12 +73,29 @@
                                            Text="{loc:Loc LanguageRestart}" />
                             </StackPanel>
 
-                            <TextBlock Grid.Row="1"
+                            <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,0,12,10"
+                                       VerticalAlignment="Center" Text="{loc:Loc AccentColor}" />
+                            <ComboBox Grid.Row="1" Grid.Column="1" Margin="0,0,0,10"
+                                      ItemsSource="{Binding View.AccentColorOptions}"
+                                      SelectedValuePath="Value"
+                                      SelectedValue="{Binding View.AccentColor, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Width="16" Height="16" Margin="0,0,8,0"
+                                                    CornerRadius="3" Background="{Binding Brush}" />
+                                            <TextBlock VerticalAlignment="Center" Text="{Binding Title}" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <TextBlock Grid.Row="2"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc BigLineHandling}" />
-                            <ComboBox Grid.Row="1"
+                            <ComboBox Grid.Row="2"
                                       Grid.Column="1"
                                       Margin="0,0,0,10"
                                       ItemsSource="{Binding View.BigLineOptions}"
@@ -85,22 +103,22 @@
                                       SelectedValuePath="Value"
                                       SelectedValue="{Binding View.BigLine, Mode=TwoWay}" />
 
-                            <TextBlock Grid.Row="2"
-                                       Grid.Column="0"
-                                       Margin="0,0,12,10"
-                                       VerticalAlignment="Center"
-                                       Text="{loc:Loc BigLineSize}" />
-                            <ui:TextBox Grid.Row="2"
-                                        Grid.Column="1"
-                                        Margin="0,0,0,10"
-                                        Text="{Binding View.BigLineSizeText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
-
                             <TextBlock Grid.Row="3"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
+                                       Text="{loc:Loc BigLineSize}" />
+                            <ui:TextBox Grid.Row="3"
+                                        Grid.Column="1"
+                                        Margin="0,0,0,10"
+                                        Text="{Binding View.BigLineSizeText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+
+                            <TextBlock Grid.Row="4"
+                                       Grid.Column="0"
+                                       Margin="0,0,12,10"
+                                       VerticalAlignment="Center"
                                        Text="{loc:Loc LogFontSize}" />
-                            <DockPanel Grid.Row="3" Grid.Column="1" Margin="0,0,0,10">
+                            <DockPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,10">
                                 <TextBlock DockPanel.Dock="Right"
                                            Width="36"
                                            Margin="8,0,0,0"
@@ -114,57 +132,57 @@
                                         Value="{Binding View.LogFontSize, Mode=TwoWay}" />
                             </DockPanel>
 
-                            <TextBlock Grid.Row="4"
+                            <TextBlock Grid.Row="5"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc TimelineTitle}" />
-                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,0,0,8">
+                            <StackPanel Grid.Row="5" Grid.Column="1" Margin="0,0,0,8">
                                 <CheckBox Content="{loc:Loc ShowTimeline}" IsChecked="{Binding View.TimelineVisible, Mode=TwoWay}" />
                                 <CheckBox Content="{loc:Loc TimelineAtTop}" Margin="0,6,0,0"
                                           IsEnabled="{Binding View.TimelineVisible}"
                                           IsChecked="{Binding View.TimelineAtTop, Mode=TwoWay}" />
                             </StackPanel>
 
-                            <TextBlock Grid.Row="5"
+                            <TextBlock Grid.Row="6"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc GroupByThread}" />
-                            <CheckBox Grid.Row="5"
+                            <CheckBox Grid.Row="6"
                                       Grid.Column="1"
                                       Margin="0,0,0,10"
                                       VerticalAlignment="Center"
                                       IsChecked="{Binding View.GroupByThread, Mode=TwoWay}" />
 
-                            <TextBlock Grid.Row="6"
+                            <TextBlock Grid.Row="7"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc ShowThreadGroupSeparators}" />
-                            <CheckBox Grid.Row="6"
+                            <CheckBox Grid.Row="7"
                                       Grid.Column="1"
                                       Margin="0,0,0,10"
                                       VerticalAlignment="Center"
                                       IsChecked="{Binding View.ShowThreadGroupSeparators, Mode=TwoWay}" />
 
-                            <TextBlock Grid.Row="7"
+                            <TextBlock Grid.Row="8"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc MergedFilesView}" />
-                            <CheckBox Grid.Row="7"
+                            <CheckBox Grid.Row="8"
                                       Grid.Column="1"
                                       Margin="0,0,0,10"
                                       VerticalAlignment="Center"
                                       IsChecked="{Binding View.MergedFilesView, Mode=TwoWay}" />
 
-                            <TextBlock Grid.Row="8"
+                            <TextBlock Grid.Row="9"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Top"
                                        Text="{loc:Loc BinaryDataDetection}" />
-                            <StackPanel Grid.Row="8"
+                            <StackPanel Grid.Row="9"
                                         Grid.Column="1"
                                         Margin="0,0,0,10">
                                 <CheckBox Content="{loc:Loc DetectBinary}"
@@ -182,12 +200,12 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <TextBlock Grid.Row="9"
+                            <TextBlock Grid.Row="10"
                                        Grid.Column="0"
                                        Margin="0,0,12,10"
                                        VerticalAlignment="Center"
                                        Text="{loc:Loc AutomaticUpdates}" />
-                            <ComboBox Grid.Row="9"
+                            <ComboBox Grid.Row="10"
                                       Grid.Column="1"
                                       Margin="0,0,0,10"
                                       ItemsSource="{Binding View.UpdateModeOptions}"
@@ -195,7 +213,7 @@
                                       SelectedValuePath="Value"
                                       SelectedValue="{Binding View.UpdateMode, Mode=TwoWay}" />
 
-                            <TextBlock Grid.Row="10"
+                            <TextBlock Grid.Row="11"
                                        Grid.Column="0"
                                        Grid.ColumnSpan="2"
                                        Margin="0,6,0,0"

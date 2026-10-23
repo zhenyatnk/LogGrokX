@@ -27,6 +27,30 @@
   <data xml:space="preserve" name="Architecture">
     <value>Arquitetura</value>
   </data>
+  <data xml:space="preserve" name="AccentBlue">
+    <value>Azul</value>
+  </data>
+  <data xml:space="preserve" name="AccentColor">
+    <value>Cor de destaque</value>
+  </data>
+  <data xml:space="preserve" name="AccentGreen">
+    <value>Verde</value>
+  </data>
+  <data xml:space="preserve" name="AccentOrange">
+    <value>Laranja</value>
+  </data>
+  <data xml:space="preserve" name="AccentPink">
+    <value>Rosa</value>
+  </data>
+  <data xml:space="preserve" name="AccentPurple">
+    <value>Roxo</value>
+  </data>
+  <data xml:space="preserve" name="AccentRed">
+    <value>Vermelho</value>
+  </data>
+  <data xml:space="preserve" name="AccentTeal">
+    <value>Azul-petróleo</value>
+  </data>
   <data xml:space="preserve" name="AutomaticUpdates">
     <value>Atualizações automáticas</value>
   </data>

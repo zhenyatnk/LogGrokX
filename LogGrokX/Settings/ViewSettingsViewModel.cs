@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Windows.Media;
 using LogGrokX.Localization;
+using LogGrokX.Theming;
 
 namespace LogGrokX.Settings
 {
@@ -9,6 +12,7 @@ namespace LogGrokX.Settings
     {
         private string _language;
         private ViewSettings.ViewBigLine _bigLine;
+        private ViewSettings.AccentColorKind _accentColor;
         private string _bigLineSizeText;
         private bool _timelineAtTop;
         private bool _timelineVisible;
@@ -26,6 +30,7 @@ namespace LogGrokX.Settings
         {
             _language = LocalizationService.NormalizeLanguage(settings.Language);
             _bigLine = settings.BigLine;
+            _accentColor = AccentColorPalette.Normalize(settings.AccentColor);
             _bigLineSizeText = settings.BigLineSize.ToString(CultureInfo.InvariantCulture);
             _timelineAtTop = settings.TimelineAtTop;
             _timelineVisible = settings.TimelineVisible;
@@ -50,6 +55,24 @@ namespace LogGrokX.Settings
                 if (_language == language)
                     return;
                 _language = language;
+                InvokePropertyChanged();
+            }
+        }
+
+        public IReadOnlyList<AccentColorOption> AccentColorOptions { get; } = AccentColorPalette.All
+            .Select(option => new AccentColorOption(option.Value, Strings.Get(option.TitleResource),
+                new SolidColorBrush(option.Color)))
+            .ToArray();
+
+        public ViewSettings.AccentColorKind AccentColor
+        {
+            get => _accentColor;
+            set
+            {
+                value = AccentColorPalette.Normalize(value);
+                if (_accentColor == value)
+                    return;
+                _accentColor = value;
                 InvokePropertyChanged();
             }
         }
@@ -229,6 +252,7 @@ namespace LogGrokX.Settings
         }
     }
 
+    public sealed record AccentColorOption(ViewSettings.AccentColorKind Value, string Title, Brush Brush);
     public sealed record UpdateModeOption(ViewSettings.UpdateModeKind Value, string Title);
     public sealed record BigLineOption(ViewSettings.ViewBigLine Value, string Title);
 }

@@ -155,6 +155,28 @@ public class ProfileSettingsTests
     }
 
     [TestMethod]
+    public void AccentColorRoundTripsWithoutRestart()
+    {
+        File.WriteAllText(_path, "Settings:\n  ViewSettings:\n    AccentColor: purple\n");
+        var settings = ApplicationSettings.LoadFromFile(_path);
+        var editor = CreateEditor(settings);
+
+        Assert.AreEqual(ViewSettings.AccentColorKind.Purple, editor.View.AccentColor);
+        Assert.AreEqual(7, editor.View.AccentColorOptions.Count);
+        editor.View.AccentColor = ViewSettings.AccentColorKind.Green;
+        Assert.IsFalse(editor.RequiresRestart);
+        Assert.IsTrue(editor.Save(), editor.ValidationMessage);
+
+        StringAssert.Contains(File.ReadAllText(_path), "AccentColor: green");
+        Assert.AreEqual(ViewSettings.AccentColorKind.Green, settings.ViewSettings.AccentColor);
+        Assert.AreEqual(ViewSettings.AccentColorKind.Green,
+            ApplicationSettings.LoadFromFile(_path).ViewSettings.AccentColor);
+        Assert.AreEqual(ViewSettings.AccentColorKind.Blue, new ViewSettings().AccentColor);
+        Assert.AreEqual(ViewSettings.AccentColorKind.Blue,
+            LogGrokX.Theming.AccentColorPalette.Normalize((ViewSettings.AccentColorKind)999));
+    }
+
+    [TestMethod]
     public void SwitchingEditorProfilesKeepsIndependentUnsavedChanges()
     {
         var editor = CreateEditor(new ApplicationSettings(_path));
@@ -355,5 +377,5 @@ public class ProfileSettingsTests
 
     internal static SettingsViewModel CreateEditor(ApplicationSettings settings) => new(settings,
         new TimelinePlacementService(settings), new ThreadGroupingService(settings),
-        new MergedFilesViewService(), new TextZoomService(settings));
+        new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService());
 }
