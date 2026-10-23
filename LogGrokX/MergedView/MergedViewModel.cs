@@ -361,6 +361,8 @@ namespace LogGrokX.MergedView
             TimeRangeFilter.Changed -= ScheduleRebuild;
             _filterSettings.ExclusionsChanged -= OnFilterChanged;
             Search.CurrentLineChanged -= NavigateToCentered;
+            _viewFactory.Dispose();
+            _searchViewFactory?.Dispose();
             _componentIndexer.Dispose();
             foreach (var document in Search.Documents.ToArray())
                 document.Dispose();
@@ -561,12 +563,15 @@ namespace LogGrokX.MergedView
             if (_filterSettings != null)
                 _filterSettings.ExclusionsChanged -= OnFilterChanged;
 
+            _viewFactory?.Dispose();
+            _searchViewFactory?.Dispose();
             _componentIndexer?.Dispose();
             _componentIndexer = new MergedComponentIndexer(_schema);
             _filterSettings = new FilterSettings(_componentIndexer, _schema.MetaInformation);
             _filterSettings.ExclusionsChanged += OnFilterChanged;
             _viewFactory = new GridViewFactory(_schema.MetaInformation, true,
-                fieldName => new FilterViewModel(fieldName, _filterSettings, _componentIndexer, _schema.MetaInformation));
+                (fieldName, dispatcher) => new FilterViewModel(fieldName, _filterSettings, _componentIndexer,
+                    _schema.MetaInformation, dispatcher));
             _searchViewFactory = null;
             RefreshActiveFilters();
         }

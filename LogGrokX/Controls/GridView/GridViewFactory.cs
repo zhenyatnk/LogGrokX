@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Threading;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
@@ -11,7 +13,7 @@ using LogGrokX.Filter;
 
 namespace LogGrokX.Controls.GridView
 {
-    public class GridViewFactory
+    public class GridViewFactory : IDisposable
     {
         private const string ThreadFieldName = "Thread";
         private const string ComponentFieldName = "Component";
@@ -21,10 +23,12 @@ namespace LogGrokX.Controls.GridView
         private const double PinColumnPadding = 12;
 
         private readonly LogMetaInformation _meta;
-        private readonly Func<string, FilterViewModel>? _filterViewModelFactory;
+        private readonly Func<string, Dispatcher, FilterViewModel>? _filterViewModelFactory;
+        private readonly Dictionary<string, FilterViewModel> _filters = new(StringComparer.Ordinal);
+        private bool _disposed;
         public GridViewFactory(LogMetaInformation meta, 
                 bool canFilter,
-                Func<string, FilterViewModel>? filterViewModelFactory)
+                Func<string, Dispatcher, FilterViewModel>? filterViewModelFactory)
         {
             _meta = meta;
             _filterViewModelFactory = canFilter switch
@@ -45,6 +49,7 @@ namespace LogGrokX.Controls.GridView
 
         public ViewBase CreateView(double[]? widths, DataTemplate? leadingCellTemplate, string? sharedFoldingStatePath)
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             var columnCount = _meta.FieldNames.Length + 2 + (leadingCellTemplate != null ? 1 : 0);
             if (widths != null && (widths.Length != columnCount ||
                                   widths.Any(width => !double.IsFinite(width) || width <= 0)))
@@ -94,7 +99,11 @@ namespace LogGrokX.Controls.GridView
                     FilterViewModel? filterViewModel = null;
                     if (_filterViewModelFactory != null && _meta.IsFieldIndexed(fieldHeader))
                     {
-                        filterViewModel = _filterViewModelFactory(fieldHeader);
+                        if (!_filters.TryGetValue(fieldHeader, out filterViewModel))
+                        {
+                            filterViewModel = _filterViewModelFactory(fieldHeader, view.Dispatcher);
+                            _filters.Add(fieldHeader, filterViewModel);
+                        }
                     }
 
                     return CreateHeaderTemplate(fieldHeader, filterViewModel);
@@ -164,13 +173,27 @@ namespace LogGrokX.Controls.GridView
                     HeaderTemplate = BuildHeaderTemplate(),
                     CellTemplate = CreateCellTemplate(),
                     Width = widths == null ? double.NaN : widths[columnIndex++],
-                    FitToContent = true,
+                    FitToContent = IsMessageField(fieldHeader),
                     ContentTextProvider = contentTextProvider
                 });
             }
 
             return view;
         }
+
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            foreach (var filter in _filters.Values)
+                filter.Dispose();
+            _filters.Clear();
+        }
+
+        private static bool IsMessageField(string fieldName) =>
+            fieldName.Equals("Message", StringComparison.OrdinalIgnoreCase)
+            || fieldName.Equals("Text", StringComparison.OrdinalIgnoreCase);
 
         private static DataTemplate CreateHeaderTemplate(string fieldHeader, FilterViewModel? filterViewModel)
         {

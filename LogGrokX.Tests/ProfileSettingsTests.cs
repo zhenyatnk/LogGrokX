@@ -355,5 +355,5 @@ public class ProfileSettingsTests
 
     internal static SettingsViewModel CreateEditor(ApplicationSettings settings) => new(settings,
         new TimelinePlacementService(settings), new ThreadGroupingService(settings),
-        new MergedFilesViewService(settings), new TextZoomService(settings));
+        new MergedFilesViewService(), new TextZoomService(settings));
 }

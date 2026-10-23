@@ -10,24 +10,28 @@ using LogGrokX.Data.Index;
 
 namespace LogGrokX.Filter
 {
-    public class FilterViewModel : ViewModelBase
+    public class FilterViewModel : ViewModelBase, IDisposable
     {
         private readonly IFilterSettings _filterSettings;
         private readonly IComponentIndexer _indexer;
         private string? _textFilter;
         private readonly int _indexedFieldIndex;
-        private readonly Dispatcher _dispatcher = Dispatcher.CurrentDispatcher;
+        private readonly Dispatcher _dispatcher;
         private readonly HashSet<string> _knownComponents = new(StringComparer.Ordinal);
+        private readonly object _newComponentsSync = new();
+        private bool _disposed;
 
         public FilterViewModel(
             string fieldName,
             IFilterSettings filterSettings,
             IComponentIndexer indexer,
-            LogMetaInformation metaInformation)
+            LogMetaInformation metaInformation,
+            Dispatcher dispatcher)
         {
-            
+            _dispatcher = dispatcher;
+            _dispatcher.VerifyAccess();
             _filterSettings = filterSettings;
-            _filterSettings.ExclusionsChanged += () => InvokePropertyChanged(nameof(IsFilterApplied));
+            _filterSettings.ExclusionsChanged += OnExclusionsChanged;
             
             _indexer = indexer;
             _indexedFieldIndex = metaInformation.GetIndexedFieldIndexByName(fieldName);
@@ -43,6 +47,26 @@ namespace LogGrokX.Filter
 
         private readonly ConcurrentBag<(int componentNumber, string value)> _newComponentsQueue = new();
         private DispatcherOperation? _addComponentDispatcherOperation;
+
+        public void Dispose()
+        {
+            _dispatcher.VerifyAccess();
+            lock (_newComponentsSync)
+            {
+                if (_disposed)
+                    return;
+                _disposed = true;
+                _indexer.ComponentAdded -= OnNewComponentAdded;
+                _filterSettings.ExclusionsChanged -= OnExclusionsChanged;
+                _addComponentDispatcherOperation?.Abort();
+                _addComponentDispatcherOperation = null;
+                _newComponentsQueue.Clear();
+            }
+            foreach (var element in Elements)
+                element.Dispose();
+        }
+
+        private void OnExclusionsChanged() => InvokePropertyChanged(nameof(IsFilterApplied));
 
         private ElementViewModel CreateElementViewModel(string fieldValue)
         {
@@ -63,27 +87,30 @@ namespace LogGrokX.Filter
                 return;
             }
 
-            _newComponentsQueue.Add((componentIndex, value));
-
-            void ProcessNewComponents()
+            lock (_newComponentsSync)
             {
+                if (_disposed)
+                    return;
+                _newComponentsQueue.Add((componentIndex, value));
+                _addComponentDispatcherOperation ??= _dispatcher.BeginInvoke(ProcessNewComponents);
+            }
+        }
+
+        private void ProcessNewComponents()
+        {
+            lock (_newComponentsSync)
+            {
+                _addComponentDispatcherOperation = null;
+                if (_disposed)
+                    return;
                 while (_newComponentsQueue.TryTake(out var valueTuple))
                 {
-                    var (componentNumber, componentValue) = valueTuple;
+                    var (_, componentValue) = valueTuple;
                     if (!_knownComponents.Add(componentValue))
                         continue;
-                    var newElement = CreateElementViewModel(componentValue);
-                    Elements.Add(newElement);
+                    Elements.Add(CreateElementViewModel(componentValue));
                 }
             }
-
-            _addComponentDispatcherOperation ??=
-                _dispatcher.BeginInvoke(() =>
-                {
-                    ProcessNewComponents();
-                    _addComponentDispatcherOperation = null;
-                    ProcessNewComponents();
-                });
         }
 
         public string? TextFilter

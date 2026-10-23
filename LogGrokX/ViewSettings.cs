@@ -24,8 +24,6 @@ namespace LogGrokX
 
         public bool ShowThreadGroupSeparators { get; set; } = true;
 
-        public bool MergedFilesView { get; set; }
-
         public bool DetectBinary { get; set; } = true;
 
         public bool DetectPem { get; set; } = true;

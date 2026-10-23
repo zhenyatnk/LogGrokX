@@ -280,11 +280,20 @@ namespace LogGrokX.Controls.ListControls
 
             if (!EnsureColumnSettings(gridView))
             {
-                EnsureHeaderWidths(gridView);
                 _contentFitDone = true;
                 StoreColumnWidths(gridView);
                 return;
             }
+
+            ResetAutoColumnWidths(gridView);
+            foreach (var row in this.GetVisualChildren<GridViewRowPresenter>())
+            {
+                foreach (var child in row.GetVisualChildren<FrameworkElement>())
+                    child.InvalidateMeasure();
+                row.InvalidateMeasure();
+                row.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            }
+            UpdateLayout();
 
             if (!FitColumnsToContent(gridView))
                 return;
@@ -428,16 +437,6 @@ namespace LogGrokX.Controls.ListControls
             if (_resetColumnsWidthOperation?.Status == DispatcherOperationStatus.Pending)
                 return;
 
-            void ResetWidth(System.Windows.Controls.GridView view)
-            {
-                Trace.TraceInformation($"Reset column widths (items: {Items.Count})");
-                foreach (var column in view.Columns)
-                {
-                    column.Width = 1;
-                    column.ClearValue(GridViewColumn.WidthProperty);
-                }
-            }
-
             _resetColumnsWidthOperation = Dispatcher.BeginInvoke(() =>
             {
                 _resetColumnsWidthOperation = null;
@@ -448,12 +447,22 @@ namespace LogGrokX.Controls.ListControls
                 if (!EnsureColumnSettings(gridView))
                     return;
 
-                ResetWidth(gridView);
+                ResetAutoColumnWidths(gridView);
                 if (GetPanel()?.IsViewportIsCompletelyFilled ?? false)
                 {
                     _headerAdjusted = true;
                 }
             }, DispatcherPriority.ApplicationIdle);
+        }
+
+        private void ResetAutoColumnWidths(System.Windows.Controls.GridView view)
+        {
+            Trace.TraceInformation($"Reset column widths (items: {Items.Count})");
+            foreach (var column in view.Columns)
+            {
+                column.Width = 1;
+                column.ClearValue(GridViewColumn.WidthProperty);
+            }
         }
 
         private bool EnsureColumnSettings(System.Windows.Controls.GridView gridView)

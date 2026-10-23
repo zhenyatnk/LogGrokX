@@ -537,7 +537,7 @@ public class ProfileRuntimeTests
     private static MainWindowViewModel CreateMain(ApplicationSettings settings) => new(settings,
         new SearchAutocompleteCache(), new SavedSearchPatternStore(), new UiThemeService(),
         new TimelinePlacementService(settings), new TextZoomService(settings),
-        new ThreadGroupingService(settings), new MergedFilesViewService(settings),
+        new ThreadGroupingService(settings), new MergedFilesViewService(),
         new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
 
     private static void WaitFor(Func<bool> ready)

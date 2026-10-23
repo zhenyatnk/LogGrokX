@@ -29,7 +29,7 @@ public class GridProfileTransitionTests
     [DataRow(true, false)]
     [DataRow(false, true)]
     [DataRow(true, true)]
-    public void ReplacingProfileKeepsFullHeadersIncludingFilterButtons(bool restoreSmallWidths, bool customHeaderStyle)
+    public void ReplacingProfileFitsHeadersUnlessWidthsWereSaved(bool restoreSmallWidths, bool customHeaderStyle)
     {
         RunOnSta(() =>
         {
@@ -68,7 +68,10 @@ public class GridProfileTransitionTests
                     };
                     header.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                     Assert.IsGreaterThan(20.0, header.DesiredSize.Width);
-                    Assert.IsGreaterThanOrEqualTo(header.DesiredSize.Width - 0.01, column.ActualWidth);
+                    if (restoreSmallWidths)
+                        Assert.AreEqual(15, column.ActualWidth, 0.01);
+                    else
+                        Assert.IsGreaterThanOrEqualTo(header.DesiredSize.Width - 0.01, column.ActualWidth);
                 }
             });
         });
@@ -170,7 +173,7 @@ public class GridProfileTransitionTests
         var indexer = new EmptyIndexer();
         var filters = new FilterSettings(indexer, meta);
         var view = (GridView)new GridViewFactory(meta, true,
-            field => new FilterViewModel(field, filters, indexer, meta)).CreateView(null);
+            (field, dispatcher) => new FilterViewModel(field, filters, indexer, meta, dispatcher)).CreateView(null);
         view.Columns.RemoveAt(0);
         for (var index = 0; index < view.Columns.Count; index++)
         {

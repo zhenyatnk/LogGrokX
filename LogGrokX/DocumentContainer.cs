@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Windows.Threading;
 using DryIoc;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
@@ -106,12 +107,12 @@ namespace LogGrokX
             _container.RegisterDelegate(c => 
                 new TransformationPerformer(c.Resolve<LogMetaInformation>().Transformations));
             
-            _container.RegisterDelegate<Func<string, FilterViewModel>>(
-                r => fieldName => new FilterViewModel(
+            _container.RegisterDelegate<Func<string, Dispatcher, FilterViewModel>>(
+                r => (fieldName, dispatcher) => new FilterViewModel(
                     fieldName, 
                     r.Resolve<FilterSettings>(),
                     r.Resolve<Indexer>(),
-                    r.Resolve<LogMetaInformation>()));
+                    r.Resolve<LogMetaInformation>(), dispatcher));
 
             _container.RegisterDelegate<Func<SearchPattern, ISearchDocument>>(
                 r =>
@@ -133,7 +134,7 @@ namespace LogGrokX
             // view
             _container.RegisterDelegate(
                 r => new GridViewFactory(r.Resolve<LogMetaInformation>(),
-                    true, r.Resolve<Func<string, FilterViewModel>>()), 
+                    true, r.Resolve<Func<string, Dispatcher, FilterViewModel>>()),
                 serviceKey: GridViewType.FilteringGirdViewType);
 
             _container.RegisterDelegate(

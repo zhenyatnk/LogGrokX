@@ -19,29 +19,48 @@ public class MergedFilesViewServiceTests
         try
         {
             var settings = ApplicationSettings.LoadFromFile(path);
-            var service = new MergedFilesViewService(settings);
+            var service = new MergedFilesViewService();
             Assert.IsFalse(service.IsEnabled);
-            Assert.IsFalse(settings.ViewSettings.MergedFilesView);
             var changes = 0;
             service.Changed += () => changes++;
 
             service.SetEnabled(true);
             Assert.IsTrue(service.IsEnabled);
-            Assert.IsTrue(settings.ViewSettings.MergedFilesView);
             Assert.AreEqual(1, changes);
             Assert.AreEqual(configuration, File.ReadAllText(path));
 
-            var restarted = new MergedFilesViewService(ApplicationSettings.LoadFromFile(path));
+            var restarted = new MergedFilesViewService();
             Assert.IsFalse(restarted.IsEnabled);
 
-            settings.ViewSettings.MergedFilesView = previouslyEnabled;
             var dialog = new SettingsViewModel(settings, new TimelinePlacementService(settings),
                 new ThreadGroupingService(settings), service, new TextZoomService(settings));
             Assert.IsTrue(dialog.View.MergedFilesView);
             dialog.SaveCommand.Execute(null);
             Assert.IsTrue(service.IsEnabled);
-            Assert.AreEqual(previouslyEnabled, ApplicationSettings.LoadFromFile(path).ViewSettings.MergedFilesView);
-            Assert.IsFalse(new MergedFilesViewService(ApplicationSettings.LoadFromFile(path)).IsEnabled);
+            Assert.IsFalse(new MergedFilesViewService().IsEnabled);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void SavingSettingsDoesNotPersistMergedView()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"loggrokx-merge-settings-{Guid.NewGuid():N}.yaml");
+        File.WriteAllText(path, "Settings:\n  ViewSettings:\n    TimelineAtTop: false\n");
+        try
+        {
+            var settings = ApplicationSettings.LoadFromFile(path);
+            var service = new MergedFilesViewService();
+            var dialog = new SettingsViewModel(settings, new TimelinePlacementService(settings),
+                new ThreadGroupingService(settings), service, new TextZoomService(settings));
+            dialog.View.MergedFilesView = true;
+            dialog.SaveCommand.Execute(null);
+            Assert.IsTrue(service.IsEnabled);
+            Assert.IsFalse(File.ReadAllText(path).Contains("MergedFilesView", StringComparison.Ordinal));
+            Assert.IsFalse(new MergedFilesViewService().IsEnabled);
         }
         finally
         {

@@ -54,11 +54,10 @@ public class DocumentLoadingLifecycleTests
                     ],
                     SelectedProfile = "Lifecycle test"
                 };
-                settings.ViewSettings.MergedFilesView = false;
                 using var viewModel = new MainWindowViewModel(
                     settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(), new UiThemeService(),
                     new TimelinePlacementService(settings), new TextZoomService(settings),
-                    new ThreadGroupingService(settings), new MergedFilesViewService(settings),
+                    new ThreadGroupingService(settings), new MergedFilesViewService(),
                     new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
 
                 var references = OpenAndCloseDocument(viewModel, fileName, lineCount, waitUntilLoaded);

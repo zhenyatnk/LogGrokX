@@ -213,7 +213,7 @@ public class MainWindowViewModelLifecycleTests
             new TimelinePlacementService(settings),
             new TextZoomService(settings),
             new ThreadGroupingService(settings),
-            new MergedFilesViewService(settings),
+            new MergedFilesViewService(),
             new UpdateCheckService(settings),
             documents => new MarkedLinesViewModel(documents));
     }

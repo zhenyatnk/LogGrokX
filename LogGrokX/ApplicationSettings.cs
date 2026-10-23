@@ -138,14 +138,6 @@ namespace LogGrokX
             SaveViewSettingValue("ShowThreadGroupSeparators", showThreadGroupSeparators ? "true" : "false");
         }
 
-        public void SetMergedFilesView(bool mergedFilesView)
-        {
-            if (ViewSettings.MergedFilesView == mergedFilesView)
-                return;
-
-            ViewSettings.MergedFilesView = mergedFilesView;
-        }
-
         public void SetBinaryDetection(bool detectBinary, bool detectPem, bool detectBase64, bool detectHex)
         {
             SetViewSetting(ViewSettings.DetectBinary, detectBinary, v => ViewSettings.DetectBinary = v, nameof(ViewSettings.DetectBinary));

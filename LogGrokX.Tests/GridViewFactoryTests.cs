@@ -111,9 +111,9 @@ namespace LogGrokX.Tests
                 for (var i = 0; i < meta.FieldNames.Length; i++)
                     Assert.IsNotNull(columns[i + 2].ContentTextProvider);
 
-                Assert.IsTrue(columns[1].FitToContent);
+                Assert.IsFalse(columns[1].FitToContent);
                 for (var i = 0; i < meta.FieldNames.Length; i++)
-                    Assert.IsTrue(columns[i + 2].FitToContent);
+                    Assert.AreEqual(meta.FieldNames[i] == "Message", columns[i + 2].FitToContent);
 
                 var line = CreateLine(meta);
 
@@ -162,6 +162,26 @@ namespace LogGrokX.Tests
             var parser = new RegexBasedLineParser(meta);
             return new LineViewModel(0, source, parser, new Selection(),
                 new TransformationPerformer(Array.Empty<string>()));
+        }
+
+        [TestMethod]
+        [DataRow("Message")]
+        [DataRow("message")]
+        [DataRow("Text")]
+        [DataRow("text")]
+        public void ContentSamplingIsLimitedToMessageAndText(string textField)
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = $"^(?<Time>)(?<Level>)(?<{textField}>.*)$" });
+                using var factory = new GridViewFactory(meta, false, null);
+                var view = (System.Windows.Controls.GridView)factory.CreateView(null);
+                var fitted = view.Columns.Cast<LogGridViewColumn>().Where(column => column.FitToContent).ToArray();
+                Assert.AreEqual(1, fitted.Length);
+                fitted[0].HeaderTemplate.Seal();
+                var header = (FrameworkElement)fitted[0].HeaderTemplate.LoadContent();
+                Assert.AreEqual(textField, ((HeaderViewModel)header.DataContext).FieldHeader);
+            });
         }
 
         [TestMethod]

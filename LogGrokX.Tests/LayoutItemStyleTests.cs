@@ -67,7 +67,7 @@ public sealed class LayoutItemStyleTests
                 var settings = ApplicationSettings.Instance();
                 using var main = new MainWindowViewModel(settings, new SearchAutocompleteCache(),
                     new SavedSearchPatternStore(), new UiThemeService(), new TimelinePlacementService(settings),
-                    new TextZoomService(settings), new ThreadGroupingService(settings), new MergedFilesViewService(settings),
+                    new TextZoomService(settings), new ThreadGroupingService(settings), new MergedFilesViewService(),
                     new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
                 main.AddDocument(path);
                 var viewModel = main.CurrentDocument!;

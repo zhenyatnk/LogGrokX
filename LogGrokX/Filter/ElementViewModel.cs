@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace LogGrokX.Filter
 {
-    public class ElementViewModel : ViewModelBase
+    public class ElementViewModel : ViewModelBase, IDisposable
     {
         public string Name { get; }
 
@@ -56,8 +56,12 @@ namespace LogGrokX.Filter
 
             _componentIndex = componentIndex;
             _filterSettings = filterSettings;
-            _filterSettings.ExclusionsChanged += () => InvokePropertyChanged(nameof(IsActive));
+            _filterSettings.ExclusionsChanged += OnExclusionsChanged;
             _percentGetter = percentGetter;
         }
+
+        public void Dispose() => _filterSettings.ExclusionsChanged -= OnExclusionsChanged;
+
+        private void OnExclusionsChanged() => InvokePropertyChanged(nameof(IsActive));
     }
 }

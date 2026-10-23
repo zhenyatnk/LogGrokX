@@ -32,7 +32,6 @@ namespace LogGrokX.Settings
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _showThreadGroupSeparators = settings.ShowThreadGroupSeparators;
-            _mergedFilesView = settings.MergedFilesView;
             _detectBinary = settings.DetectBinary;
             _detectPem = settings.DetectPem;
             _detectBase64 = settings.DetectBase64;

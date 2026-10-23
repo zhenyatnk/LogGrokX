@@ -28,9 +28,11 @@ namespace LogGrokX.Tests;
 public class ProfileColumnSizingTests
 {
     [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void ChangingProfileInMergedViewSizesAllHiddenDocumentTabs(bool detachHiddenTabs)
+    [DataRow(false, 300.0)]
+    [DataRow(true, 300.0)]
+    [DataRow(false, 12.0)]
+    [DataRow(true, 12.0)]
+    public void ChangingProfileInMergedViewSizesAllHiddenDocumentTabs(bool detachHiddenTabs, double manualWidth)
     {
         RunOnSta(() =>
         {
@@ -105,7 +107,7 @@ public class ProfileColumnSizingTests
                         WaitFor(() => GetList(document).Items.Count == 20);
                         WaitForSizing(window);
                     }
-                    FindColumn(GetList(documents[^1]), "Time").Width = 300;
+                    FindColumn(GetList(documents[^1]), "Time").Width = manualWidth;
                     window.UpdateLayout();
                     foreach (var profile in new[] { "Venn", "Classic", "Venn" })
                     {
@@ -126,9 +128,9 @@ public class ProfileColumnSizingTests
                                 root.Children.Add(document);
                             Show(document);
                             WaitForSizing(window);
-                            AssertColumnsFit(GetList(document));
+                            AssertColumnsFit(GetList(document), profile == "Classic" ? "Time" : null);
                             if (profile == "Classic")
-                                Assert.AreEqual(300, FindColumn(GetList(document), "Time").ActualWidth, 0.01,
+                                Assert.AreEqual(manualWidth, FindColumn(GetList(document), "Time").ActualWidth, 0.01,
                                     "Profile switching lost the manually resized column.");
                         }
                     }
@@ -170,7 +172,7 @@ public class ProfileColumnSizingTests
         return new DataTemplate { VisualTree = list };
     }
 
-    private static void AssertColumnsFit(LogListView list)
+    private static void AssertColumnsFit(LogListView list, string? manuallySizedField = null)
     {
         var view = (GridView)list.View;
         foreach (var column in view.Columns)
@@ -180,6 +182,8 @@ public class ProfileColumnSizingTests
             if (content == null)
                 continue;
             if (content.DataContext is not HeaderViewModel { FieldHeader: { Length: > 0 } name })
+                continue;
+            if (name == manuallySizedField)
                 continue;
             content.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Assert.IsGreaterThanOrEqualTo(content.DesiredSize.Width + header.Padding.Left + header.Padding.Right - 1, column.ActualWidth,
@@ -223,7 +227,7 @@ public class ProfileColumnSizingTests
     private static MainWindowViewModel CreateMain(ApplicationSettings settings) => new(settings,
         new SearchAutocompleteCache(), new SavedSearchPatternStore(), new UiThemeService(),
         new TimelinePlacementService(settings), new TextZoomService(settings),
-        new ThreadGroupingService(settings), new MergedFilesViewService(settings),
+        new ThreadGroupingService(settings), new MergedFilesViewService(),
         new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
 
     private static void WaitForSizing(Window window)
