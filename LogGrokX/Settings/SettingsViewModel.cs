@@ -34,6 +34,7 @@ namespace LogGrokX.Settings
         private string _savedMaxDumpsCountText = string.Empty;
         private string[] _savedProfiles;
         private ProfileViewModel _selectedProfile;
+        private ViewSettings.AccentColorKind _savedAccentColor;
 
         public SettingsViewModel(ApplicationSettings applicationSettings,
             TimelinePlacementService timelinePlacementService,
@@ -425,11 +426,20 @@ namespace LogGrokX.Settings
             _savedBigLineSizeText = View.BigLineSizeText;
             _savedEnableCrashDumps = Debug.EnableCrashDumps;
             _savedMaxDumpsCountText = Debug.MaxDumpsCountText;
+            _savedAccentColor = View.AccentColor;
         }
 
         private void OnTrackedPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (ReferenceEquals(sender, View) &&
+                e.PropertyName == nameof(ViewSettingsViewModel.AccentColor))
+                _themeService.ApplyAccentColor(View.AccentColor);
             UpdateRequiresRestart();
+        }
+
+        public void Cancel()
+        {
+            View.AccentColor = _savedAccentColor;
         }
 
         private void UpdateRequiresRestart()

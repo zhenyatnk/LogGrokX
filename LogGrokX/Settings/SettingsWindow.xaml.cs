@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -9,6 +10,7 @@ namespace LogGrokX.Settings
     public partial class SettingsWindow
     {
         private static string JsonFilter => Strings.Get("JsonFilter");
+        private bool _saved;
 
         public SettingsWindow(SettingsViewModel viewModel)
         {
@@ -19,12 +21,22 @@ namespace LogGrokX.Settings
         private void OnSaveClick(object sender, RoutedEventArgs e)
         {
             if (DataContext is SettingsViewModel viewModel && viewModel.Save())
+            {
+                _saved = true;
                 Close();
+            }
         }
 
         private void OnCancelClick(object sender, RoutedEventArgs e)
         {
             Close();
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (!_saved && DataContext is SettingsViewModel viewModel)
+                viewModel.Cancel();
+            base.OnClosing(e);
         }
 
         private void OnImportValueMappingsClick(object sender, RoutedEventArgs e)

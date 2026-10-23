@@ -177,6 +177,16 @@ public class ProfileSettingsTests
     }
 
     [TestMethod]
+    public void CancelRevertsPreviewedAccentColor()
+    {
+        File.WriteAllText(_path, "Settings:\n  ViewSettings:\n    AccentColor: purple\n");
+        var editor = CreateEditor(ApplicationSettings.LoadFromFile(_path));
+        editor.View.AccentColor = ViewSettings.AccentColorKind.Green;
+        editor.Cancel();
+        Assert.AreEqual(ViewSettings.AccentColorKind.Purple, editor.View.AccentColor);
+    }
+
+    [TestMethod]
     public void SwitchingEditorProfilesKeepsIndependentUnsavedChanges()
     {
         var editor = CreateEditor(new ApplicationSettings(_path));

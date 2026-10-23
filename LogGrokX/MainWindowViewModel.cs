@@ -85,6 +85,7 @@ namespace LogGrokX
             _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             _threadGroupingService.Changed += OnThreadGroupingChanged;
             _mergedFilesViewService.Changed += OnMergedFilesViewChanged;
+            _themeService.AccentColorChanged += OnAccentColorChanged;
             Documents = new ObservableCollection<DocumentViewModel>();
             Documents.CollectionChanged += OnDocumentsChanged;
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
@@ -312,7 +313,19 @@ namespace LogGrokX
         private static readonly AvalonDock.Themes.Vs2013LightTheme LightDockTheme = new();
         private static readonly AvalonDock.Themes.Vs2013DarkTheme DarkDockTheme = new();
 
-        public AvalonDock.Themes.Theme DockTheme => _themeService.IsDark ? DarkDockTheme : LightDockTheme;
+        public AvalonDock.Themes.Theme DockTheme => GetDockTheme();
+
+        private AvalonDock.Themes.Theme GetDockTheme()
+        {
+            AvalonDock.Themes.DictionaryTheme theme = _themeService.IsDark ? DarkDockTheme : LightDockTheme;
+            Theming.DockThemeResources.ApplyAccentColor(theme.ThemeResourceDictionary);
+            return theme;
+        }
+
+        private void OnAccentColorChanged(object? sender, EventArgs e)
+        {
+            GetDockTheme();
+        }
 
         private void OpenSupport()
         {
@@ -489,6 +502,7 @@ namespace LogGrokX
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _mergedFilesViewService.Changed -= OnMergedFilesViewChanged;
+            _themeService.AccentColorChanged -= OnAccentColorChanged;
             Documents.CollectionChanged -= OnDocumentsChanged;
             MarkedLinesViewModel.Dispose();
             MergedViewModel.Dispose();
