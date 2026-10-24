@@ -11,6 +11,7 @@
                     xmlns:textRender="clr-namespace:LogGrokX.Controls.TextRender"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="PresentationConverters.xaml" />
         <ResourceDictionary Source="ListViewItemStyle.xaml" />
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
     </ResourceDictionary.MergedDictionaries>
@@ -73,7 +74,7 @@
                          Value="{Binding Progress}"
                          Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" />
             <DockPanel Grid.Row="2" LastChildFill="True">
-            <localControls:LogMinimapControl DockPanel.Dock="{Binding TimelineDock,
+            <localControls:LogMinimapControl DockPanel.Dock="{Binding IsTimelineAtTop, Converter={StaticResource TimelineDockConverter},
                                                                FallbackValue=Bottom}"
                                              Visibility="{Binding IsTimelineVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                                              Height="30"
@@ -118,7 +119,7 @@
                                     SelectionMode="Extended"
                                     ReadonlySelectedItems="{Binding SelectedItems,
                                                             Mode=OneWayToSource}"
-                                    View="{Binding CustomView}"
+                                    View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"
                                     ItemContainerStyle="{StaticResource LogGridItemContainerStyle}"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"
                                     ScrollViewer.CanContentScroll="True"

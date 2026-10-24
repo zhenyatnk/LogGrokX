@@ -11,6 +11,7 @@ using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 using LogGrokX.Search;
 using LogGrokX.Theming;
+using LogGrokX.Platform;
 using Splat.DryIoc;
 
 namespace LogGrokX.Bootstrap
@@ -24,6 +25,8 @@ namespace LogGrokX.Bootstrap
             TracesLogger.Initialize();
             ExceptionsLogger.Initialize();
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+            UiDispatcher.Current = new WpfUiDispatcher(Dispatcher);
+            DesktopServices.Current = new WindowsDesktopService();
             _container = new Container();
             LoggerRegistrationHelper.Register(_container);
 
@@ -67,7 +70,7 @@ namespace LogGrokX.Bootstrap
             var mainWindow = _container.Resolve<MainWindow>();
             mainWindow.Show();
             ShowWhatsNewIfAny(mainWindow);
-            _container.Resolve<UpdateCheckService>().CheckOnStartup(mainWindow);
+            _container.Resolve<UpdateCheckService>().CheckOnStartup();
             
             ProcessCommandLine(e.Args.Where(item => item != null));
         }
@@ -92,18 +95,29 @@ namespace LogGrokX.Bootstrap
             _container.Dispose();
         }
 
-        private void RegisterDependencies(IRegistrator container)
+        internal static void RegisterDependencies(IRegistrator container)
         {
             container.RegisterDelegate(ApplicationSettings.Instance);
             container.Register<MainWindowViewModel>(Reuse.Singleton);
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
             container.Register<SavedSearchPatternStore>(Reuse.Singleton);
+            container.RegisterInstance<IUiDispatcher>(UiDispatcher.Current);
+            container.RegisterInstance<IDesktopService>(DesktopServices.Current);
+            container.Register<IUpdatePresenter, WpfUpdatePresenter>(Reuse.Singleton);
+            container.Register<IAppDialogs, WpfAppDialogs>(Reuse.Singleton);
+            container.Register<IColorValidator, WpfColorValidator>(Reuse.Singleton);
+            container.Register<Settings.SettingsViewModel>();
             container.Register<UiThemeService>(Reuse.Singleton);
+            container.RegisterMapping<IThemeService, UiThemeService>();
             container.Register<TimelinePlacementService>(Reuse.Singleton);
+            container.Register<ITextSizePresenter, WpfTextSizePresenter>(Reuse.Singleton);
             container.Register<TextZoomService>(Reuse.Singleton);
             container.Register<ThreadGroupingService>(Reuse.Singleton);
             container.Register<MergedFilesViewService>(Reuse.Singleton);
             container.Register<UpdateCheckService>(Reuse.Singleton);
+            container.RegisterMapping<IUpdateService, UpdateCheckService>();
+            container.Register<ICrashDumpService, WindowsCrashDumpService>(Reuse.Singleton);
+            container.Register<ITitleBarService, WindowsTitleBarService>(Reuse.Singleton);
             container.Register<MarkedLinesViewModel>(setup: Setup.With(allowDisposableTransient: true));
             container.Register<MainWindow>();
         }

@@ -14,6 +14,7 @@
                     xmlns:avalonDockExtensions="clr-namespace:LogGrokX.AvalonDockExtensions"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="PresentationConverters.xaml" />
         <ResourceDictionary Source="ListViewItemStyle.xaml" />
         <ResourceDictionary Source="ToggleButtonStyle.xaml" />
         <ResourceDictionary Source="LogViewContextMenu.xaml"/>
@@ -48,7 +49,7 @@
                                ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
                                FontFamily="{StaticResource JetBrainsMono}"
                                FontSize="{DynamicResource LogFontSize}"
-                               View="{Binding CustomView}"
+                               View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"
                                VirtualizingStackPanel.IsVirtualizing="True"
                                VirtualizingStackPanel.VirtualizationMode="Recycling"
                                controls:NavigateToLineBehavior.NavigateToLineRequest=

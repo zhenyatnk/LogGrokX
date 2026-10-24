@@ -10,7 +10,7 @@ namespace LogGrokX.MarkedLines
     {
         public DocumentViewModel Document { get; }
         public LinePartViewModel Text { get; }
-        public ColorSettings ColorSettings { get; }
+        public ColorRuleSet ColorSettings { get; }
 
         public MarkedLineViewModel(DocumentViewModel document, int lineNumber, string text)
             : base(lineNumber, document.MarkedLines)        

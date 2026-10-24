@@ -510,7 +510,7 @@ namespace LogGrokX.Controls
 
                 var left = CenterOf(start, count, width);
                 var right = CenterOf(end, count, width);
-                drawingContext.DrawRectangle(segment.Brush, null, new Rect(left, 0, Math.Max(1, right - left), height));
+                drawingContext.DrawRectangle(ColorBrushConverter.GetBrush(segment.Color), null, new Rect(left, 0, Math.Max(1, right - left), height));
             }
         }
 

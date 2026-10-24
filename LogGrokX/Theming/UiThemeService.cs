@@ -5,10 +5,11 @@ using System.Text.Json;
 using System.Windows;
 using Wpf.Ui.Appearance;
 using Wpf.Ui.Controls;
+using LogGrokX.Platform;
 
 namespace LogGrokX.Theming
 {
-    public class UiThemeService
+    public class UiThemeService : IThemeService
     {
         public const string LightTheme = "Light";
         public const string DarkTheme = "Dark";
@@ -50,6 +51,10 @@ namespace LogGrokX.Theming
             ["CheckBoxCheckBackgroundFillCheckedPressed"] = "AccentFillColorTertiary"
         };
 
+        void IThemeService.ApplyAccentColor(string accentColor) =>
+            ApplyAccentColor(Enum.TryParse<ViewSettings.AccentColorKind>(accentColor, true, out var value)
+                ? value : ViewSettings.AccentColorKind.Blue);
+
         public void ApplyAccentColor(ViewSettings.AccentColorKind accentColor)
         {
             _accentColor = AccentColorPalette.Normalize(accentColor);
@@ -57,11 +62,12 @@ namespace LogGrokX.Theming
             {
                 var previousBrushes = CaptureAccentBrushes(Application.Current.Resources);
                 ApplicationAccentColorManager.Apply(
-                    AccentColorPalette.GetColor(_accentColor),
+                    (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(AccentColorPalette.GetColor(_accentColor)),
                     ApplicationThemeManager.GetAppTheme());
                 ApplyDerivedAccentBrushes(Application.Current.Resources, previousBrushes);
                 foreach (var resources in Application.Current.Resources.MergedDictionaries.OfType<DockThemeResources>())
                     resources.ApplyAccentColor();
+                DockThemeConverter.ApplyAccentColor();
                 AccentColorChanged?.Invoke(this, EventArgs.Empty);
             }
             catch (Exception)

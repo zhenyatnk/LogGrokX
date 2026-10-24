@@ -10,7 +10,7 @@ public class TextViewSharedFoldingState
     private int _cleanupCounter = 0;
 
     private Func<IEnumerable<(int start, int length)>, int, HashSet<int>> _defaultSettingsFactory = CreateDefaultSettings;
-    private Dictionary<int, WeakReference<TextView>> _clientRefs = new();
+    private Dictionary<int, WeakReference<ITextFoldingClient>> _clientRefs = new();
     
     public HashSet<int>? this[int id]
     {
@@ -55,9 +55,9 @@ public class TextViewSharedFoldingState
         }
     }
 
-    public void Register(TextView textView)
+    public void Register(ITextFoldingClient textView)
     {
-        _clientRefs[textView.GetHashCode()] = new WeakReference<TextView>(textView);
+        _clientRefs[textView.GetHashCode()] = new WeakReference<ITextFoldingClient>(textView);
         _cleanupCounter++;
         if (_cleanupCounter % 256 == 0)
         {
@@ -65,7 +65,7 @@ public class TextViewSharedFoldingState
         }
     }
 
-    public void NotifyChanged(TextView source)
+    public void NotifyChanged(ITextFoldingClient source)
     {
         foreach (var (_, clientRef) in _clientRefs)
         {
@@ -74,7 +74,7 @@ public class TextViewSharedFoldingState
         }
     }
     
-    public void Unregister(TextView textView)
+    public void Unregister(ITextFoldingClient textView)
     {
         _clientRefs.Remove(textView.GetHashCode());
     }

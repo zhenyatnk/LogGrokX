@@ -65,7 +65,7 @@ public class ProfileRuntimeTests
                     var revision = merged.Revision;
                     if (useColumnFilter)
                     {
-                        var view = (System.Windows.Controls.GridView)merged.CustomView;
+                        var view = (System.Windows.Controls.GridView)new LogGridViewConverter().Convert(merged.CustomView, typeof(System.Windows.Controls.GridView), null!, System.Globalization.CultureInfo.InvariantCulture);
                         foreach (var column in view.Columns)
                             column.HeaderTemplate.Seal();
                         var header = view.Columns.Select(column => ((FrameworkElement)column.HeaderTemplate.LoadContent())
@@ -144,7 +144,7 @@ public class ProfileRuntimeTests
                 Assert.IsGreaterThan(0, viewChanges);
                 Assert.IsFalse(merged.MetaInformation.IsFieldIndexed("Level"));
                 Assert.IsTrue(merged.MetaInformation.IsFieldIndexed("Source"));
-                var view = (System.Windows.Controls.GridView)merged.CustomView;
+                var view = (System.Windows.Controls.GridView)new LogGridViewConverter().Convert(merged.CustomView, typeof(System.Windows.Controls.GridView), null!, System.Globalization.CultureInfo.InvariantCulture);
                 var template = view.Columns[3 + Array.IndexOf(merged.MetaInformation.FieldNames, "Source")].HeaderTemplate;
                 template.Seal();
                 var header = (HeaderViewModel)((FrameworkElement)template.LoadContent()).DataContext;
@@ -372,8 +372,8 @@ public class ProfileRuntimeTests
                 Assert.AreEqual(otherPath, second.DocumentId);
                 Assert.AreEqual(2, main.Documents.Count);
                 CollectionAssert.AreEqual(new[] { "Text" }, second.MetaInformation.FieldNames);
-                Assert.AreEqual(System.Windows.Media.Colors.Blue, second.ColorSettings.Rules.Single().ForegroundColor!.Value);
-                Assert.AreEqual(System.Windows.Media.Colors.Blue, main.MergedViewModel.ColorSettings.Rules.Single().ForegroundColor!.Value);
+                Assert.AreEqual("Blue", second.ColorSettings.Rules.Single().ForegroundColor);
+                Assert.AreEqual("Blue", main.MergedViewModel.ColorSettings.Rules.Single().ForegroundColor);
                 Assert.IsTrue(main.Documents[0].MarkedLines.Contains(0));
                 Assert.AreEqual(1, main.MarkedLinesViewModel.MarkedLines.Count);
                 Assert.IsFalse(main.MergedViewModel.AvailableDocuments.Single(item => item.Document.DocumentId == otherPath).IsSelected);
@@ -496,7 +496,7 @@ public class ProfileRuntimeTests
                 main.AddDocument(otherPath);
                 WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading);
                 CollectionAssert.AreEqual(new[] { "Message" }, main.CurrentDocument!.MetaInformation.FieldNames);
-                Assert.AreEqual(System.Windows.Media.Colors.Red, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+                Assert.AreEqual("Red", main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor);
 
                 settings.UpdateProfiles([invalid], "Invalid");
                 Assert.AreEqual("Invalid", main.Profiles.Single().Name);
@@ -510,11 +510,11 @@ public class ProfileRuntimeTests
                 WaitFor(() => main.Documents.All(document => !document.LogViewModel.IsLoading));
                 Assert.AreEqual("Invalid", main.SelectedProfile.Name);
                 CollectionAssert.AreEqual(new[] { "Text" }, main.CurrentDocument!.MetaInformation.FieldNames);
-                Assert.AreEqual(System.Windows.Media.Colors.Blue, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+                Assert.AreEqual("Blue", main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor);
 
                 settings.UpdateProfiles([anotherInvalid], "Invalid");
                 Assert.AreEqual(3, Regex.Matches(errors.ToString(), "Cannot apply profile").Count);
-                Assert.AreEqual(System.Windows.Media.Colors.Blue, main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor!.Value);
+                Assert.AreEqual("Blue", main.CurrentDocument.ColorSettings.Rules.Single().ForegroundColor);
             }
             finally
             {
@@ -539,7 +539,7 @@ public class ProfileRuntimeTests
         new SearchAutocompleteCache(), new SavedSearchPatternStore(), new UiThemeService(),
         new TimelinePlacementService(settings), new TextZoomService(settings),
         new ThreadGroupingService(settings), new MergedFilesViewService(),
-        new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
+        null, documents => new MarkedLinesViewModel(documents), new Platform.WpfColorValidator());
 
     private static void WaitFor(Func<bool> ready)
     {

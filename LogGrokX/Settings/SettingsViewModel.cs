@@ -8,19 +8,21 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.Data;
+using LogGrokX.Platform;
 using LogGrokX.Localization;
-using LogGrokX.Theming;
 
 namespace LogGrokX.Settings
 {
     public sealed class SettingsViewModel : ViewModelBase
     {
+        private readonly IDesktopService _desktop;
         private readonly ApplicationSettings _applicationSettings;
         private readonly TimelinePlacementService _timelinePlacementService;
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly MergedFilesViewService _mergedFilesViewService;
         private readonly TextZoomService _textZoomService;
-        private readonly UiThemeService _themeService;
+        private readonly IThemeService _themeService;
+        private readonly IColorValidator _colorValidator;
         private string _validationMessage = string.Empty;
         private bool _requiresRestart;
         private ColorRuleViewModel? _selectedColorRule;
@@ -40,15 +42,17 @@ namespace LogGrokX.Settings
             TimelinePlacementService timelinePlacementService,
             ThreadGroupingService threadGroupingService,
             MergedFilesViewService mergedFilesViewService,
-            TextZoomService textZoomService,
-            UiThemeService themeService)
+            TextZoomService textZoomService, IThemeService themeService,
+            IColorValidator colorValidator, IDesktopService? desktop = null)
         {
+            _desktop = desktop ?? DesktopServices.Current;
             _applicationSettings = applicationSettings;
             _timelinePlacementService = timelinePlacementService;
             _threadGroupingService = threadGroupingService;
             _mergedFilesViewService = mergedFilesViewService;
             _textZoomService = textZoomService;
             _themeService = themeService;
+            _colorValidator = colorValidator;
 
             View = new ViewSettingsViewModel(applicationSettings.ViewSettings)
             {
@@ -350,7 +354,7 @@ namespace LogGrokX.Settings
             _applicationSettings.ViewSettings.BigLineSize = bigLineSize;
             _applicationSettings.ViewSettings.UpdateMode = View.UpdateMode;
             _applicationSettings.ViewSettings.AccentColor = View.AccentColor;
-            _themeService.ApplyAccentColor(View.AccentColor);
+            _themeService.ApplyAccentColor(View.AccentColor.ToString());
             _applicationSettings.DebugSettings.EnableCrashDumps = Debug.EnableCrashDumps;
             _applicationSettings.DebugSettings.MaxDumpsCount = maxDumpsCount;
 
@@ -433,7 +437,7 @@ namespace LogGrokX.Settings
         {
             if (ReferenceEquals(sender, View) &&
                 e.PropertyName == nameof(ViewSettingsViewModel.AccentColor))
-                _themeService.ApplyAccentColor(View.AccentColor);
+                _themeService.ApplyAccentColor(View.AccentColor.ToString());
             UpdateRequiresRestart();
         }
 
@@ -489,8 +493,8 @@ namespace LogGrokX.Settings
             {
                 if (!rule.IsRegexValid)
                     errors.Add(Strings.Get("ColorRegexInvalid"));
-                if ((!string.IsNullOrWhiteSpace(rule.ForegroundColor) && rule.ForegroundBrush == null) ||
-                    (!string.IsNullOrWhiteSpace(rule.BackgroundColor) && rule.BackgroundBrush == null))
+                if (!_colorValidator.IsValid(rule.ForegroundColor) ||
+                    !_colorValidator.IsValid(rule.BackgroundColor))
                     errors.Add(Strings.Get("ColorInvalid"));
             }
 
@@ -502,34 +506,8 @@ namespace LogGrokX.Settings
 
         private void OpenSettingsFile()
         {
-            var fileName = SettingsFileName;
-            if (!File.Exists(fileName))
-                return;
-
-            void StartProcess(string verb)
-            {
-                using var process = new Process
-                {
-                    StartInfo =
-                    {
-                        FileName = fileName,
-                        UseShellExecute = true,
-                        Verb = verb
-                    }
-                };
-                process.Start();
-            }
-
-            try
-            {
-                StartProcess(string.Empty);
-            }
-            catch (Win32Exception e)
-            {
-                if (e.NativeErrorCode == 1155)
-                    StartProcess("openas");
-                else throw;
-            }
+            if (File.Exists(SettingsFileName)) _desktop.OpenPath(SettingsFileName);
         }
+
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Text.RegularExpressions;
-using System.Windows.Media;
 using LogGrokX.Colors.Configuration;
 
 namespace LogGrokX.Settings
@@ -44,7 +43,6 @@ namespace LogGrokX.Settings
                     return;
                 _foregroundColor = value;
                 InvokePropertyChanged();
-                InvokePropertyChanged(nameof(ForegroundBrush));
             }
         }
 
@@ -57,7 +55,6 @@ namespace LogGrokX.Settings
                     return;
                 _backgroundColor = value;
                 InvokePropertyChanged();
-                InvokePropertyChanged(nameof(BackgroundBrush));
             }
         }
 
@@ -77,10 +74,6 @@ namespace LogGrokX.Settings
             }
         }
 
-        public Brush? ForegroundBrush => ParseBrush(_foregroundColor);
-
-        public Brush? BackgroundBrush => ParseBrush(_backgroundColor);
-
         public ColorRuleData ToData() => new()
         {
             RegexString = _regexString,
@@ -88,24 +81,5 @@ namespace LogGrokX.Settings
             BackgroundColor = _backgroundColor
         };
 
-        private static Brush? ParseBrush(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return null;
-
-            try
-            {
-                if (ColorConverter.ConvertFromString(value) is not Color color)
-                    return null;
-
-                var brush = new SolidColorBrush(color);
-                brush.Freeze();
-                return brush;
-            }
-            catch (FormatException)
-            {
-                return null;
-            }
-        }
     }
 }

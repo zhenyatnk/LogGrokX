@@ -17,11 +17,6 @@ using LogGrokX.MarkedLines;
 
 namespace LogGrokX.Controls.ListControls
 {
-    public class ColumnSettings
-    {
-        public double[]? ColumnWidths { get; set; }
-    }
-    
     public class ListView : BaseListView
     {
         private const int MaxContentBlocks = 16;

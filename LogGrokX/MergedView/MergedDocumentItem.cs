@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Windows.Media;
 
 namespace LogGrokX.MergedView
 {
@@ -14,8 +13,8 @@ namespace LogGrokX.MergedView
         {
             Document = document;
             ColorIndex = colorIndex;
-            RowBackground = MergedViewPalette.GetRowBrush(colorIndex);
-            TimelineBrush = MergedViewPalette.GetTimelineBrush(colorIndex);
+            RowColor = MergedViewPalette.GetRowColor(colorIndex);
+            TimelineColor = MergedViewPalette.GetTimelineColor(colorIndex);
         }
 
         public DocumentViewModel Document { get; }
@@ -27,9 +26,9 @@ namespace LogGrokX.MergedView
 
         public string Title => Document.Title;
 
-        public Brush RowBackground { get; }
+        public string RowColor { get; }
 
-        public Brush TimelineBrush { get; }
+        public string TimelineColor { get; }
 
         internal void UpdateFieldMap(IReadOnlyList<string> mergedFields)
         {

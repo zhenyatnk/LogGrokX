@@ -160,7 +160,7 @@
                 Style="{StaticResource FluentCardStyle}">
             <Grid>
                 <DockingManager x:Name="DockingManager"
-                                Theme="{Binding DockTheme}"
+                                Theme="{Binding IsDarkTheme, Converter={StaticResource DockThemeConverter}}"
                                 LayoutItemContainerStyleSelector="{StaticResource DocumentLayoutItemStyleSelector}"
                                 GridSplitterWidth="10"
                                 GridSplitterHeight="10"

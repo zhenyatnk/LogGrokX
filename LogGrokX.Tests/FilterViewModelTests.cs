@@ -58,7 +58,7 @@ public class FilterViewModelTests
     private static FilterViewModel CreateFilter(TestIndexer indexer)
     {
         var meta = new LogMetaInformation(new LogFormat { Regex = "^(?<Level>.*)", IndexedFields = ["Level"] });
-        return new FilterViewModel("Level", new FilterSettings(indexer, meta), indexer, meta, Dispatcher.CurrentDispatcher);
+        return new FilterViewModel("Level", new FilterSettings(indexer, meta), indexer, meta, new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
     }
 
     [TestMethod]
@@ -69,7 +69,7 @@ public class FilterViewModelTests
             var indexer = new TestIndexer(["INFO"]);
             var meta = new LogMetaInformation(new LogFormat { Regex = "^(?<Level>.*)", IndexedFields = ["Level"] });
             var settings = new FilterSettings(indexer, meta);
-            var filter = new FilterViewModel("Level", settings, indexer, meta, Dispatcher.CurrentDispatcher);
+            var filter = new FilterViewModel("Level", settings, indexer, meta, new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
             var filterChanges = 0;
             var elementChanges = 0;
             filter.PropertyChanged += (_, _) => filterChanges++;
@@ -97,7 +97,7 @@ public class FilterViewModelTests
             var meta = new LogMetaInformation(new LogFormat { Regex = "^(?<Level>.*)", IndexedFields = ["Level"] });
             var settings = new FilterSettings(indexer, meta);
             using var factory = new GridViewFactory(meta, true,
-                (field, dispatcher) => new FilterViewModel(field, settings, indexer, meta, dispatcher));
+                (field, dispatcher) => new FilterViewModel(field, settings, indexer, meta, new Platform.WpfUiDispatcher(dispatcher)));
             FilterViewModel GetFilter()
             {
                 var view = (GridView)factory.CreateView(null);
@@ -128,7 +128,7 @@ public class FilterViewModelTests
             {
                 Assert.IsNull(Dispatcher.FromThread(Thread.CurrentThread));
                 Assert.ThrowsExactly<InvalidOperationException>(() =>
-                    new FilterViewModel("Level", settings, indexer, meta, dispatcher));
+                    new FilterViewModel("Level", settings, indexer, meta, new Platform.WpfUiDispatcher(dispatcher)));
                 Assert.IsNull(Dispatcher.FromThread(Thread.CurrentThread));
             }).GetAwaiter().GetResult();
             Assert.AreEqual(0, indexer.SubscriberCount);
@@ -154,7 +154,7 @@ public class FilterViewModelTests
                 using var container = new DocumentContainer(path, profile, settings, new SearchAutocompleteCache(),
                     new SavedSearchPatternStore(), new TimelinePlacementService(settings), new ThreadGroupingService(settings));
                 document = container.GetDocumentViewModel();
-                var view = (GridView)document.LogViewModel.CustomView;
+                var view = (GridView)new LogGridViewConverter().Convert(document.LogViewModel.CustomView, typeof(GridView), null!, System.Globalization.CultureInfo.InvariantCulture);
                 var template = view.Columns[^1].HeaderTemplate;
                 template.Seal();
                 var filter = ((HeaderViewModel)((FrameworkElement)template.LoadContent()).DataContext).FilterViewModel!;

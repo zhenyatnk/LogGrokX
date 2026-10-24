@@ -36,7 +36,7 @@
                 SelectionMode="Extended"
                 Background="{DynamicResource ApplicationBackgroundBrush}"
                 BorderThickness="0"
-                Grid.Row="1" ItemsSource="{Binding MarkedLines}"
+                Grid.Row="1"
                 ItemContainerStyle="{StaticResource MarkedLinesItemContainerStyle}"
                 FontFamily="{StaticResource JetBrainsMono}"
                 FontSize="{DynamicResource LogFontSize}"
@@ -47,6 +47,16 @@
                 listControls:BaseLogListViewItem.OnItemActivatedCommand="{Binding ItemActivatedCommand}"
                 textRender:ClippingRectProviderBehavior.ClippingRectProvider=
                     "{Binding RelativeSource={RelativeSource Self}}">
+                <listControls:MarkedLinesListView.Resources>
+                    <CollectionViewSource x:Key="GroupedMarkedLines" Source="{Binding MarkedLines}">
+                        <CollectionViewSource.GroupDescriptions>
+                            <PropertyGroupDescription PropertyName="Document" />
+                        </CollectionViewSource.GroupDescriptions>
+                    </CollectionViewSource>
+                </listControls:MarkedLinesListView.Resources>
+                <listControls:MarkedLinesListView.ItemsSource>
+                    <Binding Source="{StaticResource GroupedMarkedLines}" />
+                </listControls:MarkedLinesListView.ItemsSource>
                 <listControls:MarkedLinesListView.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel

@@ -23,9 +23,14 @@ namespace LogGrokX.Controls.GridView
         private const double PinColumnPadding = 12;
 
         private readonly LogMetaInformation _meta;
+        private readonly LogGridModel? _model;
         private readonly Func<string, Dispatcher, FilterViewModel>? _filterViewModelFactory;
         private readonly Dictionary<string, FilterViewModel> _filters = new(StringComparer.Ordinal);
         private bool _disposed;
+        public GridViewFactory(LogGridModel model) : this(model.MetaInformation, false, null)
+        {
+            _model = model;
+        }
         public GridViewFactory(LogMetaInformation meta, 
                 bool canFilter,
                 Func<string, Dispatcher, FilterViewModel>? filterViewModelFactory)
@@ -96,7 +101,7 @@ namespace LogGrokX.Controls.GridView
 
                 DataTemplate BuildHeaderTemplate()
                 {
-                    FilterViewModel? filterViewModel = null;
+                    FilterViewModel? filterViewModel = _model?.GetFilter(fieldHeader);
                     if (_filterViewModelFactory != null && _meta.IsFieldIndexed(fieldHeader))
                     {
                         if (!_filters.TryGetValue(fieldHeader, out filterViewModel))

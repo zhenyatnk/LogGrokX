@@ -12,17 +12,12 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Threading;
+using LogGrokX.Platform;
 using LogGrokX.Localization;
 
 namespace LogGrokX;
 
-public sealed record ReleaseInfo(string Tag, string PageUrl, string Notes, IReadOnlyDictionary<string, string> Assets);
-
-public sealed record PendingRelease(string Version, string Notes, string PageUrl);
-
-public class UpdateCheckService
+public class UpdateCheckService : IUpdateService, IDisposable
 {
     private const string LatestReleaseApiUrl = "https://api.github.com/repos/zhenyatnk/LogGrokX/releases/latest";
     private const string LatestReleasePageUrl = "https://github.com/zhenyatnk/LogGrokX/releases/latest";
@@ -45,26 +40,41 @@ public class UpdateCheckService
     private bool _isWindowOpen;
     private bool _isDownloading;
 
-    public UpdateCheckService(ApplicationSettings settings)
+    private readonly IUpdatePresenter? _presenter;
+    private readonly IUiDispatcher _dispatcher;
+    private IUiTimer? _checkTimer;
+    private bool _disposed;
+
+    public UpdateCheckService(ApplicationSettings settings, IUpdatePresenter? presenter = null, IUiDispatcher? dispatcher = null)
     {
         _settings = settings;
+        _presenter = presenter;
+        _dispatcher = dispatcher ?? UiDispatcher.Current;
     }
+
+    public bool CanInstall(ReleaseInfo release) => IsInstalled && GetInstallerAssetName(release) != null;
 
     public static bool IsInstalled =>
         File.Exists(Path.Combine(AppContext.BaseDirectory, "unins000.exe"));
 
     public bool HasPendingInstall => _pendingInstallerPath != null;
 
-    public async void CheckOnStartup(Window owner)
+    public async void CheckOnStartup()
     {
-        await CheckAutomaticallyAsync(owner);
-
-        var timer = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
-        timer.Tick += async (_, _) => await CheckAutomaticallyAsync(owner);
-        timer.Start();
+        _checkTimer?.Dispose();
+        _checkTimer = _dispatcher.CreateTimer(TimeSpan.FromHours(1), () => _ = CheckAutomaticallyAsync());
+        _checkTimer.Start();
+        await CheckAutomaticallyAsync();
     }
 
-    public async Task<ReleaseInfo?> CheckNowAsync(Window owner)
+    public void Dispose()
+    {
+        _disposed = true;
+        _checkTimer?.Dispose();
+        _checkTimer = null;
+    }
+
+    public async Task<ReleaseInfo?> CheckNowAsync()
     {
         var tag = await GetLatestTagAsync();
         WriteLastCheck(DateTime.UtcNow);
@@ -74,7 +84,7 @@ public class UpdateCheckService
             return new ReleaseInfo(tag, GetReleasePageUrl(tag), string.Empty, new Dictionary<string, string>());
 
         var release = await GetReleaseDetailsAsync(tag);
-        ShowUpdateWindow(owner, release);
+        ShowUpdateWindow(release);
         return release;
     }
 
@@ -86,10 +96,10 @@ public class UpdateCheckService
     public static bool IsCheckDueLocal(DateTime lastCheckLocal, DateTime nowLocal) =>
         lastCheckLocal.Date != nowLocal.Date;
 
-    private async Task CheckAutomaticallyAsync(Window owner)
+    private async Task CheckAutomaticallyAsync()
     {
         var mode = _settings.ViewSettings.UpdateMode;
-        if (mode == ViewSettings.UpdateModeKind.Disabled || _isWindowOpen || HasPendingInstall || _isDownloading)
+        if (_disposed || mode == ViewSettings.UpdateModeKind.Disabled || _isWindowOpen || HasPendingInstall || _isDownloading)
             return;
         if (!IsCheckDue(ReadLastCheck(), DateTime.UtcNow))
             return;
@@ -111,7 +121,7 @@ public class UpdateCheckService
                 return;
             }
 
-            ShowUpdateWindow(owner, release);
+            ShowUpdateWindow(release);
         }
         catch (Exception e)
         {
@@ -133,18 +143,13 @@ public class UpdateCheckService
         }
     }
 
-    private void ShowUpdateWindow(Window owner, ReleaseInfo release)
+    private void ShowUpdateWindow(ReleaseInfo release)
     {
-        if (_isWindowOpen)
+        if (_disposed || _isWindowOpen || _presenter == null)
             return;
-
-        var window = new UpdateWindow(new UpdateViewModel(this, release));
-        if (owner.IsVisible)
-            window.Owner = owner;
         _isWindowOpen = true;
-        window.Closed += (_, _) => _isWindowOpen = false;
-        window.Show();
-        window.Activate();
+        try { _presenter.ShowUpdate(this, release, () => _isWindowOpen = false); }
+        catch { _isWindowOpen = false; throw; }
     }
 
     private static string LastCheckFileName => HomeDirectoryPathProvider.GetDataFileFullPath("last-update-check.settings");
@@ -328,12 +333,6 @@ public class UpdateCheckService
         {
             Trace.TraceWarning($"Failed to save skipped update version: {e.Message}");
         }
-    }
-
-    public static void OpenUrl(string url)
-    {
-        using var process = new Process { StartInfo = { FileName = url, UseShellExecute = true } };
-        process.Start();
     }
 
     private static bool IsPerMachineInstall()

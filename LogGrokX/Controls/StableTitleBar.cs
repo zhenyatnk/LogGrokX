@@ -1,10 +1,10 @@
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Wpf.Ui.Controls;
+using LogGrokX.Platform;
 
 namespace LogGrokX.Controls;
 
@@ -14,7 +14,8 @@ public class StableTitleBar : TitleBar
     private readonly TitleBarButton?[] _buttons = new TitleBarButton?[4];
     private readonly DispatcherTimer _hoverCheck;
     private Window? _window;
-    private HwndSource? _source;
+    private IDisposable? _messageHook;
+    public ITitleBarService PlatformService { get; set; } = new WindowsTitleBarService();
     private long _nextDiagnosticAt;
 
     public StableTitleBar()
@@ -56,9 +57,8 @@ public class StableTitleBar : TitleBar
             return;
 
         // WPF-UI installs its hook at ContentRendered; the last added hook runs first.
-        _source?.RemoveHook(FilterMouseLeave);
-        _source = source;
-        _source.AddHook(FilterMouseLeave);
+        _messageHook?.Dispose();
+        _messageHook = PlatformService.InstallMessageHook(source.Handle, FilterMouseLeave);
     }
 
     private void OnTitleBarUnloaded(object sender, RoutedEventArgs e)
@@ -66,15 +66,15 @@ public class StableTitleBar : TitleBar
         _hoverCheck.Stop();
         if (_window != null)
             _window.ContentRendered -= OnContentRendered;
-        _source?.RemoveHook(FilterMouseLeave);
-        _source = null;
+        _messageHook?.Dispose();
+        _messageHook = null;
         _window = null;
     }
 
-    private IntPtr FilterMouseLeave(IntPtr hwnd, int message, IntPtr wParam, IntPtr lParam, ref bool handled)
+    private bool FilterMouseLeave(int message, nint wParam, nint lParam)
     {
         if (message != WmNcMouseLeave || !TryGetCursorPosition(out var position))
-            return IntPtr.Zero;
+            return false;
 
         foreach (var button in _buttons)
         {
@@ -83,7 +83,6 @@ public class StableTitleBar : TitleBar
 
             // WPF-UI 4.3.0 otherwise clears both hover and the pending click on a spurious leave.
             // https://github.com/lepoco/wpfui/issues/1647
-            handled = true;
             _hoverCheck.Start();
 
             var now = Environment.TickCount64;
@@ -95,9 +94,9 @@ public class StableTitleBar : TitleBar
                                    $"cursor={position}, dpi={dpi.DpiScaleX}x{dpi.DpiScaleY}, " +
                                    $"window={_window?.GetType().Name}.");
             }
-            break;
+            return true;
         }
-        return IntPtr.Zero;
+        return false;
     }
 
     private void CheckHover(object? sender, EventArgs e)
@@ -126,19 +125,8 @@ public class StableTitleBar : TitleBar
 
     protected virtual bool TryGetCursorPosition(out Point position)
     {
-        var result = GetCursorPos(out var nativePosition);
+        var result = PlatformService.TryGetCursorPosition(out var nativePosition);
         position = new Point(nativePosition.X, nativePosition.Y);
         return result;
     }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct NativePoint
-    {
-        public int X;
-        public int Y;
-    }
-
-    [DllImport("user32.dll")]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetCursorPos(out NativePoint point);
 }

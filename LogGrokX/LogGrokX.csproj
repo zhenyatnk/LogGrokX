@@ -63,6 +63,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LogGrokX.Data\LogGrokX.Data.csproj" />
+    <ProjectReference Include="..\LogGrokX.Platform\LogGrokX.Platform.csproj" />
   </ItemGroup>
 
 

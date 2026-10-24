@@ -1,12 +1,13 @@
 using System.Windows;
+using LogGrokX.Platform;
 
 namespace LogGrokX
 {
     public partial class SupportWindow
     {
-        public SupportWindow(UpdateCheckService? updateCheckService = null)
+        public SupportWindow(IUpdateService? updateCheckService = null, IDesktopService? desktop = null)
         {
-            DataContext = new SupportViewModel(updateCheckService) { Owner = this };
+            DataContext = new SupportViewModel(updateCheckService, desktop);
             InitializeComponent();
         }
 

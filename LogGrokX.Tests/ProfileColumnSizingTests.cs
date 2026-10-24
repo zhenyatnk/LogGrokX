@@ -160,7 +160,7 @@ public class ProfileColumnSizingTests
     {
         var list = new FrameworkElementFactory(typeof(LogListView));
         list.SetBinding(ItemsControl.ItemsSourceProperty, new Binding("Lines"));
-        list.SetBinding(ListView.ViewProperty, new Binding("CustomView"));
+        list.SetBinding(ListView.ViewProperty, new Binding("CustomView") { Converter = new LogGridViewConverter() });
         list.SetBinding(LogListView.ColumnSettingsProperty, new Binding("ColumnSettings"));
         list.SetBinding(LogListView.IsLoadingProperty, new Binding("IsLoading"));
         list.SetValue(ItemsControl.ItemContainerStyleProperty, resources["LogGridItemContainerStyle"]);
@@ -228,7 +228,7 @@ public class ProfileColumnSizingTests
         new SearchAutocompleteCache(), new SavedSearchPatternStore(), new UiThemeService(),
         new TimelinePlacementService(settings), new TextZoomService(settings),
         new ThreadGroupingService(settings), new MergedFilesViewService(),
-        new UpdateCheckService(settings), documents => new MarkedLinesViewModel(documents));
+        null, documents => new MarkedLinesViewModel(documents), new Platform.WpfColorValidator());
 
     private static void WaitForSizing(Window window)
     {

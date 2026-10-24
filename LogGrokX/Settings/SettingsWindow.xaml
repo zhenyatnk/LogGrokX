@@ -83,7 +83,7 @@
                                     <DataTemplate>
                                         <StackPanel Orientation="Horizontal">
                                             <Border Width="16" Height="16" Margin="0,0,8,0"
-                                                    CornerRadius="3" Background="{Binding Brush}" />
+                                                    CornerRadius="3" Background="{Binding Color, Converter={StaticResource ColorBrushConverter}}" />
                                             <TextBlock VerticalAlignment="Center" Text="{Binding Title}" />
                                         </StackPanel>
                                     </DataTemplate>
@@ -289,12 +289,12 @@
                                                     <DataTemplate>
                                                         <Border Margin="2"
                                                                 Padding="6,2"
-                                                                Background="{Binding BackgroundBrush}"
+                                                                Background="{Binding BackgroundColor, Converter={StaticResource ColorBrushConverter}}"
                                                                 BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                                                                 BorderThickness="1"
                                                                 CornerRadius="4">
                                                             <TextBlock HorizontalAlignment="Center"
-                                                                       Foreground="{Binding ForegroundBrush}"
+                                                                       Foreground="{Binding ForegroundColor, Converter={StaticResource ColorBrushConverter}}"
                                                                        Text="Aa" />
                                                         </Border>
                                                     </DataTemplate>

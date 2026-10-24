@@ -13,7 +13,7 @@ using LogGrokX.Diagnostics;
 
 namespace LogGrokX.Controls.TextRender;
 
-public class TextView : Control, IClippingRectChangesAware
+public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 {
     private const int MaxLineLength = 8192;  
     private class OutlineData
@@ -208,7 +208,7 @@ public class TextView : Control, IClippingRectChangesAware
         state?.Register(this);
     }
 
-    internal void OnSharedFoldingStateChanged()
+    public void OnSharedFoldingStateChanged()
     {
         if (_outlineData is not { } outlineData || TextModel is not { } textModel)
             return;

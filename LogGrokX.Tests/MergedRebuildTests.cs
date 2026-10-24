@@ -488,8 +488,8 @@ public class MergedRebuildTests
             settings.SelectedProfile = "Venn";
             Main = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
                 new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
-                new ThreadGroupingService(settings), new MergedFilesViewService(), new UpdateCheckService(settings),
-                documents => new MarkedLinesViewModel(documents));
+                new ThreadGroupingService(settings), new MergedFilesViewService(), null,
+                documents => new MarkedLinesViewModel(documents), new Platform.WpfColorValidator());
             Merged = buildData == null ? Main.MergedViewModel : new MergedViewModel(Main.Documents,
                 new SearchAutocompleteCache(), new SavedSearchPatternStore(), settings,
                 new ThreadGroupingService(settings), new TimelinePlacementService(settings), buildData);

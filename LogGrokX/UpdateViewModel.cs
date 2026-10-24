@@ -2,24 +2,27 @@ using System;
 using System.Threading;
 using System.Windows.Input;
 using LogGrokX.Localization;
+using LogGrokX.Platform;
 
 namespace LogGrokX;
 
 public sealed class UpdateViewModel : ViewModelBase
 {
-    private readonly UpdateCheckService _service;
+    private readonly IUpdateService _service;
     private readonly ReleaseInfo _release;
+    private readonly IDesktopService _desktop;
     private CancellationTokenSource? _cancellation;
     private bool _isDownloading;
     private bool _isReady;
     private double _progress;
     private string _status = string.Empty;
 
-    public UpdateViewModel(UpdateCheckService service, ReleaseInfo release)
+    public UpdateViewModel(IUpdateService service, ReleaseInfo release, IDesktopService? desktop = null)
     {
         _service = service;
+        _desktop = desktop ?? DesktopServices.Current;
         _release = release;
-        CanInstall = UpdateCheckService.IsInstalled && UpdateCheckService.GetInstallerAssetName(release) != null;
+        CanInstall = service.CanInstall(release);
 
         UpdateCommand = new DelegateCommand(Update);
         LaterCommand = new DelegateCommand(Close);
@@ -28,7 +31,7 @@ public sealed class UpdateViewModel : ViewModelBase
             _service.SkipVersion(_release.Tag);
             Close();
         });
-        OpenReleasePageCommand = new DelegateCommand(() => UpdateCheckService.OpenUrl(_release.PageUrl));
+        OpenReleasePageCommand = new DelegateCommand(() => _desktop.OpenUrl(_release.PageUrl));
     }
 
     public event Action? CloseRequested;
@@ -100,9 +103,10 @@ public sealed class UpdateViewModel : ViewModelBase
 
     private async void Update()
     {
+        if (IsDownloading || IsReady) return;
         if (!CanInstall)
         {
-            UpdateCheckService.OpenUrl(_release.PageUrl);
+            _desktop.OpenUrl(_release.PageUrl);
             Close();
             return;
         }
@@ -128,6 +132,8 @@ public sealed class UpdateViewModel : ViewModelBase
         }
         finally
         {
+            _cancellation.Dispose();
+            _cancellation = null;
             IsDownloading = false;
         }
     }

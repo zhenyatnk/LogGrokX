@@ -362,11 +362,11 @@ public class ProfileSettingsTests
         var colors = new Colors.ColorSettings(profile.ColorSettings!);
         var match = colors.Rules.FirstOrDefault(rule => rule.IsMatch(line));
 
-        System.Windows.Media.Color? ParseColor(string? value) => value == null ? null :
+        System.Windows.Media.Color? ParseColor(string? value) => string.IsNullOrWhiteSpace(value) ? null :
             (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(value);
 
-        Assert.AreEqual(ParseColor(foreground), match?.ForegroundColor);
-        Assert.AreEqual(ParseColor(background), match?.BackgroundColor);
+        Assert.AreEqual(ParseColor(foreground), ParseColor(match?.ForegroundColor));
+        Assert.AreEqual(ParseColor(background), ParseColor(match?.BackgroundColor));
     }
 
     [TestMethod]
@@ -387,5 +387,5 @@ public class ProfileSettingsTests
 
     internal static SettingsViewModel CreateEditor(ApplicationSettings settings) => new(settings,
         new TimelinePlacementService(settings), new ThreadGroupingService(settings),
-        new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService());
+        new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator());
 }

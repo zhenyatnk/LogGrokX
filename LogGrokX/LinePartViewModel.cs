@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
+using LogGrokX.Platform;
 using LogGrokX.Data;
 
 namespace LogGrokX;
@@ -9,6 +9,7 @@ namespace LogGrokX;
 public class LinePartViewModel : ViewModelBase
 {
     private readonly int _uniqueId;
+    private readonly IUiDispatcher _dispatcher;
     private readonly bool _followDetectionChanges;
     private readonly Func<FieldValueMapper>? _valueMapperResolver;
     private readonly DecodedPartKey? _decodedState;
@@ -31,9 +32,10 @@ public class LinePartViewModel : ViewModelBase
 
     public LinePartViewModel(int uniqueId, string source, bool detectBase64 = true,
         BinaryDetectionOptions? detection = null, FieldValueMapper? valueMapper = null,
-        Func<FieldValueMapper>? valueMapperResolver = null, DecodedPartKey? decodedState = null)
+        Func<FieldValueMapper>? valueMapperResolver = null, DecodedPartKey? decodedState = null, IUiDispatcher? dispatcher = null)
     {
         _uniqueId = uniqueId;
+        _dispatcher = dispatcher ?? UiDispatcher.Current;
         _decodedState = decodedState;
         _valueMapperResolver = valueMapperResolver;
         _valueMapper = valueMapperResolver?.Invoke() ?? valueMapper ?? FieldValueMapper.None;
@@ -250,8 +252,8 @@ public class LinePartViewModel : ViewModelBase
 
     private void OnDisplaySettingsChanged()
     {
-        var dispatcher = Application.Current?.Dispatcher;
-        if (dispatcher == null || dispatcher.CheckAccess())
+        var dispatcher = _dispatcher;
+        if (dispatcher.CheckAccess())
         {
             RefreshSettingsIfNeeded();
             return;
@@ -259,7 +261,7 @@ public class LinePartViewModel : ViewModelBase
 
         try
         {
-            dispatcher.BeginInvoke(RefreshSettingsIfNeeded);
+            dispatcher.Post(RefreshSettingsIfNeeded);
         }
         catch (InvalidOperationException)
         {

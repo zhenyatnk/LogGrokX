@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Input;
 using LogGrokX.Controls;
 using LogGrokX.Controls.ListControls;
@@ -65,7 +64,7 @@ namespace LogGrokX.MergedView
 
         private sealed record SearchMatches(MergedDataSnapshot Data, SearchPattern Pattern, HashSet<int>[] BySource);
 
-        public ViewBase CustomView => _merged.CreateSearchView();
+        public LogGridModel CustomView => _merged.GetSearchGrid();
 
         public ColumnSettings ColumnSettings => _merged.ColumnSettings;
 

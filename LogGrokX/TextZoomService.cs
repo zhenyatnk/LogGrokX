@@ -1,5 +1,5 @@
 using System;
-using System.Windows;
+using LogGrokX.Platform;
 
 namespace LogGrokX
 {
@@ -12,10 +12,12 @@ namespace LogGrokX
         public const double Step = 1;
 
         private readonly ApplicationSettings _applicationSettings;
+        private readonly ITextSizePresenter? _presenter;
 
-        public TextZoomService(ApplicationSettings applicationSettings)
+        public TextZoomService(ApplicationSettings applicationSettings, ITextSizePresenter? presenter = null)
         {
             _applicationSettings = applicationSettings;
+            _presenter = presenter;
             FontSize = Clamp(applicationSettings.ViewSettings.LogFontSize);
             Apply();
         }
@@ -46,13 +48,7 @@ namespace LogGrokX
             Changed?.Invoke();
         }
 
-        private void Apply()
-        {
-            if (Application.Current == null)
-                return;
-
-            Application.Current.Resources[FontSizeResourceKey] = FontSize;
-        }
+        private void Apply() => _presenter?.ApplyFontSize(FontSize);
 
         private static double Clamp(double fontSize)
         {

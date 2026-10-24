@@ -7,20 +7,20 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Input;
 using LogGrokX.Controls;
-using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
+using LogGrokX.Platform;
 using LogGrokX.Filter;
 
 namespace LogGrokX
 {
     public class LogViewModel : ViewModelBase, IDisposable
     {
-        private readonly GridViewFactory _viewFactory;
+        private readonly IDesktopService _desktop;
+        private readonly LogGridModel _gridModel;
         private double _progress;
         private readonly LogModelFacade _logModelFacade;
         private bool _isLoading;
@@ -42,7 +42,7 @@ namespace LogGrokX
         public LogViewModel(
             LogModelFacade logModelFacade,
             LineViewModelCollectionProvider lineViewModelCollectionProvider,
-            GridViewFactory viewFactory,
+            LogGridModel gridModel,
             FilterSettings filterSettings,
             ColumnSettings columnSettings,
             TimeRangeFilterViewModel timeRangeFilter,
@@ -50,8 +50,9 @@ namespace LogGrokX
             TimelinePlacementService timelinePlacementService,
             ThreadGroupingService threadGroupingService,
             CurrentThreadFilter currentThreadFilter,
-            TextViewSharedFoldingState foldingState)
+            TextViewSharedFoldingState foldingState, IDesktopService? desktop = null)
         {
+            _desktop = desktop ?? DesktopServices.Current;
             _logModelFacade = logModelFacade;
             _filterSettings = filterSettings;
             FoldingState = foldingState;
@@ -113,7 +114,7 @@ namespace LogGrokX
             CopySelectedItemsToClipboardCommand = new DelegateCommand(CopySelectedItemsToClipboard, 
                 () => SelectedItems?.Cast<object>().Any() ?? false); 
             
-            _viewFactory = viewFactory;
+            _gridModel = gridModel;
             ColumnSettings = columnSettings;
             RefreshActiveFilters();
             TotalLineCount = _logModelFacade.LineCount;
@@ -207,14 +208,13 @@ namespace LogGrokX
 
         public TimeRangeFilterViewModel TimeRangeFilter { get; }
 
-        public Dock TimelineDock =>
-            _timelinePlacementService.IsAtTop ? Dock.Top : Dock.Bottom;
+        public bool IsTimelineAtTop => _timelinePlacementService.IsAtTop;
 
         public bool IsTimelineVisible => _timelinePlacementService.IsVisible;
 
         private void OnTimelinePlacementChanged()
         {
-            InvokePropertyChanged(nameof(TimelineDock));
+            InvokePropertyChanged(nameof(IsTimelineAtTop));
             InvokePropertyChanged(nameof(IsTimelineVisible));
         }
 
@@ -373,7 +373,7 @@ namespace LogGrokX
             set => SetAndRaiseIfChanged(ref _isLoading, value);
         }
 
-        public ViewBase CustomView => _viewFactory.CreateView(ColumnSettings.ColumnWidths);
+        public LogGridModel CustomView => _gridModel;
 
         public NavigateToLineRequest NavigateToLineRequest { get; } = new();
         
@@ -460,7 +460,7 @@ namespace LogGrokX
             }
             _ = text.Replace("\0", string.Empty);
 
-            TextCopy.ClipboardService.SetText(text.ToString());
+            _desktop.SetClipboardText(text.ToString());
         }
 
         private async void UpdateFilteredCollection()

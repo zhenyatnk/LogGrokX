@@ -6,21 +6,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Threading;
 using LogGrokX.Colors;
 using LogGrokX.Controls;
-using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Data;
+using LogGrokX.Platform;
 using LogGrokX.Data.Virtualization;
 using LogGrokX.Filter;
 using LogGrokX.Search;
-using ColorRules = LogGrokX.Colors.ColorSettings;
 using LogGrokX.Localization;
 
 namespace LogGrokX.MergedView
@@ -46,15 +40,16 @@ namespace LogGrokX.MergedView
         private bool _disposed;
         private readonly Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> _buildData;
         private readonly DecodedPartsState _decodedParts = new();
-        private readonly DispatcherTimer _rebuildTimer;
-        private ColorRules _colorSettings;
+        private readonly IUiTimer _rebuildTimer;
+        private readonly IUiDispatcher _dispatcher;
+        private ColorRuleSet _colorSettings;
         private string? _rebuildError;
 
         private MergedSchema _schema = null!;
         private MergedComponentIndexer _componentIndexer = null!;
         private IFilterSettings _filterSettings = null!;
-        private GridViewFactory _viewFactory = null!;
-        private GridViewFactory? _searchViewFactory;
+        private LogGridModel _gridModel = null!;
+        private LogGridModel? _searchGridModel;
 
         private bool _isActive;
         private int _nextColorIndex;
@@ -70,9 +65,9 @@ namespace LogGrokX.MergedView
             SavedSearchPatternStore savedSearchPatternStore,
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
-            TimelinePlacementService timelinePlacementService)
+            TimelinePlacementService timelinePlacementService, IColorValidator? colorValidator = null, IUiDispatcher? dispatcher = null)
             : this(documents, searchAutocompleteCache, savedSearchPatternStore, applicationSettings,
-                threadGroupingService, timelinePlacementService, BuildData)
+                threadGroupingService, timelinePlacementService, BuildData, colorValidator, dispatcher)
         {
         }
 
@@ -82,21 +77,22 @@ namespace LogGrokX.MergedView
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
             TimelinePlacementService timelinePlacementService,
-            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData)
+            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData, IColorValidator? colorValidator = null, IUiDispatcher? dispatcher = null)
         {
+            _dispatcher = dispatcher ?? UiDispatcher.Current;
             _buildData = buildData;
             _documents = documents;
             _applicationSettings = applicationSettings;
             _threadGroupingService = threadGroupingService;
             _timelinePlacementService = timelinePlacementService;
-            _colorSettings = new ColorRules(applicationSettings.GetSelectedProfile().ColorSettings ?? new Colors.Configuration.ColorSettings());
+            _colorSettings = new ColorRuleSet(applicationSettings.GetSelectedProfile().ColorSettings ?? new Colors.Configuration.ColorSettings(), colorValidator);
             _threadGroupingService.Changed += OnThreadGroupingChanged;
             _timelinePlacementService.Changed += OnTimelinePlacementChanged;
 
             Search = new SearchViewModel(
                 pattern => new MergedSearchDocumentViewModel(this, pattern),
                 searchAutocompleteCache,
-                savedSearchPatternStore);
+                savedSearchPatternStore, _dispatcher);
             Search.CurrentLineChanged += NavigateToCentered;
 
             TimeRangeFilter = new MergedTimeRangeFilterViewModel();
@@ -104,15 +100,11 @@ namespace LogGrokX.MergedView
 
             ColumnSettings = applicationSettings.GetColumnSettings(ColumnSettingsKey);
 
-            _rebuildTimer = new DispatcherTimer(DispatcherPriority.Background)
+            _rebuildTimer = _dispatcher.CreateTimer(TimeSpan.FromMilliseconds(300), () =>
             {
-                Interval = TimeSpan.FromMilliseconds(300)
-            };
-            _rebuildTimer.Tick += (_, _) =>
-            {
-                _rebuildTimer.Stop();
+                _rebuildTimer!.Stop();
                 _ = RebuildAsync();
-            };
+            }, UiTimerPriority.Background);
 
             Lines = new GrowingLogLinesCollection(
                 Array.Empty<ItemViewModel>(), Array.Empty<ItemViewModel>());
@@ -149,21 +141,21 @@ namespace LogGrokX.MergedView
 
         public string Title => Strings.Get("MergedFiles");
 
-        public Dock TimelineDock => _timelinePlacementService.IsAtTop ? Dock.Top : Dock.Bottom;
+        public bool IsTimelineAtTop => _timelinePlacementService.IsAtTop;
 
         public bool IsTimelineVisible => _timelinePlacementService.IsVisible;
 
         private void OnTimelinePlacementChanged()
         {
-            InvokePropertyChanged(nameof(TimelineDock));
+            InvokePropertyChanged(nameof(IsTimelineAtTop));
             InvokePropertyChanged(nameof(IsTimelineVisible));
         }
 
         public SearchViewModel Search { get; }
 
-        public ColorSettings ColorSettings => _colorSettings;
+        public ColorRuleSet ColorSettings => _colorSettings;
 
-        public void SetColorSettings(ColorRules settings)
+        public void SetColorSettings(ColorRuleSet settings)
         {
             _colorSettings = settings;
             InvokePropertyChanged(nameof(ColorSettings));
@@ -181,14 +173,12 @@ namespace LogGrokX.MergedView
 
         public ColumnSettings ColumnSettings { get; }
 
-        public ViewBase CustomView => _viewFactory.CreateView(ColumnSettings.ColumnWidths, _sourceStripeTemplate,
-            "Source.Document.FoldingState");
+        public LogGridModel CustomView => _gridModel;
 
-        internal ViewBase CreateSearchView()
+        internal LogGridModel GetSearchGrid()
         {
-            _searchViewFactory ??= new GridViewFactory(_schema.MetaInformation, false, null);
-            return _searchViewFactory.CreateView(ColumnSettings.ColumnWidths, _sourceStripeTemplate,
-                "Source.Document.FoldingState");
+            _searchGridModel ??= new LogGridModel(_schema.MetaInformation, ColumnSettings, hasSourceColumn: true);
+            return _searchGridModel;
         }
 
         public bool CanFilter => true;
@@ -388,38 +378,22 @@ namespace LogGrokX.MergedView
             _rebuildPending = false;
             _requestVersion++;
             _rebuildCts?.Cancel();
-            _rebuildTimer.Stop();
+            _rebuildTimer.Dispose();
             _documents.CollectionChanged -= OnDocumentsChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
             TimeRangeFilter.Changed -= ScheduleFilter;
             _filterSettings.ExclusionsChanged -= OnFilterChanged;
             Search.CurrentLineChanged -= NavigateToCentered;
-            _viewFactory.Dispose();
-            _searchViewFactory?.Dispose();
+            _gridModel.Dispose();
+            _searchGridModel?.Dispose();
             _componentIndexer.Dispose();
-            foreach (var document in Search.Documents.ToArray())
-                document.Dispose();
+            Search.Dispose();
 
             foreach (var document in _subscribed)
                 document.LogViewModel.Lines.CollectionGrown -= OnDocumentGrown;
 
             _subscribed.Clear();
-        }
-
-        private readonly DataTemplate _sourceStripeTemplate = CreateSourceStripeTemplate();
-
-        private static DataTemplate CreateSourceStripeTemplate()
-        {
-            var border = new FrameworkElementFactory(typeof(Border));
-            border.SetValue(FrameworkElement.WidthProperty, 12.0);
-            border.SetValue(FrameworkElement.HeightProperty, 14.0);
-            border.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            border.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Center);
-            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
-            border.SetBinding(Border.BackgroundProperty, new Binding("Source.TimelineBrush"));
-            border.SetBinding(FrameworkElement.ToolTipProperty, new Binding("SourceTitle"));
-            return new DataTemplate(typeof(DependencyObject)) { VisualTree = border };
         }
 
         private void OnThreadGroupingChanged()
@@ -651,16 +625,16 @@ namespace LogGrokX.MergedView
             if (_filterSettings != null)
                 _filterSettings.ExclusionsChanged -= OnFilterChanged;
 
-            _viewFactory?.Dispose();
-            _searchViewFactory?.Dispose();
+            _gridModel?.Dispose();
+            _searchGridModel?.Dispose();
             _componentIndexer?.Dispose();
             _componentIndexer = new MergedComponentIndexer(_schema);
             _filterSettings = new FilterSettings(_componentIndexer, _schema.MetaInformation);
             _filterSettings.ExclusionsChanged += OnFilterChanged;
-            _viewFactory = new GridViewFactory(_schema.MetaInformation, true,
-                (fieldName, dispatcher) => new FilterViewModel(fieldName, _filterSettings, _componentIndexer,
-                    _schema.MetaInformation, dispatcher));
-            _searchViewFactory = null;
+            _gridModel = new LogGridModel(_schema.MetaInformation, ColumnSettings,
+                fieldName => new FilterViewModel(fieldName, _filterSettings, _componentIndexer,
+                    _schema.MetaInformation, _dispatcher), hasSourceColumn: true);
+            _searchGridModel = null;
             RefreshActiveFilters();
         }
 
@@ -840,7 +814,7 @@ namespace LogGrokX.MergedView
                 if (sourceIndex == current)
                     continue;
 
-                segments.Add(new TimelineSegment(start, i, sources[current].TimelineBrush));
+                segments.Add(new TimelineSegment(start, i, sources[current].TimelineColor));
                 if (segments.Count > MaxTimelineSegments)
                     return BuildDownsampledSegments(lines, sources, token);
 
@@ -882,7 +856,7 @@ namespace LogGrokX.MergedView
                         dominant = s;
                 }
 
-                var brush = sources[dominant].TimelineBrush;
+                var brush = sources[dominant].TimelineColor;
                 if (segments.Count > 0 && dominant == lastDominant)
                     segments[^1] = new TimelineSegment(segments[^1].StartLine, bucketEnd, brush);
                 else

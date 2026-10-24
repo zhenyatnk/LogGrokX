@@ -6,7 +6,6 @@ using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
-using System.Windows.Data;
 
 namespace LogGrokX.MarkedLines
 {
@@ -43,9 +42,6 @@ namespace LogGrokX.MarkedLines
                     NavigationRequested?.Invoke(item.Document, item.Index);
                 });
             
-            var view = (CollectionView)CollectionViewSource.GetDefaultView(MarkedLines);
-            var groupDescription = new PropertyGroupDescription("Document");
-            view.GroupDescriptions?.Add(groupDescription);
             UpdateLinesCollection();
         }
         

@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows.Threading;
+using LogGrokX.Platform;
 using LogGrokX.Data;
 using LogGrokX.Data.Index;
 
@@ -16,7 +16,7 @@ namespace LogGrokX.Filter
         private readonly IComponentIndexer _indexer;
         private string? _textFilter;
         private readonly int _indexedFieldIndex;
-        private readonly Dispatcher _dispatcher;
+        private readonly IUiDispatcher _dispatcher;
         private readonly HashSet<string> _knownComponents = new(StringComparer.Ordinal);
         private readonly object _newComponentsSync = new();
         private bool _disposed;
@@ -26,10 +26,10 @@ namespace LogGrokX.Filter
             IFilterSettings filterSettings,
             IComponentIndexer indexer,
             LogMetaInformation metaInformation,
-            Dispatcher dispatcher)
+            IUiDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
-            _dispatcher.VerifyAccess();
+            if (!_dispatcher.CheckAccess()) throw new InvalidOperationException("UI thread access is required.");
             _filterSettings = filterSettings;
             _filterSettings.ExclusionsChanged += OnExclusionsChanged;
             
@@ -46,11 +46,11 @@ namespace LogGrokX.Filter
         }
 
         private readonly ConcurrentBag<(int componentNumber, string value)> _newComponentsQueue = new();
-        private DispatcherOperation? _addComponentDispatcherOperation;
+        private IDisposable? _pendingComponentUpdate;
 
         public void Dispose()
         {
-            _dispatcher.VerifyAccess();
+            if (!_dispatcher.CheckAccess()) throw new InvalidOperationException("UI thread access is required.");
             lock (_newComponentsSync)
             {
                 if (_disposed)
@@ -58,8 +58,8 @@ namespace LogGrokX.Filter
                 _disposed = true;
                 _indexer.ComponentAdded -= OnNewComponentAdded;
                 _filterSettings.ExclusionsChanged -= OnExclusionsChanged;
-                _addComponentDispatcherOperation?.Abort();
-                _addComponentDispatcherOperation = null;
+                _pendingComponentUpdate?.Dispose();
+                _pendingComponentUpdate = null;
                 _newComponentsQueue.Clear();
             }
             foreach (var element in Elements)
@@ -92,7 +92,7 @@ namespace LogGrokX.Filter
                 if (_disposed)
                     return;
                 _newComponentsQueue.Add((componentIndex, value));
-                _addComponentDispatcherOperation ??= _dispatcher.BeginInvoke(ProcessNewComponents);
+                _pendingComponentUpdate ??= _dispatcher.Post(ProcessNewComponents);
             }
         }
 
@@ -100,7 +100,7 @@ namespace LogGrokX.Filter
         {
             lock (_newComponentsSync)
             {
-                _addComponentDispatcherOperation = null;
+                _pendingComponentUpdate = null;
                 if (_disposed)
                     return;
                 while (_newComponentsQueue.TryTake(out var valueTuple))

@@ -6,11 +6,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Controls;
 using System.Windows.Input;
 using LogGrokX.Localization;
 using LogGrokX.Controls;
-using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
@@ -25,7 +23,7 @@ namespace LogGrokX.Search
     {
         public const int MatchBucketCount = 1000;
 
-        private readonly GridViewFactory _viewFactory;
+        private readonly LogGridModel _gridModel;
         private SearchPattern _searchPattern;
         private bool[] _matchBuckets = Array.Empty<bool>();
         
@@ -56,7 +54,7 @@ namespace LogGrokX.Search
 
         public SearchDocumentViewModel(LogModelFacade logModelFacade,
             FilterSettings filterSettings,
-            GridViewFactory viewFactory,
+            LogGridModel gridModel,
             SearchPattern searchPattern,
             Selection markedLines,
             ColumnSettings columnSettings,
@@ -66,7 +64,7 @@ namespace LogGrokX.Search
             CurrentThreadFilter currentThreadFilter)
         {
             
-            _viewFactory = viewFactory;
+            _gridModel = gridModel;
             FoldingState = foldingState;
 
             _logModelFacade = logModelFacade;
@@ -212,7 +210,7 @@ namespace LogGrokX.Search
         public GrowingLogLinesCollection Lines { get; } = 
             new(new List<ItemViewModel>(), new List<ItemViewModel>());
         
-        public ViewBase CustomView => _viewFactory.CreateView(ColumnSettings.ColumnWidths);
+        public LogGridModel CustomView => _gridModel;
 
         public SearchPattern SearchPattern
         {

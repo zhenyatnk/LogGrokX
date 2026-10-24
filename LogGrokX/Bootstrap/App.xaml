@@ -7,6 +7,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/LogGrokX;component/Styles/PresentationConverters.xaml" />
                 <ui:ThemesDictionary Theme="Light" />
                 <ui:ControlsDictionary />
                 <theming:DockThemeResources />

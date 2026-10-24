@@ -39,6 +39,7 @@ dotnet format LogGrokX.sln
 | --- | --- |
 | `LogGrokX` | WPF app: views, view models, controls, theming, DI bootstrap. |
 | `LogGrokX.Data` | UI-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
+| `LogGrokX.Platform` | Platform-neutral service contracts and release DTOs (`net10.0`, no WPF). |
 | `LogGrokX.Tests` | Tests for the UI layer. |
 | `LogGrokX.Data.Tests` | Tests for the core data layer. |
 | `LogGrokX.Benchmarks` | BenchmarkDotNet benchmarks for the core data layer. |
@@ -130,6 +131,14 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
 
 ## Gotchas
 
+- **Platform boundary**: ViewModels use `IUiDispatcher` / `IUiTimer`,
+  `IDesktopService`, `IAppDialogs`, `IThemeService` and `IUpdateService`.
+  Windows/WPF implementations live in `LogGrokX/Platform` and are wired in
+  `Bootstrap/App.xaml.cs`; the early WER configuration uses `ICrashDumpService`
+  in `EntryPoint`. Native title-bar hooks and cursor access use `ITitleBarService`.
+  Keep WPF objects out of ViewModel contracts: `LogGridModel`, `ColorRuleSet`,
+  color strings and `IsTimelineAtTop` are converted by the UI layer
+  (`Styles/PresentationConverters.xaml`). Marked-line grouping belongs to XAML.
 - **AvalonDock 5**: the XML layout serializer lives in the separate package
   `Dirkster.AvalonDock.Serializer.Xml`; its namespace is
   `AvalonDock.Serializer.Xml` (not `AvalonDock.Layout.Serialization`).

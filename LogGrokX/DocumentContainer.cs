@@ -1,9 +1,8 @@
 using System;
 using System.Diagnostics;
-using System.Windows.Threading;
+using LogGrokX.Platform;
 using DryIoc;
 using LogGrokX.Controls;
-using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
@@ -32,8 +31,9 @@ namespace LogGrokX
         private readonly Container _container;
         public DocumentContainer(string fileName, ProfileSettings profile, ApplicationSettings applicationSettings,
             SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore,
-            TimelinePlacementService timelinePlacementService, ThreadGroupingService threadGroupingService)
+            TimelinePlacementService timelinePlacementService, ThreadGroupingService threadGroupingService, IUiDispatcher? dispatcher = null)
         {
+            dispatcher ??= UiDispatcher.Current;
             var logFormats = LogFormatValidation.GetValidFormats(profile);
             _container = new Container(rules =>
                 rules
@@ -43,6 +43,8 @@ namespace LogGrokX
 
             LoggerRegistrationHelper.Register(_container);
             
+            _container.RegisterInstance<IUiDispatcher>(dispatcher);
+            _container.RegisterInstance<IDesktopService>(DesktopServices.Current);
             _container.RegisterInstance(autocompleteCache);
             _container.RegisterInstance(savedSearchPatternStore);
             _container.RegisterInstance(timelinePlacementService);
@@ -82,7 +84,8 @@ namespace LogGrokX
                 serviceKey: ParserType.Full);
             
             // Presentation
-            _container.RegisterInstance(profile.ColorSettings ?? new Colors.Configuration.ColorSettings());
+            _container.RegisterDelegate(_ => new Colors.ColorRuleSet(
+                profile.ColorSettings ?? new Colors.Configuration.ColorSettings(), new WpfColorValidator()));
             _container.RegisterDelegate(c => 
                 applicationSettings.GetColumnSettings(c.Resolve<LogMetaInformation>().LineRegex), 
                 reuse: Reuse.Singleton);
@@ -90,7 +93,7 @@ namespace LogGrokX
             _container.Register<LogViewModel>(
                 made: Parameters.Of
                     .Type<ILineParser>(serviceKey: ParserType.Full)
-                    .Type<GridViewFactory>(serviceKey: GridViewType.FilteringGirdViewType));
+                    .Type<LogGridModel>(serviceKey: GridViewType.FilteringGirdViewType));
 
             _container.Register<LineViewModelCollectionProvider>(Reuse.Singleton, 
                 made: Parameters.Of
@@ -107,8 +110,8 @@ namespace LogGrokX
             _container.RegisterDelegate(c => 
                 new TransformationPerformer(c.Resolve<LogMetaInformation>().Transformations));
             
-            _container.RegisterDelegate<Func<string, Dispatcher, FilterViewModel>>(
-                r => (fieldName, dispatcher) => new FilterViewModel(
+            _container.RegisterDelegate<Func<string, FilterViewModel>>(
+                r => fieldName => new FilterViewModel(
                     fieldName, 
                     r.Resolve<FilterSettings>(),
                     r.Resolve<Indexer>(),
@@ -119,27 +122,27 @@ namespace LogGrokX
                 {
                     var logModelFacade = r.Resolve<LogModelFacade>();
                     var filterSettings = r.Resolve<FilterSettings>();
-                    var viewFactory = r.Resolve<GridViewFactory>(GridViewType.NotFilteringGridViewType);
+                    var gridModel = r.Resolve<LogGridModel>(GridViewType.NotFilteringGridViewType);
                     var markedLines = r.Resolve<Selection>();
                     var columnSettings = r.Resolve<ColumnSettings>();
                     var transofrmationPerformer = r.Resolve<TransformationPerformer>();
                     var timeIndex = r.Resolve<TimeIndex>();
                     var foldingState = r.Resolve<TextViewSharedFoldingState>();
                     var currentThreadFilter = r.Resolve<CurrentThreadFilter>();
-                    return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, viewFactory, pattern,
+                    return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, gridModel, pattern,
                         markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState,
                         currentThreadFilter);
                 });
             
             // view
             _container.RegisterDelegate(
-                r => new GridViewFactory(r.Resolve<LogMetaInformation>(),
-                    true, r.Resolve<Func<string, Dispatcher, FilterViewModel>>()),
+                r => new LogGridModel(r.Resolve<LogMetaInformation>(),
+                    r.Resolve<ColumnSettings>(), r.Resolve<Func<string, FilterViewModel>>()),
                 serviceKey: GridViewType.FilteringGirdViewType);
 
             _container.RegisterDelegate(
-                r => new GridViewFactory(r.Resolve<LogMetaInformation>(),
-                    false, null), 
+                r => new LogGridModel(r.Resolve<LogMetaInformation>(),
+                    r.Resolve<ColumnSettings>()),
                 serviceKey: GridViewType.NotFilteringGridViewType);
 
             // start loading

@@ -173,7 +173,7 @@ public class GridProfileTransitionTests
         var indexer = new EmptyIndexer();
         var filters = new FilterSettings(indexer, meta);
         var view = (GridView)new GridViewFactory(meta, true,
-            (field, dispatcher) => new FilterViewModel(field, filters, indexer, meta, dispatcher)).CreateView(null);
+            (field, dispatcher) => new FilterViewModel(field, filters, indexer, meta, new Platform.WpfUiDispatcher(dispatcher))).CreateView(null);
         view.Columns.RemoveAt(0);
         for (var index = 0; index < view.Columns.Count; index++)
         {

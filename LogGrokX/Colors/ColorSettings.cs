@@ -1,29 +1,27 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 
 namespace LogGrokX.Colors
 {
-    public class ColorSettings
+    public class ColorSettings : ColorRuleSet
     {
         public static readonly DependencyProperty ColorSettingsProperty = DependencyProperty.RegisterAttached(
             "ColorSettings",
+            typeof(ColorRuleSet),
             typeof(ColorSettings),
-            typeof(ColorSettings),
-            new FrameworkPropertyMetadata(default(ColorSettings), FrameworkPropertyMetadataOptions.Inherits));
+            new FrameworkPropertyMetadata(default(ColorRuleSet), FrameworkPropertyMetadataOptions.Inherits));
 
-        public static void SetColorSettings(DependencyObject element, ColorSettings value)
+        public static void SetColorSettings(DependencyObject element, ColorRuleSet value)
         {
             element.SetValue(ColorSettingsProperty, value);
         }
 
-        public static ColorSettings? GetColorSettings(DependencyObject element)
+        public static ColorRuleSet? GetColorSettings(DependencyObject element)
         {
-            return element.GetValue(ColorSettingsProperty) as ColorSettings;
+            return element.GetValue(ColorSettingsProperty) as ColorRuleSet;
         }
 
         public class ColorRule
@@ -49,10 +47,8 @@ namespace LogGrokX.Colors
             public Brush? GetBackgroundBrush(bool isDark) => GetBrush(BackgroundColor, isDark, true);
         }
 
-        public IReadOnlyList<ColorRule> Rules { get; }
-
+        private static readonly ConcurrentDictionary<string, Color> CachedColors = new(StringComparer.Ordinal);
         private static readonly ConcurrentDictionary<(Color, bool, bool), Brush> CachedBrushes = new();
-        private static readonly ConcurrentDictionary<string, Regex> CachedRegexes = new();
 
         private static Brush? GetBrush(Color? color, bool isDark, bool isBackground)
         {
@@ -92,23 +88,16 @@ namespace LogGrokX.Colors
             return Color.FromArgb(color.A, Blend(color.R), Blend(color.G), Blend(color.B));
         }
 
-        public ColorSettings(Configuration.ColorSettings colorSettingsConfiguration)
-        {
-            Color? ParseColor(string colorString)
-            {
-                if (string.IsNullOrEmpty(colorString)) return null;
-                return (Color)ColorConverter.ConvertFromString(colorString);
-            }
+        public ColorSettings(Configuration.ColorSettings configuration)
+            : base(configuration, new Platform.WpfColorValidator()) { }
 
-            ColorRule Convert(Configuration.ColorRule rule)
-            {
-                return new ColorRule(
-                    CachedRegexes.GetOrAdd(rule.RegexString, s => new Regex(s, RegexOptions.Compiled)),
-                    ParseColor(rule.ForegroundColor),
-                    ParseColor(rule.BackgroundColor));
-            }
+        public static Brush? GetForegroundBrush(ColorRuleDefinition? rule, bool isDark) =>
+            GetBrush(ParseColor(rule?.ForegroundColor), isDark, false);
 
-            Rules = colorSettingsConfiguration.Rules.Select(Convert).ToList();
-        }
+        public static Brush? GetBackgroundBrush(ColorRuleDefinition? rule, bool isDark) =>
+            GetBrush(ParseColor(rule?.BackgroundColor), isDark, true);
+
+        private static Color? ParseColor(string? value) =>
+            string.IsNullOrWhiteSpace(value) ? null : CachedColors.GetOrAdd(value, text => (Color)ColorConverter.ConvertFromString(text));
     }
 }

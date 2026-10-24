@@ -14,6 +14,7 @@
                     xmlns:textRender="clr-namespace:LogGrokX.Controls.TextRender"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="PresentationConverters.xaml" />
         <ResourceDictionary Source="ListViewItemStyle.xaml" />
         <ResourceDictionary Source="LogViewContextMenu.xaml" />
         <ResourceDictionary Source="DocumentSearchTemplate.xaml" />
@@ -24,7 +25,7 @@
         <Setter Property="Margin" Value="0" />
         <Setter Property="listControls:BaseLogListViewItem.HighlightMarkedRows" Value="True" />
         <Setter Property="Background"
-                Value="{Binding Content.BackgroundBrush,
+                Value="{Binding Content.BackgroundColor, Converter={StaticResource ColorBrushConverter},
                         RelativeSource={RelativeSource Self}}" />
     </Style>
 
@@ -48,7 +49,7 @@
                                    ItemContainerStyle="{StaticResource MergedItemContainerStyle}"
                                    ItemsSource="{Binding Lines}"
                                    ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
-                                   View="{Binding CustomView}"
+                                   View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"
                                    ColumnSettings="{Binding ColumnSettings}"
                                    ScrollViewer.VerticalScrollBarVisibility="Visible"
                                    ScrollViewer.CanContentScroll="True"
@@ -131,7 +132,7 @@
                                                 Height="12"
                                                 Margin="0,0,6,0"
                                                 VerticalAlignment="Center"
-                                                Background="{Binding TimelineBrush}"
+                                                Background="{Binding TimelineColor, Converter={StaticResource ColorBrushConverter}}"
                                                 CornerRadius="3" />
                                         <TextBlock VerticalAlignment="Center" Text="{Binding Title}" />
                                     </StackPanel>
@@ -185,7 +186,7 @@
                 </StackPanel>
 
                 <DockPanel Grid.Row="1" LastChildFill="True">
-                    <localControls:LogMinimapControl DockPanel.Dock="{Binding TimelineDock}"
+                    <localControls:LogMinimapControl DockPanel.Dock="{Binding IsTimelineAtTop, Converter={StaticResource TimelineDockConverter}}"
                                                      Visibility="{Binding IsTimelineVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                      Height="30"
                                                      HorizontalAlignment="Stretch"
@@ -224,7 +225,7 @@
                                             SelectionMode="Extended"
                                             ItemContainerStyle="{StaticResource MergedItemContainerStyle}"
                                             ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
-                                            View="{Binding CustomView}"
+                                            View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"
                                             ColumnSettings="{Binding ColumnSettings}"
                                             ScrollViewer.VerticalScrollBarVisibility="Visible"
                                             ScrollViewer.CanContentScroll="True"

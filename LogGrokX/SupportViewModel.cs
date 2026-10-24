@@ -1,10 +1,9 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Windows;
 using System.Windows.Input;
 using LogGrokX.Localization;
+using LogGrokX.Platform;
 
 namespace LogGrokX
 {
@@ -12,19 +11,21 @@ namespace LogGrokX
     {
         private const string RepositoryUrl = "https://github.com/zhenyatnk/LogGrokX";
 
-        private readonly UpdateCheckService? _updateCheckService;
+        private readonly IUpdateService? _updateCheckService;
+        private readonly IDesktopService _desktop;
         private bool _isCheckingForUpdates;
         private string _updateStatus = string.Empty;
 
-        public SupportViewModel(UpdateCheckService? updateCheckService = null)
+        public SupportViewModel(IUpdateService? updateCheckService = null, IDesktopService? desktop = null)
         {
             _updateCheckService = updateCheckService;
+            _desktop = desktop ?? DesktopServices.Current;
             CheckForUpdatesCommand = new DelegateCommand(CheckForUpdates);
-            OpenReleasesCommand = new DelegateCommand(() => OpenUrl($"{RepositoryUrl}/releases/latest"));
-            OpenIssuesCommand = new DelegateCommand(() => OpenUrl($"{RepositoryUrl}/issues/new"));
-            OpenRepositoryCommand = new DelegateCommand(() => OpenUrl(RepositoryUrl));
+            OpenReleasesCommand = new DelegateCommand(() => _desktop.OpenUrl($"{RepositoryUrl}/releases/latest"));
+            OpenIssuesCommand = new DelegateCommand(() => _desktop.OpenUrl($"{RepositoryUrl}/issues/new"));
+            OpenRepositoryCommand = new DelegateCommand(() => _desktop.OpenUrl(RepositoryUrl));
             OpenLogsFolderCommand = new DelegateCommand(OpenLogsFolder);
-            CopyDiagnosticsCommand = new DelegateCommand(() => TextCopy.ClipboardService.SetText(DiagnosticsText));
+            CopyDiagnosticsCommand = new DelegateCommand(() => _desktop.SetClipboardText(DiagnosticsText));
         }
 
         public string Version => BuildInfo.Version;
@@ -60,8 +61,6 @@ namespace LogGrokX
             }
         }
 
-        public Window? Owner { get; set; }
-
         public ICommand OpenReleasesCommand { get; }
 
         public ICommand OpenIssuesCommand { get; }
@@ -82,10 +81,7 @@ namespace LogGrokX
             UpdateStatus = Strings.Get("CheckingUpdates");
             try
             {
-                var owner = Owner ?? Application.Current?.MainWindow;
-                if (owner == null)
-                    return;
-                var release = await _updateCheckService.CheckNowAsync(owner);
+                var release = await _updateCheckService.CheckNowAsync();
                 UpdateStatus = release == null
                     ? Strings.Get("ReleaseInfoUnavailable")
                     : UpdateVersion.IsNewer(release.Tag, Version)
@@ -110,34 +106,10 @@ namespace LogGrokX
             return commit.Substring(0, Math.Min(8, commit.Length));
         }
 
-        private static void OpenUrl(string url)
+        private void OpenLogsFolder()
         {
-            using var process = new Process
-            {
-                StartInfo =
-                {
-                    FileName = url,
-                    UseShellExecute = true
-                }
-            };
-            process.Start();
-        }
-
-        private static void OpenLogsFolder()
-        {
-            var path = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "LogGrokX");
-            if (!Directory.Exists(path)) return;
-            using var process = new Process
-            {
-                StartInfo =
-                {
-                    FileName = path,
-                    UseShellExecute = true
-                }
-            };
-            process.Start();
+            var path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LogGrokX");
+            if (Directory.Exists(path)) _desktop.OpenPath(path);
         }
     }
 }

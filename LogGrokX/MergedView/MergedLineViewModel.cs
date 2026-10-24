@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 
@@ -41,7 +40,7 @@ namespace LogGrokX.MergedView
 
         public string SourceTitle => Source.Title;
 
-        public Brush BackgroundBrush => Source.RowBackground;
+        public string BackgroundColor => Source.RowColor;
 
         public LinePartViewModel Text { get; }
 

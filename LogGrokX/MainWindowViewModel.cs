@@ -6,8 +6,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Windows;
 using System.Windows.Input;
 using LogGrokX.AvalonDockExtensions;
 using LogGrokX.Data;
@@ -15,8 +13,7 @@ using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 using LogGrokX.MergedView;
 using LogGrokX.Search;
-using LogGrokX.Theming;
-using Microsoft.Win32;
+using LogGrokX.Platform;
 
 namespace LogGrokX
 {
@@ -26,13 +23,15 @@ namespace LogGrokX
         private readonly ApplicationSettings _applicationSettings;
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
         private readonly SavedSearchPatternStore _savedSearchPatternStore;
-        private readonly UiThemeService _themeService;
+        private readonly IThemeService _themeService;
+        private readonly IColorValidator _colorValidator;
         private readonly TimelinePlacementService _timelinePlacementService;
         private readonly TextZoomService _textZoomService;
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly MergedFilesViewService _mergedFilesViewService;
-        private readonly UpdateCheckService _updateCheckService;
+        private readonly IAppDialogs? _dialogs;
         private readonly Dictionary<DocumentViewModel, DocumentContainer> _containers = new();
+        private readonly IUiDispatcher _dispatcher;
         private bool _disposed;
         private ProfileSettings _selectedProfile;
         private ProfileSettings _appliedProfile;
@@ -61,14 +60,16 @@ namespace LogGrokX
         public MainWindowViewModel(ApplicationSettings applicationSettings, 
             SearchAutocompleteCache searchAutocompleteCache, 
             SavedSearchPatternStore savedSearchPatternStore,
-            UiThemeService themeService,
+            IThemeService themeService,
             TimelinePlacementService timelinePlacementService,
             TextZoomService textZoomService,
             ThreadGroupingService threadGroupingService,
             MergedFilesViewService mergedFilesViewService,
-            UpdateCheckService updateCheckService,
-            Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory)
+            IAppDialogs? dialogs,
+            Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory,
+            IColorValidator colorValidator, IUiDispatcher? dispatcher = null)
         {
+            _dispatcher = dispatcher ?? UiDispatcher.Current;
             _applicationSettings = applicationSettings;
             Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
             _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
@@ -77,19 +78,19 @@ namespace LogGrokX
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
             _themeService = themeService;
+            _colorValidator = colorValidator;
             _timelinePlacementService = timelinePlacementService;
             _textZoomService = textZoomService;
             _threadGroupingService = threadGroupingService;
             _mergedFilesViewService = mergedFilesViewService;
-            _updateCheckService = updateCheckService;
+            _dialogs = dialogs;
             _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             _threadGroupingService.Changed += OnThreadGroupingChanged;
             _mergedFilesViewService.Changed += OnMergedFilesViewChanged;
-            _themeService.AccentColorChanged += OnAccentColorChanged;
             Documents = new ObservableCollection<DocumentViewModel>();
             Documents.CollectionChanged += OnDocumentsChanged;
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
-            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService) { IsActive = _mergedFilesViewService.IsEnabled };
+            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService, _colorValidator, _dispatcher) { IsActive = _mergedFilesViewService.IsEnabled };
             _applicationSettings.ProfilesChanged += OnProfilesChanged;
             OpenSettings = new DelegateCommand(OpenSettingsWindow);
             OpenSupportCommand = new DelegateCommand(OpenSupport);
@@ -149,10 +150,10 @@ namespace LogGrokX
 
         private void OnProfilesChanged()
         {
-            var dispatcher = Application.Current?.Dispatcher;
-            if (dispatcher != null && !dispatcher.CheckAccess())
+            var dispatcher = _dispatcher;
+            if (!dispatcher.CheckAccess())
             {
-                _ = dispatcher.BeginInvoke(OnProfilesChanged);
+                _ = dispatcher.Post(OnProfilesChanged);
                 return;
             }
             if (_disposed)
@@ -189,10 +190,10 @@ namespace LogGrokX
             var documents = Documents.ToArray();
             var currentIndex = CurrentDocument == null ? -1 : Array.IndexOf(documents, CurrentDocument);
             var replacements = new List<(DocumentViewModel document, DocumentContainer container)>();
-            Colors.ColorSettings colors;
+            Colors.ColorRuleSet colors;
             try
             {
-                colors = new Colors.ColorSettings(profile.ColorSettings ?? new Colors.Configuration.ColorSettings());
+                colors = new Colors.ColorRuleSet(profile.ColorSettings ?? new Colors.Configuration.ColorSettings(), _colorValidator);
                 foreach (var document in documents)
                 {
                     var replacement = CreateDocumentResources(document.DocumentId, profile);
@@ -212,9 +213,7 @@ namespace LogGrokX
                 {
                     _lastFailedProfile = profile;
                     Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
-                    if (Application.Current != null)
-                        MessageBox.Show(Strings.Format("ProfileChangeError", profile.Name, e.Message), Strings.Get("ProfileChangeFailed"),
-                            MessageBoxButton.OK, MessageBoxImage.Warning);
+                    _dialogs?.ShowWarning(Strings.Format("ProfileChangeError", profile.Name, e.Message), Strings.Get("ProfileChangeFailed"));
                 }
                 return false;
             }
@@ -310,72 +309,24 @@ namespace LogGrokX
             InvokePropertyChanged(nameof(IsMergedView));
         }
 
-        private static readonly AvalonDock.Themes.Vs2013LightTheme LightDockTheme = new();
-        private static readonly AvalonDock.Themes.Vs2013DarkTheme DarkDockTheme = new();
+        private void OpenSupport() => _dialogs?.ShowSupport();
 
-        public AvalonDock.Themes.Theme DockTheme => GetDockTheme();
-
-        private AvalonDock.Themes.Theme GetDockTheme()
-        {
-            AvalonDock.Themes.DictionaryTheme theme = _themeService.IsDark ? DarkDockTheme : LightDockTheme;
-            Theming.DockThemeResources.ApplyAccentColor(theme.ThemeResourceDictionary);
-            return theme;
-        }
-
-        private void OnAccentColorChanged(object? sender, EventArgs e)
-        {
-            GetDockTheme();
-        }
-
-        private void OpenSupport()
-        {
-            var window = new SupportWindow(_updateCheckService);
-            if (Application.Current?.MainWindow is { } owner)
-                window.Owner = owner;
-            window.ShowDialog();
-        }
-
-        private void OpenSettingsWindow()
-        {
-            var viewModel = new LogGrokX.Settings.SettingsViewModel(
-                _applicationSettings,
-                _timelinePlacementService,
-                _threadGroupingService,
-                _mergedFilesViewService,
-                _textZoomService,
-                _themeService);
-            var window = new LogGrokX.Settings.SettingsWindow(viewModel);
-            if (Application.Current?.MainWindow is { } owner)
-                window.Owner = owner;
-            window.ShowDialog();
-        }
+        private void OpenSettingsWindow() => _dialogs?.ShowSettings();
 
         private void ToggleTheme()
         {
             _themeService.Toggle();
             InvokePropertyChanged(nameof(IsDarkTheme));
-            InvokePropertyChanged(nameof(DockTheme));
         }
 
         private void OpenFile()
         {
-            var dialog = new OpenFileDialog
+            foreach (var fileName in _dialogs?.SelectLogFiles() ?? Array.Empty<string>())
             {
-                DefaultExt = "log",
-                Filter = Strings.Get("OpenFileFilter"),
-                Multiselect = true
-            };
-
-            var dialogResult = dialog.ShowDialog();
-            if (dialogResult.GetValueOrDefault())
-            {
-                foreach (var fileName in dialog.FileNames)
-                {
-                    Trace.TraceInformation($"Open document {fileName}.");
-                    AddDocument(fileName);
-                }
+                Trace.TraceInformation($"Open document {fileName}.");
+                AddDocument(fileName);
             }
-            
+
             ShowScratchPad?.Invoke(this, new EventArgs());
         }
         
@@ -403,8 +354,7 @@ namespace LogGrokX
             catch (Exception e) when (e is FormatException or ArgumentException)
             {
                 Trace.TraceError($"Cannot open '{fileName}': {e.Message}");
-                if (Application.Current != null)
-                    MessageBox.Show(e.Message, Strings.Get("LogFormats"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                _dialogs?.ShowWarning(e.Message, Strings.Get("LogFormats"));
             }
         }
 
@@ -444,7 +394,7 @@ namespace LogGrokX
         private (DocumentViewModel document, DocumentContainer container) CreateDocumentResources(
             string fileName, ProfileSettings profile)
         {
-            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService);
+            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService, _dispatcher);
             DocumentViewModel viewModel;
             try
             {
@@ -502,7 +452,6 @@ namespace LogGrokX
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _mergedFilesViewService.Changed -= OnMergedFilesViewChanged;
-            _themeService.AccentColorChanged -= OnAccentColorChanged;
             Documents.CollectionChanged -= OnDocumentsChanged;
             MarkedLinesViewModel.Dispose();
             MergedViewModel.Dispose();
