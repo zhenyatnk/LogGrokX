@@ -148,6 +148,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   owns rendering and handles malformed colors without throwing. Accent colors
   use the platform `AccentColorKind` enum; `DockThemes` owns AvalonDock theme
   instances and their accent updates, while the converter only selects a theme.
+  WPF UI theme brushes defined as `Color="{DynamicResource SystemAccentColor*}"`
+  (list pills, selection, toggles, hyperlink buttons, …) do not follow an accent
+  change until the theme dictionary reloads, so `UiThemeService.AccentBrushColorKeys`
+  (and the theme-dependent `ThemeAccentBrushColorKeys`) re-create them in the
+  application resources; add new keys there when a window uses another one.
   Marked-line grouping and per-view saved-search filtering belong to XAML.
 - **AvalonDock 5**: the XML layout serializer lives in the separate package
   `Dirkster.AvalonDock.Serializer.Xml`; its namespace is

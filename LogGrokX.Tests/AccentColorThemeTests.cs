@@ -82,6 +82,34 @@ public sealed class AccentColorThemeTests
     }
 
     [TestMethod]
+    [DataRow(false, "SystemAccentColorSecondary", "SystemAccentColorPrimary")]
+    [DataRow(true, "SystemAccentColorTertiary", "SystemAccentColorSecondary")]
+    public void SelectedAccentUpdatesWpfUiSelectionAndLinkBrushes(bool isDark, string linkColorKey, string pressedLinkColorKey)
+    {
+        RunOnSta(() =>
+        {
+            var resources = new ResourceDictionary
+            {
+                ["SystemAccentColorPrimary"] = Color.FromRgb(1, 2, 3),
+                ["SystemAccentColorSecondary"] = Color.FromRgb(4, 5, 6),
+                ["SystemAccentColorTertiary"] = Color.FromRgb(7, 8, 9),
+                ["AccentFillColorDefault"] = Color.FromRgb(10, 11, 12),
+                ["AccentFillColorSecondary"] = Color.FromArgb(229, 13, 14, 15),
+                ["AccentFillColorTertiary"] = Color.FromArgb(204, 16, 17, 18)
+            };
+            UiThemeService.ApplyDerivedAccentBrushes(resources, isDark: isDark);
+
+            AssertBrushMatchesColor(resources, "ListViewItemPillFillBrush", "SystemAccentColorPrimary");
+            AssertBrushMatchesColor(resources, "ListBoxItemSelectedBackgroundThemeBrush", "SystemAccentColorPrimary");
+            AssertBrushMatchesColor(resources, "ComboBoxItemPillFillBrush", "SystemAccentColorPrimary");
+            AssertBrushMatchesColor(resources, "ToggleSwitchFillOn", "SystemAccentColorPrimary");
+            AssertBrushMatchesColor(resources, "TextControlFocusedBorderBrush", "SystemAccentColorPrimary");
+            AssertBrushMatchesColor(resources, "HyperlinkButtonForeground", linkColorKey);
+            AssertBrushMatchesColor(resources, "HyperlinkButtonForegroundPressed", pressedLinkColorKey);
+        });
+    }
+
+    [TestMethod]
     public void SelectedAccentKeepsExistingButtonBrushInstances()
     {
         RunOnSta(() =>

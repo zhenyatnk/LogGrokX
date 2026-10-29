@@ -48,7 +48,38 @@ namespace LogGrokX.Theming
             ["AccentButtonBackgroundPressed"] = "AccentFillColorTertiary",
             ["CheckBoxCheckBackgroundFillChecked"] = "SystemAccentColorPrimary",
             ["CheckBoxCheckBackgroundFillCheckedPointerOver"] = "AccentFillColorSecondary",
-            ["CheckBoxCheckBackgroundFillCheckedPressed"] = "AccentFillColorTertiary"
+            ["CheckBoxCheckBackgroundFillCheckedPressed"] = "AccentFillColorTertiary",
+            // WPF UI theme brushes that take their color from the accent through DynamicResource
+            // are not refreshed when the accent changes, only when the theme dictionary is reloaded.
+            ["CalendarViewSelectedBackground"] = "SystemAccentColorPrimary",
+            ["CalendarViewSelectedBorderBrush"] = "SystemAccentColorPrimary",
+            ["CalendarViewTodayBackground"] = "SystemAccentColorPrimary",
+            ["ComboBoxBorderBrushFocused"] = "SystemAccentColorSecondary",
+            ["ComboBoxItemPillFillBrush"] = "SystemAccentColorPrimary",
+            ["InfoBarInformationalSeverityIconBackground"] = "SystemAccentColorPrimary",
+            ["ListBoxItemSelectedBackgroundThemeBrush"] = "SystemAccentColorPrimary",
+            ["ListViewItemPillFillBrush"] = "SystemAccentColorPrimary",
+            ["NavigationViewSelectionIndicatorForeground"] = "SystemAccentColorPrimary",
+            ["ProgressBarForeground"] = "SystemAccentColorPrimary",
+            ["ProgressRingForegroundThemeBrush"] = "SystemAccentColorPrimary",
+            ["RadioButtonOuterEllipseCheckedStroke"] = "SystemAccentColorPrimary",
+            ["RatingControlSelectedForeground"] = "SystemAccentColorPrimary",
+            ["SliderThumbBackground"] = "SystemAccentColorPrimary",
+            ["TextControlFocusedBorderBrush"] = "SystemAccentColorPrimary",
+            ["ThumbRateForeground"] = "SystemAccentColorPrimary",
+            ["ToggleButtonBackgroundChecked"] = "SystemAccentColorPrimary",
+            ["ToggleButtonBackgroundCheckedPressed"] = "SystemAccentColorTertiary",
+            ["ToggleButtonForegroundCheckedPointerOver"] = "SystemAccentColorSecondary",
+            ["ToggleSwitchFillOn"] = "SystemAccentColorPrimary",
+            ["ToggleSwitchStrokeOn"] = "SystemAccentColorPrimary",
+            ["TreeViewItemSelectionIndicatorForeground"] = "SystemAccentColorPrimary"
+        };
+
+        private static readonly System.Collections.Generic.Dictionary<string, (string Light, string Dark)> ThemeAccentBrushColorKeys = new()
+        {
+            ["HyperlinkButtonForeground"] = ("SystemAccentColorSecondary", "SystemAccentColorTertiary"),
+            ["HyperlinkButtonForegroundPointerOver"] = ("SystemAccentColorTertiary", "SystemAccentColorTertiary"),
+            ["HyperlinkButtonForegroundPressed"] = ("SystemAccentColorPrimary", "SystemAccentColorSecondary")
         };
 
         public void ApplyAccentColor(AccentColorKind accentColor)
@@ -60,7 +91,8 @@ namespace LogGrokX.Theming
                 ApplicationAccentColorManager.Apply(
                     (System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(AccentColorPalette.GetColor(_accentColor)),
                     ApplicationThemeManager.GetAppTheme());
-                ApplyDerivedAccentBrushes(Application.Current.Resources, previousBrushes);
+                ApplyDerivedAccentBrushes(Application.Current.Resources, previousBrushes,
+                    ApplicationThemeManager.GetAppTheme() == ApplicationTheme.Dark);
                 foreach (var resources in Application.Current.Resources.MergedDictionaries.OfType<DockThemeResources>())
                     resources.ApplyAccentColor();
                 DockThemes.ApplyAccentColor();
@@ -76,7 +108,7 @@ namespace LogGrokX.Theming
             CaptureAccentBrushes(ResourceDictionary resources)
         {
             var brushes = new System.Collections.Generic.Dictionary<string, System.Windows.Media.SolidColorBrush>();
-            foreach (var brushKey in AccentBrushColorKeys.Keys)
+            foreach (var brushKey in AccentBrushColorKeys.Keys.Concat(ThemeAccentBrushColorKeys.Keys))
             {
                 if (resources[brushKey] is System.Windows.Media.SolidColorBrush { IsFrozen: false } brush)
                     brushes[brushKey] = brush;
@@ -86,10 +118,13 @@ namespace LogGrokX.Theming
         }
 
         internal static void ApplyDerivedAccentBrushes(ResourceDictionary resources,
-            System.Collections.Generic.IReadOnlyDictionary<string, System.Windows.Media.SolidColorBrush>? previousBrushes = null)
+            System.Collections.Generic.IReadOnlyDictionary<string, System.Windows.Media.SolidColorBrush>? previousBrushes = null,
+            bool isDark = false)
         {
             foreach (var (brushKey, colorKey) in AccentBrushColorKeys)
                 SetBrush(resources, brushKey, colorKey, previousBrushes);
+            foreach (var (brushKey, (light, dark)) in ThemeAccentBrushColorKeys)
+                SetBrush(resources, brushKey, isDark ? dark : light, previousBrushes);
         }
 
         private static void SetBrush(ResourceDictionary resources, string brushKey, string colorKey,
