@@ -43,6 +43,8 @@ namespace LogGrokX.Settings
             if (value.Trim() == yamlValue)
                 return;
 
+            if (value.TrimStart().StartsWith('|') || value.TrimStart().StartsWith('>'))
+                RemoveBlockScalar(index);
             _lines[index] = match.Groups[1].Value + yamlValue + comment;
             HasChanges = true;
         }
@@ -255,6 +257,17 @@ namespace LogGrokX.Settings
         private static bool IsContentLine(string line) =>
             !string.IsNullOrWhiteSpace(line) &&
             !line.TrimStart().StartsWith("#", StringComparison.Ordinal);
+
+        private void RemoveBlockScalar(int keyIndex)
+        {
+            var keyIndent = IndentOf(_lines[keyIndex]);
+            var end = keyIndex + 1;
+            while (end < _lines.Count && (_lines[end].Trim().Length == 0 || IndentOf(_lines[end]) > keyIndent))
+                end++;
+            while (end > keyIndex + 1 && _lines[end - 1].Trim().Length == 0)
+                end--;
+            _lines.RemoveRange(keyIndex + 1, end - keyIndex - 1);
+        }
 
         private static int IndentOf(string line)
         {

@@ -182,6 +182,26 @@ public sealed class CallStackSymbolsTests
         Assert.IsFalse(new LinePartViewModel(2, Message, monitor, detectBase64: false).IsCallStack);
     }
 
+    [TestMethod]
+    public void SettingsEditorShowsPathElementsOnSeparateLines()
+    {
+        var editor = new Settings.SymbolSettingsViewModel(new SymbolSettings
+        {
+            SymbolPath = @"srv*C:\Symbols*https://msdl.microsoft.com/download/symbols;C:\Build",
+            SourcePath = "srv*"
+        });
+
+        Assert.AreEqual(@"srv*C:\Symbols*https://msdl.microsoft.com/download/symbols" + Environment.NewLine + @"C:\Build",
+            editor.SymbolPath);
+
+        editor.SymbolPath = " srv*C:\\Symbols*https://symbols.example.com \r\n\r\n\\\\share\\symbols\r\n";
+        editor.SourcePath = "srv*\nC:\\Sources;D:\\More";
+        var settings = editor.ToSettings();
+
+        Assert.AreEqual(@"srv*C:\Symbols*https://symbols.example.com;\\share\symbols", settings.SymbolPath);
+        Assert.AreEqual(@"srv*;C:\Sources;D:\More", settings.SourcePath);
+    }
+
     private static CallStackSymbolService CreateService(ISymbolReader reader) =>
         new(reader, new FakePresenter(), new Desktop(), new ImmediateDispatcher(), new NotFoundHandler());
 

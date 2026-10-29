@@ -700,13 +700,13 @@
     <value>Symbolpfad</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>WinDbg-Syntax: srv*&lt;Cache&gt;*&lt;Server&gt;;&lt;Ordner&gt;, z. B. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Leer verwendet _NT_SYMBOL_PATH.</value>
+    <value>Ein Element pro Zeile (oder getrennt durch ';'), WinDbg-Syntax: srv*&lt;Cache&gt;*&lt;Server&gt; oder ein Ordner, z. B. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Leer verwendet _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Quellpfad</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Lokale Quellordner, getrennt durch ';'. srv* lädt Quellen über die Quellserverdaten der PDB.</value>
+    <value>Lokale Quellordner, einer pro Zeile (oder getrennt durch ';'). srv* lädt Quellen über die Quellserverdaten der PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Symbol-Cacheordner</value>

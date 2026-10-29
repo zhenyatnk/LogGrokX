@@ -106,9 +106,9 @@ Settings:
   SymbolSettings:
     # Resolve call stacks like "0# module.dll!<PDB GUID>,<age>!<rva>" to functions and source lines
     Enabled: true
-    # WinDbg syntax: srv*<cache>*<server>;<directory>. Empty uses _NT_SYMBOL_PATH
+    # WinDbg syntax: srv*<cache>*<server>;<directory> (Settings → Symbols edits one element per line). Empty uses _NT_SYMBOL_PATH
     SymbolPath: ''
-    # Local source roots separated by ';'. "srv*" uses the source server data of the PDB files
+    # Local source roots separated by ';' or new lines. "srv*" uses the source server data of the PDB files
     SourcePath: 'srv*'
     # Download cache for PDB and source files. Empty uses %LOCALAPPDATA%\LogGrokX\Symbols
     CachePath: ''

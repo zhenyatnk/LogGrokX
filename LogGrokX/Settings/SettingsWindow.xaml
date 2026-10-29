@@ -678,13 +678,27 @@
                             <CheckBox Content="{loc:Loc ResolveCallStacks}"
                                       IsChecked="{Binding Symbols.Enabled, Mode=TwoWay}" />
                             <TextBlock Margin="0,12,0,2" Text="{loc:Loc SymbolPath}" />
-                            <ui:TextBox PlaceholderText="srv*C:\Symbols*https://msdl.microsoft.com/download/symbols"
+                            <ui:TextBox PlaceholderText="srv*C:\Symbols*https://msdl.microsoft.com/download/symbols&#x0a;\\build\symbols"
+                                        AcceptsReturn="True"
+                                        TextWrapping="NoWrap"
+                                        MinLines="3"
+                                        MaxHeight="160"
+                                        VerticalContentAlignment="Top"
+                                        VerticalScrollBarVisibility="Auto"
+                                        HorizontalScrollBarVisibility="Auto"
                                         Text="{Binding Symbols.SymbolPath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                        Text="{loc:Loc SymbolPathHint}" />
                             <TextBlock Margin="0,12,0,2" Text="{loc:Loc SourcePath}" />
-                            <ui:TextBox PlaceholderText="srv*;C:\Sources"
+                            <ui:TextBox PlaceholderText="srv*&#x0a;C:\Sources"
+                                        AcceptsReturn="True"
+                                        TextWrapping="NoWrap"
+                                        MinLines="3"
+                                        MaxHeight="160"
+                                        VerticalContentAlignment="Top"
+                                        VerticalScrollBarVisibility="Auto"
+                                        HorizontalScrollBarVisibility="Auto"
                                         Text="{Binding Symbols.SourcePath, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                             <TextBlock Margin="0,4,0,0" TextWrapping="Wrap"
                                        Foreground="{DynamicResource TextFillColorSecondaryBrush}"

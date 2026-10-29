@@ -700,13 +700,13 @@
     <value>Caminho de símbolos</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>Sintaxe do WinDbg: srv*&lt;cache&gt;*&lt;servidor&gt;;&lt;pasta&gt;, por exemplo srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vazio usa _NT_SYMBOL_PATH.</value>
+    <value>Um elemento por linha (ou separados por ';'), sintaxe do WinDbg: srv*&lt;cache&gt;*&lt;servidor&gt; ou uma pasta, por exemplo srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vazio usa _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Caminho do código-fonte</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Pastas locais de código-fonte separadas por ';'. srv* baixa o código usando os dados do servidor de código-fonte do PDB.</value>
+    <value>Pastas locais de código-fonte, uma por linha (ou separadas por ';'). srv* baixa o código usando os dados do servidor de código-fonte do PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Pasta de cache de símbolos</value>

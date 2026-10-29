@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using LogGrokX.Symbols;
 
 namespace LogGrokX.Settings
@@ -13,8 +15,8 @@ namespace LogGrokX.Settings
         public SymbolSettingsViewModel(SymbolSettings settings)
         {
             _enabled = settings.Enabled;
-            _symbolPath = settings.SymbolPath ?? string.Empty;
-            _sourcePath = settings.SourcePath ?? string.Empty;
+            _symbolPath = ToLines(settings.SymbolPath);
+            _sourcePath = ToLines(settings.SourcePath);
             _cachePath = settings.CachePath ?? string.Empty;
             _allowSourceServerCommands = settings.AllowSourceServerCommands;
         }
@@ -49,11 +51,22 @@ namespace LogGrokX.Settings
             set => SetAndRaiseIfChanged(ref _allowSourceServerCommands, value);
         }
 
+        // The settings store WinDbg-style ';'-separated paths, the editor shows one element per line.
+        internal static string ToLines(string? path) => string.Join(Environment.NewLine, Split(path));
+
+        internal static string FromLines(string? lines) => string.Join(";", Split(lines));
+
+        private static string[] Split(string? path) =>
+            (path ?? string.Empty).Split(Data.Symbols.SymbolPath.Separators)
+                .Select(element => element.Trim())
+                .Where(element => element.Length > 0)
+                .ToArray();
+
         public SymbolSettings ToSettings() => new()
         {
             Enabled = Enabled,
-            SymbolPath = SymbolPath.Trim(),
-            SourcePath = SourcePath.Trim(),
+            SymbolPath = FromLines(SymbolPath),
+            SourcePath = FromLines(SourcePath),
             CachePath = CachePath.Trim(),
             AllowSourceServerCommands = AllowSourceServerCommands
         };

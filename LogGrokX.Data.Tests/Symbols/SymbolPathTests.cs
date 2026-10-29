@@ -46,6 +46,17 @@ public class SymbolPathTests
     }
 
     [TestMethod]
+    public void ElementsCanBeWrittenOnSeparateLines()
+    {
+        var path = SymbolPath.Parse("srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols\r\n\r\n  C:\\Build\nsrv*\\\\share\\symbols", DefaultCache);
+
+        Assert.AreEqual(3, path.Elements.Count);
+        Assert.AreEqual("https://msdl.microsoft.com/download/symbols", ((SymbolServer)path.Elements[0]).Server);
+        Assert.AreEqual(new SymbolDirectory(@"C:\Build"), path.Elements[1]);
+        Assert.AreEqual(@"\\share\symbols", ((SymbolServer)path.Elements[2]).Server);
+    }
+
+    [TestMethod]
     [DataRow(null)]
     [DataRow("")]
     [DataRow(" ; ")]

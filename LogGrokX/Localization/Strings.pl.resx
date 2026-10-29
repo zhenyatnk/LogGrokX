@@ -700,13 +700,13 @@
     <value>Ścieżka symboli</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>Składnia WinDbg: srv*&lt;pamięć podręczna&gt;*&lt;serwer&gt;;&lt;folder&gt;, np. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Puste oznacza _NT_SYMBOL_PATH.</value>
+    <value>Jeden element w wierszu (lub rozdzielone ';'), składnia WinDbg: srv*&lt;pamięć podręczna&gt;*&lt;serwer&gt; lub folder, np. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Puste oznacza _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Ścieżka źródeł</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Lokalne foldery źródeł rozdzielone ';'. srv* pobiera źródła na podstawie danych serwera źródeł z PDB.</value>
+    <value>Lokalne foldery źródeł, po jednym w wierszu (lub rozdzielone ';'). srv* pobiera źródła na podstawie danych serwera źródeł z PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Folder pamięci podręcznej symboli</value>

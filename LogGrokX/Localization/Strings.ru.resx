@@ -700,13 +700,13 @@
     <value>Путь к символам</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>Синтаксис WinDbg: srv*&lt;кэш&gt;*&lt;сервер&gt;;&lt;папка&gt;, например srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Если пусто, используется _NT_SYMBOL_PATH.</value>
+    <value>По одному элементу на строку (или через ';'), синтаксис WinDbg: srv*&lt;кэш&gt;*&lt;сервер&gt; или папка, например srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Если пусто, используется _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Путь к исходникам</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Локальные папки с исходниками через ';'. srv* загружает исходники по данным сервера исходников из PDB.</value>
+    <value>Локальные папки с исходниками, по одной на строку (или через ';'). srv* загружает исходники по данным сервера исходников из PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Папка кэша символов</value>

@@ -700,13 +700,13 @@
     <value>Ruta de símbolos</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>Sintaxis de WinDbg: srv*&lt;caché&gt;*&lt;servidor&gt;;&lt;carpeta&gt;, p. ej. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vacío usa _NT_SYMBOL_PATH.</value>
+    <value>Un elemento por línea (o separados por ';'), sintaxis de WinDbg: srv*&lt;caché&gt;*&lt;servidor&gt; o una carpeta, p. ej. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vacío usa _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Ruta de código fuente</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Carpetas locales de código fuente separadas por ';'. srv* descarga el código usando los datos del servidor de código fuente del PDB.</value>
+    <value>Carpetas locales de código fuente, una por línea (o separadas por ';'). srv* descarga el código usando los datos del servidor de código fuente del PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Carpeta de caché de símbolos</value>

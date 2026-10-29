@@ -15,14 +15,14 @@ public static class SourcePathResolver
     public static IReadOnlyList<string> ParseRoots(string? sourcePath) =>
         string.IsNullOrWhiteSpace(sourcePath)
             ? Array.Empty<string>()
-            : Environment.ExpandEnvironmentVariables(sourcePath).Split(';')
+            : Environment.ExpandEnvironmentVariables(sourcePath).Split(SymbolPath.Separators)
                 .Select(root => root.Trim().Trim('"'))
                 .Where(root => root.Length > 0 && !IsSourceServer(root))
                 .ToArray();
 
     public static bool UsesSourceServer(string? sourcePath) =>
         !string.IsNullOrWhiteSpace(sourcePath) &&
-        sourcePath.Split(';').Any(root => IsSourceServer(root.Trim()));
+        sourcePath.Split(SymbolPath.Separators).Any(root => IsSourceServer(root.Trim()));
 
     public static string? Find(string compiledPath, IEnumerable<string> roots)
     {

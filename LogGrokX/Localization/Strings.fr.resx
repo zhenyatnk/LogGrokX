@@ -700,13 +700,13 @@
     <value>Chemin des symboles</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>Syntaxe WinDbg : srv*&lt;cache&gt;*&lt;serveur&gt;;&lt;dossier&gt;, p. ex. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vide utilise _NT_SYMBOL_PATH.</value>
+    <value>Un élément par ligne (ou séparés par ';'), syntaxe WinDbg : srv*&lt;cache&gt;*&lt;serveur&gt; ou un dossier, p. ex. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vide utilise _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Chemin des sources</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Dossiers de sources locaux séparés par ';'. srv* télécharge les sources via les données du serveur de sources du PDB.</value>
+    <value>Dossiers de sources locaux, un par ligne (ou séparés par ';'). srv* télécharge les sources via les données du serveur de sources du PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Dossier de cache des symboles</value>

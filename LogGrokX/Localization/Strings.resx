@@ -700,13 +700,13 @@
     <value>Symbol path</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>WinDbg syntax: srv*&lt;cache&gt;*&lt;server&gt;;&lt;folder&gt;, e.g. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Empty uses _NT_SYMBOL_PATH.</value>
+    <value>One element per line (or separated by ';'), WinDbg syntax: srv*&lt;cache&gt;*&lt;server&gt; or a folder, e.g. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Empty uses _NT_SYMBOL_PATH.</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>Source path</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>Local source folders separated by ';'. srv* downloads sources using the source server data of the PDB.</value>
+    <value>Local source folders, one per line (or separated by ';'). srv* downloads sources using the source server data of the PDB.</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>Symbol cache folder</value>

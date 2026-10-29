@@ -22,6 +22,9 @@ public sealed class SymbolPath
 {
     public const string MicrosoftSymbolServer = "https://msdl.microsoft.com/download/symbols";
 
+    // Elements are separated by ';' as in WinDbg or written on separate lines.
+    public static readonly char[] Separators = [';', '\r', '\n'];
+
     private SymbolPath(IReadOnlyList<SymbolPathElement> elements) => Elements = elements;
 
     public IReadOnlyList<SymbolPathElement> Elements { get; }
@@ -35,7 +38,7 @@ public sealed class SymbolPath
 
         var elements = new List<SymbolPathElement>();
         var caches = new List<string>();
-        foreach (var rawElement in Environment.ExpandEnvironmentVariables(path).Split(';'))
+        foreach (var rawElement in Environment.ExpandEnvironmentVariables(path).Split(Separators))
         {
             var element = rawElement.Trim().Trim('"');
             if (element.Length == 0)

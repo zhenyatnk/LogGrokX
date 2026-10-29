@@ -700,13 +700,13 @@
     <value>シンボル パス</value>
   </data>
   <data name="SymbolPathHint" xml:space="preserve">
-    <value>WinDbg 構文: srv*&lt;キャッシュ&gt;*&lt;サーバー&gt;;&lt;フォルダー&gt;（例: srv*C:\Symbols*https://msdl.microsoft.com/download/symbols）。空の場合は _NT_SYMBOL_PATH を使用します。</value>
+    <value>1 行に 1 要素 (または ';' 区切り)、WinDbg 構文: srv*&lt;キャッシュ&gt;*&lt;サーバー&gt; またはフォルダー（例: srv*C:\Symbols*https://msdl.microsoft.com/download/symbols）。空の場合は _NT_SYMBOL_PATH を使用します。</value>
   </data>
   <data name="SourcePath" xml:space="preserve">
     <value>ソース パス</value>
   </data>
   <data name="SourcePathHint" xml:space="preserve">
-    <value>';' で区切ったローカル ソース フォルダー。srv* は PDB のソース サーバー データを使用してソースをダウンロードします。</value>
+    <value>ローカル ソース フォルダー (1 行に 1 つ、または ';' 区切り)。srv* は PDB のソース サーバー データを使用してソースをダウンロードします。</value>
   </data>
   <data name="SymbolCachePath" xml:space="preserve">
     <value>シンボル キャッシュ フォルダー</value>

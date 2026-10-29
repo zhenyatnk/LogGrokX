@@ -589,13 +589,18 @@ Call stack:
   sources (TFS `tf.exe`, git, …) are extracted only if **Allow source server
   commands** is enabled.
 
-Settings → **Symbols** (or `appsettings.yaml`, applied without restart):
+Settings → **Symbols** (or `appsettings.yaml`, applied without restart). The
+symbol and source paths may contain several elements: in the settings window
+each one is written on its own line, in `appsettings.yaml` they are separated
+by `;` (as in WinDbg) or written as a `|` block, one per line:
 
 ```yaml
   SymbolSettings:
     Enabled: true
     # WinDbg syntax; empty uses _NT_SYMBOL_PATH
-    SymbolPath: 'srv*C:\Symbols*https://msdl.microsoft.com/download/symbols;\\build\symbols'
+    SymbolPath: |
+      srv*C:\Symbols*https://msdl.microsoft.com/download/symbols
+      \\build\symbols
     SourcePath: 'srv*;C:\Sources'
     # Empty uses %LOCALAPPDATA%\LogGrokX\Symbols
     CachePath: ''

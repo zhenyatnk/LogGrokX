@@ -16,6 +16,9 @@ public class SourcePathResolverTests
         Assert.IsTrue(SourcePathResolver.UsesSourceServer(@"C:\src;srv*"));
         Assert.IsFalse(SourcePathResolver.UsesSourceServer(@"C:\src"));
         Assert.IsFalse(SourcePathResolver.UsesSourceServer(null));
+        CollectionAssert.AreEqual(new[] { @"C:\src", @"D:\other" },
+            (System.Collections.ICollection)SourcePathResolver.ParseRoots("C:\\src\r\nsrv*\r\n\r\nD:\\other\n"));
+        Assert.IsTrue(SourcePathResolver.UsesSourceServer("C:\\src\r\nsrv*"));
     }
 
     [TestMethod]

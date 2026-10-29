@@ -42,6 +42,32 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void SetScalarReplacesBlockScalar()
+        {
+            WriteFile(
+                "Settings:\n" +
+                "  SymbolSettings:\n" +
+                "    SymbolPath: |\n" +
+                "      srv*C:\\Symbols*https://msdl.microsoft.com/download/symbols\n" +
+                "\n" +
+                "      C:\\Build\n" +
+                "\n" +
+                "    SourcePath: 'srv*'\n");
+
+            var file = new YamlSettingsFile(_tempFile);
+            file.SetScalar("SymbolSettings", "SymbolPath", "'C:\\Other'");
+            file.Save();
+
+            Assert.AreEqual(
+                "Settings:\n" +
+                "  SymbolSettings:\n" +
+                "    SymbolPath: 'C:\\Other'\n" +
+                "\n" +
+                "    SourcePath: 'srv*'\n",
+                File.ReadAllText(_tempFile).Replace("\r\n", "\n"));
+        }
+
+        [TestMethod]
         public void SetScalarReplacesValueAndKeepsComments()
         {
             WriteFile(
