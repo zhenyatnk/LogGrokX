@@ -15,9 +15,6 @@
                  WindowStartupLocation="CenterOwner"
                  Background="{DynamicResource ApplicationBackgroundBrush}"
                  FontFamily="{StaticResource AppFontFamily}">
-    <ui:FluentWindow.Resources>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-    </ui:FluentWindow.Resources>
     <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -144,9 +141,18 @@
                         <StackPanel Orientation="Horizontal">
                             <Border Width="3"
                                     Margin="0,0,6,0"
-                                    CornerRadius="1.5"
-                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
-                                    Visibility="{Binding IsCurrent, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    CornerRadius="1.5">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource SystemAccentColorPrimaryBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            </Border>
                             <TextBlock Width="56"
                                        Margin="0,0,12,0"
                                        TextAlignment="Right"

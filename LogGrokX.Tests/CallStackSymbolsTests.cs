@@ -239,6 +239,8 @@ public sealed class CallStackSymbolsTests
         Assert.IsFalse(xaml.Contains("<ListView", StringComparison.Ordinal));
         Assert.IsFalse(xaml.Contains("<GridView", StringComparison.Ordinal));
         StringAssert.Contains(xaml, "{DynamicResource SystemAccentColorPrimaryBrush}");
+        Assert.IsFalse(xaml.Contains("Visibility=\"{Binding IsCurrent", StringComparison.Ordinal),
+            "The current line marker must keep its width so the line does not shift.");
     }
 
     private static CallStackSymbolService CreateService(ISymbolReader reader) =>
