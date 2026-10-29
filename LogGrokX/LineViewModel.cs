@@ -159,7 +159,7 @@ public class LineViewModel : BaseLogLineViewModel, IThreadGroupedItem
             TextViewSharedFoldingState? foldingState)
         {
             var textModel = componentIndex >= 0 && componentIndex < _parts.Length &&
-                            _parts[componentIndex] is { IsDecoded: true } decodedPart
+                            _parts[componentIndex] is { HasAlternateText: true } decodedPart
                 ? decodedPart.TextModel
                 : new TextModel(HashCode.Combine(Index, componentIndex),
                     ValueMappingText.Apply(componentText, GetValueMapper(componentIndex)));

@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Erneut versuchen</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Aufrufstapel in Protokollmeldungen auflösen</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Symbolpfad</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>WinDbg-Syntax: srv*&lt;Cache&gt;*&lt;Server&gt;;&lt;Ordner&gt;, z. B. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Leer verwendet _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Quellpfad</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Lokale Quellordner, getrennt durch ';'. srv* lädt Quellen über die Quellserverdaten der PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Symbol-Cacheordner</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Quellserver-Befehle erlauben</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Erlaubt den Quellserverdaten, Extraktionsbefehle (tf.exe, git, ...) auszuführen. Nur für vertrauenswürdige PDB-Dateien aktivieren.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Aufrufstapel</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Aufrufstapel auflösen</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Aufrufstapel anzeigen</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Aufrufstapel kopieren</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Symbole neu laden</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Im Editor öffnen</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Modul</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Funktion</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Quelle</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>Symbole werden aufgelöst…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>keine Symbole</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>Symbol nicht gefunden</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>Symbolpfad ist nicht konfiguriert: unter Einstellungen → Symbole oder in _NT_SYMBOL_PATH festlegen</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>{0} von {1} Frames aufgelöst</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Quelle wird geladen…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Quelldatei nicht gefunden: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>Quellserver-Befehl ist in den Einstellungen deaktiviert: {0}</value>
+  </data>
 </root>

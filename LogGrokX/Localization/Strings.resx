@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Retry</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Symbols</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Resolve call stacks in log messages</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Symbol path</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>WinDbg syntax: srv*&lt;cache&gt;*&lt;server&gt;;&lt;folder&gt;, e.g. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Empty uses _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Source path</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Local source folders separated by ';'. srv* downloads sources using the source server data of the PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Symbol cache folder</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Allow source server commands</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Lets the source server data run extraction commands (tf.exe, git, ...). Enable only for trusted PDB files.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Call stack</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Resolve call stack</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Show call stack</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Copy call stack</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Reload symbols</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Open in editor</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Module</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Function</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>resolving symbols…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>no symbols</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>symbol not found</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>Symbol path is not configured: set it in Settings → Symbols or in _NT_SYMBOL_PATH</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>Resolved {0} of {1} frames</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Loading source…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Source file not found: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>Source server command is disabled in settings: {0}</value>
+  </data>
 </root>

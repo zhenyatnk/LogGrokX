@@ -399,6 +399,22 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   bindings handle the case when keyboard focus is not inside a document (e.g. right
   after start); `MainWindow.EnsureKeyboardFocus` focuses the window after loading if
   nothing in it has keyboard focus.
+- **Call stack symbols** (#89): `LogGrokX.Data/Symbols` holds the testable part —
+  `CallStackParser` (frames `N# mod!GUID,age!rva`, `N# mod!rva`, `N# mod+0xrva`),
+  `SymbolPath` (WinDbg `srv*cache*server;dir` syntax), `SymbolStore` (store layout,
+  HTTP download into the first cache, `file.ptr`), `PdbFile` (minimal MSF reader for
+  the identity and the `srcsrv` stream), `SourceServerData` (`%var1%`, `%targ%`,
+  `%fnvar%()`, `%fnbksl%()`, `%fnfile%()`) and `SourcePathResolver`. Address to
+  function/line goes through `ISymbolReader` (`LogGrokX.Platform`), implemented by
+  `Platform/DbgHelpSymbolReader` (DbgHelp is not thread safe, so it is serialized
+  with a lock; each PDB is loaded at its own fake base). `Symbols/CallStackSymbolService`
+  (singleton) caches PDB lookups and frames, raises `Reset` and bumps `Version` on
+  `Refresh()` / `SymbolOptions` change; `DisplaySettingsMonitor` forwards it to the
+  cells. `LinePartViewModel.IsCallStack` / `IsSymbolsResolved` back the `SYM` toggle
+  (stored in `DecodedPartState.Symbols`); pending frames refresh the cell via
+  `DisplaySettingsMonitor.Post`. Source server commands run only when
+  `AllowSourceServerCommands` is on. The call stack window is shown through
+  `ICallStackPresenter` (`WpfCallStackPresenter`).
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

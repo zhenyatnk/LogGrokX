@@ -128,6 +128,11 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   can also be toggled separately with "Decode Base64" / "Decode PEM" in the
   context menu. Detection is on by default and can be turned off completely or
   per kind (PEM, Base64, HEX) in Settings → View → Binary data detection.
+- **Call stack symbols** — call stacks such as
+  `0# test_.dll!38B3DC8D-3D1D-FADD-E67B-593D48ABEC14,1!86da0` are resolved to
+  function names and source lines through a symbol server and a source server
+  configured like in WinDbg (Settings → Symbols): a `SYM` toggle replaces the
+  frames in place, and "Show call stack" opens a window with source links.
 - **Value mappings** — show a readable meaning next to codes and identifiers:
   a value from a mapping list is displayed as `value(mapping)`, for example
   `0x00001(type 1)` or `0x80070005(E_ACCESSDENIED)`. Lists can be limited to
@@ -188,6 +193,7 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 - [🧵 Thread grouping](./FEATURES.md#-thread-grouping)
 - [🔁 Text transformations](./FEATURES.md#-text-transformations)
 - [🔓 Base64 and PEM decoding](./FEATURES.md#-base64-and-pem-decoding)
+- [🧷 Call stack symbols](./FEATURES.md#-call-stack-symbols)
 - [🏷️ Value mappings](./FEATURES.md#️-value-mappings)
 - [🔐 XOR-masked logs](./FEATURES.md#-xor-masked-logs)
 - [🧱 Big lines](./FEATURES.md#-big-lines)

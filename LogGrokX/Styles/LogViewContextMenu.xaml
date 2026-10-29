@@ -114,6 +114,29 @@
                 <ui:SymbolIcon Symbol="NumberSymbol24" />
             </MenuItem.Icon>
         </MenuItem>
+        <MenuItem Header="{loc:Loc ResolveCallStack}"
+                  IsCheckable="True"
+                  IsChecked="{Binding PlacementTarget.DataContext.IsSymbolsResolved, Mode=TwoWay,
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                  Visibility="{Binding PlacementTarget.DataContext.IsCallStack,
+                            Converter={StaticResource BooleanToVisibilityConverter},
+                            FallbackValue={x:Static Visibility.Collapsed},
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="BranchFork24" />
+            </MenuItem.Icon>
+        </MenuItem>
+        <MenuItem Header="{loc:Loc ShowCallStack}"
+                  Command="{Binding PlacementTarget.DataContext.ShowCallStackCommand,
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}"
+                  Visibility="{Binding PlacementTarget.DataContext.IsCallStack,
+                            Converter={StaticResource BooleanToVisibilityConverter},
+                            FallbackValue={x:Static Visibility.Collapsed},
+                            RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ContextMenu}}}">
+            <MenuItem.Icon>
+                <ui:SymbolIcon Symbol="Code24" />
+            </MenuItem.Icon>
+        </MenuItem>
         <MenuItem Header="{loc:Loc Exclude}" Style="{StaticResource FilterContextMenuItem}"
                   DataContext="{Binding DataContext}"
                   d:DataContext="{d:DesignInstance Type={x:Type logGrokCore:LogViewModel}, IsDesignTimeCreatable=False}">

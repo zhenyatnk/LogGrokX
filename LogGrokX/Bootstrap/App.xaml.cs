@@ -10,6 +10,7 @@ using LogGrokX.Diagnostics;
 using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 using LogGrokX.Search;
+using LogGrokX.Symbols;
 using LogGrokX.Theming;
 using LogGrokX.Platform;
 using Splat.DryIoc;
@@ -100,7 +101,13 @@ namespace LogGrokX.Bootstrap
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
             container.Register<SavedSearchPatternStore>(Reuse.Singleton);
             container.RegisterInstance<IUiDispatcher>(dispatcher);
-            container.Register<DisplaySettingsMonitor>(Reuse.Singleton);
+            container.Register<DisplaySettingsMonitor>(Reuse.Singleton,
+                Made.Of(() => new DisplaySettingsMonitor(Arg.Of<IUiDispatcher>(), Arg.Of<CallStackSymbolService>())));
+            container.Register<ISymbolReader, DbgHelpSymbolReader>(Reuse.Singleton);
+            container.Register<ICallStackPresenter, WpfCallStackPresenter>(Reuse.Singleton);
+            container.Register<CallStackSymbolService>(Reuse.Singleton,
+                Made.Of(() => new CallStackSymbolService(Arg.Of<ISymbolReader>(), Arg.Of<ICallStackPresenter>(),
+                    Arg.Of<IDesktopService>(), Arg.Of<IUiDispatcher>())));
             container.RegisterInstance<IDesktopService>(desktop);
             container.Register<IUpdatePresenter, WpfUpdatePresenter>(Reuse.Singleton);
             container.Register<IAppDialogs, WpfAppDialogs>(Reuse.Singleton);

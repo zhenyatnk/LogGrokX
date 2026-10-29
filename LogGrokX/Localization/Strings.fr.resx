@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Réessayer</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Symboles</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Résoudre les piles d'appels dans les messages</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Chemin des symboles</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>Syntaxe WinDbg : srv*&lt;cache&gt;*&lt;serveur&gt;;&lt;dossier&gt;, p. ex. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vide utilise _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Chemin des sources</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Dossiers de sources locaux séparés par ';'. srv* télécharge les sources via les données du serveur de sources du PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Dossier de cache des symboles</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Autoriser les commandes du serveur de sources</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Permet aux données du serveur de sources d'exécuter des commandes d'extraction (tf.exe, git, ...). À activer uniquement pour des PDB de confiance.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Pile d'appels</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Résoudre la pile d'appels</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Afficher la pile d'appels</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Copier la pile d'appels</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Recharger les symboles</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Ouvrir dans l'éditeur</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Module</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Fonction</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>résolution des symboles…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>aucun symbole</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>symbole introuvable</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>Le chemin des symboles n'est pas configuré : définissez-le dans Paramètres → Symboles ou dans _NT_SYMBOL_PATH</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>{0} frames résolues sur {1}</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Chargement de la source…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Fichier source introuvable : {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>La commande du serveur de sources est désactivée dans les paramètres : {0}</value>
+  </data>
 </root>

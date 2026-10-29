@@ -59,6 +59,7 @@ namespace LogGrokX.Settings
                 MergedFilesView = mergedFilesViewService.IsEnabled
             };
             Debug = new DebugSettingsViewModel(applicationSettings.DebugSettings);
+            Symbols = new SymbolSettingsViewModel(applicationSettings.SymbolSettings);
 
             foreach (var list in applicationSettings.ValueMappings)
                 ValueMappings.Add(new ValueMappingListViewModel(list));
@@ -97,6 +98,8 @@ namespace LogGrokX.Settings
         public ViewSettingsViewModel View { get; }
 
         public DebugSettingsViewModel Debug { get; }
+
+        public SymbolSettingsViewModel Symbols { get; }
 
         public ObservableCollection<ProfileViewModel> Profiles { get; } = new();
 
@@ -369,6 +372,8 @@ namespace LogGrokX.Settings
             var valueMappingsSignature = GetValueMappingsSignature(valueMappings);
             if (valueMappingsSignature != _savedValueMappings)
                 _applicationSettings.SetValueMappings(valueMappings.ToArray());
+            var symbols = Symbols.ToSettings();
+            _applicationSettings.SetSymbolSettings(symbols);
 
             var file = new YamlSettingsFile(SettingsFileName);
             file.SetScalar("DebugSettings", "EnableCrashDumps", Debug.EnableCrashDumps ? "true" : "false");
@@ -387,6 +392,11 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "DetectBase64", View.DetectBase64 ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectHex", View.DetectHex ? "true" : "false");
             file.SetScalar("ViewSettings", "UpdateMode", View.UpdateMode.ToString().ToLowerInvariant());
+            file.SetScalar("SymbolSettings", "Enabled", symbols.Enabled ? "true" : "false");
+            file.SetScalar("SymbolSettings", "SymbolPath", QuoteScalar(symbols.SymbolPath));
+            file.SetScalar("SymbolSettings", "SourcePath", QuoteScalar(symbols.SourcePath));
+            file.SetScalar("SymbolSettings", "CachePath", QuoteScalar(symbols.CachePath));
+            file.SetScalar("SymbolSettings", "AllowSourceServerCommands", symbols.AllowSourceServerCommands ? "true" : "false");
 
             var profiles = SettingsYamlRenderer.RenderProfiles(Profiles, 0).ToArray();
             var profilesChanged = !_savedProfiles.SequenceEqual(profiles);
@@ -422,6 +432,8 @@ namespace LogGrokX.Settings
 
             return true;
         }
+
+        private static string QuoteScalar(string value) => $"'{value.Replace("'", "''")}'";
 
         private void CaptureRestartSettings()
         {

@@ -103,6 +103,18 @@ Settings:
     EnableCrashDumps: false
     MaxDumpsCount: 10
 
+  SymbolSettings:
+    # Resolve call stacks like "0# module.dll!<PDB GUID>,<age>!<rva>" to functions and source lines
+    Enabled: true
+    # WinDbg syntax: srv*<cache>*<server>;<directory>. Empty uses _NT_SYMBOL_PATH
+    SymbolPath: ''
+    # Local source roots separated by ';'. "srv*" uses the source server data of the PDB files
+    SourcePath: 'srv*'
+    # Download cache for PDB and source files. Empty uses %LOCALAPPDATA%\LogGrokX\Symbols
+    CachePath: ''
+    # Allow running source server commands (tf.exe, git, ...) to extract source files
+    AllowSourceServerCommands: false
+
   ViewSettings:
     # UI language: system, en, ru, de, fr, es, ja, pl, pt-BR (applied on restart)
     Language: system

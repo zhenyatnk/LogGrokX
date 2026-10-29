@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using LogGrokX.Data;
 using LogGrokX.Platform;
+using LogGrokX.Symbols;
 
 namespace LogGrokX;
 
@@ -16,12 +17,34 @@ public sealed class DisplaySettingsMonitor : IDisposable
     private bool _queued;
     private bool _disposed;
 
-    public DisplaySettingsMonitor(IUiDispatcher dispatcher)
+    public DisplaySettingsMonitor(IUiDispatcher dispatcher, CallStackSymbolService? symbols = null)
     {
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        Symbols = symbols;
         _onChanged = OnChanged;
         BinaryDetectionOptions.CurrentChanged += _onChanged;
         ValueMapper.CurrentChanged += _onChanged;
+        SymbolOptions.CurrentChanged += _onChanged;
+        if (symbols != null)
+            symbols.Reset += _onChanged;
+    }
+
+    internal CallStackSymbolService? Symbols { get; }
+
+    internal void Post(Action action)
+    {
+        if (_dispatcher.CheckAccess())
+        {
+            action();
+            return;
+        }
+
+        lock (_sync)
+        {
+            if (_disposed) return;
+            try { _dispatcher.Post(action); }
+            catch (InvalidOperationException) { }
+        }
     }
 
     internal void Register(LinePartViewModel client)
@@ -81,5 +104,7 @@ public sealed class DisplaySettingsMonitor : IDisposable
         }
         BinaryDetectionOptions.CurrentChanged -= _onChanged;
         ValueMapper.CurrentChanged -= _onChanged;
+        if (Symbols != null)
+            Symbols.Reset -= _onChanged;
     }
 }

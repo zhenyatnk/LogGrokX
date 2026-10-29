@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>再試行</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>シンボル</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>ログ メッセージのコール スタックを解決する</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>シンボル パス</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>WinDbg 構文: srv*&lt;キャッシュ&gt;*&lt;サーバー&gt;;&lt;フォルダー&gt;（例: srv*C:\Symbols*https://msdl.microsoft.com/download/symbols）。空の場合は _NT_SYMBOL_PATH を使用します。</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>ソース パス</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>';' で区切ったローカル ソース フォルダー。srv* は PDB のソース サーバー データを使用してソースをダウンロードします。</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>シンボル キャッシュ フォルダー</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>ソース サーバー コマンドを許可</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>ソース サーバー データによる抽出コマンド (tf.exe、git など) の実行を許可します。信頼できる PDB の場合のみ有効にしてください。</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>コール スタック</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>コール スタックを解決</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>コール スタックを表示</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>コール スタックをコピー</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>シンボルを再読み込み</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>エディターで開く</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>モジュール</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>関数</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>ソース</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>シンボルを解決中…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>シンボルなし</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>シンボルが見つかりません</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>シンボル パスが構成されていません: [設定] → [シンボル] または _NT_SYMBOL_PATH で設定してください</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>{1} 個中 {0} 個のフレームを解決しました</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>ソースを読み込み中…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>ソース ファイルが見つかりません: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>ソース サーバー コマンドは設定で無効になっています: {0}</value>
+  </data>
 </root>

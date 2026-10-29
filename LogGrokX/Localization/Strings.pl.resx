@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Ponów próbę</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Symbole</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Rozwiązuj stosy wywołań w komunikatach</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Ścieżka symboli</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>Składnia WinDbg: srv*&lt;pamięć podręczna&gt;*&lt;serwer&gt;;&lt;folder&gt;, np. srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Puste oznacza _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Ścieżka źródeł</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Lokalne foldery źródeł rozdzielone ';'. srv* pobiera źródła na podstawie danych serwera źródeł z PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Folder pamięci podręcznej symboli</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Zezwalaj na polecenia serwera źródeł</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Pozwala danym serwera źródeł uruchamiać polecenia pobierania (tf.exe, git, ...). Włączaj tylko dla zaufanych plików PDB.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Stos wywołań</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Rozwiąż stos wywołań</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Pokaż stos wywołań</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Kopiuj stos wywołań</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Przeładuj symbole</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Otwórz w edytorze</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Moduł</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Funkcja</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Źródło</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>rozwiązywanie symboli…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>brak symboli</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>nie znaleziono symbolu</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>Ścieżka symboli nie jest skonfigurowana: ustaw ją w Ustawienia → Symbole lub w _NT_SYMBOL_PATH</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>Rozwiązano ramek: {0} z {1}</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Ładowanie źródła…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Nie znaleziono pliku źródłowego: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>Polecenie serwera źródeł jest wyłączone w ustawieniach: {0}</value>
+  </data>
 </root>

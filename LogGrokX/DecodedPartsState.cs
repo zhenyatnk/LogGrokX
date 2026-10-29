@@ -4,9 +4,9 @@ using LogGrokX.Data;
 
 namespace LogGrokX;
 
-public readonly record struct DecodedPartState(Base64Content Base64, bool Hex)
+public readonly record struct DecodedPartState(Base64Content Base64, bool Hex, bool Symbols = false)
 {
-    public bool IsEmpty => Base64 == Base64Content.None && !Hex;
+    public bool IsEmpty => Base64 == Base64Content.None && !Hex && !Symbols;
 }
 
 public readonly record struct DecodedPartKey(DecodedPartsState State, object? Source, int Line, int Field)
@@ -16,7 +16,7 @@ public readonly record struct DecodedPartKey(DecodedPartsState State, object? So
     public void Set(DecodedPartState state) => State.Set(Source, Line, Field, state);
 }
 
-// Row view models are re-created by virtualization and collection resets, so the BIN / "Decode ..." state of a
+// Row view models are re-created by virtualization and collection resets, so the BIN / "Decode ..." / SYM state of a
 // cell lives here, per view, keyed by the source document, the original line number and the field (#78).
 public sealed class DecodedPartsState
 {

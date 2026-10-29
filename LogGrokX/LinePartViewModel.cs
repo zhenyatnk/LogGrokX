@@ -1,7 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Input;
 using LogGrokX.Data;
+using LogGrokX.Data.Symbols;
+using LogGrokX.Symbols;
 
 namespace LogGrokX;
 
@@ -20,6 +25,18 @@ public class LinePartViewModel : ViewModelBase
     private const int HexDecodedFlag = (int)Base64Content.All + 1;
 
     private readonly TextModel?[] _decodedTextModels = new TextModel?[HexDecodedFlag * 2];
+    private readonly string?[] _decodedTexts = new string?[HexDecodedFlag * 2];
+    private readonly DisplaySettingsMonitor _displaySettings;
+    private readonly CallStackSymbolService? _symbols;
+    private readonly bool _detectCallStack;
+    private int _symbolOptionsVersion;
+    private int _symbolsVersion;
+    private bool? _isCallStack;
+    private bool _isSymbolsResolved;
+    private TextModel? _symbolsTextModel;
+    private int _symbolsTextKey = -1;
+    private bool _waitingForSymbols;
+    private ICommand? _showCallStackCommand;
     private Base64Content? _content;
     private IReadOnlyList<StructuredSpan>? _structuredSpans;
     private Base64Content _decoded;
@@ -32,6 +49,11 @@ public class LinePartViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(displaySettings);
         _uniqueId = uniqueId;
+        _displaySettings = displaySettings;
+        _symbols = detectBase64 ? displaySettings.Symbols : null;
+        _detectCallStack = _symbols != null;
+        _symbolOptionsVersion = SymbolOptions.CurrentVersion;
+        _symbolsVersion = _symbols?.Version ?? 0;
         _decodedState = decodedState;
         _valueMapperResolver = valueMapperResolver;
         _valueMapper = valueMapperResolver?.Invoke() ?? valueMapper ?? FieldValueMapper.None;
@@ -41,7 +63,7 @@ public class LinePartViewModel : ViewModelBase
         _detection = detectBase64 ? detection ?? BinaryDetectionOptions.Current : BinaryDetectionOptions.None;
         _detectionVersion = BinaryDetectionOptions.CurrentVersion;
         OriginalText = source;
-        if (_followDetectionChanges || valueMapperResolver != null)
+        if (_followDetectionChanges || valueMapperResolver != null || _detectCallStack)
         {
             displaySettings.Register(this);
         }
@@ -52,13 +74,54 @@ public class LinePartViewModel : ViewModelBase
         get
         {
             RefreshSettingsIfNeeded();
-            if (!IsDecoded)
-                return _originalTextModel;
+            var baseModel = _originalTextModel;
+            if (IsDecoded)
+            {
+                EnsureDecodedTextModel();
+                baseModel = _decodedTextModels[DecodedKey] ?? _originalTextModel;
+            }
 
-            EnsureDecodedTextModel();
-            return _decodedTextModels[DecodedKey] ?? _originalTextModel;
+            return _isSymbolsResolved ? GetSymbolsTextModel(baseModel) : baseModel;
         }
     }
+
+    public bool HasAlternateText => IsDecoded || IsSymbolsResolved;
+
+    public bool IsCallStack
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _isCallStack ??= _detectCallStack && SymbolOptions.Current.Enabled &&
+                                    CallStackParser.ContainsCallStack(OriginalText);
+        }
+    }
+
+    public bool IsSymbolsResolved
+    {
+        get
+        {
+            RefreshSettingsIfNeeded();
+            return _isSymbolsResolved;
+        }
+        set
+        {
+            RefreshSettingsIfNeeded();
+            if (value && !IsCallStack)
+                value = false;
+            if (_isSymbolsResolved == value)
+                return;
+
+            _isSymbolsResolved = value;
+            SaveDecodedState();
+            InvokePropertyChanged();
+            InvokePropertyChanged(nameof(HasAlternateText));
+            InvokePropertyChanged(nameof(TextModel));
+        }
+    }
+
+    public ICommand ShowCallStackCommand => _showCallStackCommand ??=
+        new DelegateCommand(() => _symbols?.ShowCallStack(GetBaseText()));
 
     public string OriginalText { get; }
 
@@ -193,7 +256,7 @@ public class LinePartViewModel : ViewModelBase
         if (_decodedState is not { } key)
             return;
 
-        key.Set(new DecodedPartState(_decoded, _isHexDecoded));
+        key.Set(new DecodedPartState(_decoded, _isHexDecoded, _isSymbolsResolved));
         _decodedStateVersion = key.State.Version;
     }
 
@@ -208,20 +271,26 @@ public class LinePartViewModel : ViewModelBase
         var state = key.Get();
         var decoded = state.Base64 & Content;
         var isHexDecoded = state.Hex && IsHex;
+        var isSymbolsResolved = state.Symbols && IsCallStack;
         var changedKinds = decoded ^ _decoded;
         var hexChanged = isHexDecoded != _isHexDecoded;
-        if (changedKinds == Base64Content.None && !hexChanged)
+        var symbolsChanged = isSymbolsResolved != _isSymbolsResolved;
+        if (changedKinds == Base64Content.None && !hexChanged && !symbolsChanged)
             return;
 
         _decoded = decoded;
         _isHexDecoded = isHexDecoded;
+        _isSymbolsResolved = isSymbolsResolved;
         if (changedKinds.HasFlag(Base64Content.Pem))
             InvokePropertyChanged(nameof(IsPemDecoded));
         if (changedKinds.HasFlag(Base64Content.Base64))
             InvokePropertyChanged(nameof(IsBase64Decoded));
         if (hexChanged)
             InvokePropertyChanged(nameof(IsHexDecoded));
+        if (symbolsChanged)
+            InvokePropertyChanged(nameof(IsSymbolsResolved));
         InvokePropertyChanged(nameof(IsDecoded));
+        InvokePropertyChanged(nameof(HasAlternateText));
         InvokePropertyChanged(nameof(TextModel));
     }
 
@@ -240,6 +309,7 @@ public class LinePartViewModel : ViewModelBase
             text = hexDecoded;
         text = ValueMappingText.Apply(text, _valueMapper);
 
+        _decodedTexts[key] = text;
         _decodedTextModels[key] = new TextModel(
             HashCode.Combine(_uniqueId, nameof(Base64Content), key), text);
     }
@@ -247,7 +317,108 @@ public class LinePartViewModel : ViewModelBase
     internal void RefreshSettingsIfNeeded()
     {
         RefreshDisplaySettingsIfNeeded();
+        RefreshSymbolsIfNeeded();
         SyncDecodedState();
+    }
+
+    private string GetBaseText()
+    {
+        if (!IsDecoded)
+            return ValueMappingText.Apply(OriginalText, _valueMapper);
+
+        EnsureDecodedTextModel();
+        return _decodedTexts[DecodedKey] ?? OriginalText;
+    }
+
+    private TextModel GetSymbolsTextModel(TextModel baseModel)
+    {
+        if (_symbols == null)
+            return baseModel;
+
+        var key = DecodedKey;
+        if (_symbolsTextModel != null && _symbolsTextKey == key)
+            return _symbolsTextModel;
+
+        var frames = CallStackParser.Parse(GetBaseText());
+        var text = AnnotateCallStack(GetBaseText(), frames, out var pending);
+        _symbolsTextKey = key;
+        _symbolsTextModel = new TextModel(HashCode.Combine(_uniqueId, nameof(IsSymbolsResolved), key), text);
+        if (pending && !_waitingForSymbols)
+        {
+            _waitingForSymbols = true;
+            var version = _symbols.Version;
+            _symbols.ResolveAllAsync(frames).ContinueWith(_ => _displaySettings.Post(() =>
+            {
+                _waitingForSymbols = false;
+                if (version != _symbols.Version)
+                    return;
+                _symbolsTextModel = null;
+                if (_isSymbolsResolved)
+                    InvokePropertyChanged(nameof(TextModel));
+            }), TaskScheduler.Default);
+        }
+
+        return _symbolsTextModel;
+    }
+
+    private string AnnotateCallStack(string text, IReadOnlyList<CallStackFrame> frames, out bool pending)
+    {
+        pending = false;
+        var builder = new StringBuilder(text.Length * 2);
+        var position = 0;
+        foreach (var frame in frames)
+        {
+            builder.Append(text, position, frame.Start - position);
+            var original = text.Substring(frame.Start, frame.Length);
+            var symbol = _symbols!.Get(frame);
+            switch (symbol.Status)
+            {
+                case FrameSymbolStatus.Pending:
+                    pending = true;
+                    builder.Append(original).Append("  ").Append(Localization.Strings.Get("ResolvingSymbols"));
+                    break;
+                case FrameSymbolStatus.Resolved:
+                    builder.Append(frame.Number).Append("# ").Append(symbol.FormatFrame(frame));
+                    break;
+                case FrameSymbolStatus.NoSymbols:
+                    builder.Append(original).Append("  (").Append(Localization.Strings.Get("SymbolsNotFound")).Append(')');
+                    break;
+                default:
+                    builder.Append(original).Append("  (").Append(Localization.Strings.Get("SymbolNotResolved")).Append(')');
+                    break;
+            }
+
+            position = frame.Start + frame.Length;
+        }
+
+        builder.Append(text, position, text.Length - position);
+        return builder.ToString();
+    }
+
+    private void RefreshSymbolsIfNeeded()
+    {
+        if (!_detectCallStack)
+            return;
+
+        var optionsVersion = SymbolOptions.CurrentVersion;
+        var symbolsVersion = _symbols!.Version;
+        if (optionsVersion == _symbolOptionsVersion && symbolsVersion == _symbolsVersion)
+            return;
+
+        _symbolOptionsVersion = optionsVersion;
+        _symbolsVersion = symbolsVersion;
+        _isCallStack = null;
+        _symbolsTextModel = null;
+        if (_isSymbolsResolved && !IsCallStack)
+        {
+            _isSymbolsResolved = false;
+            SaveDecodedState();
+        }
+
+        InvokePropertyChanged(nameof(IsCallStack));
+        InvokePropertyChanged(nameof(IsSymbolsResolved));
+        InvokePropertyChanged(nameof(HasAlternateText));
+        InvokePropertyChanged(nameof(TextModel));
     }
 
     private void RefreshDisplaySettingsIfNeeded()
@@ -273,6 +444,8 @@ public class LinePartViewModel : ViewModelBase
         }
 
         Array.Clear(_decodedTextModels);
+        Array.Clear(_decodedTexts);
+        _symbolsTextModel = null;
         _originalTextModel = new TextModel(_uniqueId, ValueMappingText.Apply(OriginalText, _valueMapper));
         if (detectionChanged)
         {

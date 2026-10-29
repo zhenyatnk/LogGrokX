@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Tentar novamente</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Símbolos</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Resolver pilhas de chamadas nas mensagens</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Caminho de símbolos</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>Sintaxe do WinDbg: srv*&lt;cache&gt;*&lt;servidor&gt;;&lt;pasta&gt;, por exemplo srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Vazio usa _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Caminho do código-fonte</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Pastas locais de código-fonte separadas por ';'. srv* baixa o código usando os dados do servidor de código-fonte do PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Pasta de cache de símbolos</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Permitir comandos do servidor de código-fonte</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Permite que os dados do servidor de código-fonte executem comandos de extração (tf.exe, git, ...). Ative apenas para PDBs confiáveis.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Pilha de chamadas</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Resolver pilha de chamadas</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Mostrar pilha de chamadas</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Copiar pilha de chamadas</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Recarregar símbolos</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Abrir no editor</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Módulo</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Função</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Código-fonte</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>resolvendo símbolos…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>sem símbolos</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>símbolo não encontrado</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>O caminho de símbolos não está configurado: defina-o em Configurações → Símbolos ou em _NT_SYMBOL_PATH</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>{0} de {1} quadros resolvidos</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Carregando código-fonte…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Arquivo de código-fonte não encontrado: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>O comando do servidor de código-fonte está desativado nas configurações: {0}</value>
+  </data>
 </root>

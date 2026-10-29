@@ -31,6 +31,7 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 - [🧵 Thread grouping](#-thread-grouping)
 - [🔁 Text transformations](#-text-transformations)
 - [🔓 Base64 and PEM decoding](#-base64-and-pem-decoding)
+- [🧷 Call stack symbols](#-call-stack-symbols)
 - [🏷️ Value mappings](#️-value-mappings)
 - [🔐 XOR-masked logs](#-xor-masked-logs)
 - [🧱 Big lines](#-big-lines)
@@ -554,6 +555,54 @@ saving; reopen the log to apply it to every line.
     DetectBase64: true
     DetectHex: true
 ```
+
+## 🧷 Call stack symbols
+
+Messages that contain call stack frames are resolved to function names and
+source lines through a symbol server, like in WinDbg. Supported frame formats:
+
+```text
+Call stack:
+ 0# test_.dll!38B3DC8D-3D1D-FADD-E67B-593D48ABEC14,1!86da0   module!PDB GUID,age!RVA
+ 1# kernel32.dll!14ad                                        module!RVA
+ 2# ntdll.dll+0x5aa58                                        module+0xRVA
+```
+
+- Such a cell gets a `SYM` toggle under `BIN` and a **Resolve call stack**
+  context menu item: the frames are replaced in place with
+  `module!Function+0x1a [file @ line]` (the state survives scrolling, like `BIN`).
+  Symbols are loaded in the background; until then a frame shows
+  "resolving symbols…".
+- **Show call stack** in the context menu opens a window with the frames
+  (module, function, source location) and a source viewer: clicking a source
+  location shows the file with the frame line highlighted; **Open in editor**
+  opens it with the associated application. The PDB search attempts are shown
+  in the function tooltip when symbols are not found.
+- The PDB is looked up by its GUID and age (frames with the
+  `module!GUID,age!RVA` form) in symbol stores, symbol servers (HTTP and file
+  shares, including `file.ptr`) and plain folders. Without a GUID, a PDB with the
+  module name from a plain folder is used.
+- Sources are looked up in the local source folders (by the longest matching
+  path suffix) and, with `srv*`, through the source server data (`srcsrv`
+  stream) of the PDB: HTTP sources are downloaded to the cache; command-based
+  sources (TFS `tf.exe`, git, …) are extracted only if **Allow source server
+  commands** is enabled.
+
+Settings → **Symbols** (or `appsettings.yaml`, applied without restart):
+
+```yaml
+  SymbolSettings:
+    Enabled: true
+    # WinDbg syntax; empty uses _NT_SYMBOL_PATH
+    SymbolPath: 'srv*C:\Symbols*https://msdl.microsoft.com/download/symbols;\\build\symbols'
+    SourcePath: 'srv*;C:\Sources'
+    # Empty uses %LOCALAPPDATA%\LogGrokX\Symbols
+    CachePath: ''
+    AllowSourceServerCommands: false
+```
+
+Symbols are read with `dbghelp.dll` from Windows; **Reload symbols** in the call
+stack window forgets the cached results and searches the symbol path again.
 
 ## 🏷️ Value mappings
 

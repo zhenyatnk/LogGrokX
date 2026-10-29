@@ -690,4 +690,82 @@
   <data name="Retry" xml:space="preserve">
     <value>Повторить</value>
   </data>
+  <data name="Symbols" xml:space="preserve">
+    <value>Символы</value>
+  </data>
+  <data name="ResolveCallStacks" xml:space="preserve">
+    <value>Разрешать стеки вызовов в сообщениях</value>
+  </data>
+  <data name="SymbolPath" xml:space="preserve">
+    <value>Путь к символам</value>
+  </data>
+  <data name="SymbolPathHint" xml:space="preserve">
+    <value>Синтаксис WinDbg: srv*&lt;кэш&gt;*&lt;сервер&gt;;&lt;папка&gt;, например srv*C:\Symbols*https://msdl.microsoft.com/download/symbols. Если пусто, используется _NT_SYMBOL_PATH.</value>
+  </data>
+  <data name="SourcePath" xml:space="preserve">
+    <value>Путь к исходникам</value>
+  </data>
+  <data name="SourcePathHint" xml:space="preserve">
+    <value>Локальные папки с исходниками через ';'. srv* загружает исходники по данным сервера исходников из PDB.</value>
+  </data>
+  <data name="SymbolCachePath" xml:space="preserve">
+    <value>Папка кэша символов</value>
+  </data>
+  <data name="AllowSourceServerCommands" xml:space="preserve">
+    <value>Разрешить команды сервера исходников</value>
+  </data>
+  <data name="AllowSourceServerCommandsHint" xml:space="preserve">
+    <value>Позволяет данным сервера исходников запускать команды извлечения (tf.exe, git, ...). Включайте только для доверенных PDB.</value>
+  </data>
+  <data name="CallStack" xml:space="preserve">
+    <value>Стек вызовов</value>
+  </data>
+  <data name="ResolveCallStack" xml:space="preserve">
+    <value>Разрешить стек вызовов</value>
+  </data>
+  <data name="ShowCallStack" xml:space="preserve">
+    <value>Показать стек вызовов</value>
+  </data>
+  <data name="CopyCallStack" xml:space="preserve">
+    <value>Копировать стек вызовов</value>
+  </data>
+  <data name="ReloadSymbols" xml:space="preserve">
+    <value>Перезагрузить символы</value>
+  </data>
+  <data name="OpenInEditor" xml:space="preserve">
+    <value>Открыть в редакторе</value>
+  </data>
+  <data name="Module" xml:space="preserve">
+    <value>Модуль</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Функция</value>
+  </data>
+  <data name="SourceLocation" xml:space="preserve">
+    <value>Исходник</value>
+  </data>
+  <data name="ResolvingSymbols" xml:space="preserve">
+    <value>загрузка символов…</value>
+  </data>
+  <data name="SymbolsNotFound" xml:space="preserve">
+    <value>нет символов</value>
+  </data>
+  <data name="SymbolNotResolved" xml:space="preserve">
+    <value>символ не найден</value>
+  </data>
+  <data name="SymbolPathNotConfigured" xml:space="preserve">
+    <value>Путь к символам не задан: укажите его в Настройки → Символы или в _NT_SYMBOL_PATH</value>
+  </data>
+  <data name="ResolvedFrames" xml:space="preserve">
+    <value>Разрешено кадров: {0} из {1}</value>
+  </data>
+  <data name="LoadingSource" xml:space="preserve">
+    <value>Загрузка исходника…</value>
+  </data>
+  <data name="SourceFileNotFound" xml:space="preserve">
+    <value>Файл исходника не найден: {0}</value>
+  </data>
+  <data name="SourceServerCommandDisabled" xml:space="preserve">
+    <value>Команда сервера исходников отключена в настройках: {0}</value>
+  </data>
 </root>

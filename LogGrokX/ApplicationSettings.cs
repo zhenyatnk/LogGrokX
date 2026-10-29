@@ -8,6 +8,7 @@ using LogGrokX.Platform.Colors.Configuration;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Data;
 using LogGrokX.Settings;
+using LogGrokX.Symbols;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Primitives;
 
@@ -26,6 +27,8 @@ namespace LogGrokX
         public ColorSettings ColorSettings { get; private set; } = new();
 
         public ViewSettings ViewSettings { get; private set; } = new();
+
+        public SymbolSettings SymbolSettings { get; private set; } = new();
 
         public LogFormat[] LogFormats { get; set; } =
             Array.Empty<LogFormat>();
@@ -147,6 +150,12 @@ namespace LogGrokX
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(ViewSettings);
         }
 
+        public void SetSymbolSettings(SymbolSettings symbolSettings)
+        {
+            SymbolSettings = symbolSettings;
+            SymbolOptions.Current = SymbolOptions.FromSettings(symbolSettings);
+        }
+
         public void SetValueMappings(ValueMappingList[] valueMappings)
         {
             ValueMappings = valueMappings;
@@ -200,6 +209,7 @@ namespace LogGrokX
             var settings = BindSettings(configuration, fileName);
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
             ValueMapper.Current = new ValueMapper(settings.ValueMappings);
+            SymbolOptions.Current = SymbolOptions.FromSettings(settings.SymbolSettings);
 
             ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
             {
@@ -212,6 +222,7 @@ namespace LogGrokX
                 settings.ViewSettings.DetectHex = newSettings.ViewSettings.DetectHex;
                 BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
                 settings.SetValueMappings(newSettings.ValueMappings);
+                settings.SetSymbolSettings(newSettings.SymbolSettings);
                 settings.UpdateProfiles(newSettings.Profiles, newSettings.SelectedProfile);
             });
 

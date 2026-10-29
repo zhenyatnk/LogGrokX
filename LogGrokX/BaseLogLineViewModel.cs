@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Windows.Input;
 using LogGrokX.Controls;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.MarkedLines;
@@ -12,6 +13,7 @@ namespace LogGrokX
     {
         private readonly Selection _markedLines;
         private readonly Action _onMarkedLinesChanged;
+        private ICommand? _showCallStackCommand;
 
         protected BaseLogLineViewModel(int index, Selection markedLines, DisplaySettingsMonitor displaySettings)
         {
@@ -59,6 +61,21 @@ namespace LogGrokX
         public bool IsHex => DecodableParts.Any(p => p.IsHex);
 
         public bool IsDecodable => IsPem || IsBase64 || IsHex;
+
+        public bool IsCallStack => DecodableParts.Any(p => p.IsCallStack);
+
+        public ICommand ShowCallStackCommand => _showCallStackCommand ??= new DelegateCommand(() =>
+            DecodableParts.FirstOrDefault(p => p.IsCallStack)?.ShowCallStackCommand.Execute(null));
+
+        public bool IsSymbolsResolved
+        {
+            get => DecodableParts.Any(p => p.IsCallStack && p.IsSymbolsResolved);
+            set
+            {
+                foreach (var part in DecodableParts.Where(p => p.IsCallStack))
+                    part.IsSymbolsResolved = value;
+            }
+        }
 
         public bool IsDecoded
         {
@@ -114,7 +131,9 @@ namespace LogGrokX
             if (e.PropertyName is nameof(LinePartViewModel.IsPemDecoded)
                 or nameof(LinePartViewModel.IsBase64Decoded)
                 or nameof(LinePartViewModel.IsHexDecoded)
-                or nameof(LinePartViewModel.IsDecoded))
+                or nameof(LinePartViewModel.IsDecoded)
+                or nameof(LinePartViewModel.IsCallStack)
+                or nameof(LinePartViewModel.IsSymbolsResolved))
                 InvokePropertyChanged(e.PropertyName);
         }
         
