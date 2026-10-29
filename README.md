@@ -132,7 +132,9 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   `0# test_.dll!38B3DC8D-3D1D-FADD-E67B-593D48ABEC14,1!86da0` are resolved to
   function names and source lines through a symbol server and a source server
   configured like in WinDbg (Settings → Symbols): a `SYM` toggle replaces the
-  frames in place, and "Show call stack" opens a window with source links.
+  frames in place, and "Show call stack" opens a window with source links and
+  a source viewer with C/C++ syntax highlighting. Symbols are loaded only on
+  demand, symbol and source paths may contain several elements.
 - **Value mappings** — show a readable meaning next to codes and identifiers:
   a value from a mapping list is displayed as `value(mapping)`, for example
   `0x00001(type 1)` or `0x80070005(E_ACCESSDENIED)`. Lists can be limited to

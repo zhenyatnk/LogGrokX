@@ -579,7 +579,11 @@ Call stack:
   highlighted and centered; C/C++ sources get syntax highlighting (keywords,
   types, preprocessor, strings, numbers, comments; light and dark palettes); **Open in editor**
   opens it with the associated application. The PDB search attempts are shown
-  in the function tooltip when symbols are not found.
+  in the function tooltip when symbols are not found. Sources are not loaded
+  while the window opens, only when a frame is selected.
+- The window follows the application theme and accent color immediately: the
+  frames table, the source links and the current line marker use the accent,
+  and the source viewer switches between light and dark palettes.
 - The PDB is looked up by its GUID and age (frames with the
   `module!GUID,age!RVA` form) in symbol stores, symbol servers (HTTP and file
   shares, including `file.ptr`) and plain folders. Without a GUID, a PDB with the
