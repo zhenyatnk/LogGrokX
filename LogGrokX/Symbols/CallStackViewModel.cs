@@ -136,9 +136,7 @@ public sealed class CallStackViewModel : ViewModelBase
         {
             IsResolving = false;
             InvokePropertyChanged(nameof(Status));
-            if (SelectedFrame == null)
-                SelectedFrame = Frames.FirstOrDefault(frame => frame.HasSource);
-            else
+            if (SelectedFrame != null)
                 LoadSource(SelectedFrame);
         }), TaskScheduler.Default);
     }

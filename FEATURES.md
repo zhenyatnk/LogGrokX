@@ -571,11 +571,12 @@ Call stack:
 - Such a cell gets a `SYM` toggle under `BIN` and a **Resolve call stack**
   context menu item: the frames are replaced in place with
   `module!Function+0x1a [file @ line]` (the state survives scrolling, like `BIN`).
-  Symbols are loaded in the background; until then a frame shows
-  "resolving symbols…".
+  Nothing is downloaded until the toggle is pressed: symbols are loaded in the
+  background only for that cell, until then a frame shows "resolving symbols…".
 - **Show call stack** in the context menu opens a window with the frames
   (module, function, source location) and a source viewer: clicking a source
-  location shows the file with the frame line highlighted; **Open in editor**
+  location (or selecting a frame) loads and shows the file with the frame line
+  highlighted; **Open in editor**
   opens it with the associated application. The PDB search attempts are shown
   in the function tooltip when symbols are not found.
 - The PDB is looked up by its GUID and age (frames with the

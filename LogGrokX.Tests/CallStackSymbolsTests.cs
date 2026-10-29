@@ -143,6 +143,22 @@ public sealed class CallStackSymbolsTests
     }
 
     [TestMethod]
+    public void SymbolsAreNotLoadedUntilToggleIsPressed()
+    {
+        var reader = new FakeReader();
+        using var service = CreateService(reader);
+        using var monitor = new DisplaySettingsMonitor(new ImmediateDispatcher(), service);
+        var part = new LinePartViewModel(1, Message, monitor);
+
+        Assert.IsTrue(part.IsCallStack);
+        Assert.IsFalse(part.IsSymbolsResolved);
+        StringAssert.Contains(part.TextModel.GetDisplayedText(null), "0# test_.dll!86da0");
+        Thread.Sleep(100);
+
+        Assert.AreEqual(0, reader.Offsets.Count);
+    }
+
+    [TestMethod]
     public void DisabledSymbolsHideCallStackToggle()
     {
         SymbolOptions.Current = SymbolOptions.Current with { Enabled = false };
