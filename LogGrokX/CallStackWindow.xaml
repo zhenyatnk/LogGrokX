@@ -15,6 +15,9 @@
                  WindowStartupLocation="CenterOwner"
                  Background="{DynamicResource ApplicationBackgroundBrush}"
                  FontFamily="{StaticResource AppFontFamily}">
+    <ui:FluentWindow.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </ui:FluentWindow.Resources>
     <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -61,38 +64,39 @@
             </StackPanel>
         </Grid>
 
-        <ListView Grid.Row="2"
+        <ui:ListView Grid.Row="2"
                   Margin="12,0,12,0"
                   ItemsSource="{Binding Frames}"
                   SelectedItem="{Binding SelectedFrame, Mode=TwoWay}"
                   SelectionMode="Single">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn Header="#" Width="40" DisplayMemberBinding="{Binding Number}" />
-                    <GridViewColumn Header="{loc:Loc Module}" Width="160" DisplayMemberBinding="{Binding Module}" />
-                    <GridViewColumn Header="{loc:Loc Function}" Width="380">
-                        <GridViewColumn.CellTemplate>
+            <ui:ListView.View>
+                <ui:GridView>
+                    <ui:GridViewColumn Header="#" Width="40" DisplayMemberBinding="{Binding Number}" />
+                    <ui:GridViewColumn Header="{loc:Loc Module}" Width="160" DisplayMemberBinding="{Binding Module}" />
+                    <ui:GridViewColumn Header="{loc:Loc Function}" Width="380">
+                        <ui:GridViewColumn.CellTemplate>
                             <DataTemplate DataType="{x:Type symbols:CallStackFrameViewModel}">
                                 <TextBlock Text="{Binding Function}" ToolTip="{Binding Details}" TextTrimming="CharacterEllipsis" />
                             </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                    <GridViewColumn Header="{loc:Loc SourceLocation}" Width="360">
-                        <GridViewColumn.CellTemplate>
+                        </ui:GridViewColumn.CellTemplate>
+                    </ui:GridViewColumn>
+                    <ui:GridViewColumn Header="{loc:Loc SourceLocation}" Width="360">
+                        <ui:GridViewColumn.CellTemplate>
                             <DataTemplate DataType="{x:Type symbols:CallStackFrameViewModel}">
                                 <TextBlock TextTrimming="CharacterEllipsis" ToolTip="{Binding Location}">
                                     <Hyperlink Command="{Binding DataContext.ShowSourceCommand,
-                                                   RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ListView}}}"
+                                                   RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ui:ListView}}}"
+                                               Foreground="{DynamicResource SystemAccentColorPrimaryBrush}"
                                                CommandParameter="{Binding}">
                                         <Run Text="{Binding Location, Mode=OneWay}" />
                                     </Hyperlink>
                                 </TextBlock>
                             </DataTemplate>
-                        </GridViewColumn.CellTemplate>
-                    </GridViewColumn>
-                </GridView>
-            </ListView.View>
-        </ListView>
+                        </ui:GridViewColumn.CellTemplate>
+                    </ui:GridViewColumn>
+                </ui:GridView>
+            </ui:ListView.View>
+        </ui:ListView>
 
         <Grid Grid.Row="3" Margin="12,8,12,4">
             <Grid.ColumnDefinitions>
@@ -138,6 +142,11 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type symbols:SourceLineViewModel}">
                         <StackPanel Orientation="Horizontal">
+                            <Border Width="3"
+                                    Margin="0,0,6,0"
+                                    CornerRadius="1.5"
+                                    Background="{DynamicResource SystemAccentColorPrimaryBrush}"
+                                    Visibility="{Binding IsCurrent, Converter={StaticResource BooleanToVisibilityConverter}}" />
                             <TextBlock Width="56"
                                        Margin="0,0,12,0"
                                        TextAlignment="Right"

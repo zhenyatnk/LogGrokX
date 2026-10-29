@@ -228,6 +228,19 @@ public sealed class CallStackSymbolsTests
         Assert.AreEqual(@"srv*;C:\Sources;D:\More", settings.SourcePath);
     }
 
+    [TestMethod]
+    public void CallStackWindowUsesThemedFramesTableAndAccentBrushes()
+    {
+        var xaml = File.ReadAllText(Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+            "..", "..", "..", "..", "LogGrokX", "CallStackWindow.xaml")));
+
+        StringAssert.Contains(xaml, "<ui:ListView ");
+        StringAssert.Contains(xaml, "<ui:GridView>");
+        Assert.IsFalse(xaml.Contains("<ListView", StringComparison.Ordinal));
+        Assert.IsFalse(xaml.Contains("<GridView", StringComparison.Ordinal));
+        StringAssert.Contains(xaml, "{DynamicResource SystemAccentColorPrimaryBrush}");
+    }
+
     private static CallStackSymbolService CreateService(ISymbolReader reader) =>
         new(reader, new FakePresenter(), new Desktop(), new ImmediateDispatcher(), new NotFoundHandler());
 
