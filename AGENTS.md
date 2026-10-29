@@ -414,7 +414,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   (stored in `DecodedPartState.Symbols`); pending frames refresh the cell via
   `DisplaySettingsMonitor.Post`. Source server commands run only when
   `AllowSourceServerCommands` is on. The call stack window is shown through
-  `ICallStackPresenter` (`WpfCallStackPresenter`).
+  `ICallStackPresenter` (`WpfCallStackPresenter`); its source viewer colors C/C++
+  with `Data/Symbols/CppSyntax` tokens via `Controls/SourceCodeTextBlock` and
+  centers `CurrentSourceLine` in item scroll units (`CallStackWindow.CenterLine`).
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

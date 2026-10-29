@@ -156,12 +156,15 @@ public sealed class CallStackViewModel : ViewModelBase
         {
             var result = task.Result;
             string[]? lines = null;
+            IReadOnlyList<SourceToken>[]? tokens = null;
             var message = result.Message;
             if (result.Path != null)
             {
                 try
                 {
                     lines = File.ReadAllLines(result.Path);
+                    if (CppSyntax.IsCppFile(result.Path) || CppSyntax.IsCppFile(symbol.Symbol!.File))
+                        tokens = CppSyntax.Tokenize(lines);
                 }
                 catch (Exception e) when (e is IOException or UnauthorizedAccessException)
                 {
@@ -180,7 +183,7 @@ public sealed class CallStackViewModel : ViewModelBase
                     return;
 
                 var current = symbol.Symbol!.Line;
-                SourceLines = lines.Select((text, index) => new SourceLineViewModel(index + 1, text, index + 1 == current)).ToArray();
+                SourceLines = lines.Select((text, index) => new SourceLineViewModel(index + 1, text, index + 1 == current, tokens?[index])).ToArray();
                 CurrentSourceLine = SourceLines.FirstOrDefault(line => line.IsCurrent);
             });
         }, TaskScheduler.Default);
@@ -237,4 +240,4 @@ public sealed class CallStackFrameViewModel(CallStackFrame frame) : ViewModelBas
     }
 }
 
-public sealed record SourceLineViewModel(int Number, string Text, bool IsCurrent);
+public sealed record SourceLineViewModel(int Number, string Text, bool IsCurrent, IReadOnlyList<SourceToken>? Tokens = null);

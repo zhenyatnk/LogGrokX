@@ -183,6 +183,32 @@ public sealed class CallStackSymbolsTests
     }
 
     [TestMethod]
+    public void SelectingFrameLoadsHighlightedSourceAndMarksFrameLine()
+    {
+        var source = Path.Combine(_root, "src", "main.cpp");
+        Directory.CreateDirectory(Path.GetDirectoryName(source)!);
+        File.WriteAllLines(source, Enumerable.Range(1, 60).Select(line => line == 42 ? "    return 0; // frame" : "int x;"));
+        var presenter = new FakePresenter();
+        using var service = new CallStackSymbolService(new FakeReader(), presenter, new Desktop(), new ImmediateDispatcher(),
+            new NotFoundHandler());
+        service.ShowCallStack(Message);
+        var viewModel = presenter.Shown.Single();
+        Assert.IsTrue(viewModel.Completion.Wait(TimeSpan.FromSeconds(10)));
+        Assert.AreEqual(0, viewModel.SourceLines.Count);
+
+        viewModel.SelectedFrame = viewModel.Frames[0];
+
+        Assert.IsTrue(SpinWait.SpinUntil(() => viewModel.SourceLines.Count > 0, TimeSpan.FromSeconds(10)));
+        Assert.AreEqual(source, viewModel.SourcePath);
+        Assert.AreEqual(60, viewModel.SourceLines.Count);
+        Assert.AreEqual(42, viewModel.CurrentSourceLine!.Number);
+        Assert.IsTrue(viewModel.CurrentSourceLine.IsCurrent);
+        var tokens = viewModel.CurrentSourceLine.Tokens!;
+        CollectionAssert.Contains(tokens.Select(token => token.Kind).ToArray(), SourceTokenKind.Keyword);
+        CollectionAssert.Contains(tokens.Select(token => token.Kind).ToArray(), SourceTokenKind.Comment);
+    }
+
+    [TestMethod]
     public void SettingsEditorShowsPathElementsOnSeparateLines()
     {
         var editor = new Settings.SymbolSettingsViewModel(new SymbolSettings

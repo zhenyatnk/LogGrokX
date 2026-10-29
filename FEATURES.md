@@ -576,7 +576,8 @@ Call stack:
 - **Show call stack** in the context menu opens a window with the frames
   (module, function, source location) and a source viewer: clicking a source
   location (or selecting a frame) loads and shows the file with the frame line
-  highlighted; **Open in editor**
+  highlighted and centered; C/C++ sources get syntax highlighting (keywords,
+  types, preprocessor, strings, numbers, comments; light and dark palettes); **Open in editor**
   opens it with the associated application. The PDB search attempts are shown
   in the function tooltip when symbols are not found.
 - The PDB is looked up by its GUID and age (frames with the
