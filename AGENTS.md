@@ -435,6 +435,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   raises `NavigationRequested`; `SettingsWindow.OnNavigationRequested` switches
   tabs and focuses the field (log format boxes are found by their
   `Tag="{x:Static settings:SettingsField.*}"`, grid cells via `FocusCell`).
+  Clicking a proposed fix calls `ApplyAutoFix`: it finds the fix whose problem
+  equals the clicked one (records compare by value), applies it, re-runs
+  validation (`Revalidate`, no save) and navigates to the field.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

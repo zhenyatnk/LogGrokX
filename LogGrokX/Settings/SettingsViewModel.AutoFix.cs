@@ -33,6 +33,28 @@ namespace LogGrokX.Settings
             return Save();
         }
 
+        public bool ApplyAutoFix(SettingsProblem problem)
+        {
+            var fix = GetAutoFixes().FirstOrDefault(candidate => candidate.Problem == problem);
+            if (fix == null)
+            {
+                Revalidate();
+                return false;
+            }
+            fix.Apply();
+            Revalidate();
+            NavigateTo(problem);
+            return true;
+        }
+
+        private void Revalidate()
+        {
+            var problems = Validate();
+            Problems = problems;
+            ValidationMessage = string.Join(Environment.NewLine, problems.Select(item => item.Message));
+            AutoFixes = GetAutoFixes().Select(item => item.Problem).ToArray();
+        }
+
         private sealed record SettingsFix(SettingsProblem Problem, Action Apply);
 
         private List<SettingsFix> GetAutoFixes()

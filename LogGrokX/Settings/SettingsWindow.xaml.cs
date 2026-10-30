@@ -32,6 +32,13 @@ namespace LogGrokX.Settings
                 viewModel.NavigateTo(problem);
         }
 
+        private void OnAutoFixClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkContentElement { DataContext: SettingsProblem problem } &&
+                DataContext is SettingsViewModel viewModel)
+                viewModel.ApplyAutoFix(problem);
+        }
+
         private void OnNavigationRequested(SettingsProblem problem)
         {
             switch (problem.Field)

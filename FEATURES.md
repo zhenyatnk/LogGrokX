@@ -819,6 +819,8 @@ cannot be fixed automatically and stays in the error list.
 Every problem and every proposed fix is a link: clicking it opens the tab with
 the offending setting, selects its profile, log format, color rule or value
 mapping item, and focuses the field (a grid cell is opened for editing).
+Clicking an item in the list of proposed fixes applies only that fix, refreshes
+both lists and focuses the repaired field.
 
 The title bar groups file opening, text zoom, timeline placement, thread
 grouping, merged view, theme, support and settings tools beside the profile

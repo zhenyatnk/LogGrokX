@@ -188,6 +188,37 @@ public sealed class SettingsAutoFixTests
         });
     }
 
+    [TestMethod]
+    public void ApplyAutoFixAppliesOnlySelectedFix()
+    {
+        WithSettings(dialog =>
+        {
+            dialog.View.BigLineSizeText = "abc";
+            dialog.Debug.MaxDumpsCountText = "0";
+
+            Assert.IsFalse(dialog.Save());
+            Assert.AreEqual(2, dialog.AutoFixes.Count);
+            SettingsProblem? requested = null;
+            dialog.NavigationRequested += problem => requested = problem;
+
+            var fix = dialog.AutoFixes.Single(problem => problem.Field == SettingsField.BigLineSize);
+            Assert.IsTrue(dialog.ApplyAutoFix(fix));
+
+            Assert.AreEqual("9728", dialog.View.BigLineSizeText);
+            Assert.AreEqual("0", dialog.Debug.MaxDumpsCountText);
+            Assert.AreSame(fix, requested);
+            Assert.AreEqual(SettingsField.MaxDumpsCount, dialog.Problems.Single().Field);
+            Assert.AreEqual(SettingsField.MaxDumpsCount, dialog.AutoFixes.Single().Field);
+
+            Assert.IsFalse(dialog.ApplyAutoFix(fix));
+            Assert.IsTrue(dialog.ApplyAutoFix(dialog.AutoFixes.Single()));
+            Assert.IsFalse(dialog.HasProblems);
+            Assert.IsFalse(dialog.HasAutoFixes);
+            Assert.IsFalse(dialog.HasValidationMessage);
+            Assert.IsTrue(dialog.Save());
+        });
+    }
+
     private static void WithSettings(Action<SettingsViewModel> test)
     {
         var path = Path.Combine(Path.GetTempPath(), $"loggrokx-autofix-{Guid.NewGuid():N}.yaml");

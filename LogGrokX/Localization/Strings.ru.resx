@@ -813,4 +813,7 @@
   <data name="GoToField" xml:space="preserve">
     <value>Перейти к полю</value>
   </data>
+  <data name="ApplyFix" xml:space="preserve">
+    <value>Применить это исправление</value>
+  </data>
 </root>

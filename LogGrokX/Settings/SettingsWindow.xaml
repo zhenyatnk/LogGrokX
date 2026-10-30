@@ -35,6 +35,20 @@
                 </TextBlock>
             </BulletDecorator>
         </DataTemplate>
+        <DataTemplate x:Key="AutoFixTemplate" DataType="{x:Type settings:SettingsProblem}">
+            <BulletDecorator Margin="0,1,0,1">
+                <BulletDecorator.Bullet>
+                    <TextBlock Margin="0,0,6,0" Text="•" />
+                </BulletDecorator.Bullet>
+                <TextBlock TextWrapping="Wrap">
+                    <Hyperlink Click="OnAutoFixClick"
+                               Foreground="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                               ToolTip="{loc:Loc ApplyFix}">
+                        <Run Text="{Binding Message, Mode=OneWay}" />
+                    </Hyperlink>
+                </TextBlock>
+            </BulletDecorator>
+        </DataTemplate>
         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
@@ -798,7 +812,7 @@
                             Visibility="{Binding HasAutoFixes, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock Margin="0,0,0,2" FontWeight="SemiBold" Text="{loc:Loc AutoFixAvailable}" />
                     <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding AutoFixes}" ItemTemplate="{StaticResource ProblemTemplate}" />
+                        <ItemsControl ItemsSource="{Binding AutoFixes}" ItemTemplate="{StaticResource AutoFixTemplate}" />
                     </ScrollViewer>
                     <ui:Button Margin="0,6,0,0"
                                HorizontalAlignment="Left"
