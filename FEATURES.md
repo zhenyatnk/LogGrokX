@@ -816,6 +816,10 @@ invalid colors are reset, and value mapping items without a value or with a
 duplicate value are removed (the first one is kept). An invalid log format regex
 cannot be fixed automatically and stays in the error list.
 
+Every problem and every proposed fix is a link: clicking it opens the tab with
+the offending setting, selects its profile, log format, color rule or value
+mapping item, and focuses the field (a grid cell is opened for editing).
+
 The title bar groups file opening, text zoom, timeline placement, thread
 grouping, merged view, theme, support and settings tools beside the profile
 selector. Hover an icon for its tooltip. The timeline button cycles through

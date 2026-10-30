@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>Lista mapowań „{0}”: zduplikowane wartości zostaną usunięte, pozostanie pierwsza: {1}.</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>Przejdź do pola</value>
+  </data>
 </root>

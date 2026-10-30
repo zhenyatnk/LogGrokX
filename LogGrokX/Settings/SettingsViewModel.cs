@@ -24,6 +24,7 @@ namespace LogGrokX.Settings
         private readonly IThemeService _themeService;
         private readonly IColorValidator _colorValidator;
         private string _validationMessage = string.Empty;
+        private IReadOnlyList<SettingsProblem> _problems = Array.Empty<SettingsProblem>();
         private bool _requiresRestart;
         private ColorRuleViewModel? _selectedColorRule;
         private ValueMappingListViewModel? _selectedValueMapping;
@@ -175,10 +176,29 @@ namespace LogGrokX.Settings
                 _validationMessage = value;
                 InvokePropertyChanged();
                 InvokePropertyChanged(nameof(HasValidationMessage));
+                InvokePropertyChanged(nameof(ShowValidationText));
             }
         }
 
         public bool HasValidationMessage => !string.IsNullOrEmpty(_validationMessage);
+
+        public IReadOnlyList<SettingsProblem> Problems
+        {
+            get => _problems;
+            private set
+            {
+                if (_problems.SequenceEqual(value))
+                    return;
+                _problems = value;
+                InvokePropertyChanged();
+                InvokePropertyChanged(nameof(HasProblems));
+                InvokePropertyChanged(nameof(ShowValidationText));
+            }
+        }
+
+        public bool HasProblems => _problems.Count > 0;
+
+        public bool ShowValidationText => HasValidationMessage && !HasProblems;
 
         public bool RequiresRestart
         {
@@ -340,16 +360,18 @@ namespace LogGrokX.Settings
 
         public bool Save()
         {
-            var errors = Validate();
-            if (errors.Count > 0)
+            var problems = Validate();
+            if (problems.Count > 0)
             {
-                ValidationMessage = string.Join(Environment.NewLine, errors);
-                AutoFixes = GetAutoFixes().Select(fix => fix.Description).ToArray();
+                Problems = problems;
+                ValidationMessage = string.Join(Environment.NewLine, problems.Select(problem => problem.Message));
+                AutoFixes = GetAutoFixes().Select(fix => fix.Problem).ToArray();
                 return false;
             }
 
+            Problems = Array.Empty<SettingsProblem>();
             ValidationMessage = string.Empty;
-            AutoFixes = Array.Empty<string>();
+            AutoFixes = Array.Empty<SettingsProblem>();
 
             var bigLineSize = int.Parse(View.BigLineSizeText.Trim(), CultureInfo.InvariantCulture);
             var maxDumpsCount = int.Parse(Debug.MaxDumpsCountText.Trim(), CultureInfo.InvariantCulture);
@@ -476,46 +498,82 @@ namespace LogGrokX.Settings
                 ColorRules.Remove(_selectedColorRule);
         }
 
-        private List<string> Validate()
+        private List<SettingsProblem> Validate()
         {
-            var errors = new List<string>();
+            var problems = new List<SettingsProblem>();
 
             if (!int.TryParse(View.BigLineSizeText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var bigLineSize) || bigLineSize <= 0)
-                errors.Add(Strings.Get("BigLineSizeInvalid"));
+                problems.Add(new(Strings.Get("BigLineSizeInvalid"), SettingsField.BigLineSize));
 
             if (!int.TryParse(Debug.MaxDumpsCountText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxDumpsCount) || maxDumpsCount <= 0)
-                errors.Add(Strings.Get("MaxDumpsInvalid"));
+                problems.Add(new(Strings.Get("MaxDumpsInvalid"), SettingsField.MaxDumpsCount));
 
-            if (Profiles.Any(profile => string.IsNullOrWhiteSpace(profile.Name)))
-                errors.Add(Strings.Get("ProfileNameRequired"));
-            if (Profiles.Select(profile => profile.Name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).Count() != Profiles.Count)
-                errors.Add(Strings.Get("ProfileNamesUnique"));
+            var unnamed = Profiles.FirstOrDefault(profile => string.IsNullOrWhiteSpace(profile.Name));
+            if (unnamed != null)
+                problems.Add(new(Strings.Get("ProfileNameRequired"), SettingsField.ProfileName, unnamed));
+            var duplicate = Profiles
+                .Where(profile => !string.IsNullOrWhiteSpace(profile.Name))
+                .GroupBy(profile => profile.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.ElementAt(1))
+                .FirstOrDefault();
+            if (duplicate != null)
+                problems.Add(new(Strings.Get("ProfileNamesUnique"), SettingsField.ProfileName, duplicate));
 
             foreach (var profile in Profiles)
             {
                 for (var index = 0; index < profile.LogFormats.Count; index++)
                 {
                     var format = profile.LogFormats[index];
-                    if (!format.IsValid)
-                        errors.Add(LogFormatValidation.WithContext(profile.Name, index + 1, format.ValidationMessage));
+                    foreach (var (propertyName, message) in format.GetValidationErrors())
+                    {
+                        var field = propertyName switch
+                        {
+                            nameof(LogFormat.IndexedFields) => SettingsField.IndexedFields,
+                            nameof(LogFormat.Transformations) => SettingsField.Transformations,
+                            _ => SettingsField.LogFormatRegex
+                        };
+                        problems.Add(new(LogFormatValidation.WithContext(profile.Name, index + 1, message), field,
+                            profile, LogFormat: format));
+                    }
                     if (!format.TryGetXorMask(out _))
-                        errors.Add(Strings.Get("XorMaskInvalid"));
+                        problems.Add(new(Strings.Get("XorMaskInvalid"), SettingsField.XorMask, profile, LogFormat: format));
+                }
+
+                foreach (var rule in profile.ColorRules)
+                {
+                    if (!rule.IsRegexValid)
+                        problems.Add(new(Strings.Get("ColorRegexInvalid"), SettingsField.ColorRegex, profile, ColorRule: rule));
+                    if (!_colorValidator.IsValid(rule.ForegroundColor))
+                        problems.Add(new(Strings.Get("ColorInvalid"), SettingsField.ForegroundColor, profile, ColorRule: rule));
+                    else if (!_colorValidator.IsValid(rule.BackgroundColor))
+                        problems.Add(new(Strings.Get("ColorInvalid"), SettingsField.BackgroundColor, profile, ColorRule: rule));
                 }
             }
 
-            foreach (var rule in Profiles.SelectMany(profile => profile.ColorRules))
-            {
-                if (!rule.IsRegexValid)
-                    errors.Add(Strings.Get("ColorRegexInvalid"));
-                if (!_colorValidator.IsValid(rule.ForegroundColor) ||
-                    !_colorValidator.IsValid(rule.BackgroundColor))
-                    errors.Add(Strings.Get("ColorInvalid"));
-            }
-
             foreach (var list in ValueMappings)
-                errors.AddRange(list.GetValidationErrors());
+                problems.AddRange(list.GetValidationProblems());
 
-            return errors;
+            return problems;
+        }
+
+        public event Action<SettingsProblem>? NavigationRequested;
+
+        public void NavigateTo(SettingsProblem problem)
+        {
+            if (!problem.CanNavigate)
+                return;
+            if (problem.Profile != null && Profiles.Contains(problem.Profile))
+                SelectedProfile = problem.Profile;
+            if (problem.ColorRule != null && ColorRules.Contains(problem.ColorRule))
+                SelectedColorRule = problem.ColorRule;
+            if (problem.ValueMapping != null && ValueMappings.Contains(problem.ValueMapping))
+            {
+                SelectedValueMapping = problem.ValueMapping;
+                if (problem.MappingItem != null && problem.ValueMapping.Items.Contains(problem.MappingItem))
+                    problem.ValueMapping.SelectedItem = problem.MappingItem;
+            }
+            NavigationRequested?.Invoke(problem);
         }
 
         private void OpenSettingsFile()

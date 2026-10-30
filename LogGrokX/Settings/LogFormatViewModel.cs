@@ -129,6 +129,9 @@ namespace LogGrokX.Settings
 
         public bool HasValidationMessage => !IsValid;
 
+        internal IEnumerable<(string PropertyName, string Message)> GetValidationErrors() =>
+            LogFormatValidation.GetErrors(CreateFormat());
+
         public IReadOnlyList<string> IndexedFieldsList => SplitLines(_indexedFields);
 
         public IReadOnlyList<string> TransformationsList => SplitLines(_transformations);

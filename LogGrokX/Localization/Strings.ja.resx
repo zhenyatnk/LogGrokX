@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>値マッピング リスト「{0}」: 重複する値を削除し、最初の項目を残します: {1}。</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>フィールドに移動</value>
+  </data>
 </root>

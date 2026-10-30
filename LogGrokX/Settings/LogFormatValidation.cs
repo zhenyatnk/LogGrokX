@@ -8,10 +8,13 @@ namespace LogGrokX.Settings;
 
 internal static class LogFormatValidation
 {
-    public static IEnumerable<string> GetMessages(LogFormat format) => format.GetValidationErrors()
-        .Select(error => error.PropertyName == nameof(LogFormat.IndexedFields)
+    public static IEnumerable<string> GetMessages(LogFormat format) =>
+        GetErrors(format).Select(error => error.Message).Distinct();
+
+    public static IEnumerable<(string PropertyName, string Message)> GetErrors(LogFormat format) => format.GetValidationErrors()
+        .Select(error => (error.PropertyName, error.PropertyName == nameof(LogFormat.IndexedFields)
             ? Strings.Format("IndexedFieldUnknown", error.Value, string.Join(", ", format.FieldNames.DefaultIfEmpty("—")))
-            : Strings.Get("LogRegexInvalid"))
+            : Strings.Get("LogRegexInvalid")))
         .Distinct();
 
     public static string WithContext(string profileName, int formatNumber, string message) =>

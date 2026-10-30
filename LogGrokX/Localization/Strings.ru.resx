@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>Список «{0}»: повторяющиеся значения будут удалены, останется первое: {1}.</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>Перейти к полю</value>
+  </data>
 </root>

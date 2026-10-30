@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.IO;
 using System.Linq;
@@ -112,6 +113,78 @@ public sealed class SettingsAutoFixTests
             Assert.AreEqual("9728", dialog.View.BigLineSizeText);
             Assert.IsTrue(dialog.HasValidationMessage);
             Assert.IsFalse(dialog.HasAutoFixes);
+        });
+    }
+
+    [TestMethod]
+    public void ProblemsPointToTheirFields()
+    {
+        WithSettings(dialog =>
+        {
+            dialog.View.BigLineSizeText = "abc";
+            dialog.Debug.MaxDumpsCountText = "0";
+            var first = dialog.SelectedProfile;
+            var format = new LogFormatViewModel { Regex = @"(?<Thread>\d+)", IndexedFields = "Missing", XorMask = "zz" };
+            first.LogFormats.Add(format);
+            var rule = new ColorRuleViewModel { RegexString = "[", BackgroundColor = "notacolor" };
+            first.ColorRules.Add(rule);
+            var mapping = new ValueMappingListViewModel(new ValueMappingList
+            {
+                Name = "Codes",
+                Enabled = false,
+                Items = [new ValueMappingItem { Value = "A", Mapping = "1" }, new ValueMappingItem { Value = "A", Mapping = "2" }]
+            });
+            dialog.ValueMappings.Add(mapping);
+            dialog.AddProfileCommand.Execute(null);
+            var second = dialog.SelectedProfile;
+            second.Name = first.Name;
+
+            Assert.IsFalse(dialog.Save());
+            CollectionAssert.AreEquivalent(new[]
+            {
+                SettingsField.BigLineSize, SettingsField.MaxDumpsCount, SettingsField.ProfileName,
+                SettingsField.IndexedFields, SettingsField.XorMask, SettingsField.ColorRegex,
+                SettingsField.BackgroundColor, SettingsField.MappingValue
+            }, dialog.Problems.Select(problem => problem.Field).ToArray());
+            Assert.AreSame(second, dialog.Problems.Single(problem => problem.Field == SettingsField.ProfileName).Profile);
+            Assert.AreSame(format, dialog.Problems.Single(problem => problem.Field == SettingsField.XorMask).LogFormat);
+            Assert.AreSame(mapping.Items[1], dialog.Problems.Single(problem => problem.Field == SettingsField.MappingValue).MappingItem);
+            Assert.IsTrue(dialog.AutoFixes.All(fix => fix.CanNavigate));
+            Assert.AreEqual(string.Join(Environment.NewLine, dialog.Problems.Select(problem => problem.Message)), dialog.ValidationMessage);
+        });
+    }
+
+    [TestMethod]
+    public void NavigateToSelectsProblemTarget()
+    {
+        WithSettings(dialog =>
+        {
+            var first = dialog.SelectedProfile;
+            var rule = new ColorRuleViewModel { RegexString = "[" };
+            first.ColorRules.Add(rule);
+            var mapping = new ValueMappingListViewModel(new ValueMappingList
+            {
+                Name = "Codes",
+                Enabled = false,
+                Items = [new ValueMappingItem { Value = "", Mapping = "1" }]
+            });
+            dialog.ValueMappings.Add(mapping);
+            dialog.AddProfileCommand.Execute(null);
+            dialog.SelectedValueMapping = null;
+
+            Assert.IsFalse(dialog.Save());
+            SettingsProblem? requested = null;
+            dialog.NavigationRequested += problem => requested = problem;
+
+            var colorProblem = dialog.Problems.Single(problem => problem.Field == SettingsField.ColorRegex);
+            dialog.NavigateTo(colorProblem);
+            Assert.AreSame(colorProblem, requested);
+            Assert.AreSame(first, dialog.SelectedProfile);
+            Assert.AreSame(rule, dialog.SelectedColorRule);
+
+            dialog.NavigateTo(dialog.Problems.Single(problem => problem.Field == SettingsField.MappingValue));
+            Assert.AreSame(mapping, dialog.SelectedValueMapping);
+            Assert.AreSame(mapping.Items[0], mapping.SelectedItem);
         });
     }
 

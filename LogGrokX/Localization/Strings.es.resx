@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>Lista de asignaciones «{0}»: se eliminarán los valores duplicados y se conservará el primero: {1}.</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>Ir al campo</value>
+  </data>
 </root>

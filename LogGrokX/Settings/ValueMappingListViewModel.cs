@@ -194,21 +194,25 @@ namespace LogGrokX.Settings
             }
         }
 
-        public IEnumerable<string> GetValidationErrors()
+        public IEnumerable<string> GetValidationErrors() => GetValidationProblems().Select(problem => problem.Message);
+
+        public IEnumerable<SettingsProblem> GetValidationProblems()
         {
             var title = DisplayName;
-            if (Items.Any(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value)))
-                yield return Strings.Format("MappingValueMissing", title);
+            var missing = Items.FirstOrDefault(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value));
+            if (missing != null)
+                yield return new(Strings.Format("MappingValueMissing", title), SettingsField.MappingValue,
+                    ValueMapping: this, MappingItem: missing);
 
             var comparer = _ignoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
             var duplicates = Items
                 .Where(item => !string.IsNullOrWhiteSpace(item.Value))
                 .GroupBy(item => item.Value.Trim(), comparer)
                 .Where(group => group.Count() > 1)
-                .Select(group => group.Key)
                 .ToList();
             if (duplicates.Count > 0)
-                yield return Strings.Format("MappingDuplicates", title, string.Join(", ", duplicates));
+                yield return new(Strings.Format("MappingDuplicates", title, string.Join(", ", duplicates.Select(group => group.Key))),
+                    SettingsField.MappingValue, ValueMapping: this, MappingItem: duplicates[0].ElementAt(1));
         }
 
         public ValueMappingList ToData() => new()

@@ -428,6 +428,13 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   settings window shows the list with a **Fix and save** button
   (`OnFixAndSaveClick`). Each `Validate` error that has a safe repair needs a
   matching fix there; an invalid log format regex has none on purpose.
+  `Validate` returns `SettingsProblem`s (`Settings/SettingsProblem.cs`: message,
+  `SettingsField` and the owning profile / log format / color rule / mapping
+  list and item), published as `Problems`; `AutoFixes` are problems as well.
+  Clicking one calls `SettingsViewModel.NavigateTo`, which selects the owners and
+  raises `NavigationRequested`; `SettingsWindow.OnNavigationRequested` switches
+  tabs and focuses the field (log format boxes are found by their
+  `Tag="{x:Static settings:SettingsField.*}"`, grid cells via `FocusCell`).
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

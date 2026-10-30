@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>Werte-Zuordnungsliste „{0}“: doppelte Werte werden entfernt, der erste bleibt erhalten: {1}.</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>Zum Feld wechseln</value>
+  </data>
 </root>

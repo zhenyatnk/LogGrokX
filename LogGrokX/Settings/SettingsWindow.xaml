@@ -4,6 +4,7 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  xmlns:localControls="clr-namespace:LogGrokX.Controls"
+                 xmlns:settings="clr-namespace:LogGrokX.Settings"
                  Title="{loc:Loc Settings}"
                  Width="860"
                  Height="700"
@@ -19,6 +20,21 @@
                  ShowInTaskbar="False">
     <ui:FluentWindow.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <DataTemplate x:Key="ProblemTemplate" DataType="{x:Type settings:SettingsProblem}">
+            <BulletDecorator Margin="0,1,0,1">
+                <BulletDecorator.Bullet>
+                    <TextBlock Margin="0,0,6,0" Text="•" />
+                </BulletDecorator.Bullet>
+                <TextBlock TextWrapping="Wrap">
+                    <Hyperlink Click="OnProblemClick"
+                               IsEnabled="{Binding CanNavigate, Mode=OneWay}"
+                               Foreground="{Binding Path=(TextElement.Foreground), RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                               ToolTip="{loc:Loc GoToField}">
+                        <Run Text="{Binding Message, Mode=OneWay}" />
+                    </Hyperlink>
+                </TextBlock>
+            </BulletDecorator>
+        </DataTemplate>
         <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
@@ -39,8 +55,8 @@
         </localControls:StableTitleBar>
 
         <Border Grid.Row="1" Margin="12,4,12,8" Padding="8" Style="{StaticResource FluentCardStyle}">
-            <TabControl>
-                <TabItem Header="{loc:Loc View}">
+            <TabControl x:Name="SettingsTabs">
+                <TabItem x:Name="ViewTab" Header="{loc:Loc View}">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <Grid Margin="12" MaxWidth="620" HorizontalAlignment="Left">
                             <Grid.ColumnDefinitions>
@@ -111,6 +127,7 @@
                             <ui:TextBox Grid.Row="3"
                                         Grid.Column="1"
                                         Margin="0,0,0,10"
+                                        x:Name="BigLineSizeBox"
                                         Text="{Binding View.BigLineSizeText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
 
                             <TextBlock Grid.Row="4"
@@ -224,7 +241,7 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="{loc:Loc Profiles}">
+                <TabItem x:Name="ProfilesTab" Header="{loc:Loc Profiles}">
                     <Grid Margin="12">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -237,7 +254,8 @@
                                       ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
                                       SelectedItem="{Binding SelectedProfile, Mode=TwoWay}" />
                             <TextBlock VerticalAlignment="Center" Margin="0,0,8,0" Text="{loc:Loc Name}" />
-                            <ui:TextBox Width="180"
+                            <ui:TextBox x:Name="ProfileNameBox"
+                                        Width="180"
                                         Text="{Binding SelectedProfile.Name, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                           </StackPanel>
                           <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
@@ -249,8 +267,8 @@
                         <TextBlock Grid.Row="1" Margin="0,10,0,8" TextWrapping="Wrap"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Text="{loc:Loc ProfilesHint}" />
-                        <TabControl Grid.Row="2">
-                            <TabItem Header="{loc:Loc Colors}">
+                        <TabControl x:Name="ProfileTabs" Grid.Row="2">
+                            <TabItem x:Name="ColorsTab" Header="{loc:Loc Colors}">
                                 <Grid Margin="12">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -321,7 +339,7 @@
                                 </Grid>
                             </TabItem>
 
-                            <TabItem Header="{loc:Loc LogFormats}">
+                            <TabItem x:Name="LogFormatsTab" Header="{loc:Loc LogFormats}">
                                 <Grid Margin="12">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -336,7 +354,7 @@
                                                Text="{loc:Loc FormatsHint}" />
 
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                        <ItemsControl ItemsSource="{Binding LogFormats}">
+                                        <ItemsControl x:Name="LogFormatsList" ItemsSource="{Binding LogFormats}">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <Border Margin="0,0,0,10"
@@ -383,6 +401,7 @@
                                                                         AcceptsReturn="True"
                                                                         FontFamily="{StaticResource JetBrainsMono}"
                                                                         HorizontalScrollBarVisibility="Auto"
+                                                                        Tag="{x:Static settings:SettingsField.LogFormatRegex}"
                                                                         Text="{Binding Regex, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                                         TextWrapping="NoWrap" />
 
@@ -395,6 +414,7 @@
                                                                 <ui:TextBox MinHeight="44"
                                                                             AcceptsReturn="True"
                                                                             FontFamily="{StaticResource JetBrainsMono}"
+                                                                            Tag="{x:Static settings:SettingsField.IndexedFields}"
                                                                             Text="{Binding IndexedFields, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                                             TextWrapping="NoWrap" />
                                                                 <TextBlock Margin="0,4,0,0"
@@ -422,7 +442,7 @@
                                                                 </StackPanel>
                                                                 <StackPanel Grid.Column="4">
                                                                     <TextBlock Margin="0,0,0,2" Text="{loc:Loc XorMask}" />
-                                                                    <ui:TextBox Text="{Binding XorMask, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
+                                                                    <ui:TextBox Tag="{x:Static settings:SettingsField.XorMask}" Text="{Binding XorMask, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                                                                 </StackPanel>
                                                             </Grid>
 
@@ -437,6 +457,7 @@
                                                                         MinHeight="44"
                                                                         AcceptsReturn="True"
                                                                         FontFamily="{StaticResource JetBrainsMono}"
+                                                                        Tag="{x:Static settings:SettingsField.Transformations}"
                                                                         Text="{Binding Transformations, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"
                                                                         TextWrapping="NoWrap" />
 
@@ -473,7 +494,7 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="{loc:Loc ValueMappings}">
+                <TabItem x:Name="ValueMappingsTab" Header="{loc:Loc ValueMappings}">
                     <Grid Margin="12">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -560,7 +581,8 @@
                                        Grid.ColumnSpan="3"
                                        Margin="0,0,0,2"
                                        Text="{loc:Loc Values}" />
-                            <DataGrid Grid.Row="3"
+                            <DataGrid x:Name="MappingItemsGrid"
+                                      Grid.Row="3"
                                       Grid.Column="0"
                                       Grid.ColumnSpan="3"
                                       AutoGenerateColumns="False"
@@ -716,13 +738,14 @@
                     </ScrollViewer>
                 </TabItem>
 
-                <TabItem Header="{loc:Loc Debug}">
+                <TabItem x:Name="DebugTab" Header="{loc:Loc Debug}">
                     <StackPanel Margin="12" MaxWidth="620" HorizontalAlignment="Left">
                         <CheckBox VerticalAlignment="Center"
                                   Content="{loc:Loc EnableCrashDumps}"
                                   IsChecked="{Binding Debug.EnableCrashDumps, Mode=TwoWay}" />
                         <TextBlock Margin="0,10,0,2" Text="{loc:Loc MaxDumpsCount}" />
-                        <ui:TextBox MaxWidth="200"
+                        <ui:TextBox x:Name="MaxDumpsCountBox"
+                                    MaxWidth="200"
                                     HorizontalAlignment="Left"
                                     Text="{Binding Debug.MaxDumpsCountText, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}" />
                         <TextBlock Margin="0,12,0,0"
@@ -762,23 +785,20 @@
                            Foreground="{DynamicResource SystemFillColorCriticalBrush}"
                            Text="{Binding ValidationMessage}"
                            TextWrapping="Wrap"
-                           Visibility="{Binding HasValidationMessage, Converter={StaticResource BoolToVisibility}}" />
+                           Visibility="{Binding ShowValidationText, Converter={StaticResource BoolToVisibility}}" />
+                <ScrollViewer Margin="0,4,0,0"
+                              MaxHeight="120"
+                              VerticalScrollBarVisibility="Auto"
+                              Visibility="{Binding HasProblems, Converter={StaticResource BoolToVisibility}}">
+                    <ItemsControl ItemsSource="{Binding Problems}"
+                                  ItemTemplate="{StaticResource ProblemTemplate}"
+                                  TextElement.Foreground="{DynamicResource SystemFillColorCriticalBrush}" />
+                </ScrollViewer>
                 <StackPanel Margin="0,8,0,0"
                             Visibility="{Binding HasAutoFixes, Converter={StaticResource BoolToVisibility}}">
                     <TextBlock Margin="0,0,0,2" FontWeight="SemiBold" Text="{loc:Loc AutoFixAvailable}" />
                     <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding AutoFixes}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <BulletDecorator Margin="0,1,0,1">
-                                        <BulletDecorator.Bullet>
-                                            <TextBlock Margin="0,0,6,0" Text="•" />
-                                        </BulletDecorator.Bullet>
-                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                                    </BulletDecorator>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                        <ItemsControl ItemsSource="{Binding AutoFixes}" ItemTemplate="{StaticResource ProblemTemplate}" />
                     </ScrollViewer>
                     <ui:Button Margin="0,6,0,0"
                                HorizontalAlignment="Left"

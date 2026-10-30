@@ -810,4 +810,7 @@
   <data name="FixMappingDuplicates" xml:space="preserve">
     <value>Liste de correspondances « {0} » : les valeurs en double seront supprimées, la première est conservée : {1}.</value>
   </data>
+  <data name="GoToField" xml:space="preserve">
+    <value>Aller au champ</value>
+  </data>
 </root>

@@ -9,9 +9,9 @@ namespace LogGrokX.Settings
 {
     public sealed partial class SettingsViewModel
     {
-        private IReadOnlyList<string> _autoFixes = Array.Empty<string>();
+        private IReadOnlyList<SettingsProblem> _autoFixes = Array.Empty<SettingsProblem>();
 
-        public IReadOnlyList<string> AutoFixes
+        public IReadOnlyList<SettingsProblem> AutoFixes
         {
             get => _autoFixes;
             private set
@@ -33,7 +33,7 @@ namespace LogGrokX.Settings
             return Save();
         }
 
-        private sealed record SettingsFix(string Description, Action Apply);
+        private sealed record SettingsFix(SettingsProblem Problem, Action Apply);
 
         private List<SettingsFix> GetAutoFixes()
         {
@@ -42,13 +42,13 @@ namespace LogGrokX.Settings
             if (!int.TryParse(View.BigLineSizeText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var bigLineSize) || bigLineSize <= 0)
             {
                 var value = new ViewSettings().BigLineSize.ToString(CultureInfo.InvariantCulture);
-                fixes.Add(new(Strings.Format("FixBigLineSize", value), () => View.BigLineSizeText = value));
+                fixes.Add(new(new(Strings.Format("FixBigLineSize", value), SettingsField.BigLineSize), () => View.BigLineSizeText = value));
             }
 
             if (!int.TryParse(Debug.MaxDumpsCountText.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var maxDumpsCount) || maxDumpsCount <= 0)
             {
                 var value = new DebugSettings().MaxDumpsCount.ToString(CultureInfo.InvariantCulture);
-                fixes.Add(new(Strings.Format("FixMaxDumps", value), () => Debug.MaxDumpsCountText = value));
+                fixes.Add(new(new(Strings.Format("FixMaxDumps", value), SettingsField.MaxDumpsCount), () => Debug.MaxDumpsCountText = value));
             }
 
             AddProfileNameFixes(fixes);
@@ -56,10 +56,10 @@ namespace LogGrokX.Settings
             foreach (var profile in Profiles)
             {
                 for (var index = 0; index < profile.LogFormats.Count; index++)
-                    AddLogFormatFixes(fixes, profile.Name, index + 1, profile.LogFormats[index]);
+                    AddLogFormatFixes(fixes, profile, index + 1, profile.LogFormats[index]);
 
                 foreach (var rule in profile.ColorRules)
-                    AddColorRuleFixes(fixes, profile.Name, rule);
+                    AddColorRuleFixes(fixes, profile, rule);
             }
 
             foreach (var list in ValueMappings)
@@ -85,21 +85,23 @@ namespace LogGrokX.Settings
                 used.Add(unique);
 
                 var target = profile;
-                fixes.Add(new(name.Length == 0
-                        ? Strings.Format("FixProfileNameEmpty", unique)
-                        : Strings.Format("FixProfileNameDuplicate", name, unique),
+                fixes.Add(new(new(name.Length == 0
+                            ? Strings.Format("FixProfileNameEmpty", unique)
+                            : Strings.Format("FixProfileNameDuplicate", name, unique),
+                        SettingsField.ProfileName, target),
                     () => target.Name = unique));
             }
         }
 
-        private static void AddLogFormatFixes(List<SettingsFix> fixes, string profileName, int number, LogFormatViewModel format)
+        private static void AddLogFormatFixes(List<SettingsFix> fixes, ProfileViewModel profile, int number, LogFormatViewModel format)
         {
-            string WithContext(string message) => LogFormatValidation.WithContext(profileName, number, message);
+            SettingsProblem Problem(string message, SettingsField field) =>
+                new(LogFormatValidation.WithContext(profile.Name, number, message), field, profile, LogFormat: format);
 
             var invalidTransformations = format.TransformationsList.Where(t => !IsRegexValid(t)).ToArray();
             if (invalidTransformations.Length > 0)
             {
-                fixes.Add(new(WithContext(Strings.Format("FixTransformations", string.Join(", ", invalidTransformations))),
+                fixes.Add(new(Problem(Strings.Format("FixTransformations", string.Join(", ", invalidTransformations)), SettingsField.Transformations),
                     () => format.Transformations = string.Join(Environment.NewLine,
                         format.TransformationsList.Where(IsRegexValid))));
             }
@@ -120,7 +122,7 @@ namespace LogGrokX.Settings
                     descriptions.Add(Strings.Format("FixIndexedFieldsRemove", string.Join(", ", removed)));
                 if (descriptions.Count > 0)
                 {
-                    fixes.Add(new(WithContext(string.Join(" ", descriptions)),
+                    fixes.Add(new(Problem(string.Join(" ", descriptions), SettingsField.IndexedFields),
                         () => format.IndexedFields = string.Join(Environment.NewLine, format.IndexedFieldsList
                             .Select(field => replacements.TryGetValue(field, out var replacement) ? replacement : field)
                             .OfType<string>()
@@ -129,31 +131,36 @@ namespace LogGrokX.Settings
             }
 
             if (!format.TryGetXorMask(out _))
-                fixes.Add(new(WithContext(Strings.Format("FixXorMask", format.XorMask.Trim())), () => format.XorMask = string.Empty));
+                fixes.Add(new(Problem(Strings.Format("FixXorMask", format.XorMask.Trim()), SettingsField.XorMask), () => format.XorMask = string.Empty));
         }
 
-        private void AddColorRuleFixes(List<SettingsFix> fixes, string profileName, ColorRuleViewModel rule)
+        private void AddColorRuleFixes(List<SettingsFix> fixes, ProfileViewModel profile, ColorRuleViewModel rule)
         {
             if (!rule.IsRegexValid)
             {
                 var escaped = Regex.Escape(rule.RegexString);
-                fixes.Add(new(Strings.Format("FixColorRegex", profileName, rule.RegexString, escaped),
+                fixes.Add(new(new(Strings.Format("FixColorRegex", profile.Name, rule.RegexString, escaped),
+                        SettingsField.ColorRegex, profile, ColorRule: rule),
                     () => rule.RegexString = escaped));
             }
 
             if (!_colorValidator.IsValid(rule.ForegroundColor))
-                fixes.Add(new(Strings.Format("FixColor", profileName, rule.ForegroundColor),
+                fixes.Add(new(new(Strings.Format("FixColor", profile.Name, rule.ForegroundColor),
+                        SettingsField.ForegroundColor, profile, ColorRule: rule),
                     () => rule.ForegroundColor = string.Empty));
             if (!_colorValidator.IsValid(rule.BackgroundColor))
-                fixes.Add(new(Strings.Format("FixColor", profileName, rule.BackgroundColor),
+                fixes.Add(new(new(Strings.Format("FixColor", profile.Name, rule.BackgroundColor),
+                        SettingsField.BackgroundColor, profile, ColorRule: rule),
                     () => rule.BackgroundColor = string.Empty));
         }
 
         private static void AddValueMappingFixes(List<SettingsFix> fixes, ValueMappingListViewModel list)
         {
-            if (list.Items.Any(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value)))
+            var missing = list.Items.FirstOrDefault(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value));
+            if (missing != null)
             {
-                fixes.Add(new(Strings.Format("FixMappingValueMissing", list.DisplayName), () =>
+                fixes.Add(new(new(Strings.Format("FixMappingValueMissing", list.DisplayName), SettingsField.MappingValue,
+                    ValueMapping: list, MappingItem: missing), () =>
                 {
                     foreach (var item in list.Items.Where(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value)).ToArray())
                         list.Items.Remove(item);
@@ -165,11 +172,12 @@ namespace LogGrokX.Settings
                 .Where(item => !string.IsNullOrWhiteSpace(item.Value))
                 .GroupBy(item => item.Value.Trim(), comparer)
                 .Where(group => group.Count() > 1)
-                .Select(group => group.Key)
                 .ToArray();
             if (duplicates.Length > 0)
             {
-                fixes.Add(new(Strings.Format("FixMappingDuplicates", list.DisplayName, string.Join(", ", duplicates)), () =>
+                fixes.Add(new(new(Strings.Format("FixMappingDuplicates", list.DisplayName,
+                        string.Join(", ", duplicates.Select(group => group.Key))), SettingsField.MappingValue,
+                    ValueMapping: list, MappingItem: duplicates[0].ElementAt(1)), () =>
                 {
                     var seen = new HashSet<string>(list.IgnoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
                     foreach (var item in list.Items.Where(item => !string.IsNullOrWhiteSpace(item.Value)).ToArray())
