@@ -769,10 +769,31 @@
     <value>Quellserver-Befehl ist in den Einstellungen deaktiviert: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Diese Probleme können automatisch behoben werden:</value>
+    <value>Fehler können automatisch korrigiert werden</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Korrekte Werte können wiederhergestellt werden, ohne jede Einstellung manuell zu bearbeiten.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Fehler erfordern manuelle Korrektur</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Korrigieren</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Beheben und speichern</value>
+    <value>Alle korrigieren und speichern</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Verfügbare Fehler korrigieren</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Speichern nicht möglich</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Korrigieren Sie alle Fehler, um die Einstellungen zu speichern.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Korrigieren Sie zuerst die Fehler</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>Der Schwellenwert für die Zeilenlänge wird auf den Standardwert ({0}) zurückgesetzt.</value>

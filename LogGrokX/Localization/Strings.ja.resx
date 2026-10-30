@@ -769,10 +769,31 @@
     <value>ソース サーバー コマンドは設定で無効になっています: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>次の問題は自動的に修正できます:</value>
+    <value>エラーは自動で修正できます</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>各設定を手動で編集しなくても、正しい値に復元できます。</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>エラーを手動で修正する必要があります</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>修正</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>修正して保存</value>
+    <value>すべて修正して保存</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>修正可能なエラーを修正</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>保存できません</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>すべてのエラーを修正してから設定を保存してください。</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>先にエラーを修正してください</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>行の長さのしきい値を既定値 ({0}) にリセットします。</value>

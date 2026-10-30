@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -10,6 +12,8 @@ namespace LogGrokX.Settings
     public sealed partial class SettingsViewModel
     {
         private IReadOnlyList<SettingsProblem> _autoFixes = Array.Empty<SettingsProblem>();
+        private bool _validationActive;
+        private bool _suspendValidation;
 
         public IReadOnlyList<SettingsProblem> AutoFixes
         {
@@ -21,15 +25,40 @@ namespace LogGrokX.Settings
                 _autoFixes = value;
                 InvokePropertyChanged();
                 InvokePropertyChanged(nameof(HasAutoFixes));
+                InvokePropertyChanged(nameof(ManualProblems));
+                InvokePropertyChanged(nameof(HasManualProblems));
             }
         }
 
         public bool HasAutoFixes => _autoFixes.Count > 0;
 
+        public IReadOnlyList<SettingsProblem> ManualProblems =>
+            _problems.Where(problem => !_autoFixes.Any(fix => IsSameTarget(problem, fix))).ToArray();
+
+        public bool HasManualProblems => ManualProblems.Count > 0;
+
+        public string FixAllActionText => Strings.Get(HasManualProblems ? "FixAvailable" : "FixAndSave");
+
+        private static bool IsSameTarget(SettingsProblem problem, SettingsProblem fix) =>
+            problem.Field == fix.Field &&
+            ReferenceEquals(problem.Profile, fix.Profile) &&
+            ReferenceEquals(problem.LogFormat, fix.LogFormat) &&
+            ReferenceEquals(problem.ColorRule, fix.ColorRule) &&
+            ReferenceEquals(problem.ValueMapping, fix.ValueMapping) &&
+            (problem.Field == SettingsField.MappingValue || ReferenceEquals(problem.MappingItem, fix.MappingItem));
+
         public bool FixAndSave()
         {
-            foreach (var fix in GetAutoFixes())
-                fix.Apply();
+            _suspendValidation = true;
+            try
+            {
+                foreach (var fix in GetAutoFixes())
+                    fix.Apply();
+            }
+            finally
+            {
+                _suspendValidation = false;
+            }
             return Save();
         }
 
@@ -41,18 +70,35 @@ namespace LogGrokX.Settings
                 Revalidate();
                 return false;
             }
-            fix.Apply();
+            _suspendValidation = true;
+            try
+            {
+                fix.Apply();
+            }
+            finally
+            {
+                _suspendValidation = false;
+            }
             Revalidate();
             NavigateTo(problem);
             return true;
         }
 
-        private void Revalidate()
+        private void Revalidate() => PublishValidation(Validate());
+
+        private void RevalidateIfVisible()
         {
-            var problems = Validate();
+            if (_validationActive && !_suspendValidation)
+                Revalidate();
+        }
+
+        private void PublishValidation(IReadOnlyList<SettingsProblem> problems)
+        {
+            _validationActive = problems.Count > 0;
             Problems = problems;
             ValidationMessage = string.Join(Environment.NewLine, problems.Select(item => item.Message));
             AutoFixes = GetAutoFixes().Select(item => item.Problem).ToArray();
+            InvokePropertyChanged(nameof(FixAllActionText));
         }
 
         private sealed record SettingsFix(SettingsProblem Problem, Action Apply);
@@ -210,6 +256,75 @@ namespace LogGrokX.Settings
                 }));
             }
         }
+
+        private void InitializeValidationTracking()
+        {
+            Profiles.CollectionChanged += OnProfilesChanged;
+            ValueMappings.CollectionChanged += OnValueMappingsChanged;
+            foreach (var profile in Profiles)
+                SubscribeProfile(profile);
+            foreach (var list in ValueMappings)
+                SubscribeValueMapping(list);
+        }
+
+        private void SubscribeProfile(ProfileViewModel profile)
+        {
+            profile.PropertyChanged += OnValidationInputChanged;
+            profile.LogFormats.CollectionChanged += OnLogFormatsChanged;
+            profile.ColorRules.CollectionChanged += OnColorRulesChanged;
+            foreach (var format in profile.LogFormats)
+                format.PropertyChanged += OnValidationInputChanged;
+            foreach (var rule in profile.ColorRules)
+                rule.PropertyChanged += OnValidationInputChanged;
+        }
+
+        private void SubscribeValueMapping(ValueMappingListViewModel list)
+        {
+            list.PropertyChanged += OnValidationInputChanged;
+            list.Items.CollectionChanged += OnMappingItemsChanged;
+            foreach (var item in list.Items)
+                item.PropertyChanged += OnValidationInputChanged;
+        }
+
+        private void OnProfilesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SubscribeNewItems<ProfileViewModel>(e, SubscribeProfile);
+            RevalidateIfVisible();
+        }
+
+        private void OnLogFormatsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SubscribeNewItems<LogFormatViewModel>(e, format => format.PropertyChanged += OnValidationInputChanged);
+            RevalidateIfVisible();
+        }
+
+        private void OnColorRulesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SubscribeNewItems<ColorRuleViewModel>(e, rule => rule.PropertyChanged += OnValidationInputChanged);
+            RevalidateIfVisible();
+        }
+
+        private void OnValueMappingsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SubscribeNewItems<ValueMappingListViewModel>(e, SubscribeValueMapping);
+            RevalidateIfVisible();
+        }
+
+        private void OnMappingItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            SubscribeNewItems<ValueMappingItemViewModel>(e, item => item.PropertyChanged += OnValidationInputChanged);
+            RevalidateIfVisible();
+        }
+
+        private static void SubscribeNewItems<T>(NotifyCollectionChangedEventArgs e, Action<T> subscribe)
+        {
+            if (e.NewItems == null)
+                return;
+            foreach (T item in e.NewItems)
+                subscribe(item);
+        }
+
+        private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e) => RevalidateIfVisible();
 
         private static bool IsRegexValid(string pattern) => TryCreateRegex(pattern) != null;
 

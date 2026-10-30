@@ -77,6 +77,7 @@ namespace LogGrokX.Settings
 
             View.PropertyChanged += OnTrackedPropertyChanged;
             Debug.PropertyChanged += OnTrackedPropertyChanged;
+            InitializeValidationTracking();
 
             SaveCommand = new DelegateCommand(() => Save());
             OpenFileCommand = new DelegateCommand(OpenSettingsFile);
@@ -193,6 +194,8 @@ namespace LogGrokX.Settings
                 InvokePropertyChanged();
                 InvokePropertyChanged(nameof(HasProblems));
                 InvokePropertyChanged(nameof(ShowValidationText));
+                InvokePropertyChanged(nameof(ManualProblems));
+                InvokePropertyChanged(nameof(HasManualProblems));
             }
         }
 
@@ -363,15 +366,11 @@ namespace LogGrokX.Settings
             var problems = Validate();
             if (problems.Count > 0)
             {
-                Problems = problems;
-                ValidationMessage = string.Join(Environment.NewLine, problems.Select(problem => problem.Message));
-                AutoFixes = GetAutoFixes().Select(fix => fix.Problem).ToArray();
+                PublishValidation(problems);
                 return false;
             }
 
-            Problems = Array.Empty<SettingsProblem>();
-            ValidationMessage = string.Empty;
-            AutoFixes = Array.Empty<SettingsProblem>();
+            PublishValidation(Array.Empty<SettingsProblem>());
 
             var bigLineSize = int.Parse(View.BigLineSizeText.Trim(), CultureInfo.InvariantCulture);
             var maxDumpsCount = int.Parse(Debug.MaxDumpsCountText.Trim(), CultureInfo.InvariantCulture);
@@ -475,6 +474,7 @@ namespace LogGrokX.Settings
                 e.PropertyName == nameof(ViewSettingsViewModel.AccentColor))
                 _themeService.ApplyAccentColor(View.AccentColor);
             UpdateRequiresRestart();
+            RevalidateIfVisible();
         }
 
         public void Cancel()

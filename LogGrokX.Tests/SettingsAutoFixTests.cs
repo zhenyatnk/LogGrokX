@@ -57,6 +57,7 @@ public sealed class SettingsAutoFixTests
             Assert.IsFalse(dialog.Save());
             Assert.IsTrue(dialog.HasValidationMessage);
             Assert.IsTrue(dialog.HasAutoFixes);
+            Assert.AreEqual(LogGrokX.Localization.Strings.Get("FixAndSave"), dialog.FixAllActionText);
             Assert.AreEqual(11, dialog.AutoFixes.Count, string.Join(Environment.NewLine, dialog.AutoFixes));
 
             Assert.IsTrue(dialog.FixAndSave(), dialog.ValidationMessage);
@@ -216,6 +217,92 @@ public sealed class SettingsAutoFixTests
             Assert.IsFalse(dialog.HasAutoFixes);
             Assert.IsFalse(dialog.HasValidationMessage);
             Assert.IsTrue(dialog.Save());
+        });
+    }
+
+    [TestMethod]
+    public void ManualProblemsContainOnlyProblemsWithoutFixes()
+    {
+        WithSettings(dialog =>
+        {
+            dialog.View.BigLineSizeText = "abc";
+            dialog.SelectedProfile.LogFormats.Add(new LogFormatViewModel { Regex = "(" });
+
+            Assert.IsFalse(dialog.Save());
+            Assert.AreEqual(2, dialog.Problems.Count);
+            Assert.AreEqual(1, dialog.AutoFixes.Count);
+            Assert.IsTrue(dialog.HasManualProblems);
+            Assert.AreEqual(LogGrokX.Localization.Strings.Get("FixAvailable"), dialog.FixAllActionText);
+            Assert.AreEqual(SettingsField.LogFormatRegex, dialog.ManualProblems.Single().Field);
+
+            Assert.IsTrue(dialog.ApplyAutoFix(dialog.AutoFixes.Single()));
+            Assert.IsFalse(dialog.HasAutoFixes);
+            Assert.IsTrue(dialog.HasManualProblems);
+            Assert.AreEqual(SettingsField.LogFormatRegex, dialog.ManualProblems.Single().Field);
+        });
+    }
+
+    [TestMethod]
+    public void ApplyAutoFixRevealsProblemHiddenBehindAnotherOne()
+    {
+        WithSettings(dialog =>
+        {
+            var rule = new ColorRuleViewModel { ForegroundColor = "notacolor", BackgroundColor = "alsonotacolor" };
+            dialog.SelectedProfile.ColorRules.Add(rule);
+
+            Assert.IsFalse(dialog.Save());
+            Assert.AreEqual(SettingsField.ForegroundColor, dialog.Problems.Single().Field);
+            Assert.AreEqual(2, dialog.AutoFixes.Count);
+
+            var fix = dialog.AutoFixes.Single(problem => problem.Field == SettingsField.ForegroundColor);
+            Assert.IsTrue(dialog.ApplyAutoFix(fix));
+
+            Assert.AreEqual(SettingsField.BackgroundColor, dialog.Problems.Single().Field);
+            Assert.AreEqual(SettingsField.BackgroundColor, dialog.AutoFixes.Single().Field);
+            Assert.IsTrue(dialog.HasAutoFixes);
+            Assert.IsFalse(dialog.HasManualProblems);
+        });
+    }
+
+    [TestMethod]
+    public void ManualFixRevealsIndexedFieldProblemAfterRegexIsFixed()
+    {
+        WithSettings(dialog =>
+        {
+            var format = new LogFormatViewModel { Regex = "(", IndexedFields = "Missing" };
+            dialog.SelectedProfile.LogFormats.Add(format);
+
+            Assert.IsFalse(dialog.Save());
+            Assert.AreEqual(SettingsField.LogFormatRegex, dialog.Problems.Single().Field);
+
+            format.Regex = @"(?<Message>.*)";
+
+            Assert.AreEqual(SettingsField.IndexedFields, dialog.Problems.Single().Field);
+            Assert.AreEqual(SettingsField.IndexedFields, dialog.AutoFixes.Single().Field);
+            Assert.IsTrue(dialog.HasAutoFixes);
+            Assert.IsFalse(dialog.HasManualProblems);
+
+            format.IndexedFields = "Message";
+            Assert.IsFalse(dialog.HasProblems);
+            Assert.IsFalse(dialog.HasAutoFixes);
+            Assert.IsFalse(dialog.HasValidationMessage);
+        });
+    }
+
+    [TestMethod]
+    public void ManualFixClearsVisibleProblems()
+    {
+        WithSettings(dialog =>
+        {
+            dialog.View.BigLineSizeText = "abc";
+            Assert.IsFalse(dialog.Save());
+            Assert.IsTrue(dialog.HasProblems);
+
+            dialog.View.BigLineSizeText = "9728";
+
+            Assert.IsFalse(dialog.HasProblems);
+            Assert.IsFalse(dialog.HasAutoFixes);
+            Assert.IsFalse(dialog.HasValidationMessage);
         });
     }
 

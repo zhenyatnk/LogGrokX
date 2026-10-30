@@ -769,10 +769,31 @@
     <value>La commande du serveur de sources est désactivée dans les paramètres : {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Ces problèmes peuvent être corrigés automatiquement :</value>
+    <value>Les erreurs peuvent être corrigées automatiquement</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Les valeurs correctes peuvent être restaurées sans modifier chaque paramètre manuellement.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Les erreurs nécessitent une correction manuelle</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Corriger</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Corriger et enregistrer</value>
+    <value>Tout corriger et enregistrer</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Corriger les erreurs possibles</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Enregistrement impossible</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Corrigez toutes les erreurs pour enregistrer les paramètres.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Corrigez d'abord les erreurs</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>Le seuil de longueur de ligne sera réinitialisé à la valeur par défaut ({0}).</value>

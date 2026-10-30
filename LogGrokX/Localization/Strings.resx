@@ -769,10 +769,31 @@
     <value>Source server command is disabled in settings: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>These problems can be fixed automatically:</value>
+    <value>Errors can be fixed automatically</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Correct values can be restored without editing each setting manually.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Errors require manual correction</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Fix</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Fix and save</value>
+    <value>Fix all and save</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Fix available</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Saving is unavailable</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Fix all errors to save the settings.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Fix the errors first</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>Line length threshold will be reset to the default value ({0}).</value>

@@ -769,10 +769,31 @@
     <value>El comando del servidor de código fuente está deshabilitado en la configuración: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Estos problemas se pueden corregir automáticamente:</value>
+    <value>Los errores se pueden corregir automáticamente</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Puedes restaurar valores correctos sin editar cada ajuste manualmente.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Los errores requieren corrección manual</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Corregir</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Corregir y guardar</value>
+    <value>Corregir todo y guardar</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Corregir los errores posibles</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>No se puede guardar</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Corrige todos los errores para guardar la configuración.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Primero corrige los errores</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>El umbral de longitud de línea se restablecerá al valor predeterminado ({0}).</value>

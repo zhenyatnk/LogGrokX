@@ -27,14 +27,19 @@ namespace LogGrokX.Settings
 
         private void OnProblemClick(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkContentElement { DataContext: SettingsProblem problem } &&
-                DataContext is SettingsViewModel viewModel)
+            var problem = sender switch
+            {
+                FrameworkContentElement { DataContext: SettingsProblem item } => item,
+                FrameworkElement { DataContext: SettingsProblem item } => item,
+                _ => null
+            };
+            if (problem != null && DataContext is SettingsViewModel viewModel)
                 viewModel.NavigateTo(problem);
         }
 
         private void OnAutoFixClick(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkContentElement { DataContext: SettingsProblem problem } &&
+            if (sender is FrameworkElement { DataContext: SettingsProblem problem } &&
                 DataContext is SettingsViewModel viewModel)
                 viewModel.ApplyAutoFix(problem);
         }

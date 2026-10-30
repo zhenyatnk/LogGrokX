@@ -769,10 +769,31 @@
     <value>O comando do servidor de código-fonte está desativado nas configurações: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Estes problemas podem ser corrigidos automaticamente:</value>
+    <value>Os erros podem ser corrigidos automaticamente</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Os valores corretos podem ser restaurados sem editar cada configuração manualmente.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Os erros exigem correção manual</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Corrigir</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Corrigir e salvar</value>
+    <value>Corrigir tudo e salvar</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Corrigir erros possíveis</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Não é possível salvar</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Corrija todos os erros para salvar as configurações.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Corrija os erros primeiro</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>O limite de comprimento de linha será redefinido para o valor padrão ({0}).</value>

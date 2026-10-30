@@ -769,10 +769,31 @@
     <value>Команда сервера исходников отключена в настройках: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Эти проблемы можно исправить автоматически:</value>
+    <value>Ошибки можно исправить автоматически</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Корректные значения можно восстановить без ручной настройки каждого параметра.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Ошибки требуют ручного исправления</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Исправить</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Исправить и сохранить</value>
+    <value>Исправить всё и сохранить</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Исправить доступные</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Сохранение недоступно</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Исправьте все ошибки, чтобы сохранить настройки.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Сначала исправьте ошибки</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>Порог длины строки будет сброшен на значение по умолчанию ({0}).</value>

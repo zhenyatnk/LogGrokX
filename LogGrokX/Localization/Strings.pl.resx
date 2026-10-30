@@ -769,10 +769,31 @@
     <value>Polecenie serwera źródeł jest wyłączone w ustawieniach: {0}</value>
   </data>
   <data name="AutoFixAvailable" xml:space="preserve">
-    <value>Te problemy można naprawić automatycznie:</value>
+    <value>Błędy można naprawić automatycznie</value>
+  </data>
+  <data name="AutoFixDescription" xml:space="preserve">
+    <value>Prawidłowe wartości można przywrócić bez ręcznej edycji każdego ustawienia.</value>
+  </data>
+  <data name="ManualFixRequired" xml:space="preserve">
+    <value>Błędy wymagają ręcznej poprawy</value>
+  </data>
+  <data name="Fix" xml:space="preserve">
+    <value>Napraw</value>
   </data>
   <data name="FixAndSave" xml:space="preserve">
-    <value>Napraw i zapisz</value>
+    <value>Napraw wszystko i zapisz</value>
+  </data>
+  <data name="FixAvailable" xml:space="preserve">
+    <value>Napraw możliwe błędy</value>
+  </data>
+  <data name="SaveUnavailable" xml:space="preserve">
+    <value>Nie można zapisać</value>
+  </data>
+  <data name="SaveUnavailableDescription" xml:space="preserve">
+    <value>Napraw wszystkie błędy, aby zapisać ustawienia.</value>
+  </data>
+  <data name="FixErrorsFirst" xml:space="preserve">
+    <value>Najpierw napraw błędy</value>
   </data>
   <data name="FixBigLineSize" xml:space="preserve">
     <value>Próg długości wiersza zostanie przywrócony do wartości domyślnej ({0}).</value>
