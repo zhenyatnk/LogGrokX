@@ -44,6 +44,22 @@ namespace LogGrokX.Search
             Save();
         }
 
+        public void Update(SavedSearchPattern savedSearchPattern, string name, in SearchPattern searchPattern)
+        {
+            savedSearchPattern.Name = name;
+            savedSearchPattern.Pattern = searchPattern.Pattern;
+            savedSearchPattern.IsCaseSensitive = searchPattern.IsCaseSensitive;
+            savedSearchPattern.UseRegex = searchPattern.UseRegex;
+            Save();
+        }
+
+        public void Restore(SavedSearchPattern savedSearchPattern, int index)
+        {
+            if (Items.Contains(savedSearchPattern)) return;
+            Items.Insert(Math.Clamp(index, 0, Items.Count), savedSearchPattern);
+            Save();
+        }
+
         public void Remove(SavedSearchPattern savedSearchPattern)
         {
             if (!Items.Remove(savedSearchPattern)) return;

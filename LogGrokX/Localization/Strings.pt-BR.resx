@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Não foi possível salvar as configurações: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Duplicar</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Gerenciar pesquisas salvas…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>Nenhuma pesquisa salva encontrada.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Substituir</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Já existe uma pesquisa salva com este nome. Deseja substituí-la?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>cópia</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Pesquisa salva «{0}» excluída.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Digite uma consulta de pesquisa.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Salvar pesquisa atual…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Selecione uma pesquisa salva para editar.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Desfazer</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Pesquisas salvas</value>
   </data>

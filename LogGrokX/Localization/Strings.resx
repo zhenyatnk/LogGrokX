@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Cannot save settings: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Duplicate</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Manage saved searches…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>No saved searches found.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Replace</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>A saved search with this name already exists. Replace it?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>copy</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Saved search '{0}' deleted.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Enter a search query.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Save current search…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Select a saved search to edit.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Undo</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Saved searches</value>
   </data>

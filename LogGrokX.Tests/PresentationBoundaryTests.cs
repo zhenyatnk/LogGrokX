@@ -69,7 +69,7 @@ public sealed class PresentationBoundaryTests
             store.Items.Add(Saved("first"));
             store.Items.Add(Saved("second"));
             using var model = new SearchViewModel(_ => throw new InvalidOperationException(),
-                new SearchAutocompleteCache(), store, new WpfUiDispatcher(Dispatcher.CurrentDispatcher));
+                new SearchAutocompleteCache(), store, new WpfUiDispatcher(Dispatcher.CurrentDispatcher), TestServices.Dialogs);
             var grid = (Grid)XamlReader.Parse("""
                 <Grid xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -214,7 +214,7 @@ public sealed class PresentationBoundaryTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference CreateWeakSearch(SavedSearchPatternStore store) =>
         new(new SearchViewModel(_ => throw new InvalidOperationException(), new SearchAutocompleteCache(), store,
-            TestServices.Inline));
+            TestServices.Inline, TestServices.Dialogs));
 
     private static SavedSearchPattern Saved(string name) => SavedSearchPattern.FromSearchPattern(name, new SearchPattern(name, false, false));
 

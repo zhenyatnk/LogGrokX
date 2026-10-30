@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>設定を保存できません: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>複製</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>保存した検索の管理…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>保存した検索が見つかりません。</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>置換</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>同じ名前の保存した検索が既に存在します。置換しますか？</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>コピー</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>保存した検索「{0}」を削除しました。</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>検索クエリを入力してください。</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>現在の検索を保存…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>編集する保存した検索を選択してください。</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>元に戻す</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>保存した検索</value>
   </data>

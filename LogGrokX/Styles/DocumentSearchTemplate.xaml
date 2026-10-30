@@ -150,6 +150,7 @@
                           HorizontalContentAlignment="Center"
                           VerticalContentAlignment="Center"
                           IsTabStop="True"
+                          IsChecked="{Binding IsSavedSearchesOpen, Mode=TwoWay}"
                           Style="{StaticResource SearchParameterToggleButtonStyle}"
                           ToolTip="{loc:Loc SavedSearches}">
                 <ui:SymbolIcon Symbol="Star24" FontSize="14" />
@@ -160,13 +161,13 @@
                    Placement="Bottom"
                    StaysOpen="False"
                    filterPopup:BindPopupBehavior.ToToggleButton="{Binding ElementName=SavedSearchToggleButton}">
-                <Border Width="320"
+                <Border Width="360"
                         MaxHeight="420"
                         Background="{DynamicResource ApplicationBackgroundBrush}"
                         BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
                         BorderThickness="1"
                         CornerRadius="8">
-                    <Grid Margin="12">
+                    <Grid Margin="10">
                         <Grid.Resources>
                             <controls:SavedSearchCollectionViewSource x:Key="FilteredSavedSearches"
                                 Source="{Binding SavedSearches}" FilterText="{Binding SavedSearchFilter}" />
@@ -175,119 +176,187 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <ui:TextBox Grid.Row="0"
-                                 Margin="0,0,0,4"
-                                 Text="{Binding SavedSearchFilter,
-                                                UpdateSourceTrigger=PropertyChanged}"
-                                 PlaceholderText="{loc:Loc FilterSavedSearches}" />
-                        <ListBox Grid.Row="1"
-                                 MinHeight="80"
-                                 HorizontalContentAlignment="Stretch"
-                                 ItemsSource="{Binding Source={StaticResource FilteredSavedSearches}}">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type search:SavedSearchPattern}">
-                                    <Grid>
-                                        <Grid>
-                                            <Grid.Style>
-                                                <Style TargetType="{x:Type Grid}">
-                                                    <Setter Property="Visibility" Value="Visible" />
-                                                    <Style.Triggers>
-                                                        <DataTrigger Binding="{Binding IsEditing}" Value="True">
-                                                            <Setter Property="Visibility" Value="Collapsed" />
-                                                        </DataTrigger>
-                                                    </Style.Triggers>
-                                                </Style>
-                                            </Grid.Style>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <ui:Button Grid.Column="0"
-                                                    HorizontalContentAlignment="Left"
-                                                    Appearance="Transparent"
-                                                    Command="{Binding DataContext.ApplySavedSearchCommand,
-                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    CommandParameter="{Binding}">
-                                                <StackPanel>
-                                                    <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
-                                                    <TextBlock FontStyle="Italic"
-                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                                               Text="{Binding Pattern}" />
-                                                </StackPanel>
-                                            </ui:Button>
-                                            <ui:Button Grid.Column="1"
-                                                    Appearance="Transparent"
-                                                    Command="{Binding DataContext.BeginEditSavedSearchCommand,
-                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="{loc:Loc Edit}">
-                                                <ui:SymbolIcon Symbol="Edit24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                            </ui:Button>
-                                            <ui:Button Grid.Column="2"
-                                                    Margin="4,0,4,0"
-                                                    Appearance="Transparent"
-                                                    Command="{Binding DataContext.DeleteSavedSearchCommand,
-                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="{loc:Loc Delete}">
-                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                            </ui:Button>
-                                        </Grid>
-                                        <Grid Visibility="{Binding IsEditing,
-                                                                   Converter={StaticResource BooleanToVisibilityConverter}}">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel Grid.Column="0" Margin="2,0,0,0">
-                                                <ui:TextBox Text="{Binding EditName,
-                                                                        UpdateSourceTrigger=PropertyChanged}"
-                                                         PlaceholderText="{loc:Loc Name}" />
-                                                <ui:TextBox Margin="0,2,0,0"
-                                                         Text="{Binding EditPattern,
-                                                                        UpdateSourceTrigger=PropertyChanged}"
-                                                         PlaceholderText="{loc:Loc Pattern}" />
-                                            </StackPanel>
-                                            <ui:Button Grid.Column="1"
-                                                    Appearance="Transparent"
-                                                    Command="{Binding DataContext.CommitEditSavedSearchCommand,
-                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="{loc:Loc Save}">
-                                                <ui:SymbolIcon Symbol="Checkmark24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                            </ui:Button>
-                                            <ui:Button Grid.Column="2"
-                                                    Margin="4,0,4,0"
-                                                    Appearance="Transparent"
-                                                    Command="{Binding DataContext.CancelEditSavedSearchCommand,
-                                                                      RelativeSource={RelativeSource AncestorType=ListBox}}"
-                                                    CommandParameter="{Binding}"
-                                                    ToolTip="{loc:Loc Cancel}">
-                                                <ui:SymbolIcon Symbol="Dismiss24" FontSize="16" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
-                                            </ui:Button>
-                                        </Grid>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                                    Margin="0,0,0,6"
+                                    Text="{Binding SavedSearchFilter, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="{loc:Loc FilterSavedSearches}"
+                                    controls:SetFocusBehavior.SetFocusRequest="{Binding SavedSearchFilterFocusRequest}">
+                            <ui:TextBox.InputBindings>
+                                <KeyBinding Key="Escape" Command="{Binding CloseSavedSearchesCommand}" />
+                            </ui:TextBox.InputBindings>
+                        </ui:TextBox>
+                        <Grid Grid.Row="1" MinHeight="80">
+                            <ListBox x:Name="SavedSearchesList"
+                                     HorizontalContentAlignment="Stretch"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     ItemsSource="{Binding Source={StaticResource FilteredSavedSearches}}">
+                                <ListBox.InputBindings>
+                                    <KeyBinding Key="Enter"
+                                                Command="{Binding ApplySavedSearchCommand}"
+                                                CommandParameter="{Binding ElementName=SavedSearchesList, Path=SelectedItem}" />
+                                    <KeyBinding Key="Escape" Command="{Binding CloseSavedSearchesCommand}" />
+                                </ListBox.InputBindings>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type search:SavedSearchPattern}">
+                                        <ui:Button HorizontalContentAlignment="Stretch"
+                                                   Appearance="Transparent"
+                                                   Command="{Binding DataContext.ApplySavedSearchCommand,
+                                                                     RelativeSource={RelativeSource AncestorType=ListBox}}"
+                                                   CommandParameter="{Binding}"
+                                                   ToolTip="{Binding Pattern}">
+                                            <Grid Margin="0,1">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <TextBlock Grid.Row="0" Grid.Column="0"
+                                                           Margin="0,0,8,0"
+                                                           FontSize="12"
+                                                           LineHeight="14"
+                                                           LineStackingStrategy="BlockLineHeight"
+                                                           Text="{Binding Name}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Name}" />
+                                                <TextBlock Grid.Row="1" Grid.Column="0"
+                                                           Margin="0,0,8,0"
+                                                           FontFamily="{StaticResource JetBrainsMono}"
+                                                           FontSize="11"
+                                                           LineHeight="13"
+                                                           LineStackingStrategy="BlockLineHeight"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                           Text="{Binding Pattern}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding Pattern}" />
+                                                <TextBlock Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                           Margin="0,0,6,0"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                           Text="Aa"
+                                                           Visibility="{Binding IsCaseSensitive, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <TextBlock Grid.Row="0" Grid.Column="2" Grid.RowSpan="2"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="11"
+                                                           FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                           Text="(.*)"
+                                                           Visibility="{Binding UseRegex, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            </Grid>
+                                        </ui:Button>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                            <TextBlock Margin="16"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Text="{loc:Loc NoSavedSearchesFound}"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ElementName=SavedSearchesList, Path=HasItems}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
                         <Grid Grid.Row="2" Margin="0,4,0,0">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <ui:TextBox Grid.Column="0"
-                                     Margin="0,0,4,0"
-                                     Text="{Binding NewSearchName,
-                                                    UpdateSourceTrigger=PropertyChanged}"
-                                     PlaceholderText="{loc:Loc CurrentSearchName}" />
-                            <ui:Button Grid.Column="1"
-                                    Appearance="Primary"
-                                    Command="{Binding SaveSearchCommand}"
-                                    Content="{loc:Loc Save}" />
+                            <ui:Button Grid.Column="0"
+                                       Width="30"
+                                       MinHeight="28"
+                                       Padding="0"
+                                       Appearance="Transparent"
+                                       Command="{Binding ShowSaveSearchEditorCommand}"
+                                       IsEnabled="{Binding CanSaveCurrentSearch}"
+                                       ToolTip="{loc:Loc SaveCurrentSearch}"
+                                       AutomationProperties.Name="{loc:Loc SaveCurrentSearch}">
+                                <ui:SymbolIcon Symbol="Add24" FontSize="15" />
+                            </ui:Button>
+                            <ui:Button Grid.Column="2"
+                                       Width="30"
+                                       MinHeight="28"
+                                       Padding="0"
+                                       Appearance="Transparent"
+                                       Command="{Binding ManageSavedSearchesCommand}"
+                                       ToolTip="{loc:Loc ManageSavedSearches}"
+                                       AutomationProperties.Name="{loc:Loc ManageSavedSearches}">
+                                <ui:SymbolIcon Symbol="Settings24" FontSize="15" />
+                            </ui:Button>
                         </Grid>
+                        <Border Grid.Row="3"
+                                Margin="0,6,0,0"
+                                Padding="8"
+                                CornerRadius="4"
+                                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                Visibility="{Binding IsSaveSearchEditorOpen, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <ui:TextBox Grid.Column="0"
+                                                Margin="0,0,4,0"
+                                                Text="{Binding NewSearchName, UpdateSourceTrigger=PropertyChanged}"
+                                                PlaceholderText="{loc:Loc CurrentSearchName}">
+                                        <ui:TextBox.InputBindings>
+                                            <KeyBinding Key="Enter" Command="{Binding SaveSearchCommand}" />
+                                            <KeyBinding Key="Escape" Command="{Binding CancelSaveSearchEditorCommand}" />
+                                        </ui:TextBox.InputBindings>
+                                    </ui:TextBox>
+                                    <ui:Button Grid.Column="1"
+                                               Width="30"
+                                               MinHeight="30"
+                                               Margin="0,0,2,0"
+                                               Padding="0"
+                                               Appearance="Transparent"
+                                               Command="{Binding SaveSearchCommand}"
+                                               ToolTip="{loc:Loc Save}"
+                                               AutomationProperties.Name="{loc:Loc Save}">
+                                        <ui:SymbolIcon Symbol="Save24" FontSize="15" />
+                                    </ui:Button>
+                                    <ui:Button Grid.Column="2"
+                                               Width="30"
+                                               MinHeight="30"
+                                               Padding="0"
+                                               Appearance="Transparent"
+                                               Command="{Binding CancelSaveSearchEditorCommand}"
+                                               ToolTip="{loc:Loc Cancel}"
+                                               AutomationProperties.Name="{loc:Loc Cancel}">
+                                        <ui:SymbolIcon Symbol="Dismiss24" FontSize="15" />
+                                    </ui:Button>
+                                </Grid>
+                                <StackPanel Margin="0,8,0,0"
+                                            Visibility="{Binding IsReplaceConfirmationVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <TextBlock Text="{loc:Loc ReplaceSavedSearchConfirmation}" TextWrapping="Wrap" />
+                                    <WrapPanel Margin="0,6,0,0">
+                                        <ui:Button Margin="0,0,6,0"
+                                                   Appearance="Primary"
+                                                   Command="{Binding ConfirmReplaceSearchCommand}"
+                                                   Content="{loc:Loc Replace}" />
+                                        <ui:Button Command="{Binding CancelReplaceSearchCommand}" Content="{loc:Loc Cancel}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </Border>
             </Popup>

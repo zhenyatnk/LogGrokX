@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>No se puede guardar la configuración: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Duplicar</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Administrar búsquedas guardadas…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>No se encontraron búsquedas guardadas.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Reemplazar</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Ya existe una búsqueda guardada con este nombre. ¿Desea reemplazarla?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>copia</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Búsqueda guardada «{0}» eliminada.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Escriba una consulta de búsqueda.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Guardar búsqueda actual…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Seleccione una búsqueda guardada para editarla.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Deshacer</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Búsquedas guardadas</value>
   </data>

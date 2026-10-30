@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Impossible d’enregistrer les paramètres : {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Dupliquer</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Gérer les recherches enregistrées…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>Aucune recherche enregistrée trouvée.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Remplacer</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Une recherche enregistrée portant ce nom existe déjà. La remplacer ?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>copie</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Recherche enregistrée « {0} » supprimée.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Saisissez une requête de recherche.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Enregistrer la recherche actuelle…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Sélectionnez une recherche enregistrée à modifier.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Annuler</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Recherches enregistrées</value>
   </data>

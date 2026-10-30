@@ -31,16 +31,21 @@ namespace LogGrokX.Search
         private Regex? _highlightRegex;
         private readonly SearchAutocompleteCache _searchAutocompleteCache;
         private readonly SavedSearchPatternStore _savedSearchPatternStore;
+        private readonly IAppDialogs _dialogs;
         private string _savedSearchFilter = string.Empty;
         private readonly IUiDispatcher _dispatcher;
         private bool _disposed;
         private string _newSearchName = string.Empty;
+        private bool _isSavedSearchesOpen;
+        private bool _isSaveSearchEditorOpen;
+        private SavedSearchPattern? _pendingReplacement;
 
         public SearchViewModel(Func<SearchPattern, ISearchDocument> searchDocumentViewModelFactory,
             SearchAutocompleteCache searchAutocompleteCache,
-            SavedSearchPatternStore savedSearchPatternStore, IUiDispatcher dispatcher)
+            SavedSearchPatternStore savedSearchPatternStore, IUiDispatcher dispatcher, IAppDialogs dialogs)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            _dialogs = dialogs ?? throw new ArgumentNullException(nameof(dialogs));
             _searchDocumentViewModelFactory =
                 pattern =>
                 {
@@ -57,6 +62,12 @@ namespace LogGrokX.Search
             SearchTextCommand = new DelegateCommand(SearchText, text => !string.IsNullOrEmpty(text as string));
             Activate = new DelegateCommand(() => SetFocusRequest.Invoke());
             SaveSearchCommand = new DelegateCommand(SaveCurrentSearch);
+            ShowSaveSearchEditorCommand = new DelegateCommand(ShowSaveSearchEditor);
+            CancelSaveSearchEditorCommand = new DelegateCommand(ResetSaveSearchEditor);
+            ManageSavedSearchesCommand = new DelegateCommand(ManageSavedSearches);
+            CloseSavedSearchesCommand = new DelegateCommand(() => IsSavedSearchesOpen = false);
+            ConfirmReplaceSearchCommand = new DelegateCommand(CommitSaveCurrentSearch);
+            CancelReplaceSearchCommand = new DelegateCommand(CancelReplaceSearch);
             ApplySavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(ApplySavedSearch);
             BeginEditSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(BeginEditSavedSearch);
             CommitEditSavedSearchCommand = DelegateCommand.Create<SavedSearchPattern>(CommitEditSavedSearch);
@@ -189,6 +200,35 @@ namespace LogGrokX.Search
             }
         }
 
+        public SetFocusRequest SavedSearchFilterFocusRequest { get; } = new();
+
+        public bool IsSavedSearchesOpen
+        {
+            get => _isSavedSearchesOpen;
+            set
+            {
+                if (_isSavedSearchesOpen == value) return;
+                _isSavedSearchesOpen = value;
+                InvokePropertyChanged();
+                if (value)
+                    SavedSearchFilterFocusRequest.Invoke();
+                else
+                    ResetSaveSearchEditor();
+            }
+        }
+
+        public bool IsSaveSearchEditorOpen
+        {
+            get => _isSaveSearchEditorOpen;
+            private set => SetAndRaiseIfChanged(ref _isSaveSearchEditorOpen, value);
+        }
+
+        public bool IsReplaceConfirmationVisible => _pendingReplacement != null;
+
+        public bool CanSaveCurrentSearch => !_searchPattern.IsEmpty && _searchPattern.IsValid;
+
+        public string CurrentSearchPattern => _searchPattern.Pattern;
+
         public string NewSearchName
         {
             get => _newSearchName;
@@ -215,6 +255,18 @@ namespace LogGrokX.Search
 
         public ICommand SaveSearchCommand { get; }
 
+        public ICommand ShowSaveSearchEditorCommand { get; }
+
+        public ICommand CancelSaveSearchEditorCommand { get; }
+
+        public ICommand ManageSavedSearchesCommand { get; }
+
+        public ICommand CloseSavedSearchesCommand { get; }
+
+        public ICommand ConfirmReplaceSearchCommand { get; }
+
+        public ICommand CancelReplaceSearchCommand { get; }
+
         public ICommand ApplySavedSearchCommand { get; }
 
         public ICommand BeginEditSavedSearchCommand { get; }
@@ -225,16 +277,62 @@ namespace LogGrokX.Search
 
         public ICommand DeleteSavedSearchCommand { get; }
 
+        private void ShowSaveSearchEditor()
+        {
+            if (!CanSaveCurrentSearch) return;
+            _pendingReplacement = null;
+            NewSearchName = string.Empty;
+            IsSaveSearchEditorOpen = true;
+            InvokePropertyChanged(nameof(IsReplaceConfirmationVisible));
+        }
+
+        private void ResetSaveSearchEditor()
+        {
+            _pendingReplacement = null;
+            NewSearchName = string.Empty;
+            IsSaveSearchEditorOpen = false;
+            InvokePropertyChanged(nameof(IsReplaceConfirmationVisible));
+        }
+
+        private void ManageSavedSearches()
+        {
+            IsSavedSearchesOpen = false;
+            _dialogs.ShowSavedSearches();
+        }
+
+        private void CancelReplaceSearch()
+        {
+            _pendingReplacement = null;
+            InvokePropertyChanged(nameof(IsReplaceConfirmationVisible));
+        }
+
         private void SaveCurrentSearch()
         {
-            if (_searchPattern.IsEmpty) return;
+            if (!CanSaveCurrentSearch) return;
 
             var name = string.IsNullOrWhiteSpace(NewSearchName)
                 ? _searchPattern.Pattern
                 : NewSearchName.Trim();
+            var existing = SavedSearches.FirstOrDefault(
+                item => string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (existing != null)
+            {
+                _pendingReplacement = existing;
+                InvokePropertyChanged(nameof(IsReplaceConfirmationVisible));
+                return;
+            }
 
+            CommitSaveCurrentSearch();
+        }
+
+        private void CommitSaveCurrentSearch()
+        {
+            if (!CanSaveCurrentSearch) return;
+            var name = string.IsNullOrWhiteSpace(NewSearchName)
+                ? _searchPattern.Pattern
+                : NewSearchName.Trim();
             _savedSearchPatternStore.AddOrUpdate(name, _searchPattern);
-            NewSearchName = string.Empty;
+            ResetSaveSearchEditor();
         }
 
         private void ApplySavedSearch(SavedSearchPattern savedSearchPattern)
@@ -251,6 +349,7 @@ namespace LogGrokX.Search
             InvokePropertyChanged(nameof(UseRegex));
 
             CommitSearchPatternImmediately(_textToSearch, _isCaseSensitive, _useRegex);
+            IsSavedSearchesOpen = false;
         }
 
         private void BeginEditSavedSearch(SavedSearchPattern savedSearchPattern) =>
@@ -322,6 +421,8 @@ namespace LogGrokX.Search
 
             InvokePropertyChanged(nameof(IsFilterEnabled));
             InvokePropertyChanged(nameof(IsFilterDisabled));
+            InvokePropertyChanged(nameof(CanSaveCurrentSearch));
+            InvokePropertyChanged(nameof(CurrentSearchPattern));
             
             if (_searchPattern.IsEmpty)
             {

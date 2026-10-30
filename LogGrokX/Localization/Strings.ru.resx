@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Не удалось сохранить настройки: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Дублировать</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Управлять сохранёнными…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>Сохранённые поиски не найдены.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Заменить</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Поиск с таким названием уже существует. Заменить его?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>копия</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Сохранённый поиск «{0}» удалён.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Введите поисковый запрос.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Сохранить текущий поиск…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Выберите сохранённый поиск для редактирования.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Отменить</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Сохранённые поиски</value>
   </data>

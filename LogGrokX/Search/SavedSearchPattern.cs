@@ -9,6 +9,8 @@ namespace LogGrokX.Search
     {
         private string _name = string.Empty;
         private string _pattern = string.Empty;
+        private bool _isCaseSensitive;
+        private bool _useRegex;
 
         public string Name
         {
@@ -32,8 +34,27 @@ namespace LogGrokX.Search
             }
         }
 
-        public bool IsCaseSensitive { get; set; }
-        public bool UseRegex { get; set; }
+        public bool IsCaseSensitive
+        {
+            get => _isCaseSensitive;
+            set
+            {
+                if (_isCaseSensitive == value) return;
+                _isCaseSensitive = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool UseRegex
+        {
+            get => _useRegex;
+            set
+            {
+                if (_useRegex == value) return;
+                _useRegex = value;
+                InvokePropertyChanged();
+            }
+        }
 
         [JsonIgnore]
         public bool IsEditing { get; private set; }

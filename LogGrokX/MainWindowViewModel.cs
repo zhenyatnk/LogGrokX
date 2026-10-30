@@ -96,7 +96,7 @@ namespace LogGrokX
             Documents = new ObservableCollection<DocumentViewModel>();
             Documents.CollectionChanged += OnDocumentsChanged;
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
-            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService, _colorValidator, _dispatcher) { IsActive = _mergedFilesViewService.IsEnabled };
+            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService, _colorValidator, _dispatcher, _dialogs) { IsActive = _mergedFilesViewService.IsEnabled };
             _applicationSettings.ProfilesChanged += OnProfilesChanged;
             OpenSettings = new DelegateCommand(OpenSettingsWindow);
             OpenSupportCommand = new DelegateCommand(OpenSupport);
@@ -400,7 +400,7 @@ namespace LogGrokX
         private (DocumentViewModel document, DocumentContainer container) CreateDocumentResources(
             string fileName, ProfileSettings profile)
         {
-            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService, _dispatcher, _desktop, _colorValidator, _displaySettings);
+            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService, _dispatcher, _desktop, _dialogs, _colorValidator, _displaySettings);
             DocumentViewModel viewModel;
             try
             {

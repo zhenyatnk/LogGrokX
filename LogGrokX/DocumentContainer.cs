@@ -33,10 +33,11 @@ namespace LogGrokX
         public DocumentContainer(string fileName, ProfileSettings profile, ApplicationSettings applicationSettings,
             SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore,
             TimelinePlacementService timelinePlacementService, ThreadGroupingService threadGroupingService, IUiDispatcher dispatcher, IDesktopService desktop,
-            IColorValidator colorValidator, DisplaySettingsMonitor displaySettings)
+            IAppDialogs dialogs, IColorValidator colorValidator, DisplaySettingsMonitor displaySettings)
         {
             ArgumentNullException.ThrowIfNull(dispatcher);
             ArgumentNullException.ThrowIfNull(desktop);
+            ArgumentNullException.ThrowIfNull(dialogs);
             ArgumentNullException.ThrowIfNull(colorValidator);
             ArgumentNullException.ThrowIfNull(displaySettings);
             var logFormats = LogFormatValidation.GetValidFormats(profile);
@@ -50,6 +51,7 @@ namespace LogGrokX
             
             _container.RegisterInstance<IUiDispatcher>(dispatcher);
             _container.RegisterInstance<IDesktopService>(desktop);
+            _container.RegisterInstance(dialogs);
             _container.RegisterInstance(displaySettings, setup: Setup.With(preventDisposal: true));
             _container.RegisterInstance(autocompleteCache);
             _container.RegisterInstance(savedSearchPatternStore);

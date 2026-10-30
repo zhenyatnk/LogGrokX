@@ -6,4 +6,5 @@ public interface IAppDialogs
     void ShowWarning(string message, string title);
     void ShowSettings();
     void ShowSupport();
+    void ShowSavedSearches();
 }

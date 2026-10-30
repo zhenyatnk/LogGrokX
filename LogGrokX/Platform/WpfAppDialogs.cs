@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Windows;
 using LogGrokX.Localization;
+using LogGrokX.Search;
 using LogGrokX.Settings;
 using Microsoft.Win32;
 
 namespace LogGrokX.Platform;
 
 public sealed class WpfAppDialogs(Func<SettingsViewModel> settingsFactory, IUpdateService updates,
-    IDesktopService desktop) : IAppDialogs
+    IDesktopService desktop, SavedSearchPatternStore savedSearches) : IAppDialogs
 {
     public IReadOnlyList<string> SelectLogFiles()
     {
@@ -31,6 +32,8 @@ public sealed class WpfAppDialogs(Func<SettingsViewModel> settingsFactory, IUpda
     public void ShowSettings() => ShowDialog(new SettingsWindow(settingsFactory()));
 
     public void ShowSupport() => ShowDialog(new SupportWindow(updates, desktop));
+
+    public void ShowSavedSearches() => ShowDialog(new SavedSearchesWindow(savedSearches));
 
     private static void ShowDialog(Window window)
     {

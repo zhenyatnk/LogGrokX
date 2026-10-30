@@ -491,7 +491,7 @@ public class MergedRebuildTests
             Merged = buildData == null ? Main.MergedViewModel : new MergedViewModel(Main.Documents,
                 new SearchAutocompleteCache(), new SavedSearchPatternStore(), settings,
                 new ThreadGroupingService(settings), new TimelinePlacementService(settings), buildData, new Platform.WpfColorValidator(),
-                new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
+                new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher), TestServices.Dialogs);
             for (var source = 0; source < 3; source++)
             {
                 var path = Path.Combine(_directory, $"sample-{source}.log");

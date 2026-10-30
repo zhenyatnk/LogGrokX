@@ -66,9 +66,10 @@ namespace LogGrokX.MergedView
             SavedSearchPatternStore savedSearchPatternStore,
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
-            TimelinePlacementService timelinePlacementService, IColorValidator colorValidator, IUiDispatcher dispatcher)
+            TimelinePlacementService timelinePlacementService, IColorValidator colorValidator, IUiDispatcher dispatcher,
+            IAppDialogs dialogs)
             : this(documents, searchAutocompleteCache, savedSearchPatternStore, applicationSettings,
-                threadGroupingService, timelinePlacementService, BuildData, colorValidator, dispatcher)
+                threadGroupingService, timelinePlacementService, BuildData, colorValidator, dispatcher, dialogs)
         {
         }
 
@@ -78,7 +79,8 @@ namespace LogGrokX.MergedView
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
             TimelinePlacementService timelinePlacementService,
-            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData, IColorValidator colorValidator, IUiDispatcher dispatcher)
+            Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData, IColorValidator colorValidator, IUiDispatcher dispatcher,
+            IAppDialogs dialogs)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _buildData = buildData;
@@ -93,7 +95,7 @@ namespace LogGrokX.MergedView
             Search = new SearchViewModel(
                 pattern => new MergedSearchDocumentViewModel(this, pattern),
                 searchAutocompleteCache,
-                savedSearchPatternStore, _dispatcher);
+                savedSearchPatternStore, _dispatcher, dialogs);
             Search.CurrentLineChanged += NavigateToCentered;
 
             TimeRangeFilter = new MergedTimeRangeFilterViewModel();

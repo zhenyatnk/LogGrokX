@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Einstellungen können nicht gespeichert werden: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Duplizieren</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Gespeicherte Suchen verwalten…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>Keine gespeicherten Suchen gefunden.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Ersetzen</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Eine gespeicherte Suche mit diesem Namen ist bereits vorhanden. Ersetzen?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>Kopie</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Gespeicherte Suche „{0}“ gelöscht.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Suchbegriff eingeben.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Aktuelle Suche speichern…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Gespeicherte Suche zum Bearbeiten auswählen.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Rückgängig</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Gespeicherte Suchen</value>
   </data>

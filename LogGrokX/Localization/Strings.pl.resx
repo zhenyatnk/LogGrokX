@@ -516,6 +516,39 @@
   <data xml:space="preserve" name="SaveSettingsFailed">
     <value>Nie można zapisać ustawień: {0}</value>
   </data>
+  <data xml:space="preserve" name="Duplicate">
+    <value>Duplikuj</value>
+  </data>
+  <data xml:space="preserve" name="ManageSavedSearches">
+    <value>Zarządzaj zapisanymi wyszukiwaniami…</value>
+  </data>
+  <data xml:space="preserve" name="NoSavedSearchesFound">
+    <value>Nie znaleziono zapisanych wyszukiwań.</value>
+  </data>
+  <data xml:space="preserve" name="Replace">
+    <value>Zastąp</value>
+  </data>
+  <data xml:space="preserve" name="ReplaceSavedSearchConfirmation">
+    <value>Zapisane wyszukiwanie o tej nazwie już istnieje. Czy je zastąpić?</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchCopySuffix">
+    <value>kopia</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchDeleted">
+    <value>Zapisane wyszukiwanie „{0}” usunięto.</value>
+  </data>
+  <data xml:space="preserve" name="SavedSearchEmptyPattern">
+    <value>Wprowadź zapytanie wyszukiwania.</value>
+  </data>
+  <data xml:space="preserve" name="SaveCurrentSearch">
+    <value>Zapisz bieżące wyszukiwanie…</value>
+  </data>
+  <data xml:space="preserve" name="SelectSavedSearch">
+    <value>Wybierz zapisane wyszukiwanie do edycji.</value>
+  </data>
+  <data xml:space="preserve" name="Undo">
+    <value>Cofnij</value>
+  </data>
   <data xml:space="preserve" name="SavedSearches">
     <value>Zapisane wyszukiwania</value>
   </data>

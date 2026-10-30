@@ -45,6 +45,7 @@ internal static class TestServices
         public void ShowWarning(string message, string title) { }
         public void ShowSettings() => throw new InvalidOperationException("Unexpected dialog.");
         public void ShowSupport() => throw new InvalidOperationException("Unexpected dialog.");
+        public void ShowSavedSearches() => throw new InvalidOperationException("Unexpected dialog.");
     }
 
     private sealed class UpdatesStub : IUpdateService

@@ -155,8 +155,8 @@ public class FilterViewModelTests
                 };
                 using var container = new DocumentContainer(path, profile, settings, new SearchAutocompleteCache(),
                     new SavedSearchPatternStore(), new TimelinePlacementService(settings), new ThreadGroupingService(settings),
-                    new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher), TestServices.Desktop, new Platform.WpfColorValidator(),
-                    TestServices.DisplaySettings);
+                    new Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher), TestServices.Desktop, TestServices.Dialogs,
+                    new Platform.WpfColorValidator(), TestServices.DisplaySettings);
                 document = container.GetDocumentViewModel();
                 var view = (GridView)new LogGridViewConverter().Convert(document.LogViewModel.CustomView, typeof(GridView), null!, System.Globalization.CultureInfo.InvariantCulture);
                 var template = view.Columns[^1].HeaderTemplate;

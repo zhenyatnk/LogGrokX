@@ -190,7 +190,7 @@ public sealed class PlatformBoundaryTests
         {
             patterns.Add(pattern.Pattern);
             return new SearchDocument { SearchPattern = pattern };
-        }, new SearchAutocompleteCache(), new SavedSearchPatternStore(), dispatcher);
+        }, new SearchAutocompleteCache(), new SavedSearchPatternStore(), dispatcher, TestServices.Dialogs);
 
         viewModel.TextToSearch = "first";
         viewModel.TextToSearch = "second";
@@ -244,6 +244,7 @@ public sealed class PlatformBoundaryTests
         public IReadOnlyList<string> SelectLogFiles() { FileSelectionCount++; return []; }
         public void ShowSettings() => SettingsCount++;
         public void ShowSupport() => SupportCount++;
+        public void ShowSavedSearches() => throw new InvalidOperationException();
         public void ShowWarning(string message, string title) => throw new InvalidOperationException();
     }
 
