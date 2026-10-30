@@ -27,6 +27,15 @@ namespace LogGrokX.Settings
             }
         }
 
+        private void OnFixAndSaveClick(object sender, RoutedEventArgs e)
+        {
+            if (DataContext is SettingsViewModel viewModel && viewModel.FixAndSave())
+            {
+                _saved = true;
+                Close();
+            }
+        }
+
         private void OnCancelClick(object sender, RoutedEventArgs e)
         {
             Close();

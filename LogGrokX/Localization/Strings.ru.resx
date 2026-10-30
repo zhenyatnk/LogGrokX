@@ -768,4 +768,46 @@
   <data name="SourceServerCommandDisabled" xml:space="preserve">
     <value>Команда сервера исходников отключена в настройках: {0}</value>
   </data>
+  <data name="AutoFixAvailable" xml:space="preserve">
+    <value>Эти проблемы можно исправить автоматически:</value>
+  </data>
+  <data name="FixAndSave" xml:space="preserve">
+    <value>Исправить и сохранить</value>
+  </data>
+  <data name="FixBigLineSize" xml:space="preserve">
+    <value>Порог длины строки будет сброшен на значение по умолчанию ({0}).</value>
+  </data>
+  <data name="FixMaxDumps" xml:space="preserve">
+    <value>Максимальное число дампов будет сброшено на значение по умолчанию ({0}).</value>
+  </data>
+  <data name="FixProfileNameEmpty" xml:space="preserve">
+    <value>Профилю без названия будет присвоено название «{0}».</value>
+  </data>
+  <data name="FixProfileNameDuplicate" xml:space="preserve">
+    <value>Повторяющийся профиль «{0}» будет переименован в «{1}».</value>
+  </data>
+  <data name="FixTransformations" xml:space="preserve">
+    <value>будут удалены некорректные преобразования: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsCase" xml:space="preserve">
+    <value>индексируемые поля будут приведены к группам regex: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsRemove" xml:space="preserve">
+    <value>будут удалены неизвестные индексируемые поля: {0}.</value>
+  </data>
+  <data name="FixXorMask" xml:space="preserve">
+    <value>некорректная маска XOR «{0}» будет очищена.</value>
+  </data>
+  <data name="FixColorRegex" xml:space="preserve">
+    <value>Профиль «{0}»: регулярное выражение правила цвета «{1}» будет экранировано как обычный текст: «{2}».</value>
+  </data>
+  <data name="FixColor" xml:space="preserve">
+    <value>Профиль «{0}»: некорректный цвет «{1}» будет сброшен на цвет по умолчанию.</value>
+  </data>
+  <data name="FixMappingValueMissing" xml:space="preserve">
+    <value>Список «{0}»: элементы без значения будут удалены.</value>
+  </data>
+  <data name="FixMappingDuplicates" xml:space="preserve">
+    <value>Список «{0}»: повторяющиеся значения будут удалены, останется первое: {1}.</value>
+  </data>
 </root>

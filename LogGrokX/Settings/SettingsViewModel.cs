@@ -13,7 +13,7 @@ using LogGrokX.Localization;
 
 namespace LogGrokX.Settings
 {
-    public sealed class SettingsViewModel : ViewModelBase
+    public sealed partial class SettingsViewModel : ViewModelBase
     {
         private readonly IDesktopService _desktop;
         private readonly ApplicationSettings _applicationSettings;
@@ -344,10 +344,12 @@ namespace LogGrokX.Settings
             if (errors.Count > 0)
             {
                 ValidationMessage = string.Join(Environment.NewLine, errors);
+                AutoFixes = GetAutoFixes().Select(fix => fix.Description).ToArray();
                 return false;
             }
 
             ValidationMessage = string.Empty;
+            AutoFixes = Array.Empty<string>();
 
             var bigLineSize = int.Parse(View.BigLineSizeText.Trim(), CultureInfo.InvariantCulture);
             var maxDumpsCount = int.Parse(Debug.MaxDumpsCountText.Trim(), CultureInfo.InvariantCulture);

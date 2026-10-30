@@ -768,4 +768,46 @@
   <data name="SourceServerCommandDisabled" xml:space="preserve">
     <value>ソース サーバー コマンドは設定で無効になっています: {0}</value>
   </data>
+  <data name="AutoFixAvailable" xml:space="preserve">
+    <value>次の問題は自動的に修正できます:</value>
+  </data>
+  <data name="FixAndSave" xml:space="preserve">
+    <value>修正して保存</value>
+  </data>
+  <data name="FixBigLineSize" xml:space="preserve">
+    <value>行の長さのしきい値を既定値 ({0}) にリセットします。</value>
+  </data>
+  <data name="FixMaxDumps" xml:space="preserve">
+    <value>ダンプの最大数を既定値 ({0}) にリセットします。</value>
+  </data>
+  <data name="FixProfileNameEmpty" xml:space="preserve">
+    <value>名前のないプロファイルに「{0}」という名前を付けます。</value>
+  </data>
+  <data name="FixProfileNameDuplicate" xml:space="preserve">
+    <value>重複するプロファイル「{0}」の名前を「{1}」に変更します。</value>
+  </data>
+  <data name="FixTransformations" xml:space="preserve">
+    <value>無効な変換を削除します: {0}。</value>
+  </data>
+  <data name="FixIndexedFieldsCase" xml:space="preserve">
+    <value>インデックス フィールドを正規表現のグループに合わせます: {0}。</value>
+  </data>
+  <data name="FixIndexedFieldsRemove" xml:space="preserve">
+    <value>不明なインデックス フィールドを削除します: {0}。</value>
+  </data>
+  <data name="FixXorMask" xml:space="preserve">
+    <value>無効な XOR マスク「{0}」をクリアします。</value>
+  </data>
+  <data name="FixColorRegex" xml:space="preserve">
+    <value>プロファイル「{0}」: 色ルールの正規表現「{1}」をプレーン テキストとしてエスケープします: 「{2}」。</value>
+  </data>
+  <data name="FixColor" xml:space="preserve">
+    <value>プロファイル「{0}」: 無効な色「{1}」を既定に戻します。</value>
+  </data>
+  <data name="FixMappingValueMissing" xml:space="preserve">
+    <value>値マッピング リスト「{0}」: 値のない項目を削除します。</value>
+  </data>
+  <data name="FixMappingDuplicates" xml:space="preserve">
+    <value>値マッピング リスト「{0}」: 重複する値を削除し、最初の項目を残します: {1}。</value>
+  </data>
 </root>

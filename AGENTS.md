@@ -422,6 +422,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `ICallStackPresenter` (`WpfCallStackPresenter`); its source viewer colors C/C++
   with `Data/Symbols/CppSyntax` tokens via `Controls/SourceCodeTextBlock` and
   centers `CurrentSourceLine` in item scroll units (`CallStackWindow.CenterLine`).
+- **Settings auto-fix** (#91): `SettingsViewModel.Save` fills `AutoFixes`
+  (descriptions from `GetAutoFixes` in `Settings/SettingsViewModel.AutoFix.cs`)
+  when validation fails; `FixAndSave` applies every fix and saves again, and the
+  settings window shows the list with a **Fix and save** button
+  (`OnFixAndSaveClick`). Each `Validate` error that has a safe repair needs a
+  matching fix there; an invalid log format regex has none on purpose.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
   next to the executable.

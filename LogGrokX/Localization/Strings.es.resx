@@ -768,4 +768,46 @@
   <data name="SourceServerCommandDisabled" xml:space="preserve">
     <value>El comando del servidor de código fuente está deshabilitado en la configuración: {0}</value>
   </data>
+  <data name="AutoFixAvailable" xml:space="preserve">
+    <value>Estos problemas se pueden corregir automáticamente:</value>
+  </data>
+  <data name="FixAndSave" xml:space="preserve">
+    <value>Corregir y guardar</value>
+  </data>
+  <data name="FixBigLineSize" xml:space="preserve">
+    <value>El umbral de longitud de línea se restablecerá al valor predeterminado ({0}).</value>
+  </data>
+  <data name="FixMaxDumps" xml:space="preserve">
+    <value>El número máximo de volcados se restablecerá al valor predeterminado ({0}).</value>
+  </data>
+  <data name="FixProfileNameEmpty" xml:space="preserve">
+    <value>Un perfil sin nombre se llamará «{0}».</value>
+  </data>
+  <data name="FixProfileNameDuplicate" xml:space="preserve">
+    <value>El perfil duplicado «{0}» se renombrará a «{1}».</value>
+  </data>
+  <data name="FixTransformations" xml:space="preserve">
+    <value>se eliminarán las transformaciones no válidas: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsCase" xml:space="preserve">
+    <value>los campos indexados se ajustarán a los grupos de la regex: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsRemove" xml:space="preserve">
+    <value>se eliminarán los campos indexados desconocidos: {0}.</value>
+  </data>
+  <data name="FixXorMask" xml:space="preserve">
+    <value>se borrará la máscara XOR no válida «{0}».</value>
+  </data>
+  <data name="FixColorRegex" xml:space="preserve">
+    <value>Perfil «{0}»: la expresión regular «{1}» de la regla de color se escapará como texto literal: «{2}».</value>
+  </data>
+  <data name="FixColor" xml:space="preserve">
+    <value>Perfil «{0}»: el color no válido «{1}» se restablecerá al predeterminado.</value>
+  </data>
+  <data name="FixMappingValueMissing" xml:space="preserve">
+    <value>Lista de asignaciones «{0}»: se eliminarán los elementos sin valor.</value>
+  </data>
+  <data name="FixMappingDuplicates" xml:space="preserve">
+    <value>Lista de asignaciones «{0}»: se eliminarán los valores duplicados y se conservará el primero: {1}.</value>
+  </data>
 </root>

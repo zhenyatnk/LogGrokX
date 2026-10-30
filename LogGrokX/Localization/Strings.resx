@@ -768,4 +768,46 @@
   <data name="SourceServerCommandDisabled" xml:space="preserve">
     <value>Source server command is disabled in settings: {0}</value>
   </data>
+  <data name="AutoFixAvailable" xml:space="preserve">
+    <value>These problems can be fixed automatically:</value>
+  </data>
+  <data name="FixAndSave" xml:space="preserve">
+    <value>Fix and save</value>
+  </data>
+  <data name="FixBigLineSize" xml:space="preserve">
+    <value>Line length threshold will be reset to the default value ({0}).</value>
+  </data>
+  <data name="FixMaxDumps" xml:space="preserve">
+    <value>Maximum number of dumps will be reset to the default value ({0}).</value>
+  </data>
+  <data name="FixProfileNameEmpty" xml:space="preserve">
+    <value>A profile without a name will be named "{0}".</value>
+  </data>
+  <data name="FixProfileNameDuplicate" xml:space="preserve">
+    <value>Duplicate profile "{0}" will be renamed to "{1}".</value>
+  </data>
+  <data name="FixTransformations" xml:space="preserve">
+    <value>invalid transformations will be removed: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsCase" xml:space="preserve">
+    <value>indexed fields will be matched to the regex groups: {0}.</value>
+  </data>
+  <data name="FixIndexedFieldsRemove" xml:space="preserve">
+    <value>unknown indexed fields will be removed: {0}.</value>
+  </data>
+  <data name="FixXorMask" xml:space="preserve">
+    <value>invalid XOR mask "{0}" will be cleared.</value>
+  </data>
+  <data name="FixColorRegex" xml:space="preserve">
+    <value>Profile "{0}": color rule regex "{1}" will be escaped to match plain text: "{2}".</value>
+  </data>
+  <data name="FixColor" xml:space="preserve">
+    <value>Profile "{0}": invalid color "{1}" will be reset to the default.</value>
+  </data>
+  <data name="FixMappingValueMissing" xml:space="preserve">
+    <value>Value mapping list "{0}": items without a value will be removed.</value>
+  </data>
+  <data name="FixMappingDuplicates" xml:space="preserve">
+    <value>Value mapping list "{0}": duplicate values will be removed, keeping the first one: {1}.</value>
+  </data>
 </root>

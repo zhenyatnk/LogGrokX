@@ -763,6 +763,32 @@
                            Text="{Binding ValidationMessage}"
                            TextWrapping="Wrap"
                            Visibility="{Binding HasValidationMessage, Converter={StaticResource BoolToVisibility}}" />
+                <StackPanel Margin="0,8,0,0"
+                            Visibility="{Binding HasAutoFixes, Converter={StaticResource BoolToVisibility}}">
+                    <TextBlock Margin="0,0,0,2" FontWeight="SemiBold" Text="{loc:Loc AutoFixAvailable}" />
+                    <ScrollViewer MaxHeight="120" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding AutoFixes}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <BulletDecorator Margin="0,1,0,1">
+                                        <BulletDecorator.Bullet>
+                                            <TextBlock Margin="0,0,6,0" Text="•" />
+                                        </BulletDecorator.Bullet>
+                                        <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                                    </BulletDecorator>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                    <ui:Button Margin="0,6,0,0"
+                               HorizontalAlignment="Left"
+                               Click="OnFixAndSaveClick">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Wrench24" FontSize="16" />
+                            <TextBlock Margin="8,0,0,0" VerticalAlignment="Center" Text="{loc:Loc FixAndSave}" />
+                        </StackPanel>
+                    </ui:Button>
+                </StackPanel>
             </StackPanel>
 
             <ui:Button Grid.Column="1"
