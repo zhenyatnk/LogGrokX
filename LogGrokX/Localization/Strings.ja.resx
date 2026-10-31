@@ -534,8 +534,8 @@
   <data xml:space="preserve" name="SavedSearchCopySuffix">
     <value>コピー</value>
   </data>
-  <data xml:space="preserve" name="SavedSearchDeleted">
-    <value>保存した検索「{0}」を削除しました。</value>
+  <data xml:space="preserve" name="SavedSearchPendingDeletion">
+    <value>保存時に削除されます。</value>
   </data>
   <data xml:space="preserve" name="SavedSearchEmptyPattern">
     <value>検索クエリを入力してください。</value>
@@ -869,5 +869,11 @@
   </data>
   <data name="ApplyFix" xml:space="preserve">
     <value>この修正を適用</value>
+  </data>
+  <data name="DiscardSavedSearchChangesConfirmation" xml:space="preserve">
+    <value>未保存の変更を破棄しますか？</value>
+  </data>
+  <data name="RestoreSavedSearch" xml:space="preserve">
+    <value>検索を復元</value>
   </data>
 </root>
