@@ -20,9 +20,15 @@
                  ShowInTaskbar="False">
     <ui:FluentWindow.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibility" />
+        <Style x:Key="ActionButtonStyle" TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+            <Setter Property="MinWidth" Value="96" />
+            <Setter Property="MinHeight" Value="32" />
+            <Setter Property="Padding" Value="12,5" />
+        </Style>
     </ui:FluentWindow.Resources>
     <ui:FluentWindow.InputBindings>
         <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveCommand}" />
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding AddCommand}" />
     </ui:FluentWindow.InputBindings>
     <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
@@ -55,6 +61,7 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <ui:TextBox Grid.Column="0"
                             Margin="0,0,6,0"
@@ -66,20 +73,50 @@
                            Margin="0,0,2,0"
                            Padding="0"
                            Appearance="Transparent"
+                           Command="{Binding AddCommand}"
+                           ToolTip="{loc:Loc NewSearch}">
+                    <ui:SymbolIcon Symbol="Add24" FontSize="15" />
+                </ui:Button>
+                <ui:Button Grid.Column="2"
+                           Width="28"
+                           MinHeight="30"
+                           Margin="0,0,2,0"
+                           Padding="0"
+                           Appearance="Transparent"
                            Command="{Binding DuplicateCommand}"
-                           IsEnabled="{Binding HasSelectedSearch}"
+                           IsEnabled="{Binding CanDuplicate}"
                            ToolTip="{loc:Loc Duplicate}">
                     <ui:SymbolIcon Symbol="Copy24" FontSize="15" />
                 </ui:Button>
-                <ui:Button Grid.Column="2"
+                <ui:Button Grid.Column="3"
                            Width="28"
                            MinHeight="30"
                            Padding="0"
                            Appearance="Transparent"
                            Command="{Binding DeleteCommand}"
-                           IsEnabled="{Binding HasSelectedSearch}"
-                           ToolTip="{loc:Loc Delete}">
-                    <ui:SymbolIcon Symbol="Delete24" FontSize="15" />
+                           IsEnabled="{Binding HasSelectedSearch}">
+                    <ui:Button.Style>
+                        <Style TargetType="ui:Button" BasedOn="{StaticResource {x:Type ui:Button}}">
+                            <Setter Property="ToolTip" Value="{loc:Loc Delete}" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSelectedSearchDeleted}" Value="True">
+                                    <Setter Property="ToolTip" Value="{loc:Loc RestoreSavedSearch}" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ui:Button.Style>
+                    <ui:SymbolIcon FontSize="15">
+                        <ui:SymbolIcon.Style>
+                            <Style TargetType="ui:SymbolIcon">
+                                <Setter Property="Symbol" Value="Delete24" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelectedSearchDeleted}" Value="True">
+                                        <Setter Property="Symbol" Value="ArrowUndo24" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ui:SymbolIcon.Style>
+                    </ui:SymbolIcon>
                 </ui:Button>
             </Grid>
 
@@ -88,7 +125,20 @@
                          Padding="2"
                          HorizontalContentAlignment="Stretch"
                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         SelectedItem="{Binding SelectedSearch}">
+                         SelectedItem="{Binding SelectedSearch, Mode=OneWay}"
+                         SelectionChanged="OnSavedSearchSelectionChanged">
+                    <ListBox.InputBindings>
+                        <KeyBinding Key="Delete" Command="{Binding DeleteCommand}" />
+                    </ListBox.InputBindings>
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsPendingDeletion}" Value="True">
+                                    <Setter Property="Opacity" Value="0.45" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ListBox.ItemContainerStyle>
                     <ListBox.Resources>
                         <controls:SavedSearchCollectionViewSource x:Key="FilteredSavedSearches"
                             Source="{Binding SavedSearches}" FilterText="{Binding SavedSearchFilter}" />
@@ -145,14 +195,11 @@
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
-                <TextBlock Margin="16"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Text="{loc:Loc NoSavedSearchesFound}"
-                           TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
+                <StackPanel Margin="16"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
                             <Setter Property="Visibility" Value="Visible" />
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding ElementName=SavedSearchesList, Path=HasItems}" Value="True">
@@ -160,110 +207,102 @@
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
-                    </TextBlock.Style>
-                </TextBlock>
+                    </StackPanel.Style>
+                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               Text="{loc:Loc NoSavedSearchesFound}"
+                               TextAlignment="Center"
+                               TextWrapping="Wrap" />
+                    <ui:Button Margin="0,12,0,0"
+                               HorizontalAlignment="Center"
+                               Style="{StaticResource ActionButtonStyle}"
+                               Command="{Binding AddCommand}"
+                               Content="{loc:Loc NewSearch}" />
+                </StackPanel>
             </Grid>
 
             <Grid Grid.Row="1" Grid.Column="2">
-                <Grid IsEnabled="{Binding HasSelectedSearch}">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0"
-                               Margin="0,0,0,4"
-                               FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="{loc:Loc Name}" />
-                    <ui:TextBox Grid.Row="1" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
-                    <TextBlock Grid.Row="2"
-                               Margin="0,10,0,4"
-                               FontSize="12"
-                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                               Text="{loc:Loc Pattern}" />
-                    <ui:TextBox Grid.Row="3"
-                                MinHeight="72"
-                                AcceptsReturn="True"
-                                FontFamily="{StaticResource JetBrainsMono}"
-                                Text="{Binding EditPattern, UpdateSourceTrigger=PropertyChanged}"
-                                TextWrapping="Wrap"
-                                VerticalScrollBarVisibility="Auto" />
-                    <TextBlock Grid.Row="4"
-                               Margin="0,4,0,0"
-                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
-                               Text="{Binding ValidationMessage}"
-                               TextWrapping="Wrap"
-                               Visibility="{Binding HasValidationMessage, Converter={StaticResource BooleanToVisibility}}" />
-                    <WrapPanel Grid.Row="5" Margin="0,8,0,0">
-                        <CheckBox Margin="0,0,16,0"
-                                  Content="{loc:Loc MatchCase}"
-                                  IsChecked="{Binding EditIsCaseSensitive}" />
-                        <CheckBox Content="{loc:Loc UseRegex}"
-                                  IsChecked="{Binding EditUseRegex}" />
-                    </WrapPanel>
-                    <Border Grid.Row="6"
-                            Margin="0,8,0,0"
-                            Padding="8,6"
-                            CornerRadius="4"
-                            Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                            Visibility="{Binding IsReplaceConfirmationVisible, Converter={StaticResource BooleanToVisibility}}">
-                        <StackPanel>
-                            <TextBlock Text="{loc:Loc ReplaceSavedSearchConfirmation}" TextWrapping="Wrap" />
-                            <WrapPanel Margin="0,6,0,0">
-                                <ui:Button Margin="0,0,6,0"
-                                           Appearance="Primary"
-                                           Command="{Binding ConfirmReplaceCommand}"
-                                           Content="{loc:Loc Replace}" />
-                                <ui:Button Command="{Binding CancelReplaceCommand}" Content="{loc:Loc Cancel}" />
+                <ScrollViewer Visibility="{Binding HasEditor, Converter={StaticResource BooleanToVisibility}}"
+                              VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
+                        <TextBlock Margin="0,0,0,8"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   Text="{loc:Loc SavedSearchPendingDeletion}"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding IsSelectedSearchDeleted, Converter={StaticResource BooleanToVisibility}}" />
+                        <StackPanel IsEnabled="{Binding CanEdit}">
+                            <TextBlock Margin="0,0,0,4"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Text="{loc:Loc Name}" />
+                            <ui:TextBox x:Name="EditNameBox" Text="{Binding EditName, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock Margin="0,10,0,4"
+                                       FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       Text="{loc:Loc Pattern}" />
+                            <ui:TextBox MinHeight="72"
+                                        AcceptsReturn="True"
+                                        FontFamily="{StaticResource JetBrainsMono}"
+                                        Text="{Binding EditPattern, UpdateSourceTrigger=PropertyChanged}"
+                                        TextWrapping="Wrap"
+                                        VerticalScrollBarVisibility="Auto" />
+                            <TextBlock Margin="0,4,0,0"
+                                       Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                       Text="{Binding ValidationMessage}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasValidationMessage, Converter={StaticResource BooleanToVisibility}}" />
+                            <WrapPanel Margin="0,8,0,0">
+                                <CheckBox Margin="0,0,16,0"
+                                          Content="{loc:Loc MatchCase}"
+                                          IsChecked="{Binding EditIsCaseSensitive}" />
+                                <CheckBox Content="{loc:Loc UseRegex}"
+                                          IsChecked="{Binding EditUseRegex}" />
                             </WrapPanel>
+                            <Border Margin="0,8,0,0"
+                                    Padding="8,6"
+                                    CornerRadius="4"
+                                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                                    Visibility="{Binding IsReplaceConfirmationVisible, Converter={StaticResource BooleanToVisibility}}">
+                                <StackPanel>
+                                    <TextBlock Text="{loc:Loc ReplaceSavedSearchConfirmation}" TextWrapping="Wrap" />
+                                    <WrapPanel Margin="0,6,0,0">
+                                        <ui:Button Margin="0,0,6,0"
+                                                   Style="{StaticResource ActionButtonStyle}"
+                                                   Appearance="Primary"
+                                                   Command="{Binding ConfirmReplaceCommand}"
+                                                   Content="{loc:Loc Replace}" />
+                                        <ui:Button Style="{StaticResource ActionButtonStyle}"
+                                                   Command="{Binding CancelReplaceCommand}" Content="{loc:Loc Cancel}" />
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
-                    </Border>
-                    <WrapPanel Grid.Row="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                        <ui:Button Margin="0,0,8,0"
-                                   Command="{Binding CancelEditCommand}"
-                                   IsEnabled="{Binding HasChanges}"
-                                   Content="{loc:Loc Cancel}" />
-                        <ui:Button Appearance="Primary"
-                                   Command="{Binding SaveCommand}"
-                                   IsEnabled="{Binding CanSave}"
-                                   Content="{loc:Loc Save}" />
-                    </WrapPanel>
-                </Grid>
-                <TextBlock HorizontalAlignment="Center"
+                    </StackPanel>
+                </ScrollViewer>
+                <TextBlock Margin="16"
+                           HorizontalAlignment="Center"
                            VerticalAlignment="Center"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                            Text="{loc:Loc SelectSavedSearch}"
-                           Visibility="{Binding HasNoSelectedSearch, Converter={StaticResource BooleanToVisibility}}" />
+                           TextAlignment="Center"
+                           TextWrapping="Wrap"
+                           Visibility="{Binding HasNoEditor, Converter={StaticResource BooleanToVisibility}}" />
             </Grid>
 
-            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
-                    Margin="0,8,0,0"
-                    Padding="8,3"
-                    CornerRadius="4"
-                    Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                    Visibility="{Binding CanUndoDelete, Converter={StaticResource BooleanToVisibility}}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock VerticalAlignment="Center"
-                               FontSize="12"
-                               Text="{Binding DeletedSearchName, StringFormat={loc:Loc SavedSearchDeleted}}" />
-                    <ui:Button Grid.Column="1"
-                               MinHeight="24"
-                               Padding="8,1"
-                               Appearance="Transparent"
-                               Command="{Binding UndoDeleteCommand}"
-                               Content="{loc:Loc Undo}" />
-                </Grid>
-            </Border>
+            <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                       Margin="0,12,0,0"
+                       HorizontalAlignment="Right"
+                       Visibility="{Binding ShowActions, Converter={StaticResource BooleanToVisibility}}">
+                <ui:Button Margin="0,0,8,0"
+                           Style="{StaticResource ActionButtonStyle}"
+                           Command="{Binding CancelEditCommand}"
+                           IsEnabled="{Binding CanCancelEdit}"
+                           Content="{loc:Loc Cancel}" />
+                <ui:Button Appearance="Primary"
+                           Style="{StaticResource ActionButtonStyle}"
+                           Command="{Binding SaveCommand}"
+                           IsEnabled="{Binding CanSave}"
+                           Content="{loc:Loc Save}" />
+            </WrapPanel>
         </Grid>
 
         <ui:Button Grid.Row="1"

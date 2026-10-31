@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -8,15 +9,21 @@ namespace LogGrokX.Search
 {
     public class SavedSearchPatternStore
     {
-        private readonly string _storeFileName =
-            HomeDirectoryPathProvider.GetDataFileFullPath("SavedSearches.json");
+        private readonly string _storeFileName;
 
         public ObservableCollection<SavedSearchPattern> Items { get; }
 
-        public SavedSearchPatternStore()
+        public SavedSearchPatternStore() : this(HomeDirectoryPathProvider.GetDataFileFullPath("SavedSearches.json"))
         {
+        }
+
+        private SavedSearchPatternStore(string storeFileName)
+        {
+            _storeFileName = storeFileName;
             Items = Load();
         }
+
+        public static SavedSearchPatternStore LoadFromFile(string storeFileName) => new(storeFileName);
 
         public void Save()
         {
@@ -41,6 +48,15 @@ namespace LogGrokX.Search
                 Items.Remove(existing);
 
             Items.Insert(0, SavedSearchPattern.FromSearchPattern(name, searchPattern));
+            Save();
+        }
+
+        public void ReplaceAll(IEnumerable<SavedSearchPattern> searches)
+        {
+            var items = searches.ToArray();
+            Items.Clear();
+            foreach (var item in items)
+                Items.Add(item);
             Save();
         }
 

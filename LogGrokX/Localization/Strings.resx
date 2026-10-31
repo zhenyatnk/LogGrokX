@@ -534,8 +534,8 @@
   <data xml:space="preserve" name="SavedSearchCopySuffix">
     <value>copy</value>
   </data>
-  <data xml:space="preserve" name="SavedSearchDeleted">
-    <value>Saved search '{0}' deleted.</value>
+  <data xml:space="preserve" name="SavedSearchPendingDeletion">
+    <value>Will be deleted when you save.</value>
   </data>
   <data xml:space="preserve" name="SavedSearchEmptyPattern">
     <value>Enter a search query.</value>
@@ -869,5 +869,11 @@
   </data>
   <data name="ApplyFix" xml:space="preserve">
     <value>Apply this fix</value>
+  </data>
+  <data name="DiscardSavedSearchChangesConfirmation" xml:space="preserve">
+    <value>Discard unsaved changes?</value>
+  </data>
+  <data name="RestoreSavedSearch" xml:space="preserve">
+    <value>Restore search</value>
   </data>
 </root>

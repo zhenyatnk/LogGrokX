@@ -11,6 +11,7 @@ namespace LogGrokX.Search
         private string _pattern = string.Empty;
         private bool _isCaseSensitive;
         private bool _useRegex;
+        private bool _isPendingDeletion;
 
         public string Name
         {
@@ -52,6 +53,18 @@ namespace LogGrokX.Search
             {
                 if (_useRegex == value) return;
                 _useRegex = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        [JsonIgnore]
+        public bool IsPendingDeletion
+        {
+            get => _isPendingDeletion;
+            set
+            {
+                if (_isPendingDeletion == value) return;
+                _isPendingDeletion = value;
                 InvokePropertyChanged();
             }
         }
