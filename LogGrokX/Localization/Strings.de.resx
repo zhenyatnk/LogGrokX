@@ -534,8 +534,8 @@
   <data xml:space="preserve" name="SavedSearchCopySuffix">
     <value>Kopie</value>
   </data>
-  <data xml:space="preserve" name="SavedSearchDeleted">
-    <value>Gespeicherte Suche „{0}“ gelöscht.</value>
+  <data xml:space="preserve" name="SavedSearchPendingDeletion">
+    <value>Wird beim Speichern gelöscht.</value>
   </data>
   <data xml:space="preserve" name="SavedSearchEmptyPattern">
     <value>Suchbegriff eingeben.</value>
@@ -869,5 +869,11 @@
   </data>
   <data name="ApplyFix" xml:space="preserve">
     <value>Diese Korrektur anwenden</value>
+  </data>
+  <data name="DiscardSavedSearchChangesConfirmation" xml:space="preserve">
+    <value>Ungespeicherte Änderungen verwerfen?</value>
+  </data>
+  <data name="RestoreSavedSearch" xml:space="preserve">
+    <value>Suche wiederherstellen</value>
   </data>
 </root>

@@ -534,8 +534,8 @@
   <data xml:space="preserve" name="SavedSearchCopySuffix">
     <value>copia</value>
   </data>
-  <data xml:space="preserve" name="SavedSearchDeleted">
-    <value>Búsqueda guardada «{0}» eliminada.</value>
+  <data xml:space="preserve" name="SavedSearchPendingDeletion">
+    <value>Se eliminará al guardar.</value>
   </data>
   <data xml:space="preserve" name="SavedSearchEmptyPattern">
     <value>Escriba una consulta de búsqueda.</value>
@@ -869,5 +869,11 @@
   </data>
   <data name="ApplyFix" xml:space="preserve">
     <value>Aplicar esta corrección</value>
+  </data>
+  <data name="DiscardSavedSearchChangesConfirmation" xml:space="preserve">
+    <value>¿Descartar los cambios sin guardar?</value>
+  </data>
+  <data name="RestoreSavedSearch" xml:space="preserve">
+    <value>Restaurar búsqueda</value>
   </data>
 </root>

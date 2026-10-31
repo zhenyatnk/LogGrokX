@@ -534,8 +534,8 @@
   <data xml:space="preserve" name="SavedSearchCopySuffix">
     <value>копия</value>
   </data>
-  <data xml:space="preserve" name="SavedSearchDeleted">
-    <value>Сохранённый поиск «{0}» удалён.</value>
+  <data xml:space="preserve" name="SavedSearchPendingDeletion">
+    <value>Будет удалён при сохранении.</value>
   </data>
   <data xml:space="preserve" name="SavedSearchEmptyPattern">
     <value>Введите поисковый запрос.</value>
@@ -869,5 +869,11 @@
   </data>
   <data name="ApplyFix" xml:space="preserve">
     <value>Применить это исправление</value>
+  </data>
+  <data name="DiscardSavedSearchChangesConfirmation" xml:space="preserve">
+    <value>Сбросить несохранённые изменения?</value>
+  </data>
+  <data name="RestoreSavedSearch" xml:space="preserve">
+    <value>Восстановить поиск</value>
   </data>
 </root>
