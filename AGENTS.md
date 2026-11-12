@@ -424,16 +424,24 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   transient Alt-hover rectangle drawn by `TextControl.OnRender` with
   `SelectionBrush`; window preview key events update it without mouse movement,
   and pointer leave, scrolling, text replacement, unloading or window
-  deactivation clears it. For unmodified JSON, `TextModel` retains the source
-  and bidirectional `JsonSourceMap` compares significant characters: clicked
-  formatted ranges map back to source whitespace, while raw-source regex matches
-  are cached and projected onto expanded/collapsed formatted lines, including
-  matches crossing plain-text/JSON boundaries. `TextView` merges these with
-  direct matches and deduplicates/clips them; `TextControl`
-  invalidates highlight geometry when `TextLines` changes. Non-whitespace
-  changes, XML, plain, decoded and value-mapped models use only displayed-text
-  matching and fall back to the displayed term for Alt+click.
-  `SearchTermExtractor.AppendToPattern` escapes the term (`Regex.Escape`, spaces
+  deactivation clears it. For unmodified JSON and XML, `TextModel` retains the
+  source and bidirectional `StructuredSourceMap` uses the JSON or XML lexical
+  builder: clicked formatted ranges map back to source whitespace, while
+  raw-source regex matches are cached and projected onto expanded/collapsed
+  formatted lines, including matches crossing plain/structured boundaries and
+  mixed JSON+XML. The XML builder preserves text-node whitespace and fails
+  closed on entity/attribute normalization. `TextView` merges these with direct
+  matches and deduplicates/clips them; `TextControl` invalidates highlight
+  geometry when `TextLines` changes. Non-whitespace changes, plain, decoded and
+  value-mapped models use only displayed-text matching and fall back to the
+  displayed term for Alt+click. `SearchHighlightPattern` instruments consuming
+  `.*` / `.*?` in a secondary regex only for presentation: explicit ranges use
+  `HighlightBrush`, wildcard captures use the dimmer `WildcardHighlightBrush`
+  (opacity `0.25` in the light theme and `0.3` in the dark theme); direct and
+  structured-projected ranges are classified alike. Lookarounds, numeric
+  backreferences/conditionals and match mismatches fall back to a wholly bright
+  match without changing search semantics. `SearchTermExtractor.AppendToPattern` escapes the term
+  (`Regex.Escape`, spaces
   kept), joins it with `.*`, escapes a plain-text existing pattern, and the
   search switches to regex and commits immediately (no throttle).
 - **Call stack symbols** (#89): `LogGrokX.Data/Symbols` holds the testable part —

@@ -181,6 +181,35 @@ public class TextControlAltHoverTests
     }
 
     [TestMethod]
+    public void AltClickUsesOriginalXmlTextWhileHoverUsesFormattedBounds()
+    {
+        RunOnSta(() =>
+        {
+            const string source = "<root><item id = '1'><name>a</name></item></root>";
+            const string displayedTerm = "id=\"1\"";
+            var textView = new TextView { TextModel = new TextModel(1, source, true) };
+            textView.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var control = (TextControl)VisualTreeHelper.GetChild(textView, 0);
+            var lineIndex = 0;
+            while (!control.TextLines![lineIndex].glyphLine.Text.ToString().Contains(displayedTerm))
+                lineIndex++;
+            var line = control.TextLines[lineIndex].glyphLine;
+            var start = line.Text.ToString().IndexOf(displayedTerm, StringComparison.Ordinal);
+            var verticalOffset = 0.0;
+            for (var i = 0; i < lineIndex; i++)
+                verticalOffset += control.TextLines[i].glyphLine.AdvanceHeight;
+            var horizontalOffset = control.TextLines[lineIndex].isCollapsible ? TextView.ExpanderMargin : 0;
+            var point = GetCharacterPoint(line, start + 1, horizontalOffset, verticalOffset);
+
+            control.UpdateAltHover(point, ModifierKeys.Alt);
+
+            Assert.AreEqual(line.GetTextBounds(new Point(horizontalOffset, verticalOffset), start, displayedTerm.Length),
+                control.AltHoverBounds!.Value);
+            Assert.AreEqual("id = '1'", control.GetTermTextAtPoint(point));
+        });
+    }
+
+    [TestMethod]
     public void AltHoverTracksLinesAndCollapsibleOffset()
     {
         RunOnSta(() =>

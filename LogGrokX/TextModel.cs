@@ -28,7 +28,7 @@ public class TextModel : IReadOnlyList<StringRange>
     private Dictionary<int, StringRange>? _collapsedTextCache;
     private Dictionary<int, IReadOnlyList<(int collapsedStart, int formattedStart, int length)>>? _collapsedSegments;
     private Regex? _highlightRegex;
-    private IReadOnlyList<(int start, int length)>? _originalHighlightRanges;
+    private IReadOnlyList<(int start, int length, bool isWildcard)>? _originalHighlightRanges;
 
     public int UniqueId { get; }
 
@@ -109,15 +109,15 @@ public class TextModel : IReadOnlyList<StringRange>
         for (var i = 0; i < _formattedStructuredRanges.Count; i++)
         {
             var formattedRange = _formattedStructuredRanges[i];
-            if (formattedRange.kind != StructuredTextKind.Json || formattedStart < formattedRange.start ||
-                formattedEnd > formattedRange.start + formattedRange.length)
+            if (formattedStart < formattedRange.start || formattedEnd > formattedRange.start + formattedRange.length)
                 continue;
 
             var originalRange = _originalStructuredRanges[i];
-            var originalJson = _originalStructuredSource.Substring(originalRange.start, originalRange.length);
-            var formattedJson = _formattedStructuredText.Substring(formattedRange.start, formattedRange.length);
-            return JsonSourceMap.TryGetSubstring(originalJson, formattedJson,
-                formattedStart - formattedRange.start, formattedEnd - formattedStart, out text);
+            var originalText = _originalStructuredSource.Substring(originalRange.start, originalRange.length);
+            var formattedText = _formattedStructuredText.Substring(formattedRange.start, formattedRange.length);
+            return StructuredSourceMap.TryCreate(originalRange.kind, originalText, formattedText, out var map) &&
+                   map!.TryGetSubstring(formattedStart - formattedRange.start,
+                       formattedEnd - formattedStart, out text);
         }
 
         return false;
@@ -151,13 +151,13 @@ public class TextModel : IReadOnlyList<StringRange>
         return haveStart && haveEnd;
     }
 
-    internal IReadOnlyList<(int start, int length)> GetOriginalHighlightRanges(int lineIndex,
+    internal IReadOnlyList<(int start, int length, bool isWildcard)> GetOriginalHighlightRanges(int lineIndex,
         bool isCollapsed, Regex regex)
     {
         if (_originalStructuredSource == null || _formattedStructuredText == null ||
             _originalStructuredRanges == null || _formattedStructuredRanges == null || _textLines == null ||
             (uint)lineIndex >= (uint)_textLines.Count)
-            return Array.Empty<(int start, int length)>();
+            return Array.Empty<(int start, int length, bool isWildcard)>();
 
         if (!ReferenceEquals(regex, _highlightRegex))
         {
@@ -165,7 +165,7 @@ public class TextModel : IReadOnlyList<StringRange>
             _originalHighlightRanges = BuildOriginalHighlightRanges(regex);
         }
 
-        var result = new List<(int start, int length)>();
+        var result = new List<(int start, int length, bool isWildcard)>();
         if (isCollapsed)
         {
             if (GetCollapsedTextSubstitution(lineIndex).IsEmpty ||
@@ -178,7 +178,7 @@ public class TextModel : IReadOnlyList<StringRange>
                 var start = Math.Max(range.start, formattedStart);
                 var end = Math.Min(range.start + range.length, formattedStart + segmentLength);
                 if (end > start)
-                    result.Add((collapsedStart + start - formattedStart, end - start));
+                    result.Add((collapsedStart + start - formattedStart, end - start, range.isWildcard));
             }
         }
         else
@@ -189,80 +189,92 @@ public class TextModel : IReadOnlyList<StringRange>
                 var start = Math.Max(range.start, line.Start);
                 var end = Math.Min(range.start + range.length, line.End);
                 if (end > start)
-                    result.Add((start - line.Start, end - start));
+                    result.Add((start - line.Start, end - start, range.isWildcard));
             }
         }
 
         return result;
     }
 
-    private IReadOnlyList<(int start, int length)> BuildOriginalHighlightRanges(Regex regex)
+    private IReadOnlyList<(int start, int length, bool isWildcard)> BuildOriginalHighlightRanges(Regex regex)
     {
-        var result = new List<(int start, int length)>();
-        var maps = new JsonSourceMap?[_originalStructuredRanges!.Count];
+        var result = new List<(int start, int length, bool isWildcard)>();
+        var maps = new StructuredSourceMap?[_originalStructuredRanges!.Count];
         for (var i = 0; i < maps.Length; i++)
         {
             var originalRange = _originalStructuredRanges[i];
-            if (originalRange.kind != StructuredTextKind.Json) continue;
             var formattedRange = _formattedStructuredRanges![i];
-            JsonSourceMap.TryCreate(
+            StructuredSourceMap.TryCreate(originalRange.kind,
                 _originalStructuredSource!.Substring(originalRange.start, originalRange.length),
                 _formattedStructuredText!.Substring(formattedRange.start, formattedRange.length),
                 out maps[i]);
         }
 
+        var highlightPattern = new SearchHighlightPattern(regex);
         foreach (Match match in regex.Matches(_originalStructuredSource!))
         {
-            if (match.Length == 0) continue;
-            var matchEnd = match.Index + match.Length;
-            var first = -1;
-            var last = -1;
-            for (var i = 0; i < _originalStructuredRanges.Count; i++)
-            {
-                var range = _originalStructuredRanges[i];
-                if (range.kind != StructuredTextKind.Json || match.Index >= range.start + range.length ||
-                    matchEnd <= range.start)
-                    continue;
-                if (first < 0) first = i;
-                last = i;
-            }
-
-            if (first < 0) continue;
-            var supported = true;
-            for (var i = first; i <= last; i++)
-                if (maps[i] == null)
-                    supported = false;
-            if (!supported) continue;
-
-            var formattedStart = 0;
-            var formattedEnd = 0;
-            var firstRange = _originalStructuredRanges[first];
-            if (match.Index < firstRange.start)
-                formattedStart = MapPlainSourcePosition(match.Index);
-            else if (!TryGetFormattedJsonRange(maps, first, match.Index - firstRange.start,
-                         Math.Min(matchEnd, firstRange.start + firstRange.length) - match.Index,
-                         out formattedStart, out _))
+            if (match.Length == 0 || MapSourceRange(maps, match.Index, match.Length) is not { } wholeRange)
                 continue;
 
-            var lastRange = _originalStructuredRanges[last];
-            if (matchEnd > lastRange.start + lastRange.length)
-                formattedEnd = MapPlainSourcePosition(matchEnd);
-            else
-            {
-                var start = Math.Max(match.Index, lastRange.start);
-                if (!TryGetFormattedJsonRange(maps, last, start - lastRange.start, matchEnd - start,
-                        out _, out formattedEnd))
-                    continue;
-            }
+            var wildcardRanges = new List<(int start, int length)>();
+            if (highlightPattern.GetWildcardRanges(match) is { } sourceWildcards)
+                foreach (var wildcard in sourceWildcards)
+                    if (MapSourceRange(maps, match.Index + wildcard.start, wildcard.length) is { } formattedWildcard)
+                        wildcardRanges.Add(formattedWildcard);
 
-            if (formattedEnd > formattedStart)
-                result.Add((formattedStart, formattedEnd - formattedStart));
+            foreach (var range in SearchHighlightPattern.Subtract(wholeRange, wildcardRanges))
+                result.Add((range.start, range.length, false));
+            foreach (var range in wildcardRanges)
+                result.Add((range.start, range.length, true));
         }
 
         return result;
     }
 
-    private bool TryGetFormattedJsonRange(JsonSourceMap?[] maps, int index, int sourceStart, int sourceLength,
+    private (int start, int length)? MapSourceRange(StructuredSourceMap?[] maps, int sourceStart, int sourceLength)
+    {
+        var sourceEnd = sourceStart + sourceLength;
+        var first = -1;
+        var last = -1;
+        for (var i = 0; i < _originalStructuredRanges!.Count; i++)
+        {
+            var range = _originalStructuredRanges[i];
+            if (sourceStart >= range.start + range.length || sourceEnd <= range.start)
+                continue;
+            if (first < 0) first = i;
+            last = i;
+        }
+
+        if (first < 0) return null;
+        for (var i = first; i <= last; i++)
+            if (maps[i] == null)
+                return null;
+
+        var formattedStart = 0;
+        var formattedEnd = 0;
+        var firstRange = _originalStructuredRanges[first];
+        if (sourceStart < firstRange.start)
+            formattedStart = MapPlainSourcePosition(sourceStart);
+        else if (!TryGetFormattedStructuredRange(maps, first, sourceStart - firstRange.start,
+                     Math.Min(sourceEnd, firstRange.start + firstRange.length) - sourceStart,
+                     out formattedStart, out _))
+            return null;
+
+        var lastRange = _originalStructuredRanges[last];
+        if (sourceEnd > lastRange.start + lastRange.length)
+            formattedEnd = MapPlainSourcePosition(sourceEnd);
+        else
+        {
+            var start = Math.Max(sourceStart, lastRange.start);
+            if (!TryGetFormattedStructuredRange(maps, last, start - lastRange.start, sourceEnd - start,
+                    out _, out formattedEnd))
+                return null;
+        }
+
+        return formattedEnd > formattedStart ? (formattedStart, formattedEnd - formattedStart) : null;
+    }
+
+    private bool TryGetFormattedStructuredRange(StructuredSourceMap?[] maps, int index, int sourceStart, int sourceLength,
         out int formattedStart, out int formattedEnd)
     {
         formattedStart = 0;

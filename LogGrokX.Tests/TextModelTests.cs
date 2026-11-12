@@ -161,16 +161,57 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void OriginalTextMappingRequiresJsonAndOptIn()
+        public void OriginalXmlTextAndHighlightPreserveSourceWhitespace()
+        {
+            const string source = "<root><item id = '1'><name>a</name></item></root>";
+            var model = new TextModel(1, source, true);
+            var line = model[1].ToString();
+            var start = line.IndexOf("id=\"1\"");
+
+            Assert.IsTrue(model.TryGetOriginalText(1, start, "id=\"1\"".Length, false, out var original));
+            Assert.AreEqual("id = '1'", original);
+
+            var range = model.GetOriginalHighlightRanges(1, false, new Regex("id = '1'")).Single();
+            Assert.AreEqual(start, range.start);
+            Assert.AreEqual("id=\"1\"".Length, range.length);
+        }
+
+        [TestMethod]
+        public void OriginalXmlHighlightProjectsCollapsedWildcards()
+        {
+            const string source = "<root><item id = '1'><name>a</name></item></root>";
+            var model = new TextModel(1, source, true);
+            var root = model.CollapsibleRanges!.OrderByDescending(r => r.length).First();
+
+            var ranges = model.GetOriginalHighlightRanges(root.start, true,
+                new Regex("<item.*<name>a</name>"));
+
+            Assert.IsTrue(ranges.Any(r => r.isWildcard));
+            Assert.IsTrue(ranges.Any(r => !r.isWildcard));
+        }
+
+        [TestMethod]
+        public void OriginalHighlightCrossesJsonPlainTextAndXml()
+        {
+            const string source = "prefix {\"alpha\":1} middle <root><item id = '1'/></root> suffix";
+            var model = new TextModel(1, source, true);
+            var regex = new Regex("\"alpha\":1.*id = '1'");
+
+            var ranges = Enumerable.Range(0, model.Count)
+                .SelectMany(i => model.GetOriginalHighlightRanges(i, false, regex)).ToList();
+
+            Assert.IsTrue(ranges.Any(r => r.isWildcard));
+            Assert.IsTrue(ranges.Any(r => !r.isWildcard));
+        }
+
+        [TestMethod]
+        public void OriginalTextMappingRequiresStructuredSourceAndOptIn()
         {
             var disabled = new TextModel(1, Json);
             Assert.IsFalse(disabled.TryGetOriginalText(1, 2, 5, false, out _));
 
             var plain = new TextModel(1, "plain text", true);
             Assert.IsFalse(plain.TryGetOriginalText(0, 0, 5, false, out _));
-
-            var xml = new TextModel(1, Xml, true);
-            Assert.IsFalse(xml.TryGetOriginalText(0, 0, 5, false, out _));
         }
 
         [TestMethod]
@@ -193,7 +234,7 @@ namespace LogGrokX.Tests
         {
             const string source = "{\"alpha\":1,\"beta\":[2,3]}";
             var model = new TextModel(1, source, true);
-            var regex = new Regex(Regex.Escape("\"alpha\":1,\"beta\":[2,3]"));
+            var regex = new Regex("\"alpha\":1.*\"beta\":\\[2,3\\]");
 
             var expandedCount = Enumerable.Range(0, model.Count)
                 .Sum(i => model.GetOriginalHighlightRanges(i, false, regex).Count);
@@ -203,6 +244,7 @@ namespace LogGrokX.Tests
             var collapsedRanges = model.GetOriginalHighlightRanges(root.start, true, regex);
             Assert.IsTrue(collapsedRanges.Count >= 3, $"Collapsed ranges: {collapsedRanges.Count}");
             Assert.IsTrue(collapsedRanges.All(r => r.length > 0));
+            Assert.IsTrue(collapsedRanges.Any(r => r.isWildcard));
         }
 
         [TestMethod]

@@ -47,6 +47,7 @@ public class TextControl : Control
         _cachedStringRanges = null;
         _cachedRegex = null;
         _cachedGeometry = null;
+        _cachedWildcardGeometry = null;
     }
 
     protected override Size MeasureOverride(Size constraint)
@@ -76,7 +77,16 @@ public class TextControl : Control
             return;
         }
 
-        var highlightGeometries = GetHighlightGeometries(textLines, TextView.GetHighlightRegex(_textView));
+        var (highlightGeometries, wildcardGeometries) =
+            GetHighlightGeometrySet(textLines, TextView.GetHighlightRegex(_textView));
+
+        if (wildcardGeometries != null)
+        {
+            var wildcardBrush = _textView.WildcardHighlightBrush;
+            drawingContext.DrawGeometry(wildcardBrush,
+                new Pen(wildcardBrush, 0),
+                wildcardGeometries);
+        }
 
         if (highlightGeometries != null)
         {
@@ -132,15 +142,21 @@ public class TextControl : Control
     private List<StringRange>? _cachedStringRanges;
     private Regex? _cachedRegex;
     private Geometry? _cachedGeometry;
+    private Geometry? _cachedWildcardGeometry;
     
-    internal Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex)
+    internal Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex) =>
+        GetHighlightGeometrySet(text, regex).bright;
+
+    private (Geometry? bright, Geometry? wildcard) GetHighlightGeometrySet(
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex)
     {
         if (text == null || regex == null)
         {
             _cachedStringRanges = null;
             _cachedRegex = null;
             _cachedGeometry = null;
-            return null;
+            _cachedWildcardGeometry = null;
+            return (null, null);
         }
 
         bool CanUseCachedGeometry(IList<(GlyphLine glyphLine, bool isCollapsible)> text, Regex regex)
@@ -155,11 +171,9 @@ public class TextControl : Control
         }
 
         if (CanUseCachedGeometry(text, regex))
-        {
-            return _cachedGeometry;
-        }
+            return (_cachedGeometry, _cachedWildcardGeometry);
 
-        _cachedGeometry = GetDrawingGeometriesUncached(text, regex);
+        (_cachedGeometry, _cachedWildcardGeometry) = GetDrawingGeometriesUncached(text, regex);
         _cachedRegex = regex;
         _cachedStringRanges?.Clear();
         _cachedStringRanges ??= new List<StringRange>(text.Count);
@@ -168,18 +182,17 @@ public class TextControl : Control
             _cachedStringRanges.Add(glyphLine.Text);
         }
 
-        return _cachedGeometry;
+        return (_cachedGeometry, _cachedWildcardGeometry);
     }
 
-    private Geometry? GetDrawingGeometriesUncached(IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines,
-        Regex? regex)
+    private (Geometry? bright, Geometry? wildcard) GetDrawingGeometriesUncached(
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines, Regex? regex)
     {
         if (textLines == null || regex == null || textLines.Count == 0)
-        {
-            return null;
-        }
+            return (null, null);
 
         var accumulatedGeometry = new GeometryGroup { FillRule = FillRule.Nonzero };
+        var wildcardGeometry = new GeometryGroup { FillRule = FillRule.Nonzero };
 
         var y = 0.0;
         for (var lineIndex = 0; lineIndex < textLines.Count; lineIndex++)
@@ -188,19 +201,18 @@ public class TextControl : Control
             var glyphLine = textLine.glyphLine;
             var line = glyphLine.Text.ToString();
             var ranges = _textView.GetHighlightRanges(lineIndex, line, regex);
-            foreach (var (start, length) in ranges)
+            foreach (var (start, length, isWildcard) in ranges)
             {
                 var startPoint = GetHorizontalOffset(textLine);
                 var rect = glyphLine.GetTextBounds(new Point(startPoint, y), start, length);
                 var geometry = GeometryFromRect(rect);
-
-                accumulatedGeometry.Children.Add(geometry);
+                (isWildcard ? wildcardGeometry : accumulatedGeometry).Children.Add(geometry);
             }
 
             y += glyphLine.Size.Height;
         }
 
-        return accumulatedGeometry;
+        return (accumulatedGeometry, wildcardGeometry);
     }
 
     private Geometry GeometryFromRect(Rect rect) => new RectangleGeometry(

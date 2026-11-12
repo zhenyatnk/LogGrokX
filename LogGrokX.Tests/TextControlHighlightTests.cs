@@ -28,12 +28,53 @@ public class TextControlHighlightTests
             var rawRanges = textView.GetHighlightRanges(lineIndex, line,
                 new Regex(Regex.Escape("\"alpha\" : \"two  words\"")));
             Assert.AreEqual(1, rawRanges.Count);
-            Assert.AreEqual((expectedStart, displayed.Length), rawRanges.Single());
+            Assert.AreEqual((expectedStart, displayed.Length, false), rawRanges.Single());
 
             var formattedRanges = textView.GetHighlightRanges(lineIndex, line,
                 new Regex(Regex.Escape(displayed)));
             Assert.AreEqual(1, formattedRanges.Count);
-            Assert.AreEqual((expectedStart, displayed.Length), formattedRanges.Single());
+            Assert.AreEqual((expectedStart, displayed.Length, false), formattedRanges.Single());
+        });
+    }
+
+    [TestMethod]
+    public void WildcardPartsAreClassifiedInFormattedXml()
+    {
+        RunOnSta(() =>
+        {
+            var textView = CreateTextView("<root><item id = '1'><name>a</name></item></root>");
+            var control = (TextControl)VisualTreeHelper.GetChild(textView, 0);
+            var regex = new Regex("<item.*<name>a</name>");
+
+            var ranges = control.TextLines!.SelectMany((textLine, i) =>
+                    textView.GetHighlightRanges(i, textLine.glyphLine.Text.ToString(), regex)
+                        .Select(r => (text: textLine.glyphLine.Text.ToString().Substring(r.start, r.length),
+                            r.isWildcard)))
+                .ToList();
+
+            Assert.IsTrue(ranges.Any(r => !r.isWildcard && r.text.Contains("name")));
+            Assert.IsTrue(ranges.Any(r => r.isWildcard));
+        });
+    }
+
+    [TestMethod]
+    public void WildcardPartsAreClassifiedInFormattedJson()
+    {
+        RunOnSta(() =>
+        {
+            var textView = CreateTextView("{\"alpha\":1,\"beta\":2}");
+            var control = (TextControl)VisualTreeHelper.GetChild(textView, 0);
+            var regex = new Regex("\"alpha\":1.*\"beta\":2");
+
+            var ranges = control.TextLines!.SelectMany((textLine, i) =>
+                    textView.GetHighlightRanges(i, textLine.glyphLine.Text.ToString(), regex)
+                        .Select(r => (text: textLine.glyphLine.Text.ToString().Substring(r.start, r.length),
+                            r.isWildcard)))
+                .ToList();
+
+            Assert.IsTrue(ranges.Any(r => !r.isWildcard && r.text.Contains("alpha")));
+            Assert.IsTrue(ranges.Any(r => !r.isWildcard && r.text.Contains("beta")));
+            Assert.IsTrue(ranges.Any(r => r.isWildcard));
         });
     }
 
@@ -88,7 +129,7 @@ public class TextControlHighlightTests
             var ranges = textView.GetHighlightRanges(0, "plain alpha", new Regex("alpha"));
 
             Assert.AreEqual(1, ranges.Count);
-            Assert.AreEqual((6, 5), ranges.Single());
+            Assert.AreEqual((6, 5, false), ranges.Single());
         });
     }
 
