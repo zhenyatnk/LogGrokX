@@ -16,22 +16,38 @@ public class TextControl : Control
 {
     private readonly TextView _textView;
     private Point? _startSelectionPoint;
+    private Rect? _altHoverBounds;
+    private Window? _window;
+    private ScrollViewer? _scrollViewer;
 
     public static readonly DependencyProperty TextLinesProperty = DependencyProperty.Register(
         "TextLines", typeof(IList<(GlyphLine glyphLine, bool isCollapsible)>), 
         typeof(TextControl), new FrameworkPropertyMetadata(
             default(IList<(GlyphLine textLine, bool isCollapsible)>?),
-            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender));
+            FrameworkPropertyMetadataOptions.AffectsMeasure | FrameworkPropertyMetadataOptions.AffectsRender,
+            static (d, _) => ((TextControl)d).OnTextLinesChanged()));
 
     public IList<(GlyphLine glyphLine, bool isCollapsible)>? TextLines
     {
         get => (IList<(GlyphLine, bool)>?)GetValue(TextLinesProperty);
         set => SetValue(TextLinesProperty, value);
     }
+
+    internal Rect? AltHoverBounds => _altHoverBounds;
     
     public TextControl(TextView textView)
     {
         _textView = textView;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnTextLinesChanged()
+    {
+        ClearAltHover();
+        _cachedStringRanges = null;
+        _cachedRegex = null;
+        _cachedGeometry = null;
+        _cachedWildcardGeometry = null;
     }
 
     protected override Size MeasureOverride(Size constraint)
@@ -61,7 +77,16 @@ public class TextControl : Control
             return;
         }
 
-        var highlightGeometries = GetHighlightGeometries(textLines, TextView.GetHighlightRegex(_textView));
+        var (highlightGeometries, wildcardGeometries) =
+            GetHighlightGeometrySet(textLines, TextView.GetHighlightRegex(_textView));
+
+        if (wildcardGeometries != null)
+        {
+            var wildcardBrush = _textView.WildcardHighlightBrush;
+            drawingContext.DrawGeometry(wildcardBrush,
+                new Pen(wildcardBrush, 0),
+                wildcardGeometries);
+        }
 
         if (highlightGeometries != null)
         {
@@ -79,6 +104,13 @@ public class TextControl : Control
                 drawingContext.DrawGeometry(selectionBrush,
                     null,
                     selectionGeometries);
+        }
+
+        if (_altHoverBounds is { } altHoverBounds && _textView.SelectionBrush is { } altHoverBrush)
+        {
+            drawingContext.DrawGeometry(altHoverBrush,
+                null,
+                GeometryFromRect(altHoverBounds));
         }
 
         var verticalPosition = 0.0;
@@ -110,15 +142,21 @@ public class TextControl : Control
     private List<StringRange>? _cachedStringRanges;
     private Regex? _cachedRegex;
     private Geometry? _cachedGeometry;
+    private Geometry? _cachedWildcardGeometry;
     
-    private Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex)
+    internal Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex) =>
+        GetHighlightGeometrySet(text, regex).bright;
+
+    private (Geometry? bright, Geometry? wildcard) GetHighlightGeometrySet(
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex)
     {
         if (text == null || regex == null)
         {
             _cachedStringRanges = null;
             _cachedRegex = null;
             _cachedGeometry = null;
-            return null;
+            _cachedWildcardGeometry = null;
+            return (null, null);
         }
 
         bool CanUseCachedGeometry(IList<(GlyphLine glyphLine, bool isCollapsible)> text, Regex regex)
@@ -133,11 +171,9 @@ public class TextControl : Control
         }
 
         if (CanUseCachedGeometry(text, regex))
-        {
-            return _cachedGeometry;
-        }
+            return (_cachedGeometry, _cachedWildcardGeometry);
 
-        _cachedGeometry = GetDrawingGeometriesUncached(text, regex);
+        (_cachedGeometry, _cachedWildcardGeometry) = GetDrawingGeometriesUncached(text, regex);
         _cachedRegex = regex;
         _cachedStringRanges?.Clear();
         _cachedStringRanges ??= new List<StringRange>(text.Count);
@@ -146,38 +182,37 @@ public class TextControl : Control
             _cachedStringRanges.Add(glyphLine.Text);
         }
 
-        return _cachedGeometry;
+        return (_cachedGeometry, _cachedWildcardGeometry);
     }
 
-    private Geometry? GetDrawingGeometriesUncached(IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines,
-        Regex? regex)
+    private (Geometry? bright, Geometry? wildcard) GetDrawingGeometriesUncached(
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines, Regex? regex)
     {
         if (textLines == null || regex == null || textLines.Count == 0)
-        {
-            return null;
-        }
+            return (null, null);
 
         var accumulatedGeometry = new GeometryGroup { FillRule = FillRule.Nonzero };
+        var wildcardGeometry = new GeometryGroup { FillRule = FillRule.Nonzero };
 
         var y = 0.0;
-        foreach (var textLine in textLines)
+        for (var lineIndex = 0; lineIndex < textLines.Count; lineIndex++)
         {
+            var textLine = textLines[lineIndex];
             var glyphLine = textLine.glyphLine;
             var line = glyphLine.Text.ToString();
-            var matches = regex.Matches(line).ToList();
-            foreach (var match in matches.Where(m => m.Length > 0))
+            var ranges = _textView.GetHighlightRanges(lineIndex, line, regex);
+            foreach (var (start, length, isWildcard) in ranges)
             {
                 var startPoint = GetHorizontalOffset(textLine);
-                var rect = glyphLine.GetTextBounds(new Point(startPoint, y), match.Index, match.Length);
+                var rect = glyphLine.GetTextBounds(new Point(startPoint, y), start, length);
                 var geometry = GeometryFromRect(rect);
-
-                accumulatedGeometry.Children.Add(geometry);
+                (isWildcard ? wildcardGeometry : accumulatedGeometry).Children.Add(geometry);
             }
 
             y += glyphLine.Size.Height;
         }
 
-        return accumulatedGeometry;
+        return (accumulatedGeometry, wildcardGeometry);
     }
 
     private Geometry GeometryFromRect(Rect rect) => new RectangleGeometry(
@@ -296,6 +331,15 @@ public class TextControl : Control
         Focus();
         if (e.ChangedButton == MouseButton.Left)
         {
+            if (Keyboard.Modifiers == ModifierKeys.Alt)
+            {
+                _startSelectionPoint = null;
+                if (e.ClickCount == 1 && TextLines is { Count: > 0 })
+                    AppendTermUnderPointToSearch(e.GetPosition(this));
+                e.Handled = true;
+                return;
+            }
+
             if (e.ClickCount == 1)
             {
                 _startSelectionPoint = e.GetPosition(this);
@@ -320,6 +364,62 @@ public class TextControl : Control
         line.SetSelection(start, length);
         InvalidateVisual();
         _textView.SelectedText = line.Text.Span.Slice(start, length).ToString();
+    }
+
+    private void AppendTermUnderPointToSearch(Point point)
+    {
+        if (GetTermTextAtPoint(point) is not { } term) return;
+        if (RoutedCommands.AppendToSearch.CanExecute(term, this))
+            RoutedCommands.AppendToSearch.Execute(term, this);
+    }
+
+    internal string? GetTermTextAtPoint(Point point)
+    {
+        if (TextLines is not { Count: > 0 } textLines ||
+            GetTermRangeAtPoint(point, textLines) is not var (lineNumber, start, length))
+            return null;
+
+        var line = textLines[lineNumber].glyphLine;
+        var displayedTerm = line.Text.Span.Slice(start, length).ToString();
+        return _textView.GetOriginalTerm(lineNumber, start, length) ?? displayedTerm;
+    }
+
+    private static (int lineNumber, int start, int length)? GetTermRangeAtPoint(Point point,
+        IList<(GlyphLine glyphLine, bool isCollapsible)> textLines)
+    {
+        var (lineNumber, _) = GetTextPosition(point, textLines);
+        var (line, isCollapsible) = textLines[lineNumber];
+        var position = line.GetCharacterIndexAtPosition(point.X - GetHorizontalOffset(isCollapsible));
+        if (position < 0) return null;
+        if (SearchTermExtractor.GetTermRange(line.Text.Span, position) is not var (start, length)) return null;
+        return (lineNumber, start, length);
+    }
+
+    internal void UpdateAltHover(Point point, ModifierKeys modifiers)
+    {
+        Rect? altHoverBounds = null;
+        if (modifiers == ModifierKeys.Alt && TextLines is { Count: > 0 } textLines &&
+            GetTermRangeAtPoint(point, textLines) is var (lineNumber, start, length))
+        {
+            var verticalPosition = 0.0;
+            for (var i = 0; i < lineNumber; i++)
+                verticalPosition += textLines[i].glyphLine.AdvanceHeight;
+
+            var (line, isCollapsible) = textLines[lineNumber];
+            altHoverBounds = line.GetTextBounds(
+                new Point(GetHorizontalOffset(isCollapsible), verticalPosition), start, length);
+        }
+
+        SetAltHoverBounds(altHoverBounds);
+    }
+
+    internal void ClearAltHover() => SetAltHoverBounds(null);
+
+    private void SetAltHoverBounds(Rect? bounds)
+    {
+        if (_altHoverBounds == bounds) return;
+        _altHoverBounds = bounds;
+        InvalidateVisual();
     }
 
     private static (int start, int length) GetWordSelectionRange(StringRange lineText, int position)
@@ -390,6 +490,7 @@ public class TextControl : Control
             UpdateSelection(textLines, _startSelectionPoint.Value, endSelectionPoint);
         }
 
+        UpdateAltHover(e.GetPosition(this), Keyboard.Modifiers);
         UpdateCursor();
         base.OnMouseMove(e);
     }
@@ -401,14 +502,74 @@ public class TextControl : Control
             _startSelectionPoint = null;
         }
 
+        ClearAltHover();
+        DetachHoverEvents();
         UpdateCursor();
         base.OnMouseLeave(e);
     }
 
     protected override void OnMouseEnter(MouseEventArgs e)
     {
+        AttachHoverEvents();
+        UpdateAltHover(e.GetPosition(this), Keyboard.Modifiers);
         UpdateCursor();
         base.OnMouseEnter(e);
+    }
+
+    private void AttachHoverEvents()
+    {
+        DetachHoverEvents();
+
+        _window = Window.GetWindow(this);
+        if (_window != null)
+        {
+            _window.PreviewKeyDown += OnWindowPreviewKey;
+            _window.PreviewKeyUp += OnWindowPreviewKey;
+            _window.Deactivated += OnWindowDeactivated;
+        }
+
+        DependencyObject? parent = VisualTreeHelper.GetParent(this);
+        while (parent != null)
+        {
+            if (parent is ScrollViewer scrollViewer)
+            {
+                _scrollViewer = scrollViewer;
+                _scrollViewer.ScrollChanged += OnScrollChanged;
+                break;
+            }
+
+            parent = VisualTreeHelper.GetParent(parent);
+        }
+    }
+
+    private void DetachHoverEvents()
+    {
+        if (_window != null)
+        {
+            _window.PreviewKeyDown -= OnWindowPreviewKey;
+            _window.PreviewKeyUp -= OnWindowPreviewKey;
+            _window.Deactivated -= OnWindowDeactivated;
+            _window = null;
+        }
+
+        if (_scrollViewer != null)
+        {
+            _scrollViewer.ScrollChanged -= OnScrollChanged;
+            _scrollViewer = null;
+        }
+    }
+
+    private void OnWindowPreviewKey(object sender, KeyEventArgs e) =>
+        UpdateAltHover(Mouse.GetPosition(this), Keyboard.Modifiers);
+
+    private void OnWindowDeactivated(object? sender, EventArgs e) => ClearAltHover();
+
+    private void OnScrollChanged(object sender, ScrollChangedEventArgs e) => ClearAltHover();
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        ClearAltHover();
+        DetachHoverEvents();
     }
 
     private void UpdateCursor()

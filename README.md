@@ -85,8 +85,12 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Column / field indexing** — fields declared under `IndexedFields` are
   available as filterable columns and as search facets.
 - **Search** — regex search with match-case and regex toggles, a progress
-  indicator, result navigation and an
-  autocomplete cache. Search patterns can be saved and reused.
+  indicator, result navigation and an autocomplete cache. Search patterns can be
+  saved and reused. `Ctrl+F`, `Ctrl+L` or `Alt+D` focuses the editor and selects
+  its text; `Alt+X` clears the active search without explicitly moving focus.
+  Holding `Alt` previews the term under the pointer, and Alt+click appends it to
+  the pattern. Explicit match parts are highlighted brightly while text consumed
+  by `.*` is dimmed.
 - **Filtering** — filter by indexed column values directly from the grid, with
   removable filter chips.
 - **Time filter & timeline** — a minimap/timeline strip (top or bottom) to
@@ -94,8 +98,10 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   navigate through marked lines. Hovering the strip shows the timestamp under the
   cursor (or the line number) with a vertical guide line.
 - **JSON/XML folding** — inline JSON and XML blobs and oversized strings are
-  formatted and can be expanded/collapsed inline. The folding state is shared across the
-  log grid, search results and the marked-lines view of the same document.
+  formatted and can be expanded/collapsed inline. Alt+click uses the original
+  unformatted substring, and raw-source search matches are highlighted in the
+  formatted view. The folding state is shared across the log grid, search results
+  and the marked-lines view of the same document.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
   UTF-16LE, blocks longer than 64 bits, e.g. `48656C6C6F20776F726C64`, `48 65 6C 6C 6F 20 77 …`,
   `0x48, 0x65, …`; shorter values such as `0x80070005` are treated as numbers) are decoded

@@ -397,13 +397,53 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `YamlSettingsFile.EnsureKey` adds a missing `ValueMappings:` key to older
   files first. Covered by `ValueMapperTests`/`ValueMappingJsonTests`
   (`LogGrokX.Data.Tests`) and `ValueMappingTests` (`LogGrokX.Tests`).
-- **Search shortcuts** (#65): `Ctrl+F` / `F3` / `Shift+F3` are bound both in the document
-  templates (`DocumentTemplate.xaml`, `MergedViewTemplate.xaml`) and on `MainWindow`
-  (`ActivateSearchCommand`, `FindNextCommand`, `FindPreviousCommand`), which route to the
-  merged view search when `IsMergedViewActive` or to `CurrentDocument`. The window-level
-  bindings handle the case when keyboard focus is not inside a document (e.g. right
-  after start); `MainWindow.EnsureKeyboardFocus` focuses the window after loading if
-  nothing in it has keyboard focus.
+- **Search shortcuts** (#65): `Ctrl+F` / `Ctrl+L` / `Alt+D` activate search,
+  `Alt+X` clears it, and `F3` / `Shift+F3` navigate. They are bound both in the
+  document templates (`DocumentTemplate.xaml`, `MergedViewTemplate.xaml`) and on
+  `MainWindow` (`ActivateSearchCommand`, `ClearSearchCommand`, `FindNextCommand`,
+  `FindPreviousCommand`), which route to the merged view search when
+  `IsMergedViewActive` or to `CurrentDocument`. Activation focuses the primary
+  editor and selects its text through the opt-in
+  `SetFocusBehavior.SelectAllOnFocus`; clearing commits immediately without a
+  focus request. The window-level bindings handle focus outside a document (e.g.
+  right after start); `MainWindow.EnsureKeyboardFocus` focuses the window after
+  loading if nothing in it has keyboard focus.
+- **Alt hover/click to search** (#97): `TextControl.OnMouseDown` with only `Alt`
+  pressed takes the term under the cursor (`GlyphLine.GetCharacterIndexAtPosition`,
+  `LogGrokX.Data/SearchTermExtractor.GetTermRange`: a word of letters, digits,
+  `_`, `.`, `-`, or a whole `key = value` / `key: value` pair with optional
+  spaces/tabs around the separator when hovering the key or separator; hovering
+  the value selects only the value. Single/double-quoted values and Windows
+  paths such as `\\?\Volume{GUID}\` and `\Device\HarddiskVolume1` stay intact;
+  hovering either bracket of `[]`, `<>` or `()` selects the contents without
+  the brackets and honors nested pairs; an apostrophe between letters stays
+  part of the word instead of opening a quoted range; curly-braced values stay
+  intact) and routes `RoutedCommands.AppendToSearch` to
+  `RootDocumentControl.AppendToSearchCommand` ->
+  `SearchViewModel.AppendToSearchCommand`. The same range resolver drives the
+  transient Alt-hover rectangle drawn by `TextControl.OnRender` with
+  `SelectionBrush`; window preview key events update it without mouse movement,
+  and pointer leave, scrolling, text replacement, unloading or window
+  deactivation clears it. For unmodified JSON and XML, `TextModel` retains the
+  source and bidirectional `StructuredSourceMap` uses the JSON or XML lexical
+  builder: clicked formatted ranges map back to source whitespace, while
+  raw-source regex matches are cached and projected onto expanded/collapsed
+  formatted lines, including matches crossing plain/structured boundaries and
+  mixed JSON+XML. The XML builder preserves text-node whitespace and fails
+  closed on entity/attribute normalization. `TextView` merges these with direct
+  matches and deduplicates/clips them; `TextControl` invalidates highlight
+  geometry when `TextLines` changes. Non-whitespace changes, plain, decoded and
+  value-mapped models use only displayed-text matching and fall back to the
+  displayed term for Alt+click. `SearchHighlightPattern` instruments consuming
+  `.*` / `.*?` in a secondary regex only for presentation: explicit ranges use
+  `HighlightBrush`, wildcard captures use the dimmer `WildcardHighlightBrush`
+  (opacity `0.25` in the light theme and `0.3` in the dark theme); direct and
+  structured-projected ranges are classified alike. Lookarounds, numeric
+  backreferences/conditionals and match mismatches fall back to a wholly bright
+  match without changing search semantics. `SearchTermExtractor.AppendToPattern` escapes the term
+  (`Regex.Escape`, spaces
+  kept), joins it with `.*`, escapes a plain-text existing pattern, and the
+  search switches to regex and commits immediately (no throttle).
 - **Call stack symbols** (#89): `LogGrokX.Data/Symbols` holds the testable part —
   `CallStackParser` (frames `N# mod!GUID,age!rva`, `N# mod!rva`, `N# mod+0xrva`),
   `SymbolPath` (WinDbg `srv*cache*server;dir` syntax), `SymbolStore` (store layout,

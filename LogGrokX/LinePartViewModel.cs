@@ -58,7 +58,8 @@ public class LinePartViewModel : ViewModelBase
         _valueMapperResolver = valueMapperResolver;
         _valueMapper = valueMapperResolver?.Invoke() ?? valueMapper ?? FieldValueMapper.None;
         _valueMapperVersion = ValueMapper.CurrentVersion;
-        _originalTextModel = new TextModel(uniqueId, ValueMappingText.Apply(source, _valueMapper));
+        var text = ValueMappingText.Apply(source, _valueMapper);
+        _originalTextModel = new TextModel(uniqueId, text, ReferenceEquals(text, source));
         _followDetectionChanges = detectBase64 && detection == null;
         _detection = detectBase64 ? detection ?? BinaryDetectionOptions.Current : BinaryDetectionOptions.None;
         _detectionVersion = BinaryDetectionOptions.CurrentVersion;
@@ -446,7 +447,8 @@ public class LinePartViewModel : ViewModelBase
         Array.Clear(_decodedTextModels);
         Array.Clear(_decodedTexts);
         _symbolsTextModel = null;
-        _originalTextModel = new TextModel(_uniqueId, ValueMappingText.Apply(OriginalText, _valueMapper));
+        var text = ValueMappingText.Apply(OriginalText, _valueMapper);
+        _originalTextModel = new TextModel(_uniqueId, text, ReferenceEquals(text, OriginalText));
         if (detectionChanged)
         {
             _decoded &= Content;

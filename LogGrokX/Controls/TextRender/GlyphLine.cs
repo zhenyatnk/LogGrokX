@@ -42,6 +42,20 @@ public class GlyphLine : IDisposable
         return _advanceWidthForChar.Count;
     }
 
+    public int GetCharacterIndexAtPosition(double relativeHorizontalPosition)
+    {
+        if (relativeHorizontalPosition < 0) return -1;
+
+        var currentOffset = 0.0;
+        for (var i = 0; i < _advanceWidthForChar.Count; i++)
+        {
+            currentOffset += _advanceWidthForChar[i];
+            if (relativeHorizontalPosition < currentOffset) return i;
+        }
+
+        return -1;
+    }
+
     public Rect GetTextBounds(Point startPoint, int firstTextSourceCharacterIndex, int textLength)
     {
         var height = Size.Height;

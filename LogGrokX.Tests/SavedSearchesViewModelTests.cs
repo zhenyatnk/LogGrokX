@@ -584,6 +584,34 @@ public sealed class SavedSearchesViewModelTests
         Assert.IsFalse(manager.HasChanges);
     }
 
+    [TestMethod]
+    public void AppendToSearchBuildsRegexFromClickedTerms()
+    {
+        using var search = CreateSearch(CreateStore());
+
+        search.AppendToSearchCommand.Execute("Event = 1244");
+        search.AppendToSearchCommand.Execute("Value: a.b");
+
+        Assert.AreEqual(@"Event = 1244.*Value: a\.b", search.TextToSearch);
+        Assert.IsTrue(search.UseRegex);
+        Assert.AreEqual(search.TextToSearch, search.CurrentDocument?.SearchPattern.Pattern);
+        Assert.IsTrue(search.CurrentDocument?.SearchPattern.UseRegex);
+    }
+
+    [TestMethod]
+    public void AppendToSearchEscapesExistingPlainTextPattern()
+    {
+        using var search = CreateSearch(CreateStore());
+        search.ApplySavedSearchCommand.Execute(Saved("Plain", "a+b"));
+        Assert.IsFalse(search.UseRegex);
+
+        search.AppendToSearchCommand.Execute("c");
+
+        Assert.AreEqual(@"a\+b.*c", search.TextToSearch);
+        Assert.IsTrue(search.UseRegex);
+        Assert.AreEqual(@"a\+b.*c", search.CurrentDocument?.SearchPattern.Pattern);
+    }
+
     private SavedSearchPatternStore CreateStore() => SavedSearchPatternStore.LoadFromFile(_storeFile);
 
     private static SearchViewModel CreateSearch(SavedSearchPatternStore store) => new(

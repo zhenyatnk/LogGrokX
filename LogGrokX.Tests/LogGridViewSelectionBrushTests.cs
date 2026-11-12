@@ -43,7 +43,11 @@ public sealed class LogGridViewSelectionBrushTests
                 Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
 
                 var expected = ThemeState.Current.IsDark ? "SearchHighlightDarkBrush" : "SearchHighlightBrush";
+                var expectedWildcard = ThemeState.Current.IsDark
+                    ? "SearchWildcardHighlightDarkBrush"
+                    : "SearchWildcardHighlightBrush";
                 Assert.AreSame(resources[expected], text.HighlightBrush);
+                Assert.AreSame(resources[expectedWildcard], text.WildcardHighlightBrush);
                 Assert.AreEqual(string.Empty, errors.ToString());
             }
             finally

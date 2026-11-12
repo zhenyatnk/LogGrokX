@@ -268,6 +268,21 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     #endregion
 
+    #region WildcardHighlightBrush property
+
+    public static readonly DependencyProperty WildcardHighlightBrushProperty = DependencyProperty.Register(
+        nameof(WildcardHighlightBrush), typeof(Brush), typeof(TextView),
+        new FrameworkPropertyMetadata(Brushes.Moccasin, FrameworkPropertyMetadataOptions.AffectsRender,
+            static (d, _) => (d as TextView)?._textControl.InvalidateVisual()));
+
+    public Brush WildcardHighlightBrush
+    {
+        get => (Brush)GetValue(WildcardHighlightBrushProperty);
+        set => SetValue(WildcardHighlightBrushProperty, value);
+    }
+
+    #endregion
+
     #region SelectedText property
 
     public static readonly DependencyProperty SelectedTextProperty = DependencyProperty.Register(
@@ -589,6 +604,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     
     private void ResetText()
     {
+        _textControl.ClearAltHover();
         if (_textLines != null)
         {
             foreach (var textLine in _textLines)
@@ -655,6 +671,57 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     {
         return stringRange.Length <= MaxLineLength ? stringRange : 
             StringRange.FromString(stringRange.Span[..MaxLineLength].ToString() + "...");
+    }
+
+    internal IReadOnlyList<(int start, int length, bool isWildcard)> GetHighlightRanges(int visibleLineIndex,
+        string displayedLine, Regex regex)
+    {
+        var result = new List<(int start, int length, bool isWildcard)>();
+        var ranges = new HashSet<(int start, int length, bool isWildcard)>();
+        var highlightPattern = new SearchHighlightPattern(regex);
+        foreach (Match match in regex.Matches(displayedLine))
+        {
+            if (match.Length == 0) continue;
+            foreach (var range in highlightPattern.GetRanges(match))
+                if (ranges.Add((match.Index + range.start, range.length, range.isWildcard)))
+                    result.Add((match.Index + range.start, range.length, range.isWildcard));
+        }
+
+        if (TextModel is not { } textModel || ResolveModelLine(visibleLineIndex) is not var (lineIndex, isCollapsed))
+            return result;
+
+        foreach (var range in textModel.GetOriginalHighlightRanges(lineIndex, isCollapsed, regex))
+        {
+            if (range.start >= MaxLineLength) continue;
+            var length = Math.Min(range.length, MaxLineLength - range.start);
+            if (length > 0 && ranges.Add((range.start, length, range.isWildcard)))
+                result.Add((range.start, length, range.isWildcard));
+        }
+
+        return result;
+    }
+
+    internal string? GetOriginalTerm(int visibleLineIndex, int start, int length)
+    {
+        if (TextModel is not { } textModel || start < 0 || length <= 0 ||
+            start > MaxLineLength - length || ResolveModelLine(visibleLineIndex) is not var (lineIndex, isCollapsed))
+            return null;
+
+        return textModel.TryGetOriginalText(lineIndex, start, length, isCollapsed, out var text)
+            ? text
+            : null;
+    }
+
+    private (int modelLineIndex, bool isCollapsed)? ResolveModelLine(int visibleLineIndex)
+    {
+        if (visibleLineIndex < 0) return null;
+        if (_outlineData is not { } outlineData)
+            return (visibleLineIndex, false);
+        if (visibleLineIndex >= outlineData.CollapsibleRegionsMachine.LineCount)
+            return null;
+
+        var (_, modelLineIndex) = outlineData.CollapsibleRegionsMachine[visibleLineIndex];
+        return (modelLineIndex, outlineData.CollapsibleRegionsMachine.IsCollapsed(modelLineIndex));
     }
 
     private GlyphTypeface CreateGlyphTypeface()

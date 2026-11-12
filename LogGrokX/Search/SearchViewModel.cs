@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using LogGrokX.Data;
 using LogGrokX.Platform;
 using System.Windows.Input;
 using LogGrokX.Controls;
@@ -60,6 +61,7 @@ namespace LogGrokX.Search
             FindNextCommand = new DelegateCommand(() => CurrentDocument?.FindNext());
             FindPreviousCommand = new DelegateCommand(() => CurrentDocument?.FindPrevious());
             SearchTextCommand = new DelegateCommand(SearchText, text => !string.IsNullOrEmpty(text as string));
+            AppendToSearchCommand = new DelegateCommand(AppendToSearch, text => !string.IsNullOrEmpty(text as string));
             Activate = new DelegateCommand(() => SetFocusRequest.Invoke());
             SaveSearchCommand = new DelegateCommand(SaveCurrentSearch);
             ShowSaveSearchEditorCommand = new DelegateCommand(ShowSaveSearchEditor);
@@ -246,6 +248,8 @@ namespace LogGrokX.Search
         public ICommand Activate { get; }
         
         public ICommand SearchTextCommand { get; set; }
+
+        public ICommand AppendToSearchCommand { get; }
 
         public ICommand ClearSearchCommand { get; }
 
@@ -470,6 +474,19 @@ namespace LogGrokX.Search
             CurrentDocument = newDocument;
         }
         
+        private void AppendToSearch(object obj)
+        {
+            if (obj is not string text || string.IsNullOrEmpty(text)) return;
+            _searchPatternThrottleTimer?.Dispose();
+            _searchPatternThrottleTimer = null;
+            _textToSearch = SearchTermExtractor.AppendToPattern(_textToSearch, _useRegex, text);
+            _useRegex = true;
+            InvokePropertyChanged(nameof(TextToSearch));
+            InvokePropertyChanged(nameof(UseRegex));
+            CommitSearchPatternImmediately(_textToSearch, _isCaseSensitive, _useRegex);
+            _searchAutocompleteCache.Add(_textToSearch);
+        }
+
         private void SearchText(object obj)
         {
             if (obj is not string text) return;
