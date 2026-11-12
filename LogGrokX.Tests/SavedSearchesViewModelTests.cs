@@ -602,8 +602,8 @@ public sealed class SavedSearchesViewModelTests
     public void AppendToSearchEscapesExistingPlainTextPattern()
     {
         using var search = CreateSearch(CreateStore());
-        search.UseRegex = false;
-        search.TextToSearch = "a+b";
+        search.ApplySavedSearchCommand.Execute(Saved("Plain", "a+b"));
+        Assert.IsFalse(search.UseRegex);
 
         search.AppendToSearchCommand.Execute("c");
 
