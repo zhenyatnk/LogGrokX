@@ -55,6 +55,9 @@
         <KeyBinding Command="{Binding ZoomOutCommand}" Gesture="CTRL+OemMinus" />
         <KeyBinding Command="{Binding ResetZoomCommand}" Gesture="CTRL+D0" />
         <KeyBinding Command="{Binding ActivateSearchCommand}" Gesture="CTRL+F" />
+        <KeyBinding Command="{Binding ActivateSearchCommand}" Gesture="CTRL+L" />
+        <KeyBinding Command="{Binding ActivateSearchCommand}" Gesture="ALT+D" />
+        <KeyBinding Command="{Binding ClearSearchCommand}" Gesture="ALT+X" />
         <KeyBinding Command="{Binding FindNextCommand}" Gesture="F3" />
         <KeyBinding Command="{Binding FindPreviousCommand}" Gesture="SHIFT+F3" />
     </ui:FluentWindow.InputBindings>

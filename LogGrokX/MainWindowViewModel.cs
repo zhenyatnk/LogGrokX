@@ -106,6 +106,7 @@ namespace LogGrokX
             ZoomOutCommand = new DelegateCommand(() => _textZoomService.Decrease());
             ResetZoomCommand = new DelegateCommand(() => _textZoomService.Reset());
             ActivateSearchCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.Activate, document => document.SearchViewModel.Activate));
+            ClearSearchCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.ClearSearchCommand, document => document.SearchViewModel.ClearSearchCommand));
             FindNextCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindNextCommand, document => document.FindNextCommand));
             FindPreviousCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindPreviousCommand, document => document.FindPreviousCommand));
 
@@ -251,6 +252,8 @@ namespace LogGrokX
         public ICommand ResetZoomCommand { get; }
 
         public ICommand ActivateSearchCommand { get; }
+
+        public ICommand ClearSearchCommand { get; }
 
         public ICommand FindNextCommand { get; }
 

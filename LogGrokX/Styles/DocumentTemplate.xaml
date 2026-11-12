@@ -17,6 +17,9 @@
             AppendToSearchCommand="{Binding SearchViewModel.AppendToSearchCommand}">
             <controls:RootDocumentControl.InputBindings>
                 <KeyBinding Gesture="Ctrl+F" Command="{Binding SearchViewModel.Activate}" />
+                <KeyBinding Gesture="Ctrl+L" Command="{Binding SearchViewModel.Activate}" />
+                <KeyBinding Gesture="Alt+D" Command="{Binding SearchViewModel.Activate}" />
+                <KeyBinding Gesture="Alt+X" Command="{Binding SearchViewModel.ClearSearchCommand}" />
                 <KeyBinding Gesture="F3" Command="{Binding FindNextCommand}" />
                 <KeyBinding Gesture="Shift+F3" Command="{Binding FindPreviousCommand}" />
             </controls:RootDocumentControl.InputBindings>

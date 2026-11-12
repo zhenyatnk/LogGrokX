@@ -80,6 +80,9 @@
                                            AppendToSearchCommand="{Binding Search.AppendToSearchCommand}">
             <localControls:RootDocumentControl.InputBindings>
                 <KeyBinding Gesture="Ctrl+F" Command="{Binding Search.Activate}" />
+                <KeyBinding Gesture="Ctrl+L" Command="{Binding Search.Activate}" />
+                <KeyBinding Gesture="Alt+D" Command="{Binding Search.Activate}" />
+                <KeyBinding Gesture="Alt+X" Command="{Binding Search.ClearSearchCommand}" />
                 <KeyBinding Gesture="F3" Command="{Binding Search.FindNextCommand}" />
                 <KeyBinding Gesture="Shift+F3" Command="{Binding Search.FindPreviousCommand}" />
             </localControls:RootDocumentControl.InputBindings>

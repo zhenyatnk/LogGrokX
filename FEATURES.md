@@ -156,12 +156,23 @@ reused:
 
 ![Search text, match case, regex, saved searches](assets/images/feature-search-options.png)
 
-**Alt+click** on a word in any cell adds it to the search box: the first click
+Holding **Alt** highlights the exact text under the pointer that will be added
+to the search box. **Alt+click** on a word in any cell adds it: the first click
 starts a regex search, every next click appends the word as `.*word`, so the
 hits contain all clicked words in that order. A `key = value` or `key: value`
-pair (any number of spaces around `=`/`:`, or none) is added as a whole, e.g.
-`Event = 1244` or `Value: tests`, whether the key, the separator or the value
-is clicked. A plain-text pattern already in the box is escaped first.
+pair (any number of spaces around `=`/`:`, or none) is highlighted and added as
+a whole when the pointer is over the key or separator; hovering the value
+selects only the value. Quoted values and Windows paths such as
+`\\?\Volume{GUID}\` and `\Device\HarddiskVolume1` are kept intact, including
+quotes and trailing backslashes. Hovering either bracket of `[]`, `<>` or `()`
+selects their contents without the brackets, including contents with nested
+pairs. An apostrophe between letters stays part of the word (`Can't`) instead
+of opening a quoted range. Curly-braced values stay intact too: the key selects
+`requestor={unknown}`, while the value selects `{unknown}`. For formatted JSON,
+Alt+click adds the original substring with its original whitespace whenever
+only formatting changed. Search matches found in that original JSON are also
+highlighted in the formatted view. A plain-text pattern already in the box is
+escaped first.
 
 Every hit is listed with its parsed fields, ready to navigate:
 
@@ -832,8 +843,9 @@ both lists and focuses the repaired field.
 The title bar groups file opening, text zoom, timeline placement, thread
 grouping, merged view, theme, support and settings tools beside the profile
 selector. Hover an icon for its tooltip. The timeline button cycles through
-top, bottom and hidden; search remains available with `Ctrl+F`, `F3` and
-`Shift+F3`.
+top, bottom and hidden. Search is available with `Ctrl+F`, `Ctrl+L` or `Alt+D`:
+the editor receives focus and selects its text. `Alt+X` clears the active search
+without explicitly moving focus, and `F3` / `Shift+F3` navigate the matches.
 
 ## 🌐 Interface languages
 

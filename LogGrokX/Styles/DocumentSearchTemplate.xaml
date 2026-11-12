@@ -137,6 +137,7 @@
                      PlaceholderText="{loc:Loc SearchLogsPlaceholder}"
                      AutomationProperties.Name="{loc:Loc SearchLogsPlaceholder}"
                      controls:SetFocusBehavior.SetFocusRequest="{Binding SetFocusRequest}"
+                     controls:SetFocusBehavior.SelectAllOnFocus="True"
                      behaviors:AutoCompleteBehavior.AutoCompleteItemsSource="{Binding AutoCompleteList, Mode=OneWay}"
                      behaviors:AutoCompleteBehavior.AutoCompleteStringComparison="InvariantCultureIgnoreCase">
                 <ui:TextBox.InputBindings>

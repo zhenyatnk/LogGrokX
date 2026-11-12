@@ -202,6 +202,72 @@ public class MainWindowViewModelLifecycleTests
         });
     }
 
+    [TestMethod]
+    public void ClearSearchCommand_ClearsCurrentDocumentWithoutFocusRequest()
+    {
+        RunOnSta(() =>
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            File.WriteAllText(fileName, "2026-01-01 00:00:00 INFO 1 Synthetic message");
+            try
+            {
+                using var viewModel = CreateViewModel();
+                viewModel.ClearSearchCommand.Execute(null);
+                viewModel.AddDocument(fileName);
+                var search = viewModel.CurrentDocument!.SearchViewModel;
+                var focusRequests = 0;
+                search.SetFocusRequest.SetFocus += () => focusRequests++;
+                search.TextToSearch = "alpha";
+
+                viewModel.ClearSearchCommand.Execute(null);
+
+                Assert.AreEqual(string.Empty, search.TextToSearch);
+                Assert.IsNull(search.CurrentDocument);
+                Assert.IsTrue(search.IsFilterDisabled);
+                Assert.AreEqual(0, focusRequests);
+                viewModel.Dispose();
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        });
+    }
+
+    [TestMethod]
+    [DoNotParallelize]
+    public void ClearSearchCommand_ClearsMergedSearchWithoutFocusRequest()
+    {
+        RunOnSta(() =>
+        {
+            var settingsPath = Path.Combine(Path.GetTempPath(), $"loggrokx-merged-{Guid.NewGuid():N}.yaml");
+            File.WriteAllText(settingsPath, "Settings:\n  ViewSettings:\n    MergedFilesView: true\n");
+            try
+            {
+                var settings = new ApplicationSettings(settingsPath);
+                using var viewModel = CreateViewModel(settings);
+                viewModel.IsMergedView = true;
+                viewModel.IsMergedViewActive = true;
+                var search = viewModel.MergedViewModel.Search;
+                var focusRequests = 0;
+                search.SetFocusRequest.SetFocus += () => focusRequests++;
+                search.AppendToSearchCommand.Execute("alpha");
+                Assert.IsNotNull(search.CurrentDocument);
+
+                viewModel.ClearSearchCommand.Execute(null);
+
+                Assert.AreEqual(string.Empty, search.TextToSearch);
+                Assert.IsNull(search.CurrentDocument);
+                Assert.IsTrue(search.IsFilterDisabled);
+                Assert.AreEqual(0, focusRequests);
+            }
+            finally
+            {
+                File.Delete(settingsPath);
+            }
+        });
+    }
+
     private static MainWindowViewModel CreateViewModel(ApplicationSettings? settings = null)
     {
         settings ??= ApplicationSettings.Instance();

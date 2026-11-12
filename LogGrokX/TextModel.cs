@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using LogGrokX.Data;
 using LogGrokX.Data.Index;
 using Microsoft.Toolkit.HighPerformance;
@@ -19,8 +20,15 @@ public class TextModel : IReadOnlyList<StringRange>
     // Only a reference is kept; lines are re-tokenized on demand to avoid extra memory.
     private readonly string? _plainSource;
     private readonly Dictionary<int, StringRange>? _substitutions;
+    private readonly string? _originalStructuredSource;
+    private string? _formattedStructuredText;
+    private List<(int start, int length, StructuredTextKind kind)>? _originalStructuredRanges;
+    private List<(int start, int length, StructuredTextKind kind)>? _formattedStructuredRanges;
     private Dictionary<int, (int start, int length)>? _indexedCollapsibleRanges;
     private Dictionary<int, StringRange>? _collapsedTextCache;
+    private Dictionary<int, IReadOnlyList<(int collapsedStart, int formattedStart, int length)>>? _collapsedSegments;
+    private Regex? _highlightRegex;
+    private IReadOnlyList<(int start, int length)>? _originalHighlightRanges;
 
     public int UniqueId { get; }
 
@@ -49,16 +57,237 @@ public class TextModel : IReadOnlyList<StringRange>
         var (start, length) = _indexedCollapsibleRanges[index];
         var end = Math.Min(start + length, textLines.Count);
         var builder = new StringBuilder();
+        List<(int collapsedStart, int formattedStart, int length)>? segments =
+            _originalStructuredSource == null ? null : new();
         for (var i = start; i < end; i++)
         {
-            var line = textLines[i].Span;
-            builder.Append(i == start ? line.TrimEnd() : line.Trim());
+            var lineRange = textLines[i];
+            var line = lineRange.Span;
+            var trimmed = i == start ? line.TrimEnd() : line.Trim();
+            var leadingLength = i == start ? 0 : line.Length - line.TrimStart().Length;
+            segments?.Add((builder.Length, lineRange.Start + leadingLength, trimmed.Length));
+            builder.Append(trimmed);
         }
 
         var collapsedText = StringRange.FromString(builder.ToString());
         _collapsedTextCache ??= new Dictionary<int, StringRange>();
         _collapsedTextCache[index] = collapsedText;
+        if (segments != null)
+        {
+            _collapsedSegments ??= new Dictionary<int, IReadOnlyList<(int collapsedStart, int formattedStart, int length)>>();
+            _collapsedSegments[index] = segments;
+        }
         return collapsedText;
+    }
+
+    internal bool TryGetOriginalText(int lineIndex, int start, int length, bool isCollapsed,
+        out string? text)
+    {
+        text = null;
+        if (_originalStructuredSource == null || _formattedStructuredText == null ||
+            _originalStructuredRanges == null || _formattedStructuredRanges == null || _textLines == null ||
+            start < 0 || length <= 0)
+            return false;
+
+        int formattedStart;
+        int formattedEnd;
+        if (isCollapsed)
+        {
+            if (GetCollapsedTextSubstitution(lineIndex).IsEmpty ||
+                _collapsedSegments?.TryGetValue(lineIndex, out var segments) != true ||
+                !TryGetCollapsedRange(segments!, start, length, out formattedStart, out formattedEnd))
+                return false;
+        }
+        else
+        {
+            if ((uint)lineIndex >= (uint)_textLines.Count || start > _textLines[lineIndex].Length - length)
+                return false;
+            formattedStart = _textLines[lineIndex].Start + start;
+            formattedEnd = formattedStart + length;
+        }
+
+        for (var i = 0; i < _formattedStructuredRanges.Count; i++)
+        {
+            var formattedRange = _formattedStructuredRanges[i];
+            if (formattedRange.kind != StructuredTextKind.Json || formattedStart < formattedRange.start ||
+                formattedEnd > formattedRange.start + formattedRange.length)
+                continue;
+
+            var originalRange = _originalStructuredRanges[i];
+            var originalJson = _originalStructuredSource.Substring(originalRange.start, originalRange.length);
+            var formattedJson = _formattedStructuredText.Substring(formattedRange.start, formattedRange.length);
+            return JsonSourceMap.TryGetSubstring(originalJson, formattedJson,
+                formattedStart - formattedRange.start, formattedEnd - formattedStart, out text);
+        }
+
+        return false;
+    }
+
+    private static bool TryGetCollapsedRange(
+        IReadOnlyList<(int collapsedStart, int formattedStart, int length)> segments,
+        int start, int length, out int formattedStart, out int formattedEnd)
+    {
+        formattedStart = 0;
+        formattedEnd = 0;
+        var haveStart = false;
+        var haveEnd = false;
+        var end = start + length - 1;
+        foreach (var (collapsedStart, segmentFormattedStart, segmentLength) in segments)
+        {
+            var collapsedEnd = collapsedStart + segmentLength;
+            if (!haveStart && start >= collapsedStart && start < collapsedEnd)
+            {
+                formattedStart = segmentFormattedStart + start - collapsedStart;
+                haveStart = true;
+            }
+
+            if (end >= collapsedStart && end < collapsedEnd)
+            {
+                formattedEnd = segmentFormattedStart + end - collapsedStart + 1;
+                haveEnd = true;
+            }
+        }
+
+        return haveStart && haveEnd;
+    }
+
+    internal IReadOnlyList<(int start, int length)> GetOriginalHighlightRanges(int lineIndex,
+        bool isCollapsed, Regex regex)
+    {
+        if (_originalStructuredSource == null || _formattedStructuredText == null ||
+            _originalStructuredRanges == null || _formattedStructuredRanges == null || _textLines == null ||
+            (uint)lineIndex >= (uint)_textLines.Count)
+            return Array.Empty<(int start, int length)>();
+
+        if (!ReferenceEquals(regex, _highlightRegex))
+        {
+            _highlightRegex = regex;
+            _originalHighlightRanges = BuildOriginalHighlightRanges(regex);
+        }
+
+        var result = new List<(int start, int length)>();
+        if (isCollapsed)
+        {
+            if (GetCollapsedTextSubstitution(lineIndex).IsEmpty ||
+                _collapsedSegments?.TryGetValue(lineIndex, out var segments) != true)
+                return result;
+
+            foreach (var range in _originalHighlightRanges!)
+            foreach (var (collapsedStart, formattedStart, segmentLength) in segments!)
+            {
+                var start = Math.Max(range.start, formattedStart);
+                var end = Math.Min(range.start + range.length, formattedStart + segmentLength);
+                if (end > start)
+                    result.Add((collapsedStart + start - formattedStart, end - start));
+            }
+        }
+        else
+        {
+            var line = _textLines[lineIndex];
+            foreach (var range in _originalHighlightRanges!)
+            {
+                var start = Math.Max(range.start, line.Start);
+                var end = Math.Min(range.start + range.length, line.End);
+                if (end > start)
+                    result.Add((start - line.Start, end - start));
+            }
+        }
+
+        return result;
+    }
+
+    private IReadOnlyList<(int start, int length)> BuildOriginalHighlightRanges(Regex regex)
+    {
+        var result = new List<(int start, int length)>();
+        var maps = new JsonSourceMap?[_originalStructuredRanges!.Count];
+        for (var i = 0; i < maps.Length; i++)
+        {
+            var originalRange = _originalStructuredRanges[i];
+            if (originalRange.kind != StructuredTextKind.Json) continue;
+            var formattedRange = _formattedStructuredRanges![i];
+            JsonSourceMap.TryCreate(
+                _originalStructuredSource!.Substring(originalRange.start, originalRange.length),
+                _formattedStructuredText!.Substring(formattedRange.start, formattedRange.length),
+                out maps[i]);
+        }
+
+        foreach (Match match in regex.Matches(_originalStructuredSource!))
+        {
+            if (match.Length == 0) continue;
+            var matchEnd = match.Index + match.Length;
+            var first = -1;
+            var last = -1;
+            for (var i = 0; i < _originalStructuredRanges.Count; i++)
+            {
+                var range = _originalStructuredRanges[i];
+                if (range.kind != StructuredTextKind.Json || match.Index >= range.start + range.length ||
+                    matchEnd <= range.start)
+                    continue;
+                if (first < 0) first = i;
+                last = i;
+            }
+
+            if (first < 0) continue;
+            var supported = true;
+            for (var i = first; i <= last; i++)
+                if (maps[i] == null)
+                    supported = false;
+            if (!supported) continue;
+
+            var formattedStart = 0;
+            var formattedEnd = 0;
+            var firstRange = _originalStructuredRanges[first];
+            if (match.Index < firstRange.start)
+                formattedStart = MapPlainSourcePosition(match.Index);
+            else if (!TryGetFormattedJsonRange(maps, first, match.Index - firstRange.start,
+                         Math.Min(matchEnd, firstRange.start + firstRange.length) - match.Index,
+                         out formattedStart, out _))
+                continue;
+
+            var lastRange = _originalStructuredRanges[last];
+            if (matchEnd > lastRange.start + lastRange.length)
+                formattedEnd = MapPlainSourcePosition(matchEnd);
+            else
+            {
+                var start = Math.Max(match.Index, lastRange.start);
+                if (!TryGetFormattedJsonRange(maps, last, start - lastRange.start, matchEnd - start,
+                        out _, out formattedEnd))
+                    continue;
+            }
+
+            if (formattedEnd > formattedStart)
+                result.Add((formattedStart, formattedEnd - formattedStart));
+        }
+
+        return result;
+    }
+
+    private bool TryGetFormattedJsonRange(JsonSourceMap?[] maps, int index, int sourceStart, int sourceLength,
+        out int formattedStart, out int formattedEnd)
+    {
+        formattedStart = 0;
+        formattedEnd = 0;
+        if (maps[index]?.TryGetFormattedRange(sourceStart, sourceLength, out var start, out var length) != true)
+            return false;
+        var formattedRange = _formattedStructuredRanges![index];
+        formattedStart = formattedRange.start + start;
+        formattedEnd = formattedStart + length;
+        return true;
+    }
+
+    private int MapPlainSourcePosition(int sourcePosition)
+    {
+        var offset = 0;
+        for (var i = 0; i < _originalStructuredRanges!.Count; i++)
+        {
+            var originalRange = _originalStructuredRanges[i];
+            if (sourcePosition < originalRange.start)
+                return sourcePosition + offset;
+            var formattedRange = _formattedStructuredRanges![i];
+            offset = formattedRange.start + formattedRange.length - originalRange.start - originalRange.length;
+        }
+
+        return sourcePosition + offset;
     }
 
     public IEnumerator<StringRange> GetEnumerator()
@@ -95,13 +324,17 @@ public class TextModel : IReadOnlyList<StringRange>
         }
     }
 
-    public TextModel(int uniqueId, string source)
+    public TextModel(int uniqueId, string source) : this(uniqueId, source, false) { }
+
+    internal TextModel(int uniqueId, string source, bool enableOriginalTextSearch)
     {
         UniqueId = uniqueId;
         var structuredRanges = TextOperations.GetStructuredRanges(source);
         var viewSettings = ApplicationSettings.Instance().ViewSettings;
         if (structuredRanges.Count != 0)
         {
+            if (enableOriginalTextSearch)
+                _originalStructuredSource = source;
             (_textLines, CollapsibleRanges) = GetStructuredProperties(source, structuredRanges);
         }
         else
@@ -133,10 +366,16 @@ public class TextModel : IReadOnlyList<StringRange>
         }
     }
 
-    private static (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)
+    private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)
         GetStructuredProperties(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var (text, formattedRanges) = TextOperations.FormatInlineStructured(source, structuredRanges);
+        if (_originalStructuredSource != null)
+        {
+            _formattedStructuredText = text;
+            _originalStructuredRanges = structuredRanges;
+            _formattedStructuredRanges = formattedRanges;
+        }
         return GetCollapsibleRanges(text, formattedRanges);
     }
 
