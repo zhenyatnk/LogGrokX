@@ -296,6 +296,15 @@ public class TextControl : Control
         Focus();
         if (e.ChangedButton == MouseButton.Left)
         {
+            if (Keyboard.Modifiers == ModifierKeys.Alt)
+            {
+                _startSelectionPoint = null;
+                if (e.ClickCount == 1 && TextLines is { } lines && lines.Count != 0)
+                    AppendTermUnderPointToSearch(e.GetPosition(this), lines);
+                e.Handled = true;
+                return;
+            }
+
             if (e.ClickCount == 1)
             {
                 _startSelectionPoint = e.GetPosition(this);
@@ -320,6 +329,19 @@ public class TextControl : Control
         line.SetSelection(start, length);
         InvalidateVisual();
         _textView.SelectedText = line.Text.Span.Slice(start, length).ToString();
+    }
+
+    private void AppendTermUnderPointToSearch(Point point, IList<(GlyphLine glyphLine, bool isCollapsible)> textLines)
+    {
+        var (lineNumber, _) = GetTextPosition(point, textLines);
+        var (line, isCollapsible) = textLines[lineNumber];
+        var position = line.GetCharacterIndexAtPosition(point.X - GetHorizontalOffset(isCollapsible));
+        if (position < 0) return;
+        if (SearchTermExtractor.GetTermRange(line.Text.Span, position) is not var (start, length)) return;
+
+        var term = line.Text.Span.Slice(start, length).ToString();
+        if (RoutedCommands.AppendToSearch.CanExecute(term, this))
+            RoutedCommands.AppendToSearch.Execute(term, this);
     }
 
     private static (int start, int length) GetWordSelectionRange(StringRange lineText, int position)

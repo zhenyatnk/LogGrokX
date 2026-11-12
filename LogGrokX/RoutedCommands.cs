@@ -14,6 +14,9 @@ namespace LogGrokX
         public static readonly RoutedCommand SearchText = new RoutedUICommand(
             Localization.Strings.Get("SearchSelection"), "Search selection", typeof(UIElement));
 
+        public static readonly RoutedCommand AppendToSearch = new RoutedUICommand(
+            Localization.Strings.Get("AppendToSearch"), "Append to search", typeof(UIElement));
+
         public static readonly RoutedCommand ClearFilters = new RoutedUICommand(
             Localization.Strings.Get("ClearAllFilters"), "Clear filters", typeof(UIElement));
 

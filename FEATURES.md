@@ -156,6 +156,13 @@ reused:
 
 ![Search text, match case, regex, saved searches](assets/images/feature-search-options.png)
 
+**Alt+click** on a word in any cell adds it to the search box: the first click
+starts a regex search, every next click appends the word as `.*word`, so the
+hits contain all clicked words in that order. A `key = value` or `key: value`
+pair (any number of spaces around `=`/`:`, or none) is added as a whole, e.g.
+`Event = 1244` or `Value: tests`, whether the key, the separator or the value
+is clicked. A plain-text pattern already in the box is escaped first.
+
 Every hit is listed with its parsed fields, ready to navigate:
 
 ![Every hit, ready to navigate](assets/images/feature-search-results.png)

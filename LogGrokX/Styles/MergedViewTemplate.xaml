@@ -76,7 +76,8 @@
     </DataTemplate>
 
     <DataTemplate x:Key="MergedViewTemplate" DataType="{x:Type mergedView:MergedViewModel}">
-        <localControls:RootDocumentControl SearchTextCommand="{Binding Search.SearchTextCommand}">
+        <localControls:RootDocumentControl SearchTextCommand="{Binding Search.SearchTextCommand}"
+                                           AppendToSearchCommand="{Binding Search.AppendToSearchCommand}">
             <localControls:RootDocumentControl.InputBindings>
                 <KeyBinding Gesture="Ctrl+F" Command="{Binding Search.Activate}" />
                 <KeyBinding Gesture="F3" Command="{Binding Search.FindNextCommand}" />

@@ -561,6 +561,9 @@
   <data xml:space="preserve" name="SearchSelected">
     <value>Buscar «{0}»</value>
   </data>
+  <data xml:space="preserve" name="AppendToSearch">
+    <value>Añadir a la búsqueda</value>
+  </data>
   <data xml:space="preserve" name="SearchSelection">
     <value>Buscar selección</value>
   </data>

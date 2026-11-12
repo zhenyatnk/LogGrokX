@@ -13,7 +13,8 @@
     
     <DataTemplate x:Key="DocumentTemplate" DataType="local:DocumentViewModel">
         <controls:RootDocumentControl
-            SearchTextCommand="{Binding SearchViewModel.SearchTextCommand}">
+            SearchTextCommand="{Binding SearchViewModel.SearchTextCommand}"
+            AppendToSearchCommand="{Binding SearchViewModel.AppendToSearchCommand}">
             <controls:RootDocumentControl.InputBindings>
                 <KeyBinding Gesture="Ctrl+F" Command="{Binding SearchViewModel.Activate}" />
                 <KeyBinding Gesture="F3" Command="{Binding FindNextCommand}" />

@@ -404,6 +404,16 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   bindings handle the case when keyboard focus is not inside a document (e.g. right
   after start); `MainWindow.EnsureKeyboardFocus` focuses the window after loading if
   nothing in it has keyboard focus.
+- **Alt+click to search** (#97): `TextControl.OnMouseDown` with only `Alt`
+  pressed takes the term under the cursor (`GlyphLine.GetCharacterIndexAtPosition`,
+  `LogGrokX.Data/SearchTermExtractor.GetTermRange`: a word of letters, digits,
+  `_`, `.`, `-`, or a whole `key = value` / `key: value` pair with optional
+  spaces/tabs around the separator) and routes `RoutedCommands.AppendToSearch`
+  to `RootDocumentControl.AppendToSearchCommand` ->
+  `SearchViewModel.AppendToSearchCommand`. `SearchTermExtractor.AppendToPattern`
+  escapes the term (`Regex.Escape`, spaces kept), joins it with `.*`, escapes a
+  plain-text existing pattern, and the search switches to regex and commits
+  immediately (no throttle).
 - **Call stack symbols** (#89): `LogGrokX.Data/Symbols` holds the testable part —
   `CallStackParser` (frames `N# mod!GUID,age!rva`, `N# mod!rva`, `N# mod+0xrva`),
   `SymbolPath` (WinDbg `srv*cache*server;dir` syntax), `SymbolStore` (store layout,
