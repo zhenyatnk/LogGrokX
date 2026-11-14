@@ -141,6 +141,10 @@ namespace LogGrokX
             SaveViewSettingValue("ShowThreadGroupSeparators", showThreadGroupSeparators ? "true" : "false");
         }
 
+        public void SetShowUpdateIndicator(bool showUpdateIndicator) =>
+            SetViewSetting(ViewSettings.ShowUpdateIndicator, showUpdateIndicator,
+                value => ViewSettings.ShowUpdateIndicator = value, nameof(ViewSettings.ShowUpdateIndicator));
+
         public void SetBinaryDetection(bool detectBinary, bool detectPem, bool detectBase64, bool detectHex)
         {
             SetViewSetting(ViewSettings.DetectBinary, detectBinary, v => ViewSettings.DetectBinary = v, nameof(ViewSettings.DetectBinary));

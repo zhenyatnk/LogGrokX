@@ -24,6 +24,7 @@ namespace LogGrokX
         protected override void OnClosed(EventArgs e)
         {
             _viewModel.CloseRequested -= Close;
+            _viewModel.Dispose();
             base.OnClosed(e);
         }
     }

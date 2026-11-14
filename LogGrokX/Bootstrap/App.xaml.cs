@@ -120,6 +120,8 @@ namespace LogGrokX.Bootstrap
             container.Register<TextZoomService>(Reuse.Singleton);
             container.Register<ThreadGroupingService>(Reuse.Singleton);
             container.Register<MergedFilesViewService>(Reuse.Singleton);
+            container.Register<UpdateIndicatorService>(Reuse.Singleton);
+            container.Register<IApplicationLifetime, WpfApplicationLifetime>(Reuse.Singleton);
             container.Register<UpdateCheckService>(Reuse.Singleton);
             container.RegisterMapping<IUpdateService, UpdateCheckService>();
             container.Register<MarkedLinesViewModel>(setup: Setup.With(allowDisposableTransient: true));
@@ -127,11 +129,15 @@ namespace LogGrokX.Bootstrap
         }
 
         private void ProcessCommandLine(IEnumerable<string> commandLine)
-        {            
+        {
             var mainVm = _container.Resolve<MainWindowViewModel>();
             foreach (var item in commandLine)
             {
-                Dispatcher.BeginInvoke(new Action(() => { mainVm.AddDocument(item); }));
+                IEnumerable<string> files = item == UpdateCheckService.RestoreFilesArgument
+                    ? UpdateCheckService.TakeRestartFiles()
+                    : [item];
+                foreach (var file in files)
+                    Dispatcher.BeginInvoke(new Action(() => { mainVm.AddDocument(file); }));
             }
         }
     }

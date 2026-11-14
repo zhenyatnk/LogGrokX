@@ -6,7 +6,7 @@ using LogGrokX.Platform;
 
 namespace LogGrokX;
 
-public sealed class UpdateViewModel : ViewModelBase
+public sealed class UpdateViewModel : ViewModelBase, IDisposable
 {
     private readonly IUpdateService _service;
     private readonly ReleaseInfo _release;
@@ -32,6 +32,7 @@ public sealed class UpdateViewModel : ViewModelBase
             Close();
         });
         OpenReleasePageCommand = new DelegateCommand(() => _desktop.OpenUrl(_release.PageUrl));
+        _service.StatusChanged += OnServiceStatusChanged;
     }
 
     public event Action? CloseRequested;
@@ -100,6 +101,36 @@ public sealed class UpdateViewModel : ViewModelBase
     public ICommand OpenReleasePageCommand { get; }
 
     public void CancelDownload() => _cancellation?.Cancel();
+
+    public void Dispose() => _service.StatusChanged -= OnServiceStatusChanged;
+
+    private void OnServiceStatusChanged()
+    {
+        var status = _service.Status;
+        if (!string.Equals(status.Version, _release.Tag, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        switch (status.State)
+        {
+            case UpdateState.Downloading when !IsReady:
+                if (!IsDownloading)
+                    Status = Strings.Get("DownloadingUpdate");
+                IsDownloading = true;
+                Progress = status.Progress;
+                break;
+            case UpdateState.Ready:
+                Progress = 100;
+                IsDownloading = false;
+                IsReady = true;
+                Status = Strings.Format("UpdateReady", _release.Tag);
+                break;
+            case UpdateState.Available when _cancellation == null && !IsReady:
+                IsDownloading = false;
+                Progress = 0;
+                Status = string.Empty;
+                break;
+        }
+    }
 
     private async void Update()
     {

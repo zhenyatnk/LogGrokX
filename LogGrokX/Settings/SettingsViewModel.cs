@@ -21,6 +21,7 @@ namespace LogGrokX.Settings
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly MergedFilesViewService _mergedFilesViewService;
         private readonly TextZoomService _textZoomService;
+        private readonly UpdateIndicatorService _updateIndicatorService;
         private readonly IThemeService _themeService;
         private readonly IColorValidator _colorValidator;
         private string _validationMessage = string.Empty;
@@ -44,7 +45,7 @@ namespace LogGrokX.Settings
             ThreadGroupingService threadGroupingService,
             MergedFilesViewService mergedFilesViewService,
             TextZoomService textZoomService, IThemeService themeService,
-            IColorValidator colorValidator, IDesktopService desktop)
+            IColorValidator colorValidator, IDesktopService desktop, UpdateIndicatorService updateIndicatorService)
         {
             _desktop = desktop ?? throw new ArgumentNullException(nameof(desktop));
             _applicationSettings = applicationSettings;
@@ -52,6 +53,7 @@ namespace LogGrokX.Settings
             _threadGroupingService = threadGroupingService;
             _mergedFilesViewService = mergedFilesViewService;
             _textZoomService = textZoomService;
+            _updateIndicatorService = updateIndicatorService ?? throw new ArgumentNullException(nameof(updateIndicatorService));
             _themeService = themeService;
             _colorValidator = colorValidator;
 
@@ -388,6 +390,7 @@ namespace LogGrokX.Settings
             _threadGroupingService.SetEnabled(View.GroupByThread);
             _threadGroupingService.SetShowSeparators(View.ShowThreadGroupSeparators);
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
+            _updateIndicatorService.SetVisible(View.ShowUpdateIndicator);
             _textZoomService.SetFontSize(View.LogFontSize);
             _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
 
@@ -415,6 +418,7 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "DetectBase64", View.DetectBase64 ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectHex", View.DetectHex ? "true" : "false");
             file.SetScalar("ViewSettings", "UpdateMode", View.UpdateMode.ToString().ToLowerInvariant());
+            file.SetScalar("ViewSettings", "ShowUpdateIndicator", View.ShowUpdateIndicator ? "true" : "false");
             file.SetScalar("SymbolSettings", "Enabled", symbols.Enabled ? "true" : "false");
             file.SetScalar("SymbolSettings", "SymbolPath", QuoteScalar(symbols.SymbolPath));
             file.SetScalar("SymbolSettings", "SourcePath", QuoteScalar(symbols.SourcePath));

@@ -316,7 +316,7 @@ public sealed class SettingsAutoFixTests
             var settings = ApplicationSettings.LoadFromFile(path);
             var dialog = new SettingsViewModel(settings, new TimelinePlacementService(settings),
                 new ThreadGroupingService(settings), new MergedFilesViewService(), new TextZoomService(settings),
-                new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator(), TestServices.Desktop);
+                new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator(), TestServices.Desktop, new UpdateIndicatorService(settings));
             test(dialog);
         }
         finally

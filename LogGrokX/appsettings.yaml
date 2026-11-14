@@ -138,6 +138,8 @@ Settings:
     DetectHex: true
     # Updates: disabled - do not check, check - notify about a new version, install - download and install silently on exit
     UpdateMode: check
+    # Show update availability, download progress and restart action in the title bar
+    ShowUpdateIndicator: true
 
   # Value mappings: values found in Fields (all fields when empty) are shown as value(mapping), e.g. 0x80070005(E_ACCESSDENIED).
   # Lists can be edited, imported and exported as JSON in Settings -> Value mappings.

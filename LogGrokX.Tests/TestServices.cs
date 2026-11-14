@@ -15,11 +15,11 @@ internal static class TestServices
 {
     internal static IDesktopService Desktop { get; } = new DesktopStub();
     internal static IAppDialogs Dialogs { get; } = new DialogsStub();
-    internal static IUpdateService Updates { get; } = new UpdatesStub();
+    internal static UpdatesStub Updates { get; } = new();
     internal static IUiDispatcher Inline { get; } = new InlineDispatcher();
     internal static DisplaySettingsMonitor DisplaySettings { get; } = new(Inline);
 
-    internal static MainWindowViewModel CreateMain(ApplicationSettings settings)
+    internal static MainWindowViewModel CreateMain(ApplicationSettings settings, UpdatesStub? updates = null)
     {
         if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
             throw new InvalidOperationException("UI fixtures require an STA thread.");
@@ -28,7 +28,7 @@ internal static class TestServices
             new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
             new ThreadGroupingService(settings), new MergedFilesViewService(), Dialogs,
             documents => new MarkedLinesViewModel(documents), new WpfColorValidator(), dispatcher, Desktop,
-            new DisplaySettingsMonitor(dispatcher));
+            new DisplaySettingsMonitor(dispatcher), new UpdateIndicatorService(settings), updates ?? Updates);
     }
 
     private sealed class DesktopStub : IDesktopService
@@ -48,13 +48,27 @@ internal static class TestServices
         public void ShowSavedSearches() => throw new InvalidOperationException("Unexpected dialog.");
     }
 
-    private sealed class UpdatesStub : IUpdateService
+    internal sealed class UpdatesStub : IUpdateService
     {
+        public UpdateStatus Status { get; private set; } = new(UpdateState.None, null, 0);
+        public List<string> RestartFiles { get; } = [];
+        public event Action? StatusChanged;
+        public void SetStatus(UpdateStatus status)
+        {
+            Status = status;
+            StatusChanged?.Invoke();
+        }
         public bool CanInstall(ReleaseInfo release) => false;
         public Task<ReleaseInfo?> CheckNowAsync() => Task.FromResult<ReleaseInfo?>(null);
+        public Task DownloadAvailableAsync() => Task.CompletedTask;
         public Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("Unexpected download.");
         public void SkipVersion(string tag) { }
+        public bool RestartAndInstall(IEnumerable<string> openFiles)
+        {
+            RestartFiles.AddRange(openFiles);
+            return true;
+        }
     }
 
     private sealed class InlineDispatcher : IUiDispatcher

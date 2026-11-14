@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Разделители групп потоков</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>Индикатор обновлений в заголовке</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>Пропустить эту версию</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>Доступно обновление</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>Доступна версия {0}. Нажмите, чтобы скачать обновление.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>Перезапустить, установить LogGrokX {0} и восстановить открытые файлы.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>Не удалось сохранить открытые файлы для перезапуска.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>Обновить до {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>Загрузка {0:0}%</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>Перезапустить: {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>Ошибка проверки обновлений: {0}</value>

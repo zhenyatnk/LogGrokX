@@ -235,7 +235,22 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `App.OnStartup` calls `UpdateCheckService.TakePendingReleaseForCurrentVersion`,
   which returns the notes only if the stored version matches `BuildInfo.Version`
   (a `v`-prefix is ignored), deletes the file either way, and `WhatsNewWindow` /
-  `WhatsNewViewModel` shows them.
+  `WhatsNewViewModel` shows them. `IUpdateService.Status` / `StatusChanged`
+  drive one title-bar update pill (#99): an accent-outline download button for
+  `Available`, a neutral percent/progress indicator for `Downloading`, and a
+  filled accent restart button for `Ready`; the regular `WindowTitle` stays
+  unchanged. `ViewSettings.ShowUpdateIndicator` (Settings -> View, default on)
+  hides only the pill through `UpdateIndicatorService`, without stopping update
+  checks or downloads. The available release is stored in `available-update.json` and
+  restored as `Available` after restart while it is still newer than the current
+  build; skipping it or catching up to its version deletes the file. The pill's
+  single command downloads the available release; when installation is ready,
+  it saves
+  all open `DocumentId`s to `update-restart.json` and shuts down through
+  `IApplicationLifetime`; the installer script then waits for installation and
+  starts the app with `--restore-update`, which reads the list once and reopens
+  those files. Ordinary application exit keeps the original install-without-
+  restart behavior.
 - **Search results selection**: the search pane's `VirtualizingStackPanel` sets
   `ReplaceSelectionOnCurrentPosition="True"` so F3/next/previous replace the
   selection. Mouse and Shift+arrow selection must change `CurrentPosition`

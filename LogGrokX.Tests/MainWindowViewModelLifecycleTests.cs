@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using LogGrokX.AvalonDockExtensions;
 using LogGrokX.MarkedLines;
+using LogGrokX.Platform;
 using LogGrokX.Search;
 using LogGrokX.Theming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -51,6 +52,35 @@ public class MainWindowViewModelLifecycleTests
             finally
             {
                 File.Delete(fileName);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void RestartUpdate_PassesAllOpenDocumentPaths()
+    {
+        RunOnSta(() =>
+        {
+            var firstFile = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            var secondFile = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            File.WriteAllText(firstFile, "2026-01-01 00:00:00 INFO 1 First message");
+            File.WriteAllText(secondFile, "2026-01-01 00:00:00 INFO 2 Second message");
+            try
+            {
+                var updates = new TestServices.UpdatesStub();
+                updates.SetStatus(new UpdateStatus(UpdateState.Ready, "v2.0", 100));
+                using var viewModel = CreateViewModel(updates: updates);
+                viewModel.AddDocument(firstFile);
+                viewModel.AddDocument(secondFile);
+
+                viewModel.UpdateCommand.Execute(null);
+
+                CollectionAssert.AreEqual(new[] { firstFile, secondFile }, updates.RestartFiles);
+            }
+            finally
+            {
+                File.Delete(firstFile);
+                File.Delete(secondFile);
             }
         });
     }
@@ -268,10 +298,11 @@ public class MainWindowViewModelLifecycleTests
         });
     }
 
-    private static MainWindowViewModel CreateViewModel(ApplicationSettings? settings = null)
+    private static MainWindowViewModel CreateViewModel(ApplicationSettings? settings = null,
+        TestServices.UpdatesStub? updates = null)
     {
         settings ??= ApplicationSettings.Instance();
-        return TestServices.CreateMain(settings);
+        return TestServices.CreateMain(settings, updates);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Pokaż separatory grup wątków</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>Wskaźnik aktualizacji na pasku tytułu</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>Pomiń tę wersję</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>Dostępna aktualizacja</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>Wersja {0} jest dostępna. Kliknij, aby pobrać aktualizację.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>Uruchom ponownie, aby zainstalować LogGrokX {0} i ponownie otworzyć bieżące dzienniki.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>Nie można zapisać otwartych plików przed ponownym uruchomieniem.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>Zaktualizuj do {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>Pobieranie {0:0}%</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>Uruchom ponownie: {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>Sprawdzanie aktualizacji nie powiodło się: {0}</value>
