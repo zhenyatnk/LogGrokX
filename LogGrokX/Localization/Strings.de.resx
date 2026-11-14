@@ -900,4 +900,22 @@
   <data name="RestoreSavedSearch" xml:space="preserve">
     <value>Suche wiederherstellen</value>
   </data>
+  <data xml:space="preserve" name="TextSize">
+    <value>Textgröße</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottom">
+    <value>Unten</value>
+  </data>
+  <data xml:space="preserve" name="TimelineHidden">
+    <value>Ausgeblendet</value>
+  </data>
+  <data xml:space="preserve" name="Theme">
+    <value>Design</value>
+  </data>
+  <data xml:space="preserve" name="LightTheme">
+    <value>Hell</value>
+  </data>
+  <data xml:space="preserve" name="DarkTheme">
+    <value>Dunkel</value>
+  </data>
 </root>

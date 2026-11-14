@@ -117,12 +117,6 @@
                 </Setter>
             </Style>
 
-            <Style x:Key="TitleBarToggleButtonStyle" TargetType="{x:Type ToggleButton}"
-                   BasedOn="{StaticResource ToolbarToggleButtonStyle}">
-                <Setter Property="Width" Value="32" />
-                <Setter Property="Height" Value="32" />
-                <Setter Property="Padding" Value="6" />
-            </Style>
             <avalonDockExtensions:MenuItemCollection x:Key="AdditionalDocumentMenuItems">
                 <MenuItem Header="{loc:Loc CopyFilename}" Command="{Binding Model.Content.CopyFilenameToClipboardCommand}" />
                 <MenuItem Header="{loc:Loc CopyFullPath}" Command="{Binding Model.Content.CopyPathToClipboardCommand}" />
@@ -175,74 +169,73 @@
                     </ui:Button>
                     <Border Width="1" Height="16" Margin="6,0" VerticalAlignment="Center"
                             Background="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                    <ui:DropDownButton Height="32"
+                                       Margin="2,0"
+                                       Padding="10,6"
+                                       Appearance="Transparent"
+                                       ToolTip="{loc:Loc View}"
+                                       AutomationProperties.Name="{loc:Loc View}">
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="Eye24" FontSize="16" />
+                            <TextBlock Margin="7,0,0,0" VerticalAlignment="Center" Text="{loc:Loc View}" />
+                        </StackPanel>
+                        <ui:DropDownButton.Flyout>
+                            <ContextMenu>
+                                <MenuItem Header="{loc:Loc TextSize}">
+                                    <MenuItem Header="{loc:Loc DecreaseTextSize}"
+                                              Command="{Binding ZoomOutCommand}"
+                                              InputGestureText="Ctrl+-" />
+                                    <MenuItem Header="{loc:Loc ResetTextSize}"
+                                              Command="{Binding ResetZoomCommand}"
+                                              InputGestureText="Ctrl+0" />
+                                    <MenuItem Header="{loc:Loc IncreaseTextSize}"
+                                              Command="{Binding ZoomInCommand}"
+                                              InputGestureText="Ctrl++" />
+                                </MenuItem>
+                                <Separator />
+                                <MenuItem Header="{loc:Loc TimelineTitle}">
+                                    <MenuItem Header="{loc:Loc TimelineAtTop}"
+                                              Command="{Binding ShowTimelineAtTopCommand}"
+                                              IsCheckable="True"
+                                              IsChecked="{Binding IsTimelineAtTopVisible, Mode=OneWay}" />
+                                    <MenuItem Header="{loc:Loc TimelineBottom}"
+                                              Command="{Binding ShowTimelineAtBottomCommand}"
+                                              IsCheckable="True"
+                                              IsChecked="{Binding IsTimelineAtBottom, Mode=OneWay}" />
+                                    <MenuItem Header="{loc:Loc TimelineHidden}"
+                                              Command="{Binding HideTimelineCommand}"
+                                              IsCheckable="True"
+                                              IsChecked="{Binding IsTimelineHidden, Mode=OneWay}" />
+                                </MenuItem>
+                                <MenuItem Header="{loc:Loc ThreadGrouping}"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsGroupByThread, Mode=TwoWay}" />
+                                <MenuItem Header="{loc:Loc MergeFiles}"
+                                          IsCheckable="True"
+                                          IsChecked="{Binding IsMergedView, Mode=TwoWay}" />
+                                <Separator />
+                                <MenuItem Header="{loc:Loc Theme}">
+                                    <MenuItem Header="{loc:Loc LightTheme}"
+                                              Command="{Binding SetLightThemeCommand}"
+                                              IsCheckable="True"
+                                              IsChecked="{Binding IsLightTheme, Mode=OneWay}" />
+                                    <MenuItem Header="{loc:Loc DarkTheme}"
+                                              Command="{Binding SetDarkThemeCommand}"
+                                              IsCheckable="True"
+                                              IsChecked="{Binding IsDarkTheme, Mode=OneWay}" />
+                                </MenuItem>
+                            </ContextMenu>
+                        </ui:DropDownButton.Flyout>
+                    </ui:DropDownButton>
                     <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               ToolTip="{loc:Loc DecreaseTextSize}" Command="{Binding ZoomOutCommand}">
-                        <ui:SymbolIcon Symbol="ZoomOut24" FontSize="16" />
-                    </ui:Button>
-                    <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               ToolTip="{loc:Loc ResetTextSize}" Command="{Binding ResetZoomCommand}">
-                        <ui:SymbolIcon Symbol="ZoomFit24" FontSize="16" />
-                    </ui:Button>
-                    <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               ToolTip="{loc:Loc IncreaseTextSize}" Command="{Binding ZoomInCommand}">
-                        <ui:SymbolIcon Symbol="ZoomIn24" FontSize="16" />
-                    </ui:Button>
-                    <Border Width="1" Height="16" Margin="6,0" VerticalAlignment="Center"
-                            Background="{DynamicResource ControlStrokeColorDefaultBrush}" />
-                    <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               Command="{Binding CycleTimelineCommand}"
-                               ToolTip="{Binding TimelineToolTip}">
-                        <ui:SymbolIcon FontSize="16">
-                            <ui:SymbolIcon.Style>
-                                <Style TargetType="{x:Type ui:SymbolIcon}">
-                                    <Setter Property="Symbol" Value="ArrowDown24" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsTimelineAtTop}" Value="True">
-                                            <Setter Property="Symbol" Value="ArrowUp24" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding IsTimelineVisible}" Value="False">
-                                            <Setter Property="Symbol" Value="EyeOff24" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:SymbolIcon.Style>
-                        </ui:SymbolIcon>
-                    </ui:Button>
-                    <ToggleButton Style="{StaticResource TitleBarToggleButtonStyle}"
-                                  IsChecked="{Binding IsGroupByThread, Mode=TwoWay}"
-                                  ToolTip="{loc:Loc ThreadGrouping}">
-                        <ui:SymbolIcon Symbol="GroupList24" FontSize="16" />
-                    </ToggleButton>
-                    <ToggleButton Style="{StaticResource TitleBarToggleButtonStyle}"
-                                  IsChecked="{Binding IsMergedView, Mode=TwoWay}"
-                                  ToolTip="{loc:Loc MergeFiles}">
-                        <ui:SymbolIcon Symbol="Merge24" FontSize="16" />
-                    </ToggleButton>
-                    <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               ToolTip="{loc:Loc ToggleTheme}"
-                               Command="{Binding ToggleThemeCommand}">
-                        <ui:SymbolIcon FontSize="16">
-                            <ui:SymbolIcon.Style>
-                                <Style TargetType="{x:Type ui:SymbolIcon}">
-                                    <Setter Property="Symbol" Value="WeatherSunny24" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsDarkTheme}" Value="True">
-                                            <Setter Property="Symbol" Value="WeatherMoon24" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ui:SymbolIcon.Style>
-                        </ui:SymbolIcon>
+                               ToolTip="{loc:Loc OpenSettings}"
+                               Command="{Binding OpenSettings}">
+                        <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
                     </ui:Button>
                     <ui:Button Style="{StaticResource ToolbarButtonStyle}"
                                ToolTip="{loc:Loc Support}"
                                Command="{Binding OpenSupportCommand}">
                         <ui:SymbolIcon Symbol="QuestionCircle24" FontSize="16" />
-                    </ui:Button>
-                    <ui:Button Style="{StaticResource ToolbarButtonStyle}"
-                               ToolTip="{loc:Loc OpenSettings}"
-                               Command="{Binding OpenSettings}">
-                        <ui:SymbolIcon Symbol="Settings24" FontSize="16" />
                     </ui:Button>
                 </StackPanel>
             </localControls:StableTitleBar.TrailingContent>

@@ -900,4 +900,22 @@
   <data name="RestoreSavedSearch" xml:space="preserve">
     <value>Восстановить поиск</value>
   </data>
+  <data xml:space="preserve" name="TextSize">
+    <value>Размер текста</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottom">
+    <value>Снизу</value>
+  </data>
+  <data xml:space="preserve" name="TimelineHidden">
+    <value>Скрыта</value>
+  </data>
+  <data xml:space="preserve" name="Theme">
+    <value>Тема</value>
+  </data>
+  <data xml:space="preserve" name="LightTheme">
+    <value>Светлая</value>
+  </data>
+  <data xml:space="preserve" name="DarkTheme">
+    <value>Тёмная</value>
+  </data>
 </root>

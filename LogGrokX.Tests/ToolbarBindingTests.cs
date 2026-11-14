@@ -74,6 +74,61 @@ public class ToolbarBindingTests
             throw error;
     }
 
+    [TestMethod]
+    public void ToolbarForeground_WhenButtonResourceIsStale_UsesPrimaryTextColor()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var resources = new ResourceDictionary
+                {
+                    Source = new Uri("pack://application:,,,/LogGrokX;component/Styles/FluentStyles.xaml")
+                };
+                resources["TextFillColorPrimaryBrush"] = Brushes.White;
+                resources["ButtonForeground"] = Brushes.Black;
+                resources["ButtonForegroundPressed"] = Brushes.Black;
+                var icon = new Wpf.Ui.Controls.SymbolIcon
+                {
+                    Symbol = Wpf.Ui.Controls.SymbolRegular.Settings24
+                };
+                var button = new Wpf.Ui.Controls.Button
+                {
+                    Style = (Style)resources["ToolbarButtonStyle"],
+                    Content = icon
+                };
+                var window = new Window
+                {
+                    Content = button,
+                    Resources = resources,
+                    Width = 100,
+                    Height = 100,
+                    ShowInTaskbar = false
+                };
+                try
+                {
+                    window.Show();
+                    Assert.AreEqual(System.Windows.Media.Colors.White, ((SolidColorBrush)button.Foreground).Color);
+                    Assert.AreEqual(System.Windows.Media.Colors.White, ((SolidColorBrush)icon.Foreground).Color);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            throw error;
+    }
+
     private static void FlushBindings() =>
         Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
 
