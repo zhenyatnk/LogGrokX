@@ -65,6 +65,23 @@ public class GrowingLogLinesCollectionTests
         });
     }
 
+    [TestMethod]
+    public void SnapshotRetainsOriginalSourceAfterReset()
+    {
+        ItemViewModel[] headers = [new TestItem("old header")];
+        ItemViewModel[] source = [new TestItem("old 0"), new TestItem("old 1")];
+        var collection = new GrowingLogLinesCollection(headers, source);
+        var snapshot = collection.CreateSnapshot();
+
+        collection.Reset([new TestItem("new header")], [new TestItem("new 0")]);
+
+        Assert.AreEqual(3, snapshot.Count);
+        Assert.AreSame(headers[0], snapshot[0]);
+        Assert.AreSame(source[0], snapshot[1]);
+        Assert.AreSame(source[1], snapshot[2]);
+        Assert.AreEqual("new 0", collection[1].ToString());
+    }
+
     private sealed class TestItem(string text) : ItemViewModel
     {
         public override string ToString() => text;

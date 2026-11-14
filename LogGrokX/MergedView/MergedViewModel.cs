@@ -427,6 +427,7 @@ namespace LogGrokX.MergedView
 
         private void OnDocumentsChanged(object? sender, EventArgs e)
         {
+            CancelSelectionOperation();
             SyncDocuments();
             ScheduleRebuild();
         }

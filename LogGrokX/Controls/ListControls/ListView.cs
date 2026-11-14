@@ -288,6 +288,8 @@ namespace LogGrokX.Controls.ListControls
         }
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
+            if (e.Action == NotifyCollectionChangedAction.Reset && SelectedItems.Count > 0)
+                SelectedItems.Clear();
             base.OnItemsChanged(e);
 
             var panel = GetPanel();

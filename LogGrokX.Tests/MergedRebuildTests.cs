@@ -324,6 +324,22 @@ public class MergedRebuildTests
     }
 
     [TestMethod]
+    public void SourceRemovalCancelsMergedSelectionOperation()
+    {
+        RunOnSta(() =>
+        {
+            using var fixture = new Fixture();
+            fixture.Enable();
+            var token = fixture.Main.BulkOperations.Begin("Copy", 100, fixture.Merged);
+
+            fixture.Main.Documents.RemoveAt(0);
+
+            Assert.IsTrue(token.IsCancellationRequested);
+            Assert.IsFalse(fixture.Main.BulkOperations.IsActive);
+        });
+    }
+
+    [TestMethod]
     public void FilterChangeCancelsInFlightDataAndPublishesOnlyFilteredRows()
     {
         RunOnSta(() =>

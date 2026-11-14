@@ -33,6 +33,8 @@ namespace LogGrokX
             _headerCollectionCount = headerCollection.Count;
         }
 
+        public GrowingLogLinesCollection CreateSnapshot() => new(_headerCollection, _sourceCollection);
+
         public void Reset(IReadOnlyList<ItemViewModel> headerCollection,
             IReadOnlyList<ItemViewModel> sourceCollection)
         {

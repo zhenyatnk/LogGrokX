@@ -812,7 +812,12 @@ navigation comfortable:
   rather than per-row references; unrelated edits survive. The rollback is another
   cancellable batch operation and stops promptly when cancelled too. Cancelling
   a marked-lines pane refresh preserves the previous published list atomically.
-  Closing a document cancels its own list operations. Operation titles
+  Closing a document cancels its own list operations before the next row is
+  fetched from the released provider; closing a merged source also cancels the
+  active merged operation. Copying during a merged rebuild reads a retained
+  collection snapshot instead of the replacing grid source. Grid resets clear
+  WPF selection before locating selected rows, avoiding full materialization.
+  Operation titles
   are localized, with separate labels for toggling marks and refreshing the
   marked-lines pane. Text above the clipboard limit can be saved
   to a file in batches, without building the whole file in memory.

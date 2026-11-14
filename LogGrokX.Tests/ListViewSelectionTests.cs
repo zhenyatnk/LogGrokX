@@ -111,6 +111,66 @@ public sealed class ListViewSelectionTests
     }
 
     [TestMethod]
+    public void ResetDoesNotMaterializeSelectedRows()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+                var originalProvider = new CountingProvider(300);
+                var original = new VirtualList<int, ItemViewModel>(originalProvider, index => new TestLogItem(index));
+                var collection = new GrowingLogLinesCollection(Array.Empty<ItemViewModel>(), original);
+                var view = new LogGrokX.Controls.ListControls.ListView
+                {
+                    ItemsSource = collection,
+                    ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(
+                        typeof(LogGrokX.Controls.ListControls.VirtualizingStackPanel.VirtualizingStackPanel)))
+                };
+                var window = new Window
+                {
+                    Content = view,
+                    Width = 400,
+                    Height = 300,
+                    Left = -10000,
+                    Top = -10000,
+                    ShowActivated = false,
+                    ShowInTaskbar = false
+                };
+                try
+                {
+                    window.Show();
+                    view.SelectAll();
+                    Assert.AreEqual(300, view.SelectedItems.Count);
+                    var replacementProvider = new CountingProvider(300);
+                    var replacement = new VirtualList<int, ItemViewModel>(replacementProvider, index => new TestLogItem(index));
+
+                    collection.Reset(Array.Empty<ItemViewModel>(), replacement);
+
+                    Assert.IsTrue(replacementProvider.FetchCalls <= 1,
+                        $"Reset materialized {replacementProvider.FetchCalls} selected rows instead of only the current row.");
+                    Assert.AreEqual(0, view.SelectedItems.Count);
+                }
+                finally
+                {
+                    window.Close();
+                    Dispatcher.CurrentDispatcher.InvokeShutdown();
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
     public void DataContextOwnerCancelsListOperationWhenDocumentCloses()
     {
         Exception? error = null;
@@ -382,6 +442,11 @@ public sealed class ListViewSelectionTests
                 return nested;
         }
         return null;
+    }
+
+    private sealed class TestLogItem(int index) : ItemViewModel
+    {
+        public override string ToString() => $"line {index}";
     }
 
     private sealed class OperationListView : LogGrokX.Controls.ListControls.ListView

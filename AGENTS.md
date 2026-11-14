@@ -273,11 +273,19 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   changes. `Snapshot()` is ordered and independent of later edits. The panel
   passes snapshots to `ListView.UpdateReadonlySelectedItems`, which exposes a
   deferred enumerable; never add `.ToList()`, `.OrderBy()` or `SequenceEqual`
-  over the whole selection on the UI thread. Copy, marking and selected-value
-  filtering use `BulkSelection` batches with explicit cancellation.
+  over the whole selection on the UI thread. Copy captures
+  `GrowingLogLinesCollection.CreateSnapshot()` first, retaining the old virtual
+  lists across a merged `Lines.Reset` without materializing the selected rows.
+  Copy, marking and selected-value
+  filtering use `BulkSelection` batches with explicit cancellation. Enumeration
+  checks the token before every `MoveNext`, so a closed document cannot fetch
+  the next row from an already released provider before cancellation is seen.
   `Ctrl+A` is intercepted in `ListView.OnPreviewKeyDown` and handled by
   `VirtualizingStackPanel.SelectAll` as one range before the base WPF `ListBox`
-  `SelectAllCommand` can enumerate the collection.
+  `SelectAllCommand` can enumerate the collection. `ListView.OnItemsChanged`
+  clears WPF selection before a reset, matching the panel's own source-change
+  reset; otherwise `Selector.LocateSelectedItems` materializes every selected
+  row while a merged snapshot is being replaced.
   Clipboard text is capped at `BulkSelection.MaxClipboardCharacters`; larger
   selections can be saved to a file in batches. Search timelines show at most
   4096 selected matches. `BulkOperationService` is a singleton shared by the
@@ -303,6 +311,9 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   owner is disposed. `BaseListView` uses its `DataContext` as the operation
   owner (falling back to itself), so disposing the document/search/merged view
   model cancels the matching list operation without cancelling other documents.
+  `MergedViewModel.OnDocumentsChanged` also cancels its selection operation
+  before synchronizing sources, because closing a source does not dispose the
+  merged view itself and its rows may reference the released document.
   Mark toggling uses `Selection.BeginBulkUpdate()` per document and compact
   snapshots of changed ranges, not one reference per changed row. Cancelling it
   starts `RestoreMarks`: `Selection.Restore` intersects the original and changed

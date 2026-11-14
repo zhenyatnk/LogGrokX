@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -51,9 +52,11 @@ namespace LogGrokX.Controls.ListControls
 
         private async void CopySelectedItemsToClipboard(bool asDisplayed)
         {
-            var items = GetSelectedIndices().Select(index => Items[index]);
+            IList items = ItemsSource is GrowingLogLinesCollection growingLines ? growingLines.CreateSnapshot() : Items;
+            var selectedItems = GetSelectedIndices().Where(index => index >= 0 && index < items.Count)
+                .Select(index => items[index]!);
             var foldingState = asDisplayed ? TextView.GetSharedFoldingState(this) : null;
-            var lines = items.Select(item => asDisplayed && item is BaseLogLineViewModel viewModel
+            var lines = selectedItems.Select(item => asDisplayed && item is BaseLogLineViewModel viewModel
                 ? viewModel.GetDisplayText(foldingState)
                 : item.ToString());
             await CopyLinesWithFallbackAsync(lines);

@@ -182,7 +182,10 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   Cancelling mark toggling restores rows already changed through a separate,
   range-based rollback operation, which can also be cancelled and does not
   retain a reference to every changed row. Closing a document cancels
-  its own list operations, while cancelling a marked-lines refresh keeps the
+  its own list operations before the next row is fetched; merged operations are
+  cancelled when any source closes. Copying during a merged rebuild keeps reading
+  the original collection snapshot. Grid resets do not rematerialize all selected
+  rows. Cancelling a marked-lines refresh keeps the
   previous published list intact.
   Oversized clipboard text can be saved to a file instead.
 - **Settings** — a tabbed settings window (View, Profiles, Value mappings,

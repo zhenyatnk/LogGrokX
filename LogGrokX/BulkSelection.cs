@@ -23,16 +23,17 @@ namespace LogGrokX
             Action<long>? report = null)
         {
             var count = 0L;
-            foreach (var item in items)
+            using var enumerator = items.GetEnumerator();
+            while (!cancellationToken.IsCancellationRequested && enumerator.MoveNext())
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                action(item);
+                action(enumerator.Current);
                 count++;
                 if (count % BatchSize != 0)
                     continue;
                 report?.Invoke(count);
                 await YieldToUiAsync();
             }
+            cancellationToken.ThrowIfCancellationRequested();
         }
 
         public static async Task<BulkCopyResult> CopyAsync(IEnumerable<string?> lines, Action<string> setClipboardText,
@@ -64,10 +65,10 @@ namespace LogGrokX
             await using var writer = new StreamWriter(fileName, false, Encoding.UTF8);
             var batch = new StringBuilder();
             var count = 0;
-            foreach (var line in lines)
+            using var enumerator = lines.GetEnumerator();
+            while (!cancellationToken.IsCancellationRequested && enumerator.MoveNext())
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                batch.Append(line?.TrimEnd()).Append("\r\n");
+                batch.Append(enumerator.Current?.TrimEnd()).Append("\r\n");
                 if (++count % BatchSize != 0)
                     continue;
                 await writer.WriteAsync(batch.Replace("\0", string.Empty).ToString());
@@ -75,6 +76,7 @@ namespace LogGrokX
                 report?.Invoke(count);
                 await YieldToUiAsync();
             }
+            cancellationToken.ThrowIfCancellationRequested();
             if (batch.Length > 0)
                 await writer.WriteAsync(batch.Replace("\0", string.Empty).ToString());
         }

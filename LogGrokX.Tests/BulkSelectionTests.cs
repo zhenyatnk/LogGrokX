@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -94,6 +95,41 @@ public sealed class BulkSelectionTests
     }
 
     [TestMethod]
+    public async Task ProcessingDoesNotFetchNextItemAfterCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var lines = new CancellationAwareEnumerable<int>(Enumerable.Range(0, 300), cancellation.Token);
+
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => BulkSelection.ProcessAsync(lines,
+            _ => { }, cancellation.Token, processed =>
+            {
+                if (processed == 128)
+                    cancellation.Cancel();
+            }));
+    }
+
+    [TestMethod]
+    public async Task SavingDoesNotFetchNextItemAfterCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var lines = new CancellationAwareEnumerable<string?>(Enumerable.Range(0, 300).Select(index => $"line {index}"), cancellation.Token);
+        var path = Path.Combine(Path.GetTempPath(), $"loggrokx-cancel-copy-{Guid.NewGuid():N}.txt");
+        try
+        {
+            await Assert.ThrowsExactlyAsync<OperationCanceledException>(() => BulkSelection.SaveAsync(lines,
+                path, cancellation.Token, processed =>
+                {
+                    if (processed == 128)
+                        cancellation.Cancel();
+                }));
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
     public async Task SavingWritesAllLinesInBatches()
     {
         var path = Path.Combine(Path.GetTempPath(), $"loggrokx-selection-{Guid.NewGuid():N}.txt");
@@ -111,5 +147,20 @@ public sealed class BulkSelectionTests
         {
             File.Delete(path);
         }
+    }
+
+    private sealed class CancellationAwareEnumerable<T>(IEnumerable<T> items, CancellationToken cancellationToken) : IEnumerable<T>
+    {
+        public IEnumerator<T> GetEnumerator()
+        {
+            foreach (var item in items)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    throw new InvalidOperationException("The next item was fetched after cancellation.");
+                yield return item;
+            }
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
