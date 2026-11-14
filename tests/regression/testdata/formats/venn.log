@@ -1,0 +1,5 @@
+2026-05-14 9:05:01.123 - [INFO] - [1:200:300] - [svc.exe] - [Core] - [V01] venn info
+2026-05-14 9:05:02.456 - [ERRO] - [1:200:301] - [svc.exe] - [Core] - [V02] venn error
+2026-05-14 9:05:03.789 - [WARN] - [1:200:300] - [svc.exe] - [Net] - [V03] venn warn
+2026-05-14 9:05:04.000 - [CRIT] - [1:200:302] - [svc.exe] - [irql 2] - [Drv] - [V04] venn crit
+2026-05-14 9:05:05.000 - [TRAC] - [1:200:300] - [Core] - [V05] venn trace

@@ -1,0 +1,19 @@
+2026-05-14 10:00:00.000 INF Thread-01 Search [S01] user = alice role=admin path: C:\temp\data
+2026-05-14 10:00:00.250 INF Thread-02 Search [S02] status:200 code : 404 key	=	value-tab
+2026-05-14 10:00:00.500 INF Thread-03 Search [S03] name="John Smith" title='Lead dev'
+   continuation line with needle-ZZ9 inside
+2026-05-14 10:00:00.750 INF Thread-01 Search [S04] mount \\?\Volume{3F2504E0-4F89-11D3-9A0C-0305E82C3301}\ and \Device\HarddiskVolume1\ done
+2026-05-14 10:00:01.000 INF Thread-02 Search [S05] [outer [inner] tail] <a<b>c> (x(y)z)
+2026-05-14 10:00:01.250 INF Thread-03 Search [S06] Can't connect, won't retry
+2026-05-14 10:00:01.500 INF Thread-01 Search [S07] requestor={unknown} owner={ID-42}
+2026-05-14 10:00:01.750 INF Thread-02 Search [S08] price is $5.00 (approx) [x] a+b*c? ^start end$
+2026-05-14 10:00:02.000 INF Thread-03 Search [S09] Payment FAILED for order 1
+2026-05-14 10:00:02.250 INF Thread-01 Search [S10] payment failed for order 2
+2026-05-14 10:00:02.500 INF Thread-02 Search [S11] PAYMENT Failed for order 3
+2026-05-14 10:00:02.750 INF Thread-03 Search [S12] Ошибка подключения к серверу
+2026-05-14 10:00:03.000 INF Thread-01 Search [S13] ошибка повторного подключения
+2026-05-14 10:00:03.250 INF Thread-02 Search [S14] alpha beta gamma delta
+2026-05-14 10:00:03.500 INF Thread-03 Search [S15] aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!
+2026-05-14 10:00:03.750 INF Thread-01 Search [S16] alpha only
+2026-05-14 10:00:04.000 INF Thread-02 Search [S17] delta only
+2026-05-14 10:00:04.250 INF Thread-03 Search [S18] mixed alpha and delta and gamma

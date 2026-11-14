@@ -1,0 +1,16 @@
+10:00:00.000	0x0A01	INF	Net	[T01] connection opened host=alpha
+10:00:00.250	0x0A01	INF	Net	[T02] handshake step=1 completed
+10:00:00.500	0x0A01	DBG	Net	[T03] handshake step=2 debug trace
+10:00:00.750	0x0A02	WRN	Db	[T04] slow query step=1 took 1200ms
+10:00:01.000	0x0A02	ERR	Db	[T05] query failed step=2 code=0x80070005
+10:00:01.250	0x0A01	INF	Net	[T06] connection reused step=3
+10:00:01.500	0x0A03	IMP	Ui	[T07] important user action step=1
+10:00:01.750	0x0A03	INF	Ui	[T08] render completed step=2
+10:00:02.000	0x0A03	INF	Ui	[T09] FATAL renderer crashed step=3
+10:00:02.250	0x0A02	ERR	Db	[T10] No error found while checking step=4
+10:00:02.500	0x0A02	INF	Db	[T11] result error: 0x0 returned step=5
+10:00:02.750	0x0A01	ERR	Net	[T12] fatal network error step=4
+10:00:03.000	0x0A01	INF	Net	[T13] connection closed step=5
+10:00:03.250	0x0A02	INF	Db	[T14] pool drained step=6
+10:00:03.500	0x0A03	INF	Ui	[T15] window closed step=4
+10:00:03.750	0x0A03	DBG	Ui	[T16] dispose step=5

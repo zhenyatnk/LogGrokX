@@ -1,0 +1,54 @@
+[
+  {
+    "Name": "Reg-Case",
+    "Enabled": true,
+    "IgnoreCase": false,
+    "Fields": [],
+    "Items": [
+      {
+        "Value": "TYPE_A",
+        "Mapping": "upper A"
+      },
+      {
+        "Value": "AMP_CODE",
+        "Mapping": "a<b & \"c\""
+      }
+    ]
+  },
+  {
+    "Name": "Reg-Phrase",
+    "Enabled": true,
+    "IgnoreCase": true,
+    "Fields": [],
+    "Items": [
+      {
+        "Value": "disk",
+        "Mapping": "short"
+      },
+      {
+        "Value": "disk full",
+        "Mapping": "long wins"
+      },
+      {
+        "Value": "5",
+        "Mapping": "five"
+      },
+      {
+        "Value": "0x00003",
+        "Mapping": "first list"
+      }
+    ]
+  },
+  {
+    "Name": "Reg-Second",
+    "Enabled": true,
+    "IgnoreCase": true,
+    "Fields": [],
+    "Items": [
+      {
+        "Value": "0x00003",
+        "Mapping": "second list"
+      }
+    ]
+  }
+]
