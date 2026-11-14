@@ -549,6 +549,10 @@ LEGACY = """Settings:
 def gen_configs():
     repo = ROOT.parents[2]
     shipped = (repo / "LogGrokX" / "appsettings.yaml").read_text(encoding="utf-8")
+    # Комментарии-примеры строк лога из штатного конфига (с табуляцией) не переносим:
+    # тестовые данные не должны содержать имён и путей, похожих на реальные продукты.
+    shipped = "".join(l for l in shipped.splitlines(keepends=True)
+                      if not (l.lstrip().startswith("#") and "\t" in l))
     marker = "\n  DebugSettings:"
     assert marker in shipped
     reg = shipped.replace(marker, "\n" + REGRESSION_PROFILE.rstrip("\n") + "\n" + marker, 1)
