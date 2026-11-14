@@ -34,7 +34,6 @@ namespace LogGrokX.Controls.ListControls
             CommandBindings.Add(new CommandBinding(RoutedCommands.CopyAsDisplayed,
                 (_, args) => CopyToClipboard("CopyAsDisplayed", true, args),
                 CanExecuteCopyToClipboard));
-            Unloaded += (_, _) => CancelSelectionOperations();
         }
 
         private void CopyToClipboard(string commandName, bool asDisplayed, ExecutedRoutedEventArgs args)
@@ -94,10 +93,10 @@ namespace LogGrokX.Controls.ListControls
             }
         }
 
-        protected CancellationToken BeginSelectionOperation(string title)
+        protected CancellationToken BeginSelectionOperation(string titleKey, long? total = null)
         {
             if (BulkOperations != null)
-                return BulkOperations.Begin(title, GetSelectedCount(), this);
+                return BulkOperations.Begin(Strings.Get(titleKey), total ?? GetSelectedCount(), DataContext ?? this);
             CancelSelectionOperations();
             _selectionOperationCancellation = new CancellationTokenSource();
             return _selectionOperationCancellation.Token;

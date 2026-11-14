@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>Требуется перезапуск</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>Восстановление отметок</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>Среда выполнения</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>Ошибка обновления: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>Обновление отмеченных строк</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>LogGrokX {0} будет установлен автоматически после закрытия приложения.</value>

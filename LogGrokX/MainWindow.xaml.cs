@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using AvalonDock.Layout;
 using AvalonDock.Serializer.Xml;
 using LogGrokX.AvalonDockExtensions;
@@ -77,6 +78,18 @@ namespace LogGrokX
         {
             if (e.PropertyName == nameof(MainWindowViewModel.IsMergedView))
                 UpdateMergedDocument();
+        }
+
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None && _viewModel.BulkOperations.IsActive)
+            {
+                _viewModel.BulkOperations.CancelCommand.Execute(null);
+                e.Handled = true;
+                return;
+            }
+
+            base.OnPreviewKeyDown(e);
         }
 
         private void OnPreviewMouseWheel(object sender, System.Windows.Input.MouseWheelEventArgs e)

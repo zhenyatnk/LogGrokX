@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>再起動が必要</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>マークを復元</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>ランタイム</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>更新に失敗しました: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>マークした行を更新</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>アプリを終了すると LogGrokX {0} が自動インストールされます。</value>

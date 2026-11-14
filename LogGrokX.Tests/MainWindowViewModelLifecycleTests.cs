@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using LogGrokX.AvalonDockExtensions;
 using LogGrokX.MarkedLines;
 using LogGrokX.Platform;
@@ -312,7 +313,7 @@ public class MainWindowViewModelLifecycleTests
     private static WeakReference CreateAndDisposeMarkedLinesViewModel(
         ObservableCollection<DocumentViewModel> documents)
     {
-        var viewModel = new MarkedLinesViewModel(documents, new BulkOperationService());
+        var viewModel = new MarkedLinesViewModel(documents, new BulkOperationService(new WpfUiDispatcher(Dispatcher.CurrentDispatcher)));
         viewModel.Dispose();
         return new WeakReference(viewModel);
     }

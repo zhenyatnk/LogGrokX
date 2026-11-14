@@ -14,6 +14,7 @@ using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.Platform;
 using LogGrokX.Filter;
+using LogGrokX.Localization;
 
 namespace LogGrokX
 {
@@ -349,7 +350,6 @@ namespace LogGrokX
             set
             {
                 if (_selectedItems == null && value == null) return;
-                CancelSelectionOperation();
                 _selectedItems = value;
                 InvokePropertyChanged();
             }
@@ -419,7 +419,7 @@ namespace LogGrokX
             }
         }
 
-        private CancellationToken BeginSelectionOperation(string title) => BulkOperations.Begin(title, SelectedCount, this);
+        private CancellationToken BeginSelectionOperation(string titleKey) => BulkOperations.Begin(Strings.Get(titleKey), SelectedCount, this);
 
         private void CancelSelectionOperation() => BulkOperations.Cancel(this);
 

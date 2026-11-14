@@ -287,6 +287,7 @@ namespace LogGrokX.Search
         
         public void Dispose()
         {
+            BulkOperations.Cancel(this);
             _filterSettings.ExclusionsChanged -= UpdateLines;
             _filterSettings.TimeRangeChanged -= StartSearch;
             _filterSettings.LineRangeChanged -= StartSearch;

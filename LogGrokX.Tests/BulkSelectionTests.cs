@@ -1,9 +1,12 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -44,6 +47,50 @@ public sealed class BulkSelectionTests
             reports.Add);
 
         CollectionAssert.AreEqual(new long[] { 128, 256 }, reports);
+    }
+
+    [TestMethod]
+    public void ProcessingLetsBindingAndRenderWorkRunBetweenBatches()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var dispatcher = Dispatcher.CurrentDispatcher;
+                SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(dispatcher));
+
+                var completed = false;
+                var bindingRanBeforeCompletion = false;
+
+                dispatcher.BeginInvoke(new Action(async () =>
+                {
+                    await BulkSelection.ProcessAsync(Enumerable.Range(0, 1024), _ => { }, CancellationToken.None);
+                    completed = true;
+                }), DispatcherPriority.Normal);
+
+                dispatcher.BeginInvoke(new Action(() => bindingRanBeforeCompletion = !completed),
+                    DispatcherPriority.DataBind);
+
+                dispatcher.BeginInvoke(
+                    new Action(() => dispatcher.BeginInvokeShutdown(DispatcherPriority.Background)),
+                    DispatcherPriority.ApplicationIdle);
+
+                Dispatcher.Run();
+
+                Assert.IsTrue(bindingRanBeforeCompletion,
+                    "Bulk processing starved binding/render work on the UI thread.");
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
     }
 
     [TestMethod]

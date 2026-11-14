@@ -8,7 +8,7 @@ namespace LogGrokX.Controls
 {
     public class Selection : IEnumerable<int>
     {
-        private readonly record struct SelectionRange(int Start, int End) : IEnumerable<int>
+        internal readonly record struct SelectionRange(int Start, int End) : IEnumerable<int>
         {
             public IEnumerator<int> GetEnumerator()
             {
@@ -17,6 +17,20 @@ namespace LogGrokX.Controls
             }
 
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        public readonly struct SelectionSnapshot
+        {
+            private readonly SelectionRange[]? _ranges;
+
+            private SelectionSnapshot(SelectionRange[] ranges) => _ranges = ranges;
+
+            public static SelectionSnapshot FromRanges(IEnumerable<(int Start, int End)> ranges) =>
+                new(Normalize(ranges.Select(range => new SelectionRange(range.Start, range.End))));
+
+            internal SelectionRange[] Ranges => _ranges ?? [];
+
+            internal static SelectionSnapshot Create(SelectionRange[] ranges) => new(ranges);
         }
 
         private readonly List<WeakReference<Action>> _weakHandlers = new();
@@ -168,6 +182,81 @@ namespace LogGrokX.Controls
                     return true;
             }
             return false;
+        }
+
+        public SelectionSnapshot CaptureSnapshot() => SelectionSnapshot.Create(_ranges.ToArray());
+
+        public void Restore(SelectionSnapshot original, SelectionSnapshot affected)
+        {
+            if (affected.Ranges.Length == 0)
+                return;
+            var ranges = Subtract(_ranges, affected.Ranges);
+            ranges.AddRange(Intersect(original.Ranges, affected.Ranges));
+            var normalized = Normalize(ranges).ToList();
+            if (normalized.SequenceEqual(_ranges))
+                return;
+            _ranges = normalized;
+            RaiseChanged();
+        }
+
+        private static List<SelectionRange> Subtract(IReadOnlyList<SelectionRange> source,
+            IReadOnlyList<SelectionRange> excluded)
+        {
+            var result = new List<SelectionRange>();
+            var excludedIndex = 0;
+            foreach (var range in source)
+            {
+                var start = (long)range.Start;
+                while (excludedIndex < excluded.Count && excluded[excludedIndex].End < start)
+                    excludedIndex++;
+                var currentIndex = excludedIndex;
+                while (currentIndex < excluded.Count && excluded[currentIndex].Start <= range.End && start <= range.End)
+                {
+                    var current = excluded[currentIndex++];
+                    if (current.Start > start)
+                        result.Add(new SelectionRange((int)start, (int)Math.Min(range.End, (long)current.Start - 1)));
+                    start = Math.Max(start, (long)current.End + 1);
+                }
+                if (start <= range.End)
+                    result.Add(new SelectionRange((int)start, range.End));
+            }
+            return result;
+        }
+
+        private static List<SelectionRange> Intersect(IReadOnlyList<SelectionRange> first,
+            IReadOnlyList<SelectionRange> second)
+        {
+            var result = new List<SelectionRange>();
+            var firstIndex = 0;
+            var secondIndex = 0;
+            while (firstIndex < first.Count && secondIndex < second.Count)
+            {
+                var start = Math.Max(first[firstIndex].Start, second[secondIndex].Start);
+                var end = Math.Min(first[firstIndex].End, second[secondIndex].End);
+                if (start <= end)
+                    result.Add(new SelectionRange(start, end));
+                if (first[firstIndex].End < second[secondIndex].End)
+                    firstIndex++;
+                else
+                    secondIndex++;
+            }
+            return result;
+        }
+
+        private static SelectionRange[] Normalize(IEnumerable<SelectionRange> ranges)
+        {
+            var sorted = ranges.OrderBy(range => range.Start).ThenBy(range => range.End).ToArray();
+            var normalized = new List<SelectionRange>();
+            foreach (var range in sorted)
+            {
+                if (range.Start > range.End)
+                    continue;
+                if (normalized.Count == 0 || normalized[^1].End < (long)range.Start - 1)
+                    normalized.Add(range);
+                else
+                    normalized[^1] = new SelectionRange(normalized[^1].Start, Math.Max(normalized[^1].End, range.End));
+            }
+            return normalized.ToArray();
         }
 
         public IEnumerable<int> Snapshot() => _ranges.ToArray().SelectMany(range => range);

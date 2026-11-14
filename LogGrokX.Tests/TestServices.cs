@@ -24,7 +24,7 @@ internal static class TestServices
         if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
             throw new InvalidOperationException("UI fixtures require an STA thread.");
         var dispatcher = new WpfUiDispatcher(Dispatcher.CurrentDispatcher);
-        var bulkOperations = new BulkOperationService();
+        var bulkOperations = new BulkOperationService(dispatcher);
         return new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
             new ThreadGroupingService(settings), new MergedFilesViewService(), Dialogs,

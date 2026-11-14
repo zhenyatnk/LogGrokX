@@ -7,15 +7,18 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Threading;
+using LogGrokX.Localization;
 
 namespace LogGrokX.MarkedLines
 {
     public class MarkedLinesViewModel : ViewModelBase, IDisposable
     {
-        private readonly ObservableCollection<MarkedLineViewModel> _markedLines = new();
+        private ObservableCollection<MarkedLineViewModel> _markedLines = new();
         private readonly ObservableCollection<DocumentViewModel> _documents;
         private readonly HashSet<DocumentViewModel> _alreadySubscribed = new();
         private bool _disposed;
+        private bool _isClearing;
+        private int _updateDepth;
         private int _updateVersion;
         
         public BulkOperationService BulkOperations { get; }
@@ -23,6 +26,8 @@ namespace LogGrokX.MarkedLines
         public ObservableCollection<MarkedLineViewModel> MarkedLines => _markedLines;
 
         public DelegateCommand ItemActivatedCommand { get; }
+
+        public DelegateCommand ClearDocumentMarksCommand { get; }
 
         public bool HaveMarkedLines => _markedLines.Count != 0;
         
@@ -43,9 +48,10 @@ namespace LogGrokX.MarkedLines
             ItemActivatedCommand = new DelegateCommand(
                 o =>
                 {
-                    if (o is not MarkedLineViewModel item) return;
+                    if (_isClearing || _updateDepth != 0 || o is not MarkedLineViewModel item) return;
                     NavigationRequested?.Invoke(item.Document, item.Index);
                 });
+            ClearDocumentMarksCommand = DelegateCommand.Create<DocumentViewModel>(ClearDocumentMarkedLines);
             
             UpdateLinesCollection();
         }
@@ -91,47 +97,61 @@ namespace LogGrokX.MarkedLines
             }
         }
 
+        private void ClearDocumentMarkedLines(DocumentViewModel document)
+        {
+            if (_disposed || _isClearing || !_documents.Contains(document))
+                return;
+            _isClearing = true;
+            _updateVersion++;
+            BulkOperations.Cancel(this);
+            try
+            {
+                document.MarkedLines.Clear();
+            }
+            finally
+            {
+                _isClearing = false;
+                UpdateLinesCollection();
+            }
+        }
+
         private async void UpdateLinesCollection()
         {
+            if (_disposed || _isClearing)
+                return;
+            _updateDepth++;
             var version = ++_updateVersion;
-            var cancellationToken = BulkOperations.Begin("ToggleMarks",
+            var cancellationToken = BulkOperations.Begin(Strings.Get("UpdateMarkedLines"),
                 _documents.Sum(document => document.MarkedLines.Count), this);
             try
             {
-                var allDocuments = new HashSet<DocumentViewModel>(_documents);
-                for (var i = _markedLines.Count - 1; i >= 0; i--)
-                {
-                    if (!allDocuments.Contains(_markedLines[i].Document))
-                        _markedLines.RemoveAt(i);
-                }
-
-                var index = 0;
+                var existingLines = _markedLines;
+                var updatedLines = new List<MarkedLineViewModel>();
+                var existingIndex = 0;
                 await BulkSelection.ProcessAsync(_documents.SelectMany(
                     document => document.MarkedLineViewModels.Select(line => (document, line))), item =>
                 {
                     if (version != _updateVersion)
                         throw new OperationCanceledException();
                     var (document, (lineNumber, text)) = item;
-                    if (_markedLines.Count <= index || _markedLines[index].Document != document)
+                    while (existingIndex < existingLines.Count &&
+                           (existingLines[existingIndex].Document != document || existingLines[existingIndex].Index < lineNumber))
+                        existingIndex++;
+                    if (existingIndex < existingLines.Count && existingLines[existingIndex].Document == document &&
+                        existingLines[existingIndex].Index == lineNumber)
                     {
-                        _markedLines.Insert(index, new MarkedLineViewModel(document, lineNumber, text));
-                        index++;
-                        return;
+                        updatedLines.Add(existingLines[existingIndex++]);
                     }
-
-                    while (index < _markedLines.Count && _markedLines[index].Index < lineNumber)
-                        _markedLines.RemoveAt(index);
-
-                    if (index >= _markedLines.Count || _markedLines[index].Index > lineNumber)
-                        _markedLines.Insert(index, new MarkedLineViewModel(document, lineNumber, text));
-
-                    index++;
+                    else
+                    {
+                        updatedLines.Add(new MarkedLineViewModel(document, lineNumber, text));
+                    }
                 }, cancellationToken, BulkOperations.Report);
 
                 if (version != _updateVersion)
                     return;
-                while (_markedLines.Count > index)
-                    _markedLines.RemoveAt(index);
+                _markedLines = new ObservableCollection<MarkedLineViewModel>(updatedLines);
+                InvokePropertyChanged(nameof(MarkedLines));
                 InvokePropertyChanged(nameof(HaveMarkedLines));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -139,6 +159,7 @@ namespace LogGrokX.MarkedLines
             }
             finally
             {
+                _updateDepth--;
                 BulkOperations.Complete(cancellationToken);
             }
         }

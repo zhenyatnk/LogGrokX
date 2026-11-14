@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>Restart required</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>Restore marks</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>Runtime</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>Update failed: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>Update marked lines</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>LogGrokX {0} will be installed silently when you close the application.</value>

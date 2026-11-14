@@ -367,8 +367,11 @@ the evidence can be revisited, copied or compared without repeating the search.
 
 ![Pinned lines, also marked on the timeline](assets/images/feature-marked-lines-detail.png)
 
-Marked lines are browsed from the dedicated "Marked lines" view; jumping to a
-marked line centers the target row in the grid (see
+Marked lines are browsed from the dedicated "Marked lines" view. Every file
+group has a **Clear all** button that removes focus from the list and resets
+marks only for that file, without triggering navigation as rows disappear.
+Arrow keys still navigate to the current marked line without pressing `Enter`.
+Jumping to a marked line centers the target row in the grid (see
 [Centered navigation](#-centered-navigation)), and the marks also appear on the
 timeline strip.
 
@@ -801,8 +804,17 @@ navigation comfortable:
   transformation, Base64/HEX decoding or value mapping); the per-cell context
   menu offers **Copy** and **Copy as native** (the original, undecoded value).
   Large selections, including `Ctrl+A`, use compact ranges and cancellable
-  batches with progress and a Cancel button at the top of the window instead of
-  materializing every selected row. Text above the clipboard limit can be saved
+  batches with a non-focusable floating progress card instead of materializing
+  every selected row. The card appears after one second, can be cancelled with
+  its button or `Esc`, and never appears for short operations. Focus loss and
+  selection changes do not interrupt the operation or hide the card. Cancelling
+  mark toggling rolls back rows already changed using compact range snapshots
+  rather than per-row references; unrelated edits survive. The rollback is another
+  cancellable batch operation and stops promptly when cancelled too. Cancelling
+  a marked-lines pane refresh preserves the previous published list atomically.
+  Closing a document cancels its own list operations. Operation titles
+  are localized, with separate labels for toggling marks and refreshing the
+  marked-lines pane. Text above the clipboard limit can be saved
   to a file in batches, without building the whole file in memory.
 - **Centered, keyboard-driven navigation** — arrow keys move the current line,
   `F3`/`Shift+F3` step through search hits, all centering the target row (see

@@ -112,6 +112,9 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
+  Each file's group has its own **Clear all** button that removes list focus and
+  resets only its marks without triggering navigation during the update.
+  Arrow keys navigate to the current marked line without `Enter`.
 - **Text zoom** — scale log text with `Ctrl` + mouse wheel, `Ctrl` + `+`/`-` or
   the title-bar **View → Text size** menu, and reset with `Ctrl` + `0`; the size
   is persisted in `appsettings.yaml`.
@@ -173,8 +176,15 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Grid conveniences** — horizontal scrolling, auto-width columns, and
   copy-as-displayed / copy-as-native for whole rows or single cells. Large
   selections, including `Ctrl+A`, are stored as compact ranges and processed in
-  cancellable batches with progress and a Cancel button at the top of the window;
-  oversized clipboard text can be saved to a file instead.
+  cancellable batches; operations longer than one second show a floating,
+  non-focusable progress card with localized operation titles and Cancel (also
+  available via `Esc`). Focus loss does not interrupt the operation or hide it.
+  Cancelling mark toggling restores rows already changed through a separate,
+  range-based rollback operation, which can also be cancelled and does not
+  retain a reference to every changed row. Closing a document cancels
+  its own list operations, while cancelling a marked-lines refresh keeps the
+  previous published list intact.
+  Oversized clipboard text can be saved to a file instead.
 - **Settings** — a tabbed settings window (View, Profiles, Value mappings,
   Symbols, Debug), with Colors and Log formats grouped under Profiles. Most
   changes apply without a restart and mirror `appsettings.yaml`.

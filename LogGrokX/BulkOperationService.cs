@@ -2,20 +2,27 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Windows.Input;
+using LogGrokX.Platform;
 
 namespace LogGrokX
 {
     public sealed class BulkOperationService : ViewModelBase
     {
+        public static readonly TimeSpan IndicatorDelay = TimeSpan.FromSeconds(1);
+
+        private readonly IUiDispatcher _dispatcher;
         private CancellationTokenSource? _cancellation;
+        private IUiTimer? _indicatorTimer;
         private object? _owner;
         private string _title = string.Empty;
         private long _processed;
         private long _total;
         private bool _isActive;
+        private bool _isIndicatorVisible;
 
-        public BulkOperationService()
+        public BulkOperationService(IUiDispatcher dispatcher)
         {
+            _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             CancelCommand = new DelegateCommand(() => Cancel());
         }
 
@@ -65,6 +72,12 @@ namespace LogGrokX
             private set => SetAndRaiseIfChanged(ref _isActive, value);
         }
 
+        public bool IsIndicatorVisible
+        {
+            get => _isIndicatorVisible;
+            private set => SetAndRaiseIfChanged(ref _isIndicatorVisible, value);
+        }
+
         public CancellationToken Begin(string title, long total, object owner)
         {
             Cancel();
@@ -75,8 +88,20 @@ namespace LogGrokX
             Processed = 0;
             Total = total;
             IsActive = true;
+            var cancellationToken = _cancellation.Token;
+            IUiTimer? timer = null;
+            timer = _dispatcher.CreateTimer(IndicatorDelay, () =>
+            {
+                timer!.Dispose();
+                if (ReferenceEquals(_indicatorTimer, timer))
+                    _indicatorTimer = null;
+                if (_cancellation?.Token == cancellationToken && IsActive)
+                    IsIndicatorVisible = true;
+            }, UiTimerPriority.Background);
+            _indicatorTimer = timer;
+            timer.Start();
             Trace.TraceInformation($"Bulk operation started: {title}, total={total}, owner={owner.GetType().Name}");
-            return _cancellation.Token;
+            return cancellationToken;
         }
 
         public void Report(long processed) => Processed = processed;
@@ -87,6 +112,7 @@ namespace LogGrokX
                 return;
             Processed = Total;
             IsActive = false;
+            HideIndicator();
             Trace.TraceInformation($"Bulk operation completed: {Title}");
             _owner = null;
         }
@@ -102,7 +128,15 @@ namespace LogGrokX
             Trace.TraceInformation($"Bulk operation cancelled: {Title}");
             _cancellation?.Cancel();
             IsActive = false;
+            HideIndicator();
             _owner = null;
+        }
+
+        private void HideIndicator()
+        {
+            _indicatorTimer?.Dispose();
+            _indicatorTimer = null;
+            IsIndicatorVisible = false;
         }
     }
 }

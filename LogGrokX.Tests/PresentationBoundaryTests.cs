@@ -12,6 +12,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -193,15 +194,149 @@ public sealed class PresentationBoundaryTests
                     window.Show();
                     window.UpdateLayout();
                     var list = host.GetVisualChildren<MarkedLinesListView>().Single();
+                    Assert.IsTrue(VirtualizingPanel.GetIsVirtualizingWhenGrouping(list),
+                        "The grouped marked-lines list must virtualize items, otherwise opening the pane realizes every row.");
+                    Assert.IsTrue(ScrollViewer.GetCanContentScroll(list),
+                        "Grouped virtualization requires content scrolling.");
                     Assert.AreEqual(2, list.Items.Count);
                     Assert.AreEqual(2, list.Items.Groups!.Count);
                     CollectionAssert.AreEquivalent(model.Documents.ToArray(), list.Items.Groups.Cast<CollectionViewGroup>().Select(group => group.Name).ToArray());
-                    model.Documents[0].MarkedLines.Remove(0);
+                    var clearButtons = host.GetVisualChildren<Button>()
+                        .Where(button => ReferenceEquals(button.Command, list.ClearDocumentMarksCommand)).ToArray();
+                    Assert.AreEqual(2, clearButtons.Length);
+                    CollectionAssert.AreEquivalent(model.Documents.ToArray(), clearButtons.Select(button => button.CommandParameter).ToArray());
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                    var navigationCount = 0;
+                    model.MarkedLinesViewModel.NavigationRequested += (_, _) => navigationCount++;
+                    list.Items.MoveCurrentToPosition(1);
+                    Assert.AreEqual(1, navigationCount);
+                    list.Items.MoveCurrentToPosition(0);
+                    Assert.AreEqual(2, navigationCount);
+                    navigationCount = 0;
+                    Keyboard.Focus(clearButtons[0]);
+                    Assert.AreSame(clearButtons[0], Keyboard.FocusedElement);
+                    list.ClearDocumentMarksCommand.Execute(clearButtons[0].CommandParameter);
+                    Assert.IsFalse(list.IsKeyboardFocusWithin);
                     window.UpdateLayout();
                     Assert.AreEqual(1, list.Items.Count);
                     Assert.AreEqual(1, list.Items.Groups.Count);
+                    Assert.AreEqual(0, navigationCount, "Removing the current marked row must not activate another row.");
                 }
                 finally { window.Close(); }
+            }
+            finally
+            {
+                foreach (var path in Directory.GetFiles(directory)) File.Delete(path);
+                Directory.Delete(directory);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void CancellingMarkedLinesUpdateKeepsOriginalCollection()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "loggrokx-cancel-update-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var settingsPath = Path.Combine(directory, "settings.yaml");
+                File.WriteAllText(settingsPath, "Settings:\n  LogFormats:\n    - Regex: '^(?<Message>.*)$'\n");
+                using var model = TestServices.CreateMain(ApplicationSettings.LoadFromFile(settingsPath));
+                var path = Path.Combine(directory, "source.log");
+                File.WriteAllLines(path, Enumerable.Range(0, 300).Select(index => $"line {index}"));
+                model.AddDocument(path);
+                var document = model.CurrentDocument!;
+                WaitFor(() => !document.LogViewModel.IsLoading);
+                document.MarkedLines.SetRange(0, 299);
+                WaitFor(() => model.MarkedLinesViewModel.MarkedLines.Count == 300 && !model.BulkOperations.IsActive);
+                var originalCollection = model.MarkedLinesViewModel.MarkedLines;
+                var originalItems = originalCollection.ToArray();
+
+                document.MarkedLines.SetRange(100, 399);
+                WaitFor(() => model.BulkOperations.IsActive && model.BulkOperations.Processed >= 128);
+                model.BulkOperations.CancelCommand.Execute(null);
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+
+                Assert.AreSame(originalCollection, model.MarkedLinesViewModel.MarkedLines);
+                CollectionAssert.AreEqual(originalItems, originalCollection.ToArray());
+            }
+            finally
+            {
+                foreach (var path in Directory.GetFiles(directory)) File.Delete(path);
+                Directory.Delete(directory);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void CurrentChangeAndExplicitInputActivateLogRow()
+    {
+        RunOnSta(() =>
+        {
+            var list = new MarkedLinesListView();
+            var item = new BaseLogListViewItem(list) { Content = new object() };
+            var activations = 0;
+            item.ItemActivated += (_, _) => activations++;
+
+            var window = CreateWindow(item);
+            try
+            {
+                window.Show();
+                item.IsCurrentItem = true;
+                Assert.AreEqual(1, activations);
+
+                item.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, 0, MouseButton.Left)
+                {
+                    RoutedEvent = UIElement.PreviewMouseDownEvent
+                });
+                item.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, PresentationSource.FromVisual(item)!, 0, Key.Enter)
+                {
+                    RoutedEvent = UIElement.KeyDownEvent
+                });
+
+                Assert.AreEqual(3, activations);
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    [TestMethod]
+    public void ClearDocumentMarksCommandClearsOnlyItsDocument()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "loggrokx-clear-marks-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            try
+            {
+                var settingsPath = Path.Combine(directory, "settings.yaml");
+                File.WriteAllText(settingsPath, "Settings:\n  LogFormats:\n    - Regex: '^(?<Message>.*)$'\n");
+                using var model = TestServices.CreateMain(ApplicationSettings.LoadFromFile(settingsPath));
+                for (var i = 0; i < 2; i++)
+                {
+                    var path = Path.Combine(directory, $"source-{i}.log");
+                    File.WriteAllText(path, "message\n");
+                    model.AddDocument(path);
+                }
+                WaitFor(() => model.Documents.All(document => !document.LogViewModel.IsLoading));
+                foreach (var document in model.Documents)
+                    document.MarkedLines.Add(0);
+                WaitFor(() => model.MarkedLinesViewModel.MarkedLines.Count == 2);
+
+                model.MarkedLinesViewModel.ClearDocumentMarksCommand.Execute(model.Documents[0]);
+
+                Assert.AreEqual(0, model.Documents[0].MarkedLines.Count);
+                Assert.AreEqual(1, model.Documents[1].MarkedLines.Count);
+                WaitFor(() => model.MarkedLinesViewModel.MarkedLines.Count == 1);
+                Assert.AreSame(model.Documents[1], model.MarkedLinesViewModel.MarkedLines.Single().Document);
+
+                model.MarkedLinesViewModel.ClearDocumentMarksCommand.Execute(model.Documents[1]);
+
+                Assert.AreEqual(0, model.Documents[1].MarkedLines.Count);
+                Assert.IsFalse(model.MarkedLinesViewModel.HaveMarkedLines);
+                Assert.AreEqual(0, model.MarkedLinesViewModel.MarkedLines.Count);
             }
             finally
             {

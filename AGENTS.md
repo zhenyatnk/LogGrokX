@@ -274,22 +274,62 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   passes snapshots to `ListView.UpdateReadonlySelectedItems`, which exposes a
   deferred enumerable; never add `.ToList()`, `.OrderBy()` or `SequenceEqual`
   over the whole selection on the UI thread. Copy, marking and selected-value
-  filtering use `BulkSelection` batches with cancellation on selection changes.
+  filtering use `BulkSelection` batches with explicit cancellation.
   `Ctrl+A` is intercepted in `ListView.OnPreviewKeyDown` and handled by
   `VirtualizingStackPanel.SelectAll` as one range before the base WPF `ListBox`
   `SelectAllCommand` can enumerate the collection.
   Clipboard text is capped at `BulkSelection.MaxClipboardCharacters`; larger
   selections can be saved to a file in batches. Search timelines show at most
   4096 selected matches. `BulkOperationService` is a singleton shared by the
-  main window, documents and controls: the top panel shows title, progress and
-  processed/total counts with Cancel. Batches report every 128 items; starting
+  main window, documents and controls: a non-focusable floating card over the
+  top-right of the document area shows title, progress and processed/total
+  counts with Cancel. Its margin keeps it below the column headers and clear
+  of the scrollbar; `ApplicationBackgroundBrush` makes the card opaque. The
+  fixed-width counter column prevents resizing as numbers change. A separate
+  bottom row stretches the progress bar to 12 px before the Cancel button,
+  independently of the counter width. It appears only after `IndicatorDelay` (one second), so
+  short operations do not change the UI; `Esc` cancels an active operation
+  without moving keyboard focus. Operation titles use `Strings`: `ToggleMarks`
+  changes the selection, then `UpdateMarkedLines` publishes the marked-lines
+  pane after its bulk update is disposed. Batches report every 128 items; starting
   an operation cancels the previous one and stale completion cannot hide a newer
-  one. Selection changes cancel only an operation owned by the same view, so
-  updates to the marked-lines view cannot cancel marking in the log view.
-  Mark toggling uses `Selection.BeginBulkUpdate()` per document.
+  one. Batches yield through `BulkSelection.YieldToUiAsync`, which resumes at
+  `DispatcherPriority.Background` (falling back to `Task.Yield` off the UI
+  thread): a plain `Task.Yield` resumes at `Normal` priority and starves the
+  `DataBind`/`Render` work, so the progress bar would not repaint and the Cancel
+  button would not react on large documents. Focus loss, view unloading and
+  selection changes never cancel an operation or hide its card. Cancellation is
+  explicit (Cancel/`Esc`), or implicit when an operation is replaced or its
+  owner is disposed. `BaseListView` uses its `DataContext` as the operation
+  owner (falling back to itself), so disposing the document/search/merged view
+  model cancels the matching list operation without cancelling other documents.
+  Mark toggling uses `Selection.BeginBulkUpdate()` per document and compact
+  snapshots of changed ranges, not one reference per changed row. Cancelling it
+  starts `RestoreMarks`: `Selection.Restore` intersects the original and changed
+  ranges and subtracts them from the current ranges, so unrelated edits made
+  during the operation survive. Rollback runs in reverse document batches and
+  can be cancelled without finishing the remaining documents. A single
+  contiguous document restores in O(ranges), without a second per-row pass.
+  Both operations report progress and use localized titles.
   `DocumentViewModel.MarkedLineViewModels` is deferred and
-  `MarkedLinesViewModel.UpdateLinesCollection` publishes marked rows in the
-  same cancellable batches instead of rebuilding the whole list synchronously.
+  `MarkedLinesViewModel.UpdateLinesCollection` builds a replacement in
+  cancellable batches, reusing unchanged rows, and publishes it in one
+  `MarkedLines` property change. Cancellation leaves the original collection
+  and selection untouched instead of exposing a partially updated list.
+  The marked-lines pane groups rows by document through a `CollectionViewSource`
+  in `Styles/MarkedLinesViewTemplate.xaml`; WPF disables item virtualization as
+  soon as grouping is on unless `VirtualizingPanel.IsVirtualizingWhenGrouping`
+  is set (with `ScrollViewer.CanContentScroll`), so that attribute is required
+  there — without it opening the pane with many marked lines realizes every row
+  container at once and freezes the UI. Each document group header has a
+  localized Clear all button bound to `MarkedLinesListView.ClearDocumentMarksCommand`;
+  it clears keyboard focus, then clears only that document and coalesces the
+  resulting pane refresh into one update. `BaseLogListViewItem.IsCurrentItem`
+  raises `ItemActivated`, so arrow navigation follows the current row. During
+  collection synchronization `MarkedLinesViewModel` suppresses immediate
+  activation and `MarkedLinesListView` suppresses deferred activation through
+  the next layout pass, preventing navigation and reentrant layout while rows
+  disappear. Explicit mouse input and `Enter` also activate a row.
 - **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
   cell value (whole value, optionally quoted, from 8 chars; fragments from 16
   chars; standard or URL-safe alphabet) and accepts it only if it decodes to

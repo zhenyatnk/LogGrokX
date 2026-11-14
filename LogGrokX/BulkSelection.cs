@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace LogGrokX
 {
@@ -30,7 +31,7 @@ namespace LogGrokX
                 if (count % BatchSize != 0)
                     continue;
                 report?.Invoke(count);
-                await Task.Yield();
+                await YieldToUiAsync();
             }
         }
 
@@ -72,10 +73,22 @@ namespace LogGrokX
                 await writer.WriteAsync(batch.Replace("\0", string.Empty).ToString());
                 batch.Clear();
                 report?.Invoke(count);
-                await Task.Yield();
+                await YieldToUiAsync();
             }
             if (batch.Length > 0)
                 await writer.WriteAsync(batch.Replace("\0", string.Empty).ToString());
+        }
+
+        private static async Task YieldToUiAsync()
+        {
+            var dispatcher = Dispatcher.FromThread(Thread.CurrentThread);
+            if (dispatcher is null)
+            {
+                await Task.Yield();
+                return;
+            }
+
+            await dispatcher.InvokeAsync(static () => { }, DispatcherPriority.Background);
         }
 
         private sealed class ClipboardLimitException : Exception;

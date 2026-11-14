@@ -163,10 +163,9 @@ namespace LogGrokX.Controls.ListControls
             {
                 var oldValue = IsCurrentItem;
                 SetValue(IsCurrentItemProperty, value);
-                if (value && value != oldValue)
-                {
+                if (value && value != oldValue &&
+                    _itemsControl is not MarkedLinesListView { IsActivationSuppressed: true })
                     RaiseEvent(new ItemActivatedEventArgs(ItemActivatedEvent, this, Content));
-                }
             }
         }
 
@@ -241,6 +240,17 @@ namespace LogGrokX.Controls.ListControls
             if (IsCurrentItem)
                 RaiseEvent(new ItemActivatedEventArgs(ItemActivatedEvent, this, Content));
             base.OnPreviewMouseDown(e);
+        }
+
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                RaiseEvent(new ItemActivatedEventArgs(ItemActivatedEvent, this, Content));
+                e.Handled = true;
+                return;
+            }
+            base.OnKeyDown(e);
         }
 
         private void UpdateIsCurrentProperty()

@@ -114,7 +114,6 @@ namespace LogGrokX.Controls.ListControls
 
         public void UpdateReadonlySelectedItems(IEnumerable<int> selectedIndices, long selectedCount)
         {
-            CancelSelectionOperations();
             ReadonlySelectedCount = selectedCount;
             ReadonlySelectedItems = selectedIndices
                 .Where(index => index < Items.Count && index >= 0)
@@ -125,6 +124,8 @@ namespace LogGrokX.Controls.ListControls
         {
             var cancellationToken = BeginSelectionOperation("ToggleMarks");
             var bulkUpdates = new Dictionary<Selection, IDisposable>();
+            var rollbackStates = new Dictionary<Selection, MarkRollbackState>();
+            var changedCount = 0L;
             try
             {
                 var items = GetSelectedIndices().Select(index => Items[index]).OfType<ILineMark>();
@@ -133,19 +134,22 @@ namespace LogGrokX.Controls.ListControls
                 {
                     if (item.IsMarked)
                         return;
-                    BeginMarkedLinesUpdate(item);
+                    RecordChangedItem(item);
                     item.IsMarked = true;
                     existsUnmarked = true;
                 }, cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
                 if (!existsUnmarked)
+                {
                     await BulkSelection.ProcessAsync(items, item =>
                     {
-                        BeginMarkedLinesUpdate(item);
+                        RecordChangedItem(item);
                         item.IsMarked = !item.IsMarked;
                     }, cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                await RollbackMarksAsync();
             }
             finally
             {
@@ -154,12 +158,62 @@ namespace LogGrokX.Controls.ListControls
                 BulkOperations?.Complete(cancellationToken);
             }
 
-            void BeginMarkedLinesUpdate(ILineMark item)
+            async Task RollbackMarksAsync()
             {
-                if (item is not BaseLogLineViewModel line || bulkUpdates.ContainsKey(line.MarkedLines))
+                if (changedCount == 0)
                     return;
-                bulkUpdates.Add(line.MarkedLines, line.MarkedLines.BeginBulkUpdate());
+                var rollbackToken = BeginSelectionOperation("RestoreMarks", changedCount);
+                var processed = 0L;
+                try
+                {
+                    await BulkSelection.ProcessAsync(rollbackStates.Values.AsEnumerable().Reverse(), state =>
+                    {
+                        state.Restore();
+                        processed += state.ChangedCount;
+                    }, rollbackToken, _ => BulkOperations?.Report(processed));
+                }
+                catch (OperationCanceledException) when (rollbackToken.IsCancellationRequested)
+                {
+                }
+                finally
+                {
+                    BulkOperations?.Complete(rollbackToken);
+                }
             }
+
+            void RecordChangedItem(ILineMark item)
+            {
+                if (item is not BaseLogLineViewModel line)
+                    return;
+                if (!rollbackStates.TryGetValue(line.MarkedLines, out var state))
+                {
+                    state = new MarkRollbackState(line.MarkedLines);
+                    rollbackStates.Add(line.MarkedLines, state);
+                    bulkUpdates.Add(line.MarkedLines, line.MarkedLines.BeginBulkUpdate());
+                }
+                state.Record(line.Index);
+                changedCount++;
+            }
+        }
+
+        private sealed class MarkRollbackState(Selection markedLines)
+        {
+            private readonly Selection.SelectionSnapshot _original = markedLines.CaptureSnapshot();
+            private readonly List<(int Start, int End)> _changedRanges = new();
+
+            public long ChangedCount { get; private set; }
+
+            public void Record(int index)
+            {
+                if (_changedRanges.Count > 0 && _changedRanges[^1].End == index - 1)
+                    _changedRanges[^1] = (_changedRanges[^1].Start, index);
+                else
+                    _changedRanges.Add((index, index));
+                ChangedCount++;
+            }
+
+            public void Restore() => markedLines.Restore(_original,
+                Selection.SelectionSnapshot.FromRanges(_changedRanges));
         }
 
         public void PrepareItemContainer(ListViewItem container, object item)

@@ -142,7 +142,6 @@
     <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -242,42 +241,7 @@
             </localControls:StableTitleBar.TrailingContent>
         </localControls:StableTitleBar>
 
-        <Border Grid.Row="1"
-                Margin="12,4,12,0"
-                Padding="12,8"
-                Background="{DynamicResource ControlFillColorSecondaryBrush}"
-                CornerRadius="{StaticResource AppControlCornerRadius}"
-                Visibility="{Binding BulkOperations.IsActive, Converter={StaticResource BoolToVisibility}}">
-            <Grid VerticalAlignment="Center">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock VerticalAlignment="Center"
-                           FontWeight="SemiBold"
-                           Text="{Binding BulkOperations.Title, Mode=OneWay}" />
-                <ProgressBar Grid.Column="1"
-                             Height="6"
-                             Margin="16,0,12,0"
-                             VerticalAlignment="Center"
-                             Maximum="100"
-                             Value="{Binding BulkOperations.Progress, Mode=OneWay}" />
-                <TextBlock Grid.Column="2"
-                           Margin="0,0,16,0"
-                           VerticalAlignment="Center"
-                           Text="{Binding BulkOperations.ProgressText, Mode=OneWay}" />
-                <ui:Button Grid.Column="3"
-                           MinHeight="28"
-                           Padding="12,2"
-                           VerticalAlignment="Center"
-                           Command="{Binding BulkOperations.CancelCommand}"
-                           Content="{loc:Loc Cancel}" />
-            </Grid>
-        </Border>
-
-        <Border Grid.Row="2" Margin="2,0,2,2" Padding="0"
+        <Border Grid.Row="1" Margin="2,0,2,2" Padding="0"
                 Style="{StaticResource FluentCardStyle}">
             <Grid>
                 <DockingManager x:Name="DockingManager"
@@ -324,6 +288,59 @@
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                    Text="{loc:Loc WelcomeShortcuts}" />
                     </StackPanel>
+                </Border>
+                <Border x:Name="BulkOperationIndicator"
+                        Panel.ZIndex="2"
+                        Width="380"
+                        Margin="32,60,56,0"
+                        Padding="12,8"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Focusable="False"
+                        Background="{DynamicResource ApplicationBackgroundBrush}"
+                        BorderBrush="{DynamicResource ControlStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="{StaticResource AppControlCornerRadius}"
+                        Visibility="{Binding BulkOperations.IsIndicatorVisible, Converter={StaticResource BoolToVisibility}}">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="170" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock VerticalAlignment="Center"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   Text="{Binding BulkOperations.Title, Mode=OneWay}" />
+                        <TextBlock Grid.Column="1"
+                                   Margin="12,0,0,0"
+                                   VerticalAlignment="Center"
+                                   TextAlignment="Right"
+                                   Text="{Binding BulkOperations.ProgressText, Mode=OneWay}" />
+                        <Grid Grid.Row="1" Grid.ColumnSpan="2" Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ProgressBar Height="4"
+                                         Margin="0,0,12,0"
+                                         VerticalAlignment="Center"
+                                         Maximum="100"
+                                         Value="{Binding BulkOperations.Progress, Mode=OneWay}" />
+                            <ui:Button Grid.Column="1"
+                                       MinHeight="28"
+                                       Padding="12,2"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Right"
+                                       Focusable="False"
+                                       IsTabStop="False"
+                                       Command="{Binding BulkOperations.CancelCommand}"
+                                       Content="{loc:Loc Cancel}" />
+                        </Grid>
+                    </Grid>
                 </Border>
             </Grid>
         </Border>

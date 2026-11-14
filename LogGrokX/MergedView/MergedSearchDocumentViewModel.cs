@@ -181,6 +181,7 @@ namespace LogGrokX.MergedView
 
         public void Dispose()
         {
+            BulkOperations.Cancel(this);
             _merged.Rebuilt -= OnMergedRebuilt;
             _merged.CurrentThreadChanged -= OnCurrentThreadChanged;
 

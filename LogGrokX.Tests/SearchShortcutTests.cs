@@ -38,6 +38,37 @@ public class SearchShortcutTests
     }
 
     [TestMethod]
+    public void BulkProgressOverlayDoesNotReserveSpaceOrTakeFocus()
+    {
+        var repositoryRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
+        var windowXaml = XDocument.Load(Path.Combine(repositoryRoot, "LogGrokX", "MainWindow.xaml"));
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var rootGrid = windowXaml.Root!.Elements(presentation + "Grid").Single();
+        var rows = rootGrid.Element(presentation + "Grid.RowDefinitions")!.Elements();
+        var indicator = windowXaml.Descendants(presentation + "Border")
+            .Single(element => element.Attribute(x + "Name")?.Value == "BulkOperationIndicator");
+
+        Assert.AreEqual(2, rows.Count());
+        Assert.AreEqual("1", indicator.Parent!.Parent!.Attribute("Grid.Row")?.Value);
+        Assert.AreEqual("Right", indicator.Attribute("HorizontalAlignment")?.Value);
+        Assert.AreEqual("Top", indicator.Attribute("VerticalAlignment")?.Value);
+        StringAssert.Contains(indicator.Attribute("Background")!.Value, "ApplicationBackgroundBrush");
+        Assert.AreEqual("False", indicator.Attribute("Focusable")?.Value);
+        StringAssert.Contains(indicator.Attribute("Visibility")!.Value, "BulkOperations.IsIndicatorVisible");
+        var counterColumn = indicator.Element(presentation + "Grid")!
+            .Element(presentation + "Grid.ColumnDefinitions")!.Elements().Last();
+        Assert.AreEqual("170", counterColumn.Attribute("Width")?.Value);
+        var progressBar = indicator.Descendants(presentation + "ProgressBar").Single();
+        Assert.AreEqual("0,0,12,0", progressBar.Attribute("Margin")?.Value);
+        Assert.AreEqual("2", progressBar.Parent!.Attribute("Grid.ColumnSpan")?.Value);
+        var cancelButton = indicator.Descendants().Single(element => element.Name.LocalName == "Button");
+        Assert.AreEqual("Right", cancelButton.Attribute("HorizontalAlignment")?.Value);
+        Assert.AreEqual("False", cancelButton.Attribute("Focusable")?.Value);
+        Assert.AreEqual("False", cancelButton.Attribute("IsTabStop")?.Value);
+    }
+
+    [TestMethod]
     public void SearchTemplateEnablesSelectAllOnlyForPrimaryEditor()
     {
         RunOnSta(() =>

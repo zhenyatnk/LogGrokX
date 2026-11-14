@@ -111,6 +111,72 @@ public sealed class ListViewSelectionTests
     }
 
     [TestMethod]
+    public void DataContextOwnerCancelsListOperationWhenDocumentCloses()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var operations = new BulkOperationService(new LogGrokX.Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
+                var owner = new object();
+                var view = new OperationListView { DataContext = owner, BulkOperations = operations };
+                var token = view.BeginOperation();
+
+                operations.Cancel(view);
+                Assert.IsTrue(operations.IsActive);
+                Assert.IsFalse(token.IsCancellationRequested);
+
+                operations.Cancel(owner);
+                Assert.IsFalse(operations.IsActive);
+                Assert.IsTrue(token.IsCancellationRequested);
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
+    public void SelectionChangesAndUnloadingDoNotCancelOperation()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var operations = new BulkOperationService(new LogGrokX.Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
+                var view = new LogGrokX.Controls.ListControls.ListView { BulkOperations = operations };
+                var token = operations.Begin("Copy", 1000, view);
+
+                view.UpdateReadonlySelectedItems(new[] { 0 }, 1);
+                view.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+
+                Assert.IsTrue(operations.IsActive);
+                Assert.IsFalse(token.IsCancellationRequested);
+                operations.CancelCommand.Execute(null);
+                Assert.IsFalse(operations.IsActive);
+                Assert.IsTrue(token.IsCancellationRequested);
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
     public void ToggleMarksKeepsProgressActiveAfterFirstBatch()
     {
         Exception? error = null;
@@ -120,7 +186,7 @@ public sealed class ListViewSelectionTests
             {
                 SynchronizationContext.SetSynchronizationContext(
                     new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
-                var operations = new BulkOperationService();
+                var operations = new BulkOperationService(new LogGrokX.Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
                 var markedLines = new Selection();
                 var parser = new RegexBasedLineParser(new LogMetaInformation(new LogFormat { Regex = "^.*$" }));
                 var transformation = new TransformationPerformer(Array.Empty<string>());
@@ -175,6 +241,123 @@ public sealed class ListViewSelectionTests
             ExceptionDispatchInfo.Capture(error).Throw();
     }
 
+    [TestMethod]
+    public void CancellingToggleMarksRestoresChangesAndAllowsCancellingRollback()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(
+                    new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
+                var scenarios = new[]
+                {
+                    (InitiallyMarked: false, CancelRollback: false, Expected: 0),
+                    (InitiallyMarked: false, CancelRollback: true, Expected: 128),
+                    (InitiallyMarked: true, CancelRollback: false, Expected: 300),
+                    (InitiallyMarked: true, CancelRollback: true, Expected: 172)
+                };
+                foreach (var scenario in scenarios)
+                {
+                    var operations = new BulkOperationService(new LogGrokX.Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher));
+                    var markedLines = new Selection();
+                    var documentSelections = scenario.CancelRollback
+                        ? Enumerable.Range(0, 300).Select(_ => new Selection()).ToArray()
+                        : [markedLines];
+                    if (scenario.InitiallyMarked)
+                    {
+                        if (scenario.CancelRollback)
+                            for (var index = 0; index < documentSelections.Length; index++)
+                                documentSelections[index].Set(index);
+                        else
+                            markedLines.SetRange(0, 299);
+                    }
+                    long MarkedCount() => documentSelections.Sum(selection => selection.Count);
+                    var parser = new RegexBasedLineParser(new LogMetaInformation(new LogFormat { Regex = "^.*$" }));
+                    var transformation = new TransformationPerformer(Array.Empty<string>());
+                    var items = Enumerable.Range(0, 300).Select(index =>
+                        new LineViewModel(index, $"line {index}", parser, scenario.CancelRollback ? documentSelections[index] : markedLines, transformation,
+                            TestServices.DisplaySettings)).ToArray();
+                    var view = new LogGrokX.Controls.ListControls.ListView
+                    {
+                        ItemsSource = items,
+                        BulkOperations = operations,
+                        ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(
+                            typeof(LogGrokX.Controls.ListControls.VirtualizingStackPanel.VirtualizingStackPanel)))
+                    };
+                    var window = new Window
+                    {
+                        Content = view,
+                        Width = 400,
+                        Height = 300,
+                        Left = -10000,
+                        Top = -10000,
+                        ShowActivated = false,
+                        ShowInTaskbar = false
+                    };
+                    try
+                    {
+                        window.Show();
+                        var panel = FindPanel(window);
+                        Assert.IsNotNull(panel);
+                        panel.SelectAll();
+                        if (scenario.InitiallyMarked)
+                        {
+                            var unmarked = items.FirstOrDefault(item => !item.IsMarked);
+                            Assert.IsNull(unmarked, unmarked is null ? string.Empty :
+                                $"index={unmarked.Index}, selectionContains={documentSelections[unmarked.Index].Contains(unmarked.Index)}");
+                        }
+                        var forwardCancelled = false;
+                        operations.PropertyChanged += (_, args) =>
+                        {
+                            if (args.PropertyName != nameof(BulkOperationService.Processed))
+                                return;
+                            if (!forwardCancelled && operations.Title == LogGrokX.Localization.Strings.Get("ToggleMarks") &&
+                                operations.Processed >= 256 && (!scenario.InitiallyMarked || MarkedCount() <= 44))
+                            {
+                                forwardCancelled = true;
+                                operations.CancelCommand.Execute(null);
+                            }
+                            if (scenario.CancelRollback && operations.Title == LogGrokX.Localization.Strings.Get("RestoreMarks") &&
+                                operations.Processed >= 128)
+                                operations.CancelCommand.Execute(null);
+                        };
+                        RoutedCommands.ToggleMarks.Execute(null, view);
+                        PumpUntil(() => forwardCancelled, TimeSpan.FromSeconds(5));
+
+                        if (scenario.CancelRollback)
+                        {
+                            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                        }
+                        else
+                        {
+                            PumpUntil(() => !operations.IsActive && MarkedCount() == scenario.Expected,
+                                TimeSpan.FromSeconds(5));
+                        }
+
+                        Assert.AreEqual(scenario.Expected, MarkedCount(),
+                            $"initiallyMarked={scenario.InitiallyMarked}, cancelRollback={scenario.CancelRollback}");
+                        Assert.IsFalse(operations.IsActive);
+                    }
+                    finally
+                    {
+                        window.Close();
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
     private static void PumpUntil(Func<bool> condition, TimeSpan timeout)
     {
         var deadline = DateTime.UtcNow + timeout;
@@ -199,6 +382,11 @@ public sealed class ListViewSelectionTests
                 return nested;
         }
         return null;
+    }
+
+    private sealed class OperationListView : LogGrokX.Controls.ListControls.ListView
+    {
+        public CancellationToken BeginOperation() => BeginSelectionOperation("Copy");
     }
 
     private sealed class CountingProvider(int count) : IItemProvider<int>

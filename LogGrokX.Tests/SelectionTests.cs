@@ -82,6 +82,39 @@ public sealed class SelectionTests
     }
 
     [TestMethod]
+    public void RestoreReappliesOriginalOnlyInsideAffectedRanges()
+    {
+        var selection = new Selection();
+        selection.SetRange(0, 100);
+        var original = selection.CaptureSnapshot();
+        selection.Remove(15);
+        selection.Remove(60);
+        selection.Add(200);
+
+        selection.Restore(original, Selection.SelectionSnapshot.FromRanges([(10, 20)]));
+
+        Assert.IsTrue(selection.Contains(15));
+        Assert.IsFalse(selection.Contains(60));
+        Assert.IsTrue(selection.Contains(200));
+        Assert.AreEqual(101, selection.Count);
+    }
+
+    [TestMethod]
+    public void RestoreNormalizesUnsortedAffectedRanges()
+    {
+        var selection = new Selection();
+        selection.SetRange(0, 100);
+        var original = selection.CaptureSnapshot();
+        selection.Remove(10);
+        selection.Remove(20);
+        selection.Remove(30);
+
+        selection.Restore(original, Selection.SelectionSnapshot.FromRanges([(30, 30), (10, 10), (20, 20)]));
+
+        CollectionAssert.AreEqual(Enumerable.Range(0, 101).ToArray(), selection.ToArray());
+    }
+
+    [TestMethod]
     public void SnapshotDoesNotChangeWithLaterSelectionUpdates()
     {
         var selection = new Selection();

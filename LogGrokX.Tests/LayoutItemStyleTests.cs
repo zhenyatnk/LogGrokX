@@ -31,7 +31,7 @@ public sealed class LayoutItemStyleTests
     {
         RunOnSta(() =>
         {
-            using var marked = new MarkedLinesViewModel(new ObservableCollection<DocumentViewModel>(), new BulkOperationService());
+            using var marked = new MarkedLinesViewModel(new ObservableCollection<DocumentViewModel>(), new BulkOperationService(new LogGrokX.Platform.WpfUiDispatcher(Dispatcher.CurrentDispatcher)));
             var panel = new LayoutAnchorable
             {
                 Title = Strings.Get("MarkedLines"),

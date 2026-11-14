@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>Se requiere reiniciar</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>Restaurar marcas</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>Entorno de ejecución</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>Error de actualización: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>Actualizar líneas marcadas</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>LogGrokX {0} se instalará automáticamente al cerrar la aplicación.</value>

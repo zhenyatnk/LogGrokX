@@ -42,6 +42,8 @@
                 FontSize="{DynamicResource LogFontSize}"
                 VirtualizingStackPanel.IsVirtualizing="True"
                 VirtualizingStackPanel.VirtualizationMode="Recycling"
+                VirtualizingPanel.IsVirtualizingWhenGrouping="True"
+                ScrollViewer.CanContentScroll="True"
                 IsSynchronizedWithCurrentItem="True"
                 ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
                 BulkOperations="{Binding BulkOperations}"
@@ -141,6 +143,20 @@
                                                                     HorizontalAlignment="Center"
                                                                     Symbol="Copy24" />
                                                                 <TextBlock Margin="6,0,0,0" Text="{loc:Loc CopyLines}" />
+                                                            </StackPanel>
+                                                        </ui:Button>
+                                                        <ui:Button
+                                                            Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type listControls:MarkedLinesListView}},
+                                                                    Path=ClearDocumentMarksCommand}"
+                                                            CommandParameter="{Binding Name}"
+                                                            Margin="6,0,0,0"
+                                                            Padding="6,2"
+                                                            Appearance="Transparent"
+                                                            ToolTip="{loc:Loc ClearAll}"
+                                                            AutomationProperties.Name="{loc:Loc ClearAll}">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <ui:SymbolIcon FontSize="12" Symbol="Dismiss24" />
+                                                                <TextBlock Margin="6,0,0,0" Text="{loc:Loc ClearAll}" />
                                                             </StackPanel>
                                                         </ui:Button>
                                                     </StackPanel>
