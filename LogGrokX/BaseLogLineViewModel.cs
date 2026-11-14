@@ -27,6 +27,8 @@ namespace LogGrokX
         
         protected DisplaySettingsMonitor DisplaySettings { get; }
 
+        internal Selection MarkedLines => _markedLines;
+
         public int Index { get; }
 
         public LinePartViewModel IndexViewModel { get; }

@@ -50,6 +50,8 @@ namespace LogGrokX
         public MarkedLinesViewModel MarkedLinesViewModel { get; }
 
         public MergedViewModel MergedViewModel { get; }
+
+        public BulkOperationService BulkOperations { get; }
         
         public ICommand OpenFileCommand => new DelegateCommand(OpenFile);
 
@@ -73,13 +75,15 @@ namespace LogGrokX
             IAppDialogs dialogs,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory,
             IColorValidator colorValidator, IUiDispatcher dispatcher, IDesktopService desktop,
-            DisplaySettingsMonitor displaySettings, UpdateIndicatorService updateIndicatorService, IUpdateService updates)
+            DisplaySettingsMonitor displaySettings, UpdateIndicatorService updateIndicatorService, IUpdateService updates,
+            BulkOperationService bulkOperations)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _desktop = desktop ?? throw new ArgumentNullException(nameof(desktop));
             _displaySettings = displaySettings ?? throw new ArgumentNullException(nameof(displaySettings));
             _updateIndicatorService = updateIndicatorService ?? throw new ArgumentNullException(nameof(updateIndicatorService));
             _updates = updates ?? throw new ArgumentNullException(nameof(updates));
+            BulkOperations = bulkOperations ?? throw new ArgumentNullException(nameof(bulkOperations));
             _applicationSettings = applicationSettings;
             Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
             _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
@@ -100,12 +104,15 @@ namespace LogGrokX
             Documents = new ObservableCollection<DocumentViewModel>();
             Documents.CollectionChanged += OnDocumentsChanged;
             MarkedLinesViewModel = markedLinesViewModelFactory(Documents);
-            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService, _colorValidator, _dispatcher, _dialogs) { IsActive = _mergedFilesViewService.IsEnabled };
+            MergedViewModel = new MergedViewModel(Documents, _searchAutocompleteCache, _savedSearchPatternStore, _applicationSettings, _threadGroupingService, _timelinePlacementService, _colorValidator, _dispatcher, _dialogs, BulkOperations) { IsActive = _mergedFilesViewService.IsEnabled };
             _applicationSettings.ProfilesChanged += OnProfilesChanged;
             OpenSettings = new DelegateCommand(OpenSettingsWindow);
             OpenSupportCommand = new DelegateCommand(OpenSupport);
-            ToggleThemeCommand = new DelegateCommand(ToggleTheme);
-            CycleTimelineCommand = new DelegateCommand(_timelinePlacementService.CyclePlacement);
+            SetLightThemeCommand = new DelegateCommand(() => SetTheme(false));
+            SetDarkThemeCommand = new DelegateCommand(() => SetTheme(true));
+            ShowTimelineAtTopCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(true, true));
+            ShowTimelineAtBottomCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(false, true));
+            HideTimelineCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(_timelinePlacementService.IsAtTop, false));
             ZoomInCommand = new DelegateCommand(() => _textZoomService.Increase());
             ZoomOutCommand = new DelegateCommand(() => _textZoomService.Decrease());
             ResetZoomCommand = new DelegateCommand(() => _textZoomService.Reset());
@@ -248,9 +255,15 @@ namespace LogGrokX
 
         public ICommand OpenSupportCommand { get; }
 
-        public ICommand ToggleThemeCommand { get; }
+        public ICommand SetLightThemeCommand { get; }
 
-        public ICommand CycleTimelineCommand { get; }
+        public ICommand SetDarkThemeCommand { get; }
+
+        public ICommand ShowTimelineAtTopCommand { get; }
+
+        public ICommand ShowTimelineAtBottomCommand { get; }
+
+        public ICommand HideTimelineCommand { get; }
 
         public ICommand ZoomInCommand { get; }
 
@@ -280,6 +293,8 @@ namespace LogGrokX
         }
 
         public bool IsDarkTheme => _themeService.IsDark;
+
+        public bool IsLightTheme => !IsDarkTheme;
 
         public string WindowTitle => $"LogGrokX {BuildInfo.Version}";
 
@@ -361,15 +376,19 @@ namespace LogGrokX
 
         public bool IsTimelineVisible => _timelinePlacementService.IsVisible;
 
-        public string TimelineToolTip => Strings.Get(!IsTimelineVisible
-            ? "TimelineOffHint"
-            : IsTimelineAtTop ? "TimelineTopHint" : "TimelineBottomHint");
+        public bool IsTimelineAtTopVisible => IsTimelineVisible && IsTimelineAtTop;
+
+        public bool IsTimelineAtBottom => IsTimelineVisible && !IsTimelineAtTop;
+
+        public bool IsTimelineHidden => !IsTimelineVisible;
 
         private void OnTimelinePlacementChanged()
         {
             InvokePropertyChanged(nameof(IsTimelineAtTop));
             InvokePropertyChanged(nameof(IsTimelineVisible));
-            InvokePropertyChanged(nameof(TimelineToolTip));
+            InvokePropertyChanged(nameof(IsTimelineAtTopVisible));
+            InvokePropertyChanged(nameof(IsTimelineAtBottom));
+            InvokePropertyChanged(nameof(IsTimelineHidden));
         }
 
         public bool IsGroupByThread
@@ -401,10 +420,13 @@ namespace LogGrokX
 
         private void OpenSettingsWindow() => _dialogs.ShowSettings();
 
-        private void ToggleTheme()
+        private void SetTheme(bool isDark)
         {
+            if (IsDarkTheme == isDark)
+                return;
             _themeService.Toggle();
             InvokePropertyChanged(nameof(IsDarkTheme));
+            InvokePropertyChanged(nameof(IsLightTheme));
         }
 
         private void OpenFile()
@@ -482,7 +504,7 @@ namespace LogGrokX
         private (DocumentViewModel document, DocumentContainer container) CreateDocumentResources(
             string fileName, ProfileSettings profile)
         {
-            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService, _dispatcher, _desktop, _dialogs, _colorValidator, _displaySettings);
+            var container = new DocumentContainer(fileName, profile, _applicationSettings, _searchAutocompleteCache, _savedSearchPatternStore, _timelinePlacementService, _threadGroupingService, _dispatcher, _desktop, _dialogs, _colorValidator, _displaySettings, BulkOperations);
             DocumentViewModel viewModel;
             try
             {

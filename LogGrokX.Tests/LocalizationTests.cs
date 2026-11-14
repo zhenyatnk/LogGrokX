@@ -85,6 +85,24 @@ public sealed class LocalizationTests
     }
 
     [TestMethod]
+    [DataRow("en", "Copy", "Toggle marks", "Update marked lines", "Restore marks")]
+    [DataRow("ru", "Копировать", "Переключить отметки", "Обновление отмеченных строк", "Восстановление отметок")]
+    [DataRow("de", "Kopieren", "Markierungen umschalten", "Markierte Zeilen aktualisieren", "Markierungen wiederherstellen")]
+    [DataRow("fr", "Copier", "Basculer les marques", "Mettre à jour les lignes marquées", "Restaurer les marques")]
+    [DataRow("es", "Copiar", "Alternar marcas", "Actualizar líneas marcadas", "Restaurar marcas")]
+    [DataRow("ja", "コピー", "マークを切り替え", "マークした行を更新", "マークを復元")]
+    [DataRow("pl", "Kopiuj", "Przełącz oznaczenia", "Aktualizacja oznaczonych wierszy", "Przywracanie oznaczeń")]
+    [DataRow("pt-BR", "Copiar", "Alternar marcações", "Atualizar linhas marcadas", "Restaurar marcações")]
+    public void BulkOperationTitlesUseSelectedCatalog(string language, string copy, string toggle, string update, string restore)
+    {
+        using var culture = new CultureScope(language);
+        Assert.AreEqual(copy, Strings.Get("Copy"));
+        Assert.AreEqual(toggle, Strings.Get("ToggleMarks"));
+        Assert.AreEqual(update, Strings.Get("UpdateMarkedLines"));
+        Assert.AreEqual(restore, Strings.Get("RestoreMarks"));
+    }
+
+    [TestMethod]
     [DataRow("en", "Settings")]
     [DataRow("ru", "Настройки")]
     [DataRow("de", "Einstellungen")]

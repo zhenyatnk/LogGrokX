@@ -134,21 +134,17 @@ namespace LogGrokX
                 LogViewModel.SetSearchSelectedLines(SearchViewModel.CurrentSelectedMatchLines);
         }
         
-        public ObservableCollection<(int number, string text)> MarkedLineViewModels
+        public IEnumerable<(int number, string text)> MarkedLineViewModels
         {
             get
             {
-                var lineNumbers = _markedLines.ToList();
-                lineNumbers.Sort();
-                var collection = new ObservableCollection<(int number, string text)>();
-                foreach (var lineNumber in lineNumbers.Where(number => number >= 0 && number < _lineProvider.Count))
+                foreach (var lineNumber in _markedLines.Snapshot()
+                             .Where(number => number >= 0 && number < _lineProvider.Count))
                 {
                     var lines = new (int, string)[1];
                     _lineProvider.Fetch(lineNumber, lines.AsSpan());
-                    collection.Add((lineNumber, _transformationPerformer.Transform(lines[0].Item2)));
+                    yield return (lineNumber, _transformationPerformer.Transform(lines[0].Item2));
                 }
-
-                return collection;
             }
         }
 

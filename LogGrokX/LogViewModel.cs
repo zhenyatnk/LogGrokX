@@ -14,6 +14,7 @@ using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.Platform;
 using LogGrokX.Filter;
+using LogGrokX.Localization;
 
 namespace LogGrokX
 {
@@ -25,6 +26,7 @@ namespace LogGrokX
         private readonly LogModelFacade _logModelFacade;
         private bool _isLoading;
         private IEnumerable? _selectedItems;
+        private long _selectedCount;
         private readonly LineViewModelCollectionProvider _lineViewModelCollectionProvider;
         private Regex? _highlightRegex;
         private Func<int, int> _getIndexByValue;
@@ -50,9 +52,10 @@ namespace LogGrokX
             TimelinePlacementService timelinePlacementService,
             ThreadGroupingService threadGroupingService,
             CurrentThreadFilter currentThreadFilter,
-            TextViewSharedFoldingState foldingState, IDesktopService desktop)
+            TextViewSharedFoldingState foldingState, IDesktopService desktop, BulkOperationService bulkOperations)
         {
             _desktop = desktop ?? throw new ArgumentNullException(nameof(desktop));
+            BulkOperations = bulkOperations ?? throw new ArgumentNullException(nameof(bulkOperations));
             _logModelFacade = logModelFacade;
             _filterSettings = filterSettings;
             FoldingState = foldingState;
@@ -82,20 +85,10 @@ namespace LogGrokX
             Lines = new GrowingLogLinesCollection(_headerCollection, lineCollection);
             
             ExcludeCommand = DelegateCommand.Create(
-                    (int componentIndex) => {
-                        _filterSettings.AddExclusions(
-                            logModelFacade.MetaInformation.GetIndexedFieldIndexByFieldIndex(componentIndex),
-                            GetComponentsInSelectedLines(componentIndex));
-                    });    
-            
+                (int componentIndex) => ExcludeSelectedComponents(componentIndex, false));
+
             ExcludeAllButCommand = DelegateCommand.Create(
-                (int componentIndex) =>
-                {
-                    
-                    _filterSettings.ExcludeAllExcept(
-                        logModelFacade.MetaInformation.GetIndexedFieldIndexByFieldIndex(componentIndex),
-                        GetComponentsInSelectedLines(componentIndex));
-                });
+                (int componentIndex) => ExcludeSelectedComponents(componentIndex, true));
             
             ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions());
 
@@ -122,6 +115,8 @@ namespace LogGrokX
             UpdateDocumentWhileLoading();
             UpdateProgress();
         }
+
+        public BulkOperationService BulkOperations { get; }
 
         public ObservableCollection<FilterChipViewModel> ActiveFilters { get; } = new();
 
@@ -248,6 +243,7 @@ namespace LogGrokX
                 return;
 
             _disposed = true;
+            CancelSelectionOperation();
             _loadingCancellation.Cancel();
             _loadingCancellation.Dispose();
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
@@ -342,14 +338,18 @@ namespace LogGrokX
 
         public ICommand ClearFiltersCommand { get; }
 
+        public long SelectedCount
+        {
+            get => _selectedCount;
+            set => SetAndRaiseIfChanged(ref _selectedCount, value);
+        }
+
         public IEnumerable? SelectedItems
         {
             get => _selectedItems;
             set
             {
                 if (_selectedItems == null && value == null) return;
-                if (_selectedItems != null && value != null && 
-                    _selectedItems.Cast<object>().SequenceEqual(value.Cast<object>())) return;
                 _selectedItems = value;
                 InvokePropertyChanged();
             }
@@ -389,11 +389,39 @@ namespace LogGrokX
             NavigateToLineRequest.Raise(scrollIndex);
         }
         
-        private IEnumerable<string> GetComponentsInSelectedLines(int componentIndex)
+        private async void ExcludeSelectedComponents(int componentIndex, bool excludeAllBut)
         {
-            var lineViewModels = SelectedItems?.OfType<LineViewModel>() ?? Enumerable.Empty<LineViewModel>();
-            return lineViewModels.Select(line => line[componentIndex].OriginalText ?? string.Empty).Distinct();
+            var selectedItems = SelectedItems;
+            var cancellationToken = BeginSelectionOperation(excludeAllBut ? "ExcludeAllBut" : "Exclude");
+            try
+            {
+                var values = new List<string>();
+                var seen = new HashSet<string>();
+                await BulkSelection.ProcessAsync(
+                    selectedItems?.OfType<LineViewModel>() ?? Enumerable.Empty<LineViewModel>(), line =>
+                    {
+                        var value = line[componentIndex].OriginalText ?? string.Empty;
+                        if (seen.Add(value))
+                            values.Add(value);
+                    }, cancellationToken, BulkOperations.Report);
+                var indexedFieldIndex = _logModelFacade.MetaInformation.GetIndexedFieldIndexByFieldIndex(componentIndex);
+                if (excludeAllBut)
+                    _filterSettings.ExcludeAllExcept(indexedFieldIndex, values);
+                else
+                    _filterSettings.AddExclusions(indexedFieldIndex, values);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            finally
+            {
+                BulkOperations.Complete(cancellationToken);
+            }
         }
+
+        private CancellationToken BeginSelectionOperation(string titleKey) => BulkOperations.Begin(Strings.Get(titleKey), SelectedCount, this);
+
+        private void CancelSelectionOperation() => BulkOperations.Cancel(this);
 
         private async void UpdateDocumentWhileLoading()
         {
@@ -445,22 +473,23 @@ namespace LogGrokX
             }
         }
         
-        private void CopySelectedItemsToClipboard()
+        private async void CopySelectedItemsToClipboard()
         {
-            if (SelectedItems == null) return;
-            var orderedLines =
-                SelectedItems.OfType<LogHeaderViewModel>().Select(h => h.ToString())
-                    .Concat(SelectedItems.OfType<LineViewModel>().OrderBy(ln => ln.Index).Select(ln => ln.ToString()));
-            
-            var  text = new StringBuilder();
-            foreach (var line in orderedLines)
+            var selectedItems = SelectedItems;
+            if (selectedItems == null) return;
+            var cancellationToken = BeginSelectionOperation("Copy");
+            try
             {
-                _ = text.Append(line);
-                _ = text.Append("\r\n");
+                await BulkSelection.CopyAsync(selectedItems.Cast<object>().Select(item => item.ToString()),
+                    _desktop.SetClipboardText, cancellationToken, BulkOperations.Report);
             }
-            _ = text.Replace("\0", string.Empty);
-
-            _desktop.SetClipboardText(text.ToString());
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            finally
+            {
+                BulkOperations.Complete(cancellationToken);
+            }
         }
 
         private async void UpdateFilteredCollection()

@@ -1,9 +1,13 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Threading;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.MarkedLines;
 
@@ -11,6 +15,8 @@ namespace LogGrokX.Controls.ListControls
 {
    public class MarkedLinesListView : BaseListView
     {
+        private int _collectionChangeVersion;
+
         public static readonly DependencyProperty ReadonlySelectedItemsProperty = DependencyProperty.Register(
             "ReadonlySelectedItems", typeof(IEnumerable), typeof(MarkedLinesListView),
             new PropertyMetadata(default(IEnumerable)));
@@ -23,9 +29,34 @@ namespace LogGrokX.Controls.ListControls
 
         public DelegateCommand CopyDocumentLinesCommand { get; }
 
+        public DelegateCommand ClearDocumentMarksCommand { get; }
+
+        internal bool IsActivationSuppressed { get; private set; }
+
         public MarkedLinesListView()
         {
             CopyDocumentLinesCommand = new DelegateCommand(CopyDocumentLines);
+            ClearDocumentMarksCommand = new DelegateCommand(ClearDocumentMarks);
+            ((INotifyCollectionChanged)Items).CollectionChanged += (_, _) => SuppressActivationUntilLayout();
+        }
+
+        private void SuppressActivationUntilLayout()
+        {
+            var version = ++_collectionChangeVersion;
+            IsActivationSuppressed = true;
+            Dispatcher.BeginInvoke(new Action(() =>
+            {
+                if (version == _collectionChangeVersion)
+                    IsActivationSuppressed = false;
+            }), DispatcherPriority.Background);
+        }
+
+        private void ClearDocumentMarks(object parameter)
+        {
+            if (parameter is not DocumentViewModel || DataContext is not MarkedLinesViewModel viewModel)
+                return;
+            Keyboard.ClearFocus();
+            viewModel.ClearDocumentMarksCommand.Execute(parameter);
         }
 
         private void CopyDocumentLines(object parameter)
@@ -59,6 +90,8 @@ namespace LogGrokX.Controls.ListControls
         {
             return new BaseLogListViewItem(this);
         }
+
+        protected override long GetSelectedCount() => ReadonlySelectedItems?.Cast<object>().Count() ?? 0;
 
         protected override IEnumerable<int> GetSelectedIndices()
         {

@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -41,6 +42,15 @@ namespace LogGrokX.Controls.ListControls
         
         public static readonly DependencyProperty ReadonlySelectedItemsProperty =
             DependencyProperty.Register(nameof(ReadonlySelectedItems), typeof(IEnumerable), typeof(ListView));
+
+        public static readonly DependencyProperty ReadonlySelectedCountProperty =
+            DependencyProperty.Register(nameof(ReadonlySelectedCount), typeof(long), typeof(ListView));
+
+        public long ReadonlySelectedCount
+        {
+            get => (long)GetValue(ReadonlySelectedCountProperty);
+            set => SetValue(ReadonlySelectedCountProperty, value);
+        }
 
         public static readonly DependencyProperty ColumnSettingsProperty = DependencyProperty.Register(
             "ColumnSettings", typeof(ColumnSettings), typeof(ListView),
@@ -89,9 +99,9 @@ namespace LogGrokX.Controls.ListControls
             };
 
             CommandBindings.Add(new CommandBinding(RoutedCommands.ToggleMarks,
-                (_, args) =>
+                async (_, args) =>
                 {
-                    RoutedCommands.ToggleMarksHandler(GetSelectedIndices().Select(i => Items[i]).OfType<ILineMark>());
+                    await ToggleMarksAsync();
                     args.Handled = true;
                 },
                 (_, args) =>
@@ -102,12 +112,108 @@ namespace LogGrokX.Controls.ListControls
             ScheduleResetColumnsWidth();
         }
 
-        public void UpdateReadonlySelectedItems(IEnumerable<int> selectedIndices)
+        public void UpdateReadonlySelectedItems(IEnumerable<int> selectedIndices, long selectedCount)
         {
-            ReadonlySelectedItems =
-                selectedIndices
-                    .Where(index => index < Items.Count && index >= 0)
-                    .Select(index => Items[index]).ToList();
+            ReadonlySelectedCount = selectedCount;
+            ReadonlySelectedItems = selectedIndices
+                .Where(index => index < Items.Count && index >= 0)
+                .Select(index => Items[index]);
+        }
+
+        private async Task ToggleMarksAsync()
+        {
+            var cancellationToken = BeginSelectionOperation("ToggleMarks");
+            var bulkUpdates = new Dictionary<Selection, IDisposable>();
+            var rollbackStates = new Dictionary<Selection, MarkRollbackState>();
+            var changedCount = 0L;
+            try
+            {
+                var items = GetSelectedIndices().Select(index => Items[index]).OfType<ILineMark>();
+                var existsUnmarked = false;
+                await BulkSelection.ProcessAsync(items, item =>
+                {
+                    if (item.IsMarked)
+                        return;
+                    RecordChangedItem(item);
+                    item.IsMarked = true;
+                    existsUnmarked = true;
+                }, cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
+                if (!existsUnmarked)
+                {
+                    await BulkSelection.ProcessAsync(items, item =>
+                    {
+                        RecordChangedItem(item);
+                        item.IsMarked = !item.IsMarked;
+                    }, cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await RollbackMarksAsync();
+            }
+            finally
+            {
+                foreach (var update in bulkUpdates.Values)
+                    update.Dispose();
+                BulkOperations?.Complete(cancellationToken);
+            }
+
+            async Task RollbackMarksAsync()
+            {
+                if (changedCount == 0)
+                    return;
+                var rollbackToken = BeginSelectionOperation("RestoreMarks", changedCount);
+                var processed = 0L;
+                try
+                {
+                    await BulkSelection.ProcessAsync(rollbackStates.Values.AsEnumerable().Reverse(), state =>
+                    {
+                        state.Restore();
+                        processed += state.ChangedCount;
+                    }, rollbackToken, _ => BulkOperations?.Report(processed));
+                }
+                catch (OperationCanceledException) when (rollbackToken.IsCancellationRequested)
+                {
+                }
+                finally
+                {
+                    BulkOperations?.Complete(rollbackToken);
+                }
+            }
+
+            void RecordChangedItem(ILineMark item)
+            {
+                if (item is not BaseLogLineViewModel line)
+                    return;
+                if (!rollbackStates.TryGetValue(line.MarkedLines, out var state))
+                {
+                    state = new MarkRollbackState(line.MarkedLines);
+                    rollbackStates.Add(line.MarkedLines, state);
+                    bulkUpdates.Add(line.MarkedLines, line.MarkedLines.BeginBulkUpdate());
+                }
+                state.Record(line.Index);
+                changedCount++;
+            }
+        }
+
+        private sealed class MarkRollbackState(Selection markedLines)
+        {
+            private readonly Selection.SelectionSnapshot _original = markedLines.CaptureSnapshot();
+            private readonly List<(int Start, int End)> _changedRanges = new();
+
+            public long ChangedCount { get; private set; }
+
+            public void Record(int index)
+            {
+                if (_changedRanges.Count > 0 && _changedRanges[^1].End == index - 1)
+                    _changedRanges[^1] = (_changedRanges[^1].Start, index);
+                else
+                    _changedRanges.Add((index, index));
+                ChangedCount++;
+            }
+
+            public void Restore() => markedLines.Restore(_original,
+                Selection.SelectionSnapshot.FromRanges(_changedRanges));
         }
 
         public void PrepareItemContainer(ListViewItem container, object item)
@@ -152,6 +258,17 @@ namespace LogGrokX.Controls.ListControls
             GetPanel()?.BringIndexIntoViewPublic(lineNumber);
         }
 
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            if (e.Key == Key.A && Keyboard.Modifiers.HasFlag(ModifierKeys.Control) && GetPanel() is { } panel)
+            {
+                panel.SelectAll();
+                e.Handled = true;
+                return;
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
         protected override void OnKeyDown(KeyEventArgs e)
         {
             if (GetPanel()?.ProcessKeyDown(e.Key) == true)
@@ -171,6 +288,8 @@ namespace LogGrokX.Controls.ListControls
         }
         protected override void OnItemsChanged(NotifyCollectionChangedEventArgs e)
         {
+            if (e.Action == NotifyCollectionChangedAction.Reset && SelectedItems.Count > 0)
+                SelectedItems.Clear();
             base.OnItemsChanged(e);
 
             var panel = GetPanel();
@@ -205,6 +324,8 @@ namespace LogGrokX.Controls.ListControls
         }
         
         protected override IEnumerable<int> GetSelectedIndices() => GetPanel()?.SelectedIndices ?? Enumerable.Empty<int>();
+
+        protected override long GetSelectedCount() => GetPanel()?.SelectedCount ?? 0;
 
         protected override void OnTextInput(TextCompositionEventArgs e)
         {

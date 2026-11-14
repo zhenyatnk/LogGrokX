@@ -96,7 +96,8 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Time filter & timeline** — a minimap/timeline strip (top or bottom) to
   filter by time range (or line numbers when no timestamps are available) and to
   navigate through marked lines. Hovering the strip shows the timestamp under the
-  cursor (or the line number) with a vertical guide line.
+  cursor (or the line number) with a vertical guide line. Choose its placement or
+  hide it from the title-bar **View** menu.
 - **JSON/XML folding** — inline JSON and XML blobs and oversized strings are
   formatted and can be expanded/collapsed inline. Alt+click uses the original
   unformatted substring, and raw-source search matches are highlighted in the
@@ -111,15 +112,19 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Color rules** — highlight matching lines and text with rules in
   `appsettings.yaml`; colors adapt to the active theme.
 - **Marked lines** — mark interesting lines and browse them in a dedicated view.
-- **Text zoom** — scale log text with `Ctrl` + mouse wheel or `Ctrl` + `+`/`-`,
-  and reset with `Ctrl` + `0`; the size is persisted in `appsettings.yaml`.
+  Each file's group has its own **Clear all** button that removes list focus and
+  resets only its marks without triggering navigation during the update.
+  Arrow keys navigate to the current marked line without `Enter`.
+- **Text zoom** — scale log text with `Ctrl` + mouse wheel, `Ctrl` + `+`/`-` or
+  the title-bar **View → Text size** menu, and reset with `Ctrl` + `0`; the size
+  is persisted in `appsettings.yaml`.
 - **Centered navigation** — jumping to a search hit (including `F3`) or a marked
   line centers the target row in the grid.
 - **Thread grouping** — group consecutive visible lines that share the same
   `Thread` field, separated by subtle dividers and with the thread value dimmed
   on continuation rows. Rows of threads other than the current line are dimmed
-  and search results are limited to the current thread. Toggled from the title
-  bar and persisted in `appsettings.yaml`.
+  and search results are limited to the current thread. Toggled from the
+  title-bar **View** menu and persisted in `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.
 - **Base64 decoding** — rows with Base64 that decodes to readable UTF-8 text
@@ -148,26 +153,43 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   mappings and are imported/exported as JSON. Search, filters and indexes still
   work on the original values.
 - **XOR-masked logs** — transparently de-obfuscate XOR-encoded log files.
-- **Light & dark themes** — switch theme from the title bar; chrome, log colors
-  and search highlighting follow the active theme. The window uses solid theme
+- **Light & dark themes** — switch theme from the title-bar **View → Theme**
+  menu; chrome, log colors and search highlighting follow the active theme. The
+  window uses solid theme
   colors rather than the Windows 11 Mica material, which is incompatible with
   AvalonDock's auto-hide flyout.
 - **Crash dumps** — optional Windows Error Reporting local dumps for diagnostics.
 - **Support window** — version, commit, runtime/OS info and links to releases,
   issues and source, a manual update check, plus "copy diagnostics" and "open logs folder"
   (`?` button in the title bar).
-- **Automatic updates** — checks GitHub for a new release at most once a day,
-  shows a dialog with release notes and installs the update silently when the
-  app is closed. Modes: do not check, check, or install automatically (Settings, installer); a manual check
-  is available in the Support window. After an update is applied, a **What's new**
+- **Automatic updates** — checks GitHub for a new release at most once a day.
+  The title-bar indicator shows an available download, download progress or the
+  restart action; release notes are shown in a dialog when interactive checks are
+  enabled. Modes: do not check, check, or install automatically (Settings,
+  installer); a manual check is available in the Support window. Installation
+  runs silently when the app is closed, and restart after a downloaded update can
+  reopen the current log files. After an update is applied, a **What's new**
   window shows the release notes on the next launch.
 - **Multiple documents** — dockable tabs powered by AvalonDock. Open files from
   the command line or by drag & drop, and use the tab context menu to copy a
   path or file name or open the containing folder.
 - **Grid conveniences** — horizontal scrolling, auto-width columns, and
-  copy-as-displayed / copy-as-native for whole rows or single cells.
+  copy-as-displayed / copy-as-native for whole rows or single cells. Large
+  selections, including `Ctrl+A`, are stored as compact ranges and processed in
+  cancellable batches; operations longer than one second show a floating,
+  non-focusable progress card with localized operation titles and Cancel (also
+  available via `Esc`). Focus loss does not interrupt the operation or hide it.
+  Cancelling mark toggling restores rows already changed through a separate,
+  range-based rollback operation, which can also be cancelled and does not
+  retain a reference to every changed row. Closing a document cancels
+  its own list operations before the next row is fetched; merged operations are
+  cancelled when any source closes. Copying during a merged rebuild keeps reading
+  the original collection snapshot. Grid resets do not rematerialize all selected
+  rows. Cancelling a marked-lines refresh keeps the
+  previous published list intact.
+  Oversized clipboard text can be saved to a file instead.
 - **Settings** — a tabbed settings window (View, Profiles, Value mappings,
-  Debug), with Colors and Log formats grouped under Profiles. Most
+  Symbols, Debug), with Colors and Log formats grouped under Profiles. Most
   changes apply without a restart and mirror `appsettings.yaml`.
 - **Interface languages** — English, Russian, German, French, Spanish,
   Japanese, Polish and Brazilian Portuguese, plus a system-language option.
@@ -178,8 +200,8 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Merged files view** — combine several opened logs into one time-ordered grid.
   Columns are aligned across different log formats, rows are tinted per source,
   and search, time-range filtering, thread grouping, JSON folding and marking
-  all work as in a single document. Toggled from the title bar or Settings and
-  persisted in `appsettings.yaml`.
+  all work as in a single document. Toggled from the title-bar **View** menu or
+  Settings and enabled only for the current session.
 
 ### Feature guides
 
@@ -235,7 +257,7 @@ snippets for every feature live in [FEATURES.md](./FEATURES.md):
 
 ```powershell
 dotnet restore
-dotnet build --configuration Release
+dotnet build LogGrokX.sln --configuration Release
 ```
 
 The build output is written to `bin\Release\`. Run the application with:
@@ -250,7 +272,7 @@ The solution contains two test projects: `LogGrokX.Tests` and
 `LogGrokX.Data.Tests`.
 
 ```powershell
-dotnet test
+dotnet test LogGrokX.sln
 ```
 
 ## Benchmarks
@@ -288,6 +310,7 @@ the diagnostics block to the clipboard, or open the log folder at
 | -------------------- | ----------------------------------------------------------------- |
 | `LogGrokX`        | WPF application: views, view models, controls, theming.           |
 | `LogGrokX.Data`   | Platform-agnostic core: stream loading, line parsing, indexes, search, virtualization. |
+| `LogGrokX.Platform` | Platform-neutral service contracts and release DTOs, without WPF dependencies. |
 | `LogGrokX.Tests`  | Tests for the UI layer.                                           |
 | `LogGrokX.Data.Tests` | Tests for the core data layer.                                |
 | `LogGrokX.Benchmarks` | BenchmarkDotNet benchmarks for the core data layer.          |
@@ -340,8 +363,6 @@ Settings:
     GroupByThread: false
     # Draw horizontal separators between thread groups
     ShowThreadGroupSeparators: true
-    # Combine all open documents into one time-ordered grid
-    MergedFilesView: false
     # Binary data detection (BIN): DetectBinary turns it off completely,
     # the other keys select the kinds
     DetectBinary: true

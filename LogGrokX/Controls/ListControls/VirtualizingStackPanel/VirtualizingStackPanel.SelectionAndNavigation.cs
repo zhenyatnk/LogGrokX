@@ -70,7 +70,9 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
         private bool _keepSelectionOnCurrentPositionChange;
         private ScrollContentPresenter? _scrollContentPresenter;
 
-        public IEnumerable<int> SelectedIndices => _selection;
+        public IEnumerable<int> SelectedIndices => _selection.Snapshot();
+
+        public long SelectedCount => _selection.Count;
 
         public event Action? SelectionChanged;
         
@@ -78,6 +80,9 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
         {
             switch (key)
             {
+                case Key.A when Keyboard.Modifiers.HasFlag(ModifierKeys.Control):
+                    SelectAll();
+                    break;
                 case Key.Down when Keyboard.Modifiers.HasFlag(ModifierKeys.Shift):
                     ExpandSelectionDown();
                     break;
@@ -102,6 +107,15 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
             UpdateSelection();
             return true;
+        }
+
+        public void SelectAll()
+        {
+            if (Items.Count == 0)
+                _selection.Clear();
+            else
+                _selection.SetRange(0, Items.Count - 1);
+            UpdateSelection();
         }
 
         public bool ProcessMouseDown(MouseButton changedButton)

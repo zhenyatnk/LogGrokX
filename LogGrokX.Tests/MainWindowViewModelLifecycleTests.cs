@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using LogGrokX.AvalonDockExtensions;
 using LogGrokX.MarkedLines;
 using LogGrokX.Platform;
@@ -129,7 +130,7 @@ public class MainWindowViewModelLifecycleTests
 
     [TestMethod]
     [DoNotParallelize]
-    public void CycleTimeline_UpdatesBothViewsAndPersistsAllThreeStates()
+    public void TimelineCommands_UpdateBothViewsAndPersistAllThreeStates()
     {
         RunOnSta(() =>
         {
@@ -149,12 +150,15 @@ public class MainWindowViewModelLifecycleTests
                 Assert.IsTrue(merged.IsTimelineAtTop);
                 Assert.IsTrue(viewModel.IsTimelineVisible);
 
-                foreach (var (visible, dock) in new[]
+                foreach (var (command, visible, dock) in new[]
                 {
-                    (true, Dock.Bottom), (false, Dock.Bottom), (true, Dock.Top), (true, Dock.Bottom)
+                    (viewModel.ShowTimelineAtBottomCommand, true, Dock.Bottom),
+                    (viewModel.HideTimelineCommand, false, Dock.Bottom),
+                    (viewModel.ShowTimelineAtTopCommand, true, Dock.Top),
+                    (viewModel.ShowTimelineAtBottomCommand, true, Dock.Bottom)
                 })
                 {
-                    viewModel.CycleTimelineCommand.Execute(null);
+                    command.Execute(null);
                     Assert.AreEqual(visible, viewModel.IsTimelineVisible);
                     Assert.AreEqual(visible, log.IsTimelineVisible);
                     Assert.AreEqual(visible, merged.IsTimelineVisible);
@@ -309,7 +313,7 @@ public class MainWindowViewModelLifecycleTests
     private static WeakReference CreateAndDisposeMarkedLinesViewModel(
         ObservableCollection<DocumentViewModel> documents)
     {
-        var viewModel = new MarkedLinesViewModel(documents);
+        var viewModel = new MarkedLinesViewModel(documents, new BulkOperationService(new WpfUiDispatcher(Dispatcher.CurrentDispatcher)));
         viewModel.Dispose();
         return new WeakReference(viewModel);
     }

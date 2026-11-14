@@ -59,6 +59,7 @@ namespace LogGrokX.MergedView
         private int _scrollPosition = -1;
         private int _totalLineCount;
         private IEnumerable? _selectedItems;
+        private long _selectedCount;
         private IReadOnlyList<TimelineSegment> _timelineSegments = Array.Empty<TimelineSegment>();
 
         public MergedViewModel(ObservableCollection<DocumentViewModel> documents,
@@ -67,9 +68,9 @@ namespace LogGrokX.MergedView
             ApplicationSettings applicationSettings,
             ThreadGroupingService threadGroupingService,
             TimelinePlacementService timelinePlacementService, IColorValidator colorValidator, IUiDispatcher dispatcher,
-            IAppDialogs dialogs)
+            IAppDialogs dialogs, BulkOperationService bulkOperations)
             : this(documents, searchAutocompleteCache, savedSearchPatternStore, applicationSettings,
-                threadGroupingService, timelinePlacementService, BuildData, colorValidator, dispatcher, dialogs)
+                threadGroupingService, timelinePlacementService, BuildData, colorValidator, dispatcher, dialogs, bulkOperations)
         {
         }
 
@@ -80,9 +81,10 @@ namespace LogGrokX.MergedView
             ThreadGroupingService threadGroupingService,
             TimelinePlacementService timelinePlacementService,
             Func<MergedDocumentItem[], MergeSource[], CancellationToken, MergedDataSnapshot> buildData, IColorValidator colorValidator, IUiDispatcher dispatcher,
-            IAppDialogs dialogs)
+            IAppDialogs dialogs, BulkOperationService bulkOperations)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+            BulkOperations = bulkOperations ?? throw new ArgumentNullException(nameof(bulkOperations));
             _buildData = buildData;
             _documents = documents;
             _applicationSettings = applicationSettings;
@@ -122,12 +124,10 @@ namespace LogGrokX.MergedView
             });
 
             ExcludeCommand = DelegateCommand.Create(
-                (int fieldIndex) => _filterSettings.AddExclusions(
-                    MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex), GetComponentsInSelectedLines(fieldIndex)));
+                (int fieldIndex) => ExcludeSelectedComponents(fieldIndex, false));
 
             ExcludeAllButCommand = DelegateCommand.Create(
-                (int fieldIndex) => _filterSettings.ExcludeAllExcept(
-                    MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex), GetComponentsInSelectedLines(fieldIndex)));
+                (int fieldIndex) => ExcludeSelectedComponents(fieldIndex, true));
 
             ClearExclusionsCommand = new DelegateCommand(() => _filterSettings.ClearAllExclusions());
             RetryRebuildCommand = new DelegateCommand(ScheduleRebuild);
@@ -141,6 +141,8 @@ namespace LogGrokX.MergedView
             _documents.CollectionChanged += OnDocumentsChanged;
             SyncDocuments();
         }
+
+        public BulkOperationService BulkOperations { get; }
 
         public string Title => Strings.Get("MergedFiles");
 
@@ -206,14 +208,18 @@ namespace LogGrokX.MergedView
 
         public ICommand ExcludeAllButCommand { get; }
 
+        public long SelectedCount
+        {
+            get => _selectedCount;
+            set => SetAndRaiseIfChanged(ref _selectedCount, value);
+        }
+
         public IEnumerable? SelectedItems
         {
             get => _selectedItems;
             set
             {
                 if (_selectedItems == null && value == null) return;
-                if (_selectedItems != null && value != null &&
-                    _selectedItems.Cast<object>().SequenceEqual(value.Cast<object>())) return;
                 _selectedItems = value;
                 InvokePropertyChanged();
             }
@@ -378,6 +384,7 @@ namespace LogGrokX.MergedView
         public void Dispose()
         {
             _disposed = true;
+            CancelSelectionOperation();
             _rebuildPending = false;
             _requestVersion++;
             _rebuildCts?.Cancel();
@@ -420,6 +427,7 @@ namespace LogGrokX.MergedView
 
         private void OnDocumentsChanged(object? sender, EventArgs e)
         {
+            CancelSelectionOperation();
             SyncDocuments();
             ScheduleRebuild();
         }
@@ -661,11 +669,39 @@ namespace LogGrokX.MergedView
             InvokePropertyChanged(nameof(HaveExclusions));
         }
 
-        private IEnumerable<string> GetComponentsInSelectedLines(int fieldIndex)
+        private async void ExcludeSelectedComponents(int fieldIndex, bool excludeAllBut)
         {
-            var lines = SelectedItems?.OfType<MergedLineViewModel>() ?? Enumerable.Empty<MergedLineViewModel>();
-            return lines.Select(line => line[fieldIndex].OriginalText ?? string.Empty).Distinct();
+            var selectedItems = SelectedItems;
+            var cancellationToken = BeginSelectionOperation(excludeAllBut ? "ExcludeAllBut" : "Exclude");
+            try
+            {
+                var values = new List<string>();
+                var seen = new HashSet<string>();
+                await BulkSelection.ProcessAsync(
+                    selectedItems?.OfType<MergedLineViewModel>() ?? Enumerable.Empty<MergedLineViewModel>(), line =>
+                    {
+                        var value = line[fieldIndex].OriginalText ?? string.Empty;
+                        if (seen.Add(value))
+                            values.Add(value);
+                    }, cancellationToken, BulkOperations.Report);
+                var indexedFieldIndex = MetaInformation.GetIndexedFieldIndexByFieldIndex(fieldIndex);
+                if (excludeAllBut)
+                    _filterSettings.ExcludeAllExcept(indexedFieldIndex, values);
+                else
+                    _filterSettings.AddExclusions(indexedFieldIndex, values);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            finally
+            {
+                BulkOperations.Complete(cancellationToken);
+            }
         }
+
+        private CancellationToken BeginSelectionOperation(string titleKey) => BulkOperations.Begin(Strings.Get(titleKey), SelectedCount, this);
+
+        private void CancelSelectionOperation() => BulkOperations.Cancel(this);
 
         private (bool Active, double Lower, double Upper) CaptureRange() =>
             (TimeRangeFilter.IsAvailable && (TimeRangeFilter.LowerValue > TimeRangeFilter.Minimum ||

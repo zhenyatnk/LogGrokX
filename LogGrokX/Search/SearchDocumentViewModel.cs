@@ -44,6 +44,7 @@ namespace LogGrokX.Search
         private int _excludedThreadsSnapshotCount = -1;
         private int? _currentItemIndex;
         private IEnumerable<object>? _selectedItems;
+        private const int MaxSelectedMatchLines = 4096;
         private IReadOnlyList<int> _selectedMatchLines = Array.Empty<int>();
         private readonly LogModelFacade _logModelFacade;
         private readonly TimeIndex _timeIndex;
@@ -62,10 +63,11 @@ namespace LogGrokX.Search
             TransformationPerformer transformationPerformer,
             TimeIndex timeIndex,
             TextViewSharedFoldingState foldingState,
-            CurrentThreadFilter currentThreadFilter, DisplaySettingsMonitor displaySettings)
+            CurrentThreadFilter currentThreadFilter, DisplaySettingsMonitor displaySettings, BulkOperationService bulkOperations)
         {
             
             _displaySettings = displaySettings;
+            BulkOperations = bulkOperations ?? throw new ArgumentNullException(nameof(bulkOperations));
             _gridModel = gridModel;
             FoldingState = foldingState;
 
@@ -242,14 +244,16 @@ namespace LogGrokX.Search
             }
         }
 
+        public BulkOperationService BulkOperations { get; }
+
         public IEnumerable<object>? SelectedItems
         {
             get => _selectedItems;
             set
             {
                 _selectedItems = value;
-                SelectedMatchLines =
-                    value?.OfType<LineViewModel>().Select(line => line.Index).ToArray() ?? Array.Empty<int>();
+                SelectedMatchLines = value?.OfType<LineViewModel>().Select(line => line.Index)
+                    .Take(MaxSelectedMatchLines).ToArray() ?? Array.Empty<int>();
             }
         }
 
@@ -283,6 +287,7 @@ namespace LogGrokX.Search
         
         public void Dispose()
         {
+            BulkOperations.Cancel(this);
             _filterSettings.ExclusionsChanged -= UpdateLines;
             _filterSettings.TimeRangeChanged -= StartSearch;
             _filterSettings.LineRangeChanged -= StartSearch;

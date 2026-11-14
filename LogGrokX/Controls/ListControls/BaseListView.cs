@@ -1,14 +1,32 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using LogGrokX.Controls.TextRender;
+using LogGrokX.Localization;
+using Microsoft.Win32;
 
 namespace LogGrokX.Controls.ListControls
 {
     public abstract class BaseListView : System.Windows.Controls.ListView
     {
+        private CancellationTokenSource? _selectionOperationCancellation;
+
+        public static readonly DependencyProperty BulkOperationsProperty = DependencyProperty.Register(
+            nameof(BulkOperations), typeof(BulkOperationService), typeof(BaseListView));
+
+        public BulkOperationService? BulkOperations
+        {
+            get => (BulkOperationService?)GetValue(BulkOperationsProperty);
+            set => SetValue(BulkOperationsProperty, value);
+        }
+
         protected BaseListView()
         {
             CommandBindings.Add(new CommandBinding(RoutedCommands.CopyToClipboard,
@@ -31,31 +49,76 @@ namespace LogGrokX.Controls.ListControls
             args.CanExecute = GetSelectedIndices().Any();
             args.Handled = true;
         }
-               
-        private void CopySelectedItemsToClipboard(bool asDisplayed)
-        {
-            var indices = GetSelectedIndices();
-            
-            var items =  
-                indices
-                    .OrderBy(i => i)
-                    .Select(i => Items[i]);
-            
-            var foldingState = asDisplayed ? TextView.GetSharedFoldingState(this) : null;
-            var  text = new StringBuilder();
-            foreach (var line in items)
-            {
-                var lineText = asDisplayed && line is BaseLogLineViewModel viewModel
-                    ? viewModel.GetDisplayText(foldingState)
-                    : line.ToString();
-                _ = text.Append(lineText?.TrimEnd());
-                _ = text.Append("\r\n");
-            }
-            _ = text.Replace("\0", string.Empty);
 
-            TextCopy.ClipboardService.SetText(text.ToString());
+        private async void CopySelectedItemsToClipboard(bool asDisplayed)
+        {
+            IList items = ItemsSource is GrowingLogLinesCollection growingLines ? growingLines.CreateSnapshot() : Items;
+            var selectedItems = GetSelectedIndices().Where(index => index >= 0 && index < items.Count)
+                .Select(index => items[index]!);
+            var foldingState = asDisplayed ? TextView.GetSharedFoldingState(this) : null;
+            var lines = selectedItems.Select(item => asDisplayed && item is BaseLogLineViewModel viewModel
+                ? viewModel.GetDisplayText(foldingState)
+                : item.ToString());
+            await CopyLinesWithFallbackAsync(lines);
+        }
+
+        protected async Task CopyLinesWithFallbackAsync(IEnumerable<string?> lines)
+        {
+            var cancellationToken = BeginSelectionOperation("Copy");
+            try
+            {
+                var result = await BulkSelection.CopyAsync(lines,
+                    text => TextCopy.ClipboardService.SetText(text), cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
+                if (result == BulkCopyResult.Copied)
+                    return;
+
+                var dialog = new SaveFileDialog
+                {
+                    Title = Strings.Get("SaveSelection"),
+                    Filter = Strings.Get("TextFilesFilter"),
+                    DefaultExt = ".txt",
+                    FileName = "selection.txt"
+                };
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+                    await BulkSelection.SaveAsync(lines, dialog.FileName, cancellationToken, BulkOperations is null ? null : BulkOperations.Report);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                MessageBox.Show(Window.GetWindow(this), Strings.Format("SelectionSaveFailed", e.Message),
+                    Strings.Get("SaveSelection"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                BulkOperations?.Complete(cancellationToken);
+            }
+        }
+
+        protected CancellationToken BeginSelectionOperation(string titleKey, long? total = null)
+        {
+            if (BulkOperations != null)
+                return BulkOperations.Begin(Strings.Get(titleKey), total ?? GetSelectedCount(), DataContext ?? this);
+            CancelSelectionOperations();
+            _selectionOperationCancellation = new CancellationTokenSource();
+            return _selectionOperationCancellation.Token;
+        }
+
+        protected void CancelSelectionOperations()
+        {
+            if (BulkOperations != null)
+            {
+                BulkOperations.Cancel(this);
+                return;
+            }
+            _selectionOperationCancellation?.Cancel();
+            _selectionOperationCancellation?.Dispose();
+            _selectionOperationCancellation = null;
         }
 
         protected abstract IEnumerable<int> GetSelectedIndices();
+
+        protected abstract long GetSelectedCount();
     }
 }

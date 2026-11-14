@@ -119,6 +119,8 @@
                                     SelectionMode="Extended"
                                     ReadonlySelectedItems="{Binding SelectedItems,
                                                             Mode=OneWayToSource}"
+                                    ReadonlySelectedCount="{Binding SelectedCount, Mode=OneWayToSource}"
+                                    BulkOperations="{Binding BulkOperations}"
                                     View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"
                                     ItemContainerStyle="{StaticResource LogGridItemContainerStyle}"
                                     ScrollViewer.VerticalScrollBarVisibility="Visible"

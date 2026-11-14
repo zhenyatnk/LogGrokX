@@ -47,6 +47,7 @@
                                ItemContainerStyle="{StaticResource ItemContainerStyle}"
                                ItemsSource="{Binding Lines}"
                                ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
+                               BulkOperations="{Binding BulkOperations}"
                                FontFamily="{StaticResource JetBrainsMono}"
                                FontSize="{DynamicResource LogFontSize}"
                                View="{Binding CustomView, Converter={StaticResource LogGridViewConverter}}"

@@ -57,6 +57,10 @@ loading (`LoaderBenchmark`) and the merge core (`MergeBenchmark`:
 The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
 **AvalonDock 5** for docking. Branding/window title is **LogGrokX** plus the
 build version: `BuildInfo.Version` (release `-p:Version`, default `0.0`).
+Beside the profile selector, the title bar keeps **Open**, **View**,
+**Settings** and **Support**, plus the conditional update indicator. The View
+menu contains text zoom, explicit timeline placement/visibility, thread
+grouping, merged view and light/dark theme selection.
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
 JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
@@ -64,7 +68,7 @@ JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
 `TextModel` builds collapsible line ranges from braces (JSON) or
 `GetXmlElementRanges` (XML). XML is recognized only when the root element has
 child elements, so text like `List<int>` or `<br/>` stays plain (#49).
-Thread grouping is driven by `ThreadGroupingService` (toggled from the title bar,
+Thread grouping is driven by `ThreadGroupingService` (toggled from the title-bar View menu,
 persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Controls/ListControls/BaseLogListViewItem`, computed by
@@ -104,7 +108,7 @@ a hover readout). Hovering shows a vertical guide line plus the timestamp under
 the cursor (or `Line N` in line-number mode) drawn directly in the canvas via
 `DrawHoverTime`/`GetHoverText`, so it does not use a WPF `ToolTip`. Placement is
 controlled by `TimelinePlacementService` and persisted as
-`ViewSettings.TimelineAtTop`.
+`ViewSettings.TimelineAtTop` and `ViewSettings.TimelineVisible`.
 
 The **merged files view** combines several opened documents into one
 time-ordered grid and lives in `MergedView/`: `MergedViewModel` owns the merge,
@@ -113,7 +117,7 @@ parsed lines; `MergedSchema`/`MergedComponentIndexer` align columns across
 formats; `MergedSearchDocumentViewModel` and `MergedTimeRangeFilterViewModel`
 mirror the single-log search and time-range panes; `MergedViewPalette` supplies
 per-source colors; `MergedLineViewModel`/`ListItemProvider` adapt merged rows to
-the grid. The view is toggled by `MergedFilesViewService` (title bar / Settings,
+the grid. The view is toggled by `MergedFilesViewService` (title-bar View menu / Settings,
 enabled only for the current session) and rendered by
 `Styles/MergedViewTemplate.xaml`. Cross-format rules: identical column names are
 aligned case-insensitively, plain-text/unrecognized lines put the whole line into
@@ -163,8 +167,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `Theming/UiThemeService.cs`. Reference `DynamicResource` brushes
   (`ApplicationBackgroundBrush`, `TextFillColorPrimaryBrush`,
   `ControlStrokeColorDefaultBrush`, …) instead of hard-coded colors so both
-  themes work. WPF-UI ships *keyed* styles (e.g. `UiGridViewColumnHeaderStyle`),
-  so implicit styles are not always picked up — define overrides explicitly in
+  themes work. `ToolbarButtonStyle` sets `Foreground` and `PressedForeground`
+  directly to `TextFillColorPrimaryBrush`: the generic `ButtonForeground` can
+  remain from the previous theme during startup and make title-bar icons dark.
+  WPF-UI ships *keyed* styles (e.g. `UiGridViewColumnHeaderStyle`), so implicit
+  styles are not always picked up — define overrides explicitly in
   `Bootstrap/App.xaml`.
 - **Window backdrop**: keep `WindowBackdropType="None"` on every `FluentWindow`
   (`MainWindow`, `SupportWindow`, `SettingsWindow`) and `WindowBackdropType.None`
@@ -261,6 +268,79 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   -> `LogMinimapControl.MatchLines` (merged view binds
   `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
+- **Large selections**: `Controls/Selection` stores normalized, merged ranges
+  instead of one `HashSet` entry per line and raises `Changed` only for actual
+  changes. `Snapshot()` is ordered and independent of later edits. The panel
+  passes snapshots to `ListView.UpdateReadonlySelectedItems`, which exposes a
+  deferred enumerable; never add `.ToList()`, `.OrderBy()` or `SequenceEqual`
+  over the whole selection on the UI thread. Copy captures
+  `GrowingLogLinesCollection.CreateSnapshot()` first, retaining the old virtual
+  lists across a merged `Lines.Reset` without materializing the selected rows.
+  Copy, marking and selected-value
+  filtering use `BulkSelection` batches with explicit cancellation. Enumeration
+  checks the token before every `MoveNext`, so a closed document cannot fetch
+  the next row from an already released provider before cancellation is seen.
+  `Ctrl+A` is intercepted in `ListView.OnPreviewKeyDown` and handled by
+  `VirtualizingStackPanel.SelectAll` as one range before the base WPF `ListBox`
+  `SelectAllCommand` can enumerate the collection. `ListView.OnItemsChanged`
+  clears WPF selection before a reset, matching the panel's own source-change
+  reset; otherwise `Selector.LocateSelectedItems` materializes every selected
+  row while a merged snapshot is being replaced.
+  Clipboard text is capped at `BulkSelection.MaxClipboardCharacters`; larger
+  selections can be saved to a file in batches. Search timelines show at most
+  4096 selected matches. `BulkOperationService` is a singleton shared by the
+  main window, documents and controls: a non-focusable floating card over the
+  top-right of the document area shows title, progress and processed/total
+  counts with Cancel. Its margin keeps it below the column headers and clear
+  of the scrollbar; `ApplicationBackgroundBrush` makes the card opaque. The
+  fixed-width counter column prevents resizing as numbers change. A separate
+  bottom row stretches the progress bar to 12 px before the Cancel button,
+  independently of the counter width. It appears only after `IndicatorDelay` (one second), so
+  short operations do not change the UI; `Esc` cancels an active operation
+  without moving keyboard focus. Operation titles use `Strings`: `ToggleMarks`
+  changes the selection, then `UpdateMarkedLines` publishes the marked-lines
+  pane after its bulk update is disposed. Batches report every 128 items; starting
+  an operation cancels the previous one and stale completion cannot hide a newer
+  one. Batches yield through `BulkSelection.YieldToUiAsync`, which resumes at
+  `DispatcherPriority.Background` (falling back to `Task.Yield` off the UI
+  thread): a plain `Task.Yield` resumes at `Normal` priority and starves the
+  `DataBind`/`Render` work, so the progress bar would not repaint and the Cancel
+  button would not react on large documents. Focus loss, view unloading and
+  selection changes never cancel an operation or hide its card. Cancellation is
+  explicit (Cancel/`Esc`), or implicit when an operation is replaced or its
+  owner is disposed. `BaseListView` uses its `DataContext` as the operation
+  owner (falling back to itself), so disposing the document/search/merged view
+  model cancels the matching list operation without cancelling other documents.
+  `MergedViewModel.OnDocumentsChanged` also cancels its selection operation
+  before synchronizing sources, because closing a source does not dispose the
+  merged view itself and its rows may reference the released document.
+  Mark toggling uses `Selection.BeginBulkUpdate()` per document and compact
+  snapshots of changed ranges, not one reference per changed row. Cancelling it
+  starts `RestoreMarks`: `Selection.Restore` intersects the original and changed
+  ranges and subtracts them from the current ranges, so unrelated edits made
+  during the operation survive. Rollback runs in reverse document batches and
+  can be cancelled without finishing the remaining documents. A single
+  contiguous document restores in O(ranges), without a second per-row pass.
+  Both operations report progress and use localized titles.
+  `DocumentViewModel.MarkedLineViewModels` is deferred and
+  `MarkedLinesViewModel.UpdateLinesCollection` builds a replacement in
+  cancellable batches, reusing unchanged rows, and publishes it in one
+  `MarkedLines` property change. Cancellation leaves the original collection
+  and selection untouched instead of exposing a partially updated list.
+  The marked-lines pane groups rows by document through a `CollectionViewSource`
+  in `Styles/MarkedLinesViewTemplate.xaml`; WPF disables item virtualization as
+  soon as grouping is on unless `VirtualizingPanel.IsVirtualizingWhenGrouping`
+  is set (with `ScrollViewer.CanContentScroll`), so that attribute is required
+  there — without it opening the pane with many marked lines realizes every row
+  container at once and freezes the UI. Each document group header has a
+  localized Clear all button bound to `MarkedLinesListView.ClearDocumentMarksCommand`;
+  it clears keyboard focus, then clears only that document and coalesces the
+  resulting pane refresh into one update. `BaseLogListViewItem.IsCurrentItem`
+  raises `ItemActivated`, so arrow navigation follows the current row. During
+  collection synchronization `MarkedLinesViewModel` suppresses immediate
+  activation and `MarkedLinesListView` suppresses deferred activation through
+  the next layout pass, preventing navigation and reentrant layout while rows
+  disappear. Explicit mouse input and `Enter` also activate a row.
 - **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
   cell value (whole value, optionally quoted, from 8 chars; fragments from 16
   chars; standard or URL-safe alphabet) and accepts it only if it decodes to

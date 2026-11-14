@@ -33,7 +33,7 @@ namespace LogGrokX
         public DocumentContainer(string fileName, ProfileSettings profile, ApplicationSettings applicationSettings,
             SearchAutocompleteCache autocompleteCache, SavedSearchPatternStore savedSearchPatternStore,
             TimelinePlacementService timelinePlacementService, ThreadGroupingService threadGroupingService, IUiDispatcher dispatcher, IDesktopService desktop,
-            IAppDialogs dialogs, IColorValidator colorValidator, DisplaySettingsMonitor displaySettings)
+            IAppDialogs dialogs, IColorValidator colorValidator, DisplaySettingsMonitor displaySettings, BulkOperationService bulkOperations)
         {
             ArgumentNullException.ThrowIfNull(dispatcher);
             ArgumentNullException.ThrowIfNull(desktop);
@@ -53,6 +53,7 @@ namespace LogGrokX
             _container.RegisterInstance<IDesktopService>(desktop);
             _container.RegisterInstance(dialogs);
             _container.RegisterInstance(displaySettings, setup: Setup.With(preventDisposal: true));
+            _container.RegisterInstance(bulkOperations);
             _container.RegisterInstance(autocompleteCache);
             _container.RegisterInstance(savedSearchPatternStore);
             _container.RegisterInstance(timelinePlacementService);
@@ -139,7 +140,7 @@ namespace LogGrokX
                     var currentThreadFilter = r.Resolve<CurrentThreadFilter>();
                     return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, gridModel, pattern,
                         markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState,
-                        currentThreadFilter, displaySettings);
+                        currentThreadFilter, displaySettings, bulkOperations);
                 });
             
             // view

@@ -8,11 +8,11 @@ and shows the relevant configuration or core API with a ready-to-adapt snippet.
 > demo logs** (`demo-app.log`, `demo-worker.log`, `demo-xor.log`), not real
 > product traces. The demo files live in [`assets/demo`](./assets/demo) and can
 > be regenerated from the scenario script. Most images are 1920×1080 (Full HD);
-> settings windows and detail views use a tighter crop for readability. Older
-> feature screenshots remain where the workflow is unchanged; the overview,
-> language and profile screenshots show the current interface.
+> settings windows and detail views use a tighter crop for readability. Feature
+> screenshots illustrate the workflows; the title bar now groups view-related
+> tools under **View**, as described below.
 
-![Current interface with the profile selector and title-bar tools](assets/images/feature-overview.png)
+![Log grid with the profile selector and title-bar tools](assets/images/feature-overview.png)
 
 ## Table of contents
 
@@ -256,9 +256,11 @@ if (timeline.FindLineRange(fromTicks, toTicks) is { } window)
 
 `TimeIndex` normalizes day-less timestamps (rolling them over midnight) and uses
 binary search for `FindLineRange`; it is shared by the single-log and merged
-timelines. The placement is persisted as `ViewSettings.TimelineAtTop`. The hover
-readout is drawn in `Controls/LogMinimapControl.cs` (`DrawHoverTime` /
-`GetHoverText`) using `TimeIndex.GetTicksAt` and `TimestampParser.Format`.
+timelines. Placement and visibility are selected in the title-bar **View →
+Timeline** menu and persisted as `ViewSettings.TimelineAtTop` and
+`ViewSettings.TimelineVisible`. The hover readout is drawn in
+`Controls/LogMinimapControl.cs` (`DrawHoverTime` / `GetHoverText`) using
+`TimeIndex.GetTicksAt` and `TimestampParser.Format`.
 
 ## 📦 JSON/XML folding
 
@@ -365,8 +367,11 @@ the evidence can be revisited, copied or compared without repeating the search.
 
 ![Pinned lines, also marked on the timeline](assets/images/feature-marked-lines-detail.png)
 
-Marked lines are browsed from the dedicated "Marked lines" view; jumping to a
-marked line centers the target row in the grid (see
+Marked lines are browsed from the dedicated "Marked lines" view. Every file
+group has a **Clear all** button that removes focus from the list and resets
+marks only for that file, without triggering navigation as rows disappear.
+Arrow keys still navigate to the current marked line without pressing `Enter`.
+Jumping to a marked line centers the target row in the grid (see
 [Centered navigation](#-centered-navigation)), and the marks also appear on the
 timeline strip.
 
@@ -391,6 +396,7 @@ zoom.SetFontSize(14);
 Console.WriteLine($"Current log font size: {zoom.FontSize}");
 ```
 
+The same commands are available in the title-bar **View → Text size** menu.
 `TextZoomService` clamps the size between its min/max, raises `Changed`, and
 persists the value as `ViewSettings.LogFontSize`.
 
@@ -413,7 +419,7 @@ rather than to the top edge.
 **Business value.** Interleaved log lines from many worker threads are hard to
 follow. Thread grouping collapses consecutive visible lines that share the same
 `Thread` value, dims the repeated thread value on continuation rows, and adds
-subtle dividers. Toggled from the title bar and persisted.
+subtle dividers. Toggled from the title-bar **View** menu and persisted.
 
 ![Thread grouping enabled](assets/images/feature-thread-grouping.png)
 
@@ -565,8 +571,8 @@ detection** it can be switched off completely (**Detect binary data (BIN)**) or
 per kind: **PEM blocks, certificates and keys** (PEM blocks plus Base64 DER
 certificates, public keys and CryptoAPI key blobs), **Base64 text** and **HEX**.
 A disabled kind is not detected, so it does not show the `BIN` toggle or its
-**Decode …** context menu item. The choice is applied to lines shown after
-saving; reopen the log to apply it to every line.
+**Decode …** context menu item. Saving the choice refreshes already open and
+newly shown rows immediately; reopening the log is not required.
 
 ```yaml
   ViewSettings:
@@ -671,8 +677,9 @@ mapping is escaped, and if the fragment would no longer be the same JSON/XML it
 is left unchanged, so folding keeps working. JSON comments written by mappings
 are tolerated from `JsonCommentHandling.Skip` and preserved when the fragment is
 formatted and folded. Mappings change only what is displayed (and copied):
-search, filters, color rules and indexes work on the original values. Changes
-apply to lines shown after saving; reopen the log to apply them to every line.
+search, filters, color rules and indexes work on the original values. Saving
+changes refreshes already open and newly shown rows immediately; reopening the
+log is not required.
 
 ```yaml
   ValueMappings:
@@ -796,6 +803,24 @@ navigation comfortable:
 - **Copy** — `Ctrl+C` copies the selected lines as displayed (after any textual
   transformation, Base64/HEX decoding or value mapping); the per-cell context
   menu offers **Copy** and **Copy as native** (the original, undecoded value).
+  Large selections, including `Ctrl+A`, use compact ranges and cancellable
+  batches with a non-focusable floating progress card instead of materializing
+  every selected row. The card appears after one second, can be cancelled with
+  its button or `Esc`, and never appears for short operations. Focus loss and
+  selection changes do not interrupt the operation or hide the card. Cancelling
+  mark toggling rolls back rows already changed using compact range snapshots
+  rather than per-row references; unrelated edits survive. The rollback is another
+  cancellable batch operation and stops promptly when cancelled too. Cancelling
+  a marked-lines pane refresh preserves the previous published list atomically.
+  Closing a document cancels its own list operations before the next row is
+  fetched from the released provider; closing a merged source also cancels the
+  active merged operation. Copying during a merged rebuild reads a retained
+  collection snapshot instead of the replacing grid source. Grid resets clear
+  WPF selection before locating selected rows, avoiding full materialization.
+  Operation titles
+  are localized, with separate labels for toggling marks and refreshing the
+  marked-lines pane. Text above the clipboard limit can be saved
+  to a file in batches, without building the whole file in memory.
 - **Centered, keyboard-driven navigation** — arrow keys move the current line,
   `F3`/`Shift+F3` step through search hits, all centering the target row (see
   [Centered navigation](#-centered-navigation)).
@@ -813,10 +838,11 @@ The Settings window is organised into tabs:
 
 | Tab | Contents |
 | --- | --- |
-| **View** | Interface language, text size, thread grouping and separators, timeline placement and visibility, merged view, binary detection, big lines, update mode. |
+| **View** | Interface language, accent color, text size, thread grouping and separators, timeline placement and visibility, merged view, binary detection, big lines, update mode and title-bar update indicator. |
 | **Profiles → Colors** | Named profiles and their foreground/background color rules. |
 | **Profiles → Log formats** | Each profile's regular expressions, indexed fields, transformations, time parsing and XOR mask. |
 | **Value mappings** | The mapping lists and their JSON import/export. |
+| **Symbols** | Symbol and source paths, cache and source-server command policy. |
 | **Debug** | Crash dumps and diagnostics. |
 
 ![Settings — Colors tab](assets/images/feature-settings-colors.png)
@@ -842,10 +868,11 @@ mapping item, and focuses the field (a grid cell is opened for editing).
 Clicking an item in the list of proposed fixes applies only that fix, refreshes
 both lists and focuses the repaired field.
 
-The title bar groups file opening, text zoom, timeline placement, thread
-grouping, merged view, theme, support and settings tools beside the profile
-selector. Hover an icon for its tooltip. The timeline button cycles through
-top, bottom and hidden. Search is available with `Ctrl+F`, `Ctrl+L` or `Alt+D`:
+Beside the profile selector, the title bar keeps **Open**, **View**,
+**Settings** and **Support**, plus the update indicator when it is active.
+**View** contains text zoom, explicit timeline states (top, bottom and hidden),
+thread grouping, merged view and light/dark theme selection. Search is available
+with `Ctrl+F`, `Ctrl+L` or `Alt+D`:
 the editor receives focus and selects its text. `Alt+X` clears the active search
 without explicitly moving focus, and `F3` / `Shift+F3` navigate the matches.
 
@@ -948,9 +975,12 @@ if (themeService.IsDark)
     Console.WriteLine($"Active theme: {themeService.CurrentTheme}");
 ```
 
-The selected theme is stored in `%LOCALAPPDATA%\LogGrokX\Data\Theme.json` and
-re-applied on startup by `UiThemeService.ApplySavedTheme`. Reference
-`DynamicResource` brushes in custom styles so both themes keep working.
+Select **View → Theme → Light** or **Dark** in the title bar. The selected
+theme is stored in `%LOCALAPPDATA%\LogGrokX\Data\Theme.json` and re-applied on
+startup by `UiThemeService.ApplySavedTheme`. Reference `DynamicResource` brushes
+in custom styles so both themes keep working. Toolbar buttons use
+`TextFillColorPrimaryBrush` directly, so their icons also have the correct color
+on the first frame after restoring a dark theme.
 
 ## 🩺 Crash dumps
 
@@ -1023,8 +1053,9 @@ if (timeline.FindLineRange(fromTicks, toTicks) is { } window)
 
 `MergedLineOrder.Build` performs a k-way merge with a priority queue, so the cost
 is proportional to the number of lines rather than the number of sources. The
-view is toggled by `MergedFilesViewService` and persisted as
-`ViewSettings.MergedFilesView`.
+view is toggled from the title-bar **View** menu or Settings by
+`MergedFilesViewService`. It is enabled only for the current session and is not
+restored from `appsettings.yaml` after a restart.
 
 ## 🔄 Automatic updates
 
@@ -1032,14 +1063,21 @@ view is toggled by `MergedFilesViewService` and persisted as
 checks for a newer release at most once a day and, with one click, installs it
 silently when the application is closed.
 
-- On startup (and hourly while running) the app asks the GitHub
-  `releases/latest` API for the newest version, but no more than once every
-  24 hours.
-- If a newer version exists, the **Update available** dialog shows the release
-  notes with **Update**, **Later** and **Skip this version**.
-- **Update** downloads the installer for the current architecture, verifies it
-  against `SHA256SUMS.txt`, and runs it in silent mode after LogGrokX exits.
-  Program Files installs ask for UAC elevation.
+- On startup (and hourly while running) the app resolves the newest tag from the
+  redirect of the GitHub `releases/latest` web page, but no more than once every
+  24 hours. For a newer, non-skipped version it requests release notes and assets
+  from the tag API; rate limits fall back to the well-known asset URLs.
+- The title-bar indicator shows **Update to …**, download progress or
+  **Restart: …**. It can be hidden with **Settings → View → Update indicator in
+  title bar** without disabling checks or downloads. An available version is
+  remembered across restarts until it is installed or skipped.
+- With interactive checks, the **Update available** dialog shows release notes
+  with **Update**, **Later** and **Skip this version**.
+- **Update** downloads the installer for the current architecture and verifies it
+  against `SHA256SUMS.txt`. The ready indicator saves the open log list and
+  restarts the app; installation runs silently after LogGrokX exits and the logs
+  are reopened. Ordinary exit retains install-on-close behaviour. Program Files
+  installs ask for UAC elevation.
 - Portable builds cannot self-update: the button opens the release page instead.
 - **Check for updates** in the Support window runs a check right away, ignoring
   the daily limit and skipped versions.

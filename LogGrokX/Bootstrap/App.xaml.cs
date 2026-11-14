@@ -98,6 +98,7 @@ namespace LogGrokX.Bootstrap
         {
             container.RegisterDelegate(ApplicationSettings.Instance);
             container.Register<MainWindowViewModel>(Reuse.Singleton);
+            container.Register<BulkOperationService>(Reuse.Singleton);
             container.Register<SearchAutocompleteCache>(Reuse.Singleton); 
             container.Register<SavedSearchPatternStore>(Reuse.Singleton);
             container.RegisterInstance<IUiDispatcher>(dispatcher);

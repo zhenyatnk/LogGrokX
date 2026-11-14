@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>Требуется перезапуск</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>Восстановление отметок</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>Среда выполнения</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>Ошибка обновления: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>Обновление отмеченных строк</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>LogGrokX {0} будет установлен автоматически после закрытия приложения.</value>
@@ -899,5 +905,32 @@
   </data>
   <data name="RestoreSavedSearch" xml:space="preserve">
     <value>Восстановить поиск</value>
+  </data>
+  <data xml:space="preserve" name="TextSize">
+    <value>Размер текста</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottom">
+    <value>Снизу</value>
+  </data>
+  <data xml:space="preserve" name="TimelineHidden">
+    <value>Скрыта</value>
+  </data>
+  <data xml:space="preserve" name="Theme">
+    <value>Тема</value>
+  </data>
+  <data xml:space="preserve" name="LightTheme">
+    <value>Светлая</value>
+  </data>
+  <data xml:space="preserve" name="DarkTheme">
+    <value>Тёмная</value>
+  </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>Сохранить выделение</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>Не удалось сохранить выбранные строки: {0}</value>
   </data>
 </root>

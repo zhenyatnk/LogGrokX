@@ -504,6 +504,9 @@
   <data xml:space="preserve" name="RestartRequired">
     <value>Reinicialização necessária</value>
   </data>
+  <data xml:space="preserve" name="RestoreMarks">
+    <value>Restaurar marcações</value>
+  </data>
   <data xml:space="preserve" name="Runtime">
     <value>Ambiente de execução</value>
   </data>
@@ -644,6 +647,9 @@
   </data>
   <data xml:space="preserve" name="UpdateFailed">
     <value>Falha na atualização: {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateMarkedLines">
+    <value>Atualizar linhas marcadas</value>
   </data>
   <data xml:space="preserve" name="UpdateReady">
     <value>LogGrokX {0} será instalado automaticamente ao fechar o aplicativo.</value>
@@ -899,5 +905,32 @@
   </data>
   <data name="RestoreSavedSearch" xml:space="preserve">
     <value>Restaurar pesquisa</value>
+  </data>
+  <data xml:space="preserve" name="TextSize">
+    <value>Tamanho do texto</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottom">
+    <value>Na parte inferior</value>
+  </data>
+  <data xml:space="preserve" name="TimelineHidden">
+    <value>Oculta</value>
+  </data>
+  <data xml:space="preserve" name="Theme">
+    <value>Tema</value>
+  </data>
+  <data xml:space="preserve" name="LightTheme">
+    <value>Claro</value>
+  </data>
+  <data xml:space="preserve" name="DarkTheme">
+    <value>Escuro</value>
+  </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>Salvar seleção</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>Arquivos de texto (*.txt)|*.txt|Todos os arquivos (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>Não foi possível salvar as linhas selecionadas: {0}</value>
   </data>
 </root>

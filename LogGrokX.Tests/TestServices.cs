@@ -24,11 +24,12 @@ internal static class TestServices
         if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
             throw new InvalidOperationException("UI fixtures require an STA thread.");
         var dispatcher = new WpfUiDispatcher(Dispatcher.CurrentDispatcher);
+        var bulkOperations = new BulkOperationService(dispatcher);
         return new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
             new ThreadGroupingService(settings), new MergedFilesViewService(), Dialogs,
-            documents => new MarkedLinesViewModel(documents), new WpfColorValidator(), dispatcher, Desktop,
-            new DisplaySettingsMonitor(dispatcher), new UpdateIndicatorService(settings), updates ?? Updates);
+            documents => new MarkedLinesViewModel(documents, bulkOperations), new WpfColorValidator(), dispatcher, Desktop,
+            new DisplaySettingsMonitor(dispatcher), new UpdateIndicatorService(settings), updates ?? Updates, bulkOperations);
     }
 
     private sealed class DesktopStub : IDesktopService
