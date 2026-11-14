@@ -900,4 +900,22 @@
   <data name="RestoreSavedSearch" xml:space="preserve">
     <value>検索を復元</value>
   </data>
+  <data xml:space="preserve" name="TextSize">
+    <value>文字サイズ</value>
+  </data>
+  <data xml:space="preserve" name="TimelineBottom">
+    <value>下部</value>
+  </data>
+  <data xml:space="preserve" name="TimelineHidden">
+    <value>非表示</value>
+  </data>
+  <data xml:space="preserve" name="Theme">
+    <value>テーマ</value>
+  </data>
+  <data xml:space="preserve" name="LightTheme">
+    <value>ライト</value>
+  </data>
+  <data xml:space="preserve" name="DarkTheme">
+    <value>ダーク</value>
+  </data>
 </root>

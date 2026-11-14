@@ -64,7 +64,7 @@ JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
 `TextModel` builds collapsible line ranges from braces (JSON) or
 `GetXmlElementRanges` (XML). XML is recognized only when the root element has
 child elements, so text like `List<int>` or `<br/>` stays plain (#49).
-Thread grouping is driven by `ThreadGroupingService` (toggled from the title bar,
+Thread grouping is driven by `ThreadGroupingService` (toggled from the title-bar View menu,
 persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on
 `Controls/ListControls/BaseLogListViewItem`, computed by
@@ -113,7 +113,7 @@ parsed lines; `MergedSchema`/`MergedComponentIndexer` align columns across
 formats; `MergedSearchDocumentViewModel` and `MergedTimeRangeFilterViewModel`
 mirror the single-log search and time-range panes; `MergedViewPalette` supplies
 per-source colors; `MergedLineViewModel`/`ListItemProvider` adapt merged rows to
-the grid. The view is toggled by `MergedFilesViewService` (title bar / Settings,
+the grid. The view is toggled by `MergedFilesViewService` (title-bar View menu / Settings,
 enabled only for the current session) and rendered by
 `Styles/MergedViewTemplate.xaml`. Cross-format rules: identical column names are
 aligned case-insensitively, plain-text/unrecognized lines put the whole line into

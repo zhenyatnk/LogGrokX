@@ -104,8 +104,11 @@ namespace LogGrokX
             _applicationSettings.ProfilesChanged += OnProfilesChanged;
             OpenSettings = new DelegateCommand(OpenSettingsWindow);
             OpenSupportCommand = new DelegateCommand(OpenSupport);
-            ToggleThemeCommand = new DelegateCommand(ToggleTheme);
-            CycleTimelineCommand = new DelegateCommand(_timelinePlacementService.CyclePlacement);
+            SetLightThemeCommand = new DelegateCommand(() => SetTheme(false));
+            SetDarkThemeCommand = new DelegateCommand(() => SetTheme(true));
+            ShowTimelineAtTopCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(true, true));
+            ShowTimelineAtBottomCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(false, true));
+            HideTimelineCommand = new DelegateCommand(() => _timelinePlacementService.SetPlacement(_timelinePlacementService.IsAtTop, false));
             ZoomInCommand = new DelegateCommand(() => _textZoomService.Increase());
             ZoomOutCommand = new DelegateCommand(() => _textZoomService.Decrease());
             ResetZoomCommand = new DelegateCommand(() => _textZoomService.Reset());
@@ -248,9 +251,15 @@ namespace LogGrokX
 
         public ICommand OpenSupportCommand { get; }
 
-        public ICommand ToggleThemeCommand { get; }
+        public ICommand SetLightThemeCommand { get; }
 
-        public ICommand CycleTimelineCommand { get; }
+        public ICommand SetDarkThemeCommand { get; }
+
+        public ICommand ShowTimelineAtTopCommand { get; }
+
+        public ICommand ShowTimelineAtBottomCommand { get; }
+
+        public ICommand HideTimelineCommand { get; }
 
         public ICommand ZoomInCommand { get; }
 
@@ -280,6 +289,8 @@ namespace LogGrokX
         }
 
         public bool IsDarkTheme => _themeService.IsDark;
+
+        public bool IsLightTheme => !IsDarkTheme;
 
         public string WindowTitle => $"LogGrokX {BuildInfo.Version}";
 
@@ -361,15 +372,19 @@ namespace LogGrokX
 
         public bool IsTimelineVisible => _timelinePlacementService.IsVisible;
 
-        public string TimelineToolTip => Strings.Get(!IsTimelineVisible
-            ? "TimelineOffHint"
-            : IsTimelineAtTop ? "TimelineTopHint" : "TimelineBottomHint");
+        public bool IsTimelineAtTopVisible => IsTimelineVisible && IsTimelineAtTop;
+
+        public bool IsTimelineAtBottom => IsTimelineVisible && !IsTimelineAtTop;
+
+        public bool IsTimelineHidden => !IsTimelineVisible;
 
         private void OnTimelinePlacementChanged()
         {
             InvokePropertyChanged(nameof(IsTimelineAtTop));
             InvokePropertyChanged(nameof(IsTimelineVisible));
-            InvokePropertyChanged(nameof(TimelineToolTip));
+            InvokePropertyChanged(nameof(IsTimelineAtTopVisible));
+            InvokePropertyChanged(nameof(IsTimelineAtBottom));
+            InvokePropertyChanged(nameof(IsTimelineHidden));
         }
 
         public bool IsGroupByThread
@@ -401,10 +416,13 @@ namespace LogGrokX
 
         private void OpenSettingsWindow() => _dialogs.ShowSettings();
 
-        private void ToggleTheme()
+        private void SetTheme(bool isDark)
         {
+            if (IsDarkTheme == isDark)
+                return;
             _themeService.Toggle();
             InvokePropertyChanged(nameof(IsDarkTheme));
+            InvokePropertyChanged(nameof(IsLightTheme));
         }
 
         private void OpenFile()

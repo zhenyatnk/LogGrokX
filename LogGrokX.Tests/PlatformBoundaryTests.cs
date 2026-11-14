@@ -78,13 +78,46 @@ public sealed class PlatformBoundaryTests
         viewModel.OpenSettings.Execute(null);
         viewModel.OpenSupportCommand.Execute(null);
         viewModel.OpenFileCommand.Execute(null);
-        viewModel.ToggleThemeCommand.Execute(null);
+        viewModel.SetDarkThemeCommand.Execute(null);
 
         Assert.AreEqual(1, dialogs.SettingsCount);
         Assert.AreEqual(1, dialogs.SupportCount);
         Assert.AreEqual(1, dialogs.FileSelectionCount);
         Assert.AreEqual(0, viewModel.Documents.Count);
         Assert.IsTrue(viewModel.IsDarkTheme);
+    }
+
+    [TestMethod]
+    public void ViewMenuCommandsSetTimelinePlacementAndTheme()
+    {
+        var settings = new ApplicationSettings();
+        var theme = new Theme();
+        using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
+            theme, new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
+            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents),
+            new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
+            new UpdateIndicatorService(settings), new Updates());
+
+        viewModel.ShowTimelineAtBottomCommand.Execute(null);
+        Assert.IsTrue(viewModel.IsTimelineAtBottom);
+        Assert.IsFalse(viewModel.IsTimelineAtTopVisible);
+        Assert.IsFalse(viewModel.IsTimelineHidden);
+
+        viewModel.HideTimelineCommand.Execute(null);
+        Assert.IsTrue(viewModel.IsTimelineHidden);
+        Assert.IsFalse(viewModel.IsTimelineAtBottom);
+
+        viewModel.ShowTimelineAtTopCommand.Execute(null);
+        Assert.IsTrue(viewModel.IsTimelineAtTopVisible);
+        Assert.IsFalse(viewModel.IsTimelineHidden);
+
+        viewModel.SetDarkThemeCommand.Execute(null);
+        viewModel.SetDarkThemeCommand.Execute(null);
+        Assert.IsTrue(viewModel.IsDarkTheme);
+        Assert.IsFalse(viewModel.IsLightTheme);
+        viewModel.SetLightThemeCommand.Execute(null);
+        Assert.IsFalse(viewModel.IsDarkTheme);
+        Assert.IsTrue(viewModel.IsLightTheme);
     }
 
     [TestMethod]
