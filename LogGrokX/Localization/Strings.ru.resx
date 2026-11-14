@@ -918,4 +918,13 @@
   <data xml:space="preserve" name="DarkTheme">
     <value>Тёмная</value>
   </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>Сохранить выделение</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>Текстовые файлы (*.txt)|*.txt|Все файлы (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>Не удалось сохранить выбранные строки: {0}</value>
+  </data>
 </root>

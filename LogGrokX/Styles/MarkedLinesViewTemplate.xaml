@@ -44,6 +44,7 @@
                 VirtualizingStackPanel.VirtualizationMode="Recycling"
                 IsSynchronizedWithCurrentItem="True"
                 ReadonlySelectedItems="{Binding SelectedItems, Mode=OneWayToSource}"
+                BulkOperations="{Binding BulkOperations}"
                 listControls:BaseLogListViewItem.OnItemActivatedCommand="{Binding ItemActivatedCommand}"
                 textRender:ClippingRectProviderBehavior.ClippingRectProvider=
                     "{Binding RelativeSource={RelativeSource Self}}">

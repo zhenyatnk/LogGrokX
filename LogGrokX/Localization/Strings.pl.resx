@@ -918,4 +918,13 @@
   <data xml:space="preserve" name="DarkTheme">
     <value>Ciemny</value>
   </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>Zapisz zaznaczenie</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>Pliki tekstowe (*.txt)|*.txt|Wszystkie pliki (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>Nie można zapisać wybranych wierszy: {0}</value>
+  </data>
 </root>

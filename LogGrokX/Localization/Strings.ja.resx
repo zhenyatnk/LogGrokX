@@ -918,4 +918,13 @@
   <data xml:space="preserve" name="DarkTheme">
     <value>ダーク</value>
   </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>選択内容を保存</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>テキスト ファイル (*.txt)|*.txt|すべてのファイル (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>選択した行を保存できません: {0}</value>
+  </data>
 </root>

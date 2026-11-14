@@ -312,7 +312,7 @@ public class MainWindowViewModelLifecycleTests
     private static WeakReference CreateAndDisposeMarkedLinesViewModel(
         ObservableCollection<DocumentViewModel> documents)
     {
-        var viewModel = new MarkedLinesViewModel(documents);
+        var viewModel = new MarkedLinesViewModel(documents, new BulkOperationService());
         viewModel.Dispose();
         return new WeakReference(viewModel);
     }

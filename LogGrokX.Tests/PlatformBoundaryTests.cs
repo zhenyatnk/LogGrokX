@@ -71,9 +71,9 @@ public sealed class PlatformBoundaryTests
         var theme = new Theme();
         using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             theme, new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
-            new MergedFilesViewService(), dialogs, documents => new MarkedLines.MarkedLinesViewModel(documents),
+            new MergedFilesViewService(), dialogs, documents => new MarkedLines.MarkedLinesViewModel(documents, new BulkOperationService()),
             new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
-            new UpdateIndicatorService(settings), new Updates());
+            new UpdateIndicatorService(settings), new Updates(), new BulkOperationService());
 
         viewModel.OpenSettings.Execute(null);
         viewModel.OpenSupportCommand.Execute(null);
@@ -94,9 +94,9 @@ public sealed class PlatformBoundaryTests
         var theme = new Theme();
         using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             theme, new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
-            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents),
+            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents, new BulkOperationService()),
             new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
-            new UpdateIndicatorService(settings), new Updates());
+            new UpdateIndicatorService(settings), new Updates(), new BulkOperationService());
 
         viewModel.ShowTimelineAtBottomCommand.Execute(null);
         Assert.IsTrue(viewModel.IsTimelineAtBottom);
@@ -128,9 +128,9 @@ public sealed class PlatformBoundaryTests
         var indicator = new UpdateIndicatorService(settings);
         using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             new Theme(), new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
-            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents),
+            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents, new BulkOperationService()),
             new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
-            indicator, updates);
+            indicator, updates, new BulkOperationService());
         var baseTitle = viewModel.WindowTitle;
         var updateTextChanges = 0;
         viewModel.PropertyChanged += (_, e) =>

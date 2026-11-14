@@ -14,7 +14,7 @@
                 ExtendsContentIntoTitleBar="True"
                 WindowBackdropType="None"
                 WindowCornerPreference="Round"
-                Icon="pack://application:,,,/app.ico"
+                Icon="pack://application:,,,/LogGrokX;component/app.ico"
                 WindowStartupLocation="CenterScreen"
                 MinWidth="1024"
                 MinHeight="640"
@@ -142,12 +142,13 @@
     <Grid UseLayoutRounding="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <localControls:StableTitleBar Grid.Row="0" Title="{Binding WindowTitle}">
             <localControls:StableTitleBar.Icon>
-                <ui:ImageIcon Source="pack://application:,,,/app.ico" Width="16" Height="16" />
+                <ui:ImageIcon Source="pack://application:,,,/LogGrokX;component/app.ico" Width="16" Height="16" />
             </localControls:StableTitleBar.Icon>
             <localControls:StableTitleBar.TrailingContent>
                 <StackPanel Margin="0,0,8,0" Orientation="Horizontal" VerticalAlignment="Center">
@@ -241,7 +242,42 @@
             </localControls:StableTitleBar.TrailingContent>
         </localControls:StableTitleBar>
 
-        <Border Grid.Row="1" Margin="2,0,2,2" Padding="0"
+        <Border Grid.Row="1"
+                Margin="12,4,12,0"
+                Padding="12,8"
+                Background="{DynamicResource ControlFillColorSecondaryBrush}"
+                CornerRadius="{StaticResource AppControlCornerRadius}"
+                Visibility="{Binding BulkOperations.IsActive, Converter={StaticResource BoolToVisibility}}">
+            <Grid VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center"
+                           FontWeight="SemiBold"
+                           Text="{Binding BulkOperations.Title, Mode=OneWay}" />
+                <ProgressBar Grid.Column="1"
+                             Height="6"
+                             Margin="16,0,12,0"
+                             VerticalAlignment="Center"
+                             Maximum="100"
+                             Value="{Binding BulkOperations.Progress, Mode=OneWay}" />
+                <TextBlock Grid.Column="2"
+                           Margin="0,0,16,0"
+                           VerticalAlignment="Center"
+                           Text="{Binding BulkOperations.ProgressText, Mode=OneWay}" />
+                <ui:Button Grid.Column="3"
+                           MinHeight="28"
+                           Padding="12,2"
+                           VerticalAlignment="Center"
+                           Command="{Binding BulkOperations.CancelCommand}"
+                           Content="{loc:Loc Cancel}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2" Margin="2,0,2,2" Padding="0"
                 Style="{StaticResource FluentCardStyle}">
             <Grid>
                 <DockingManager x:Name="DockingManager"

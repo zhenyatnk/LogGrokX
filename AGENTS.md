@@ -57,6 +57,10 @@ loading (`LoaderBenchmark`) and the merge core (`MergeBenchmark`:
 The UI layer uses **WPF-UI 4.3.0** (Fluent controls/theming) and
 **AvalonDock 5** for docking. Branding/window title is **LogGrokX** plus the
 build version: `BuildInfo.Version` (release `-p:Version`, default `0.0`).
+Beside the profile selector, the title bar keeps **Open**, **View**,
+**Settings** and **Support**, plus the conditional update indicator. The View
+menu contains text zoom, explicit timeline placement/visibility, thread
+grouping, merged view and light/dark theme selection.
 JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
 JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
@@ -104,7 +108,7 @@ a hover readout). Hovering shows a vertical guide line plus the timestamp under
 the cursor (or `Line N` in line-number mode) drawn directly in the canvas via
 `DrawHoverTime`/`GetHoverText`, so it does not use a WPF `ToolTip`. Placement is
 controlled by `TimelinePlacementService` and persisted as
-`ViewSettings.TimelineAtTop`.
+`ViewSettings.TimelineAtTop` and `ViewSettings.TimelineVisible`.
 
 The **merged files view** combines several opened documents into one
 time-ordered grid and lives in `MergedView/`: `MergedViewModel` owns the merge,
@@ -163,8 +167,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   `Theming/UiThemeService.cs`. Reference `DynamicResource` brushes
   (`ApplicationBackgroundBrush`, `TextFillColorPrimaryBrush`,
   `ControlStrokeColorDefaultBrush`, …) instead of hard-coded colors so both
-  themes work. WPF-UI ships *keyed* styles (e.g. `UiGridViewColumnHeaderStyle`),
-  so implicit styles are not always picked up — define overrides explicitly in
+  themes work. `ToolbarButtonStyle` sets `Foreground` and `PressedForeground`
+  directly to `TextFillColorPrimaryBrush`: the generic `ButtonForeground` can
+  remain from the previous theme during startup and make title-bar icons dark.
+  WPF-UI ships *keyed* styles (e.g. `UiGridViewColumnHeaderStyle`), so implicit
+  styles are not always picked up — define overrides explicitly in
   `Bootstrap/App.xaml`.
 - **Window backdrop**: keep `WindowBackdropType="None"` on every `FluentWindow`
   (`MainWindow`, `SupportWindow`, `SettingsWindow`) and `WindowBackdropType.None`
@@ -261,6 +268,28 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   -> `LogMinimapControl.MatchLines` (merged view binds
   `Search.CurrentSelectedMatchLines`). They are drawn like `MatchLine` but
   semi-transparent; the current line (`MatchLine`) stays opaque on top.
+- **Large selections**: `Controls/Selection` stores normalized, merged ranges
+  instead of one `HashSet` entry per line and raises `Changed` only for actual
+  changes. `Snapshot()` is ordered and independent of later edits. The panel
+  passes snapshots to `ListView.UpdateReadonlySelectedItems`, which exposes a
+  deferred enumerable; never add `.ToList()`, `.OrderBy()` or `SequenceEqual`
+  over the whole selection on the UI thread. Copy, marking and selected-value
+  filtering use `BulkSelection` batches with cancellation on selection changes.
+  `Ctrl+A` is intercepted in `ListView.OnPreviewKeyDown` and handled by
+  `VirtualizingStackPanel.SelectAll` as one range before the base WPF `ListBox`
+  `SelectAllCommand` can enumerate the collection.
+  Clipboard text is capped at `BulkSelection.MaxClipboardCharacters`; larger
+  selections can be saved to a file in batches. Search timelines show at most
+  4096 selected matches. `BulkOperationService` is a singleton shared by the
+  main window, documents and controls: the top panel shows title, progress and
+  processed/total counts with Cancel. Batches report every 128 items; starting
+  an operation cancels the previous one and stale completion cannot hide a newer
+  one. Selection changes cancel only an operation owned by the same view, so
+  updates to the marked-lines view cannot cancel marking in the log view.
+  Mark toggling uses `Selection.BeginBulkUpdate()` per document.
+  `DocumentViewModel.MarkedLineViewModels` is deferred and
+  `MarkedLinesViewModel.UpdateLinesCollection` publishes marked rows in the
+  same cancellable batches instead of rebuilding the whole list synchronously.
 - **Base64 decoding** (#35): `LogGrokX.Data/Base64Detector` finds Base64 in a
   cell value (whole value, optionally quoted, from 8 chars; fragments from 16
   chars; standard or URL-safe alphabet) and accepts it only if it decodes to

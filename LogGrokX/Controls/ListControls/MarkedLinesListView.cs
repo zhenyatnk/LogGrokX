@@ -51,6 +51,7 @@ namespace LogGrokX.Controls.ListControls
 
         protected override void OnSelectionChanged(SelectionChangedEventArgs e)
         {
+            CancelSelectionOperations();
             ReadonlySelectedItems = SelectedItems;
             base.OnSelectionChanged(e);
         }
@@ -59,6 +60,8 @@ namespace LogGrokX.Controls.ListControls
         {
             return new BaseLogListViewItem(this);
         }
+
+        protected override long GetSelectedCount() => ReadonlySelectedItems?.Cast<object>().Count() ?? 0;
 
         protected override IEnumerable<int> GetSelectedIndices()
         {

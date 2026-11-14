@@ -32,6 +32,7 @@ namespace LogGrokX.MergedView
         private bool[] _matchBuckets = Array.Empty<bool>();
         private int? _currentItemIndex;
         private IEnumerable<object>? _selectedItems;
+        private const int MaxSelectedMatchLines = 4096;
         private IReadOnlyList<int> _selectedMatchLines = Array.Empty<int>();
         private Regex? _highlightRegex;
         private bool _isSearching;
@@ -113,14 +114,16 @@ namespace LogGrokX.MergedView
                 ? MapToFull(_matchedIndices[index])
                 : -1;
 
+        public BulkOperationService BulkOperations => _merged.BulkOperations;
+
         public IEnumerable<object>? SelectedItems
         {
             get => _selectedItems;
             set
             {
                 _selectedItems = value;
-                SelectedMatchLines =
-                    value?.OfType<MergedLineViewModel>().Select(line => line.MergedIndex).ToArray() ?? Array.Empty<int>();
+                SelectedMatchLines = value?.OfType<MergedLineViewModel>().Select(line => line.MergedIndex)
+                    .Take(MaxSelectedMatchLines).ToArray() ?? Array.Empty<int>();
             }
         }
 

@@ -81,7 +81,7 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
             _selection.Changed += () =>
             {
-                ListView.UpdateReadonlySelectedItems(_selection);
+                ListView.UpdateReadonlySelectedItems(_selection.Snapshot(), _selection.Count);
                 SelectionChanged?.Invoke();
             };
         }

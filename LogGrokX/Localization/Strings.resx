@@ -918,4 +918,13 @@
   <data xml:space="preserve" name="DarkTheme">
     <value>Dark</value>
   </data>
+  <data xml:space="preserve" name="SaveSelection">
+    <value>Save selection</value>
+  </data>
+  <data xml:space="preserve" name="TextFilesFilter">
+    <value>Text files (*.txt)|*.txt|All files (*.*)|*.*</value>
+  </data>
+  <data xml:space="preserve" name="SelectionSaveFailed">
+    <value>Cannot save selected lines: {0}</value>
+  </data>
 </root>

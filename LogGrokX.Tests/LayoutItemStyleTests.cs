@@ -31,7 +31,7 @@ public sealed class LayoutItemStyleTests
     {
         RunOnSta(() =>
         {
-            using var marked = new MarkedLinesViewModel(new ObservableCollection<DocumentViewModel>());
+            using var marked = new MarkedLinesViewModel(new ObservableCollection<DocumentViewModel>(), new BulkOperationService());
             var panel = new LayoutAnchorable
             {
                 Title = Strings.Get("MarkedLines"),
