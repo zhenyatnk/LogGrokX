@@ -72,7 +72,8 @@ public sealed class PlatformBoundaryTests
         using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             theme, new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
             new MergedFilesViewService(), dialogs, documents => new MarkedLines.MarkedLinesViewModel(documents),
-            new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()));
+            new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
+            new UpdateIndicatorService(settings), new Updates());
 
         viewModel.OpenSettings.Execute(null);
         viewModel.OpenSupportCommand.Execute(null);
@@ -87,6 +88,55 @@ public sealed class PlatformBoundaryTests
     }
 
     [TestMethod]
+    public void MainWindowUpdateIndicatorFollowsStatus()
+    {
+        var settings = new ApplicationSettings();
+        var updates = new Updates();
+        var indicator = new UpdateIndicatorService(settings);
+        using var viewModel = new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
+            new Theme(), new TimelinePlacementService(settings), new TextZoomService(settings), new ThreadGroupingService(settings),
+            new MergedFilesViewService(), new Dialogs(), documents => new MarkedLines.MarkedLinesViewModel(documents),
+            new AcceptColors(), new ManualDispatcher(), new Desktop(), new DisplaySettingsMonitor(new ManualDispatcher()),
+            indicator, updates);
+        var baseTitle = viewModel.WindowTitle;
+        var updateTextChanges = 0;
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(viewModel.UpdateText)) updateTextChanges++;
+        };
+        Assert.IsFalse(viewModel.IsUpdateVisible);
+
+        updates.SetStatus(new UpdateStatus(UpdateState.Available, "v2.0", 0));
+        StringAssert.Contains(viewModel.UpdateText, "v2.0");
+        Assert.IsTrue(viewModel.IsUpdateVisible);
+        Assert.IsTrue(viewModel.IsUpdateAvailable);
+        Assert.IsTrue(viewModel.IsUpdateActionAvailable);
+        Assert.IsFalse(viewModel.IsUpdateReady);
+        viewModel.UpdateCommand.Execute(null);
+        Assert.AreEqual(1, updates.AvailableDownloadCount);
+        Assert.IsTrue(indicator.IsVisible);
+        indicator.SetVisible(false);
+        Assert.IsFalse(viewModel.IsUpdateVisible);
+        Assert.IsTrue(viewModel.IsUpdateAvailable);
+        indicator.SetVisible(true);
+        Assert.IsTrue(viewModel.IsUpdateVisible);
+
+        updates.SetStatus(new UpdateStatus(UpdateState.Downloading, "v2.0", 43.4));
+        Assert.IsFalse(viewModel.IsUpdateAvailable);
+        Assert.IsTrue(viewModel.IsUpdateDownloading);
+        Assert.IsFalse(viewModel.IsUpdateActionAvailable);
+        Assert.AreEqual(43.4, viewModel.UpdateProgress);
+        StringAssert.Contains(viewModel.UpdateText, "43");
+        StringAssert.Contains(viewModel.UpdateText, "%");
+
+        updates.SetStatus(new UpdateStatus(UpdateState.Ready, "v2.0", 100));
+        Assert.IsTrue(viewModel.IsUpdateReady);
+        Assert.IsTrue(viewModel.IsUpdateActionAvailable);
+        Assert.AreEqual(3, updateTextChanges);
+        Assert.AreEqual(baseTitle, viewModel.WindowTitle);
+    }
+
+    [TestMethod]
     public void AccentPreviewAndCancellationUseThemeInterface()
     {
         var settings = new ApplicationSettings();
@@ -94,7 +144,7 @@ public sealed class PlatformBoundaryTests
         var theme = new Theme();
         var editor = new Settings.SettingsViewModel(settings, new TimelinePlacementService(settings),
             new ThreadGroupingService(settings), new MergedFilesViewService(), new TextZoomService(settings),
-            theme, new AcceptColors(), new Desktop());
+            theme, new AcceptColors(), new Desktop(), new UpdateIndicatorService(settings));
 
         editor.View.AccentColor = AccentColorKind.Red;
         Assert.AreEqual(AccentColorKind.Red, theme.AccentColor);
@@ -163,6 +213,22 @@ public sealed class PlatformBoundaryTests
         viewModel.UpdateCommand.Execute(null);
         Assert.IsTrue(viewModel.IsReady);
         Assert.AreEqual(2, service.DownloadCount);
+    }
+
+    [TestMethod]
+    public void UpdateWindowFollowsDownloadStartedFromTitleBar()
+    {
+        var service = new Updates();
+        using var viewModel = new UpdateViewModel(service, Release, new Desktop());
+
+        service.SetStatus(new UpdateStatus(UpdateState.Downloading, Release.Tag, 25));
+        Assert.IsTrue(viewModel.IsDownloading);
+        Assert.AreEqual(25.0, viewModel.Progress);
+
+        service.SetStatus(new UpdateStatus(UpdateState.Ready, Release.Tag, 100));
+        Assert.IsFalse(viewModel.IsDownloading);
+        Assert.IsTrue(viewModel.IsReady);
+        Assert.AreEqual(100.0, viewModel.Progress);
     }
 
     [TestMethod]
@@ -266,11 +332,21 @@ public sealed class PlatformBoundaryTests
         public bool Installable { get; init; } = true;
         public Task Download { get; set; } = Task.CompletedTask;
         public int DownloadCount { get; private set; }
+        public int AvailableDownloadCount { get; private set; }
         public int CheckCount { get; private set; }
         public string? SkippedVersion { get; private set; }
         public CancellationToken Token { get; private set; }
+        public UpdateStatus Status { get; private set; } = new(UpdateState.None, null, 0);
+        public List<string> RestartFiles { get; } = [];
+        public event Action? StatusChanged;
+        public void SetStatus(UpdateStatus status)
+        {
+            Status = status;
+            StatusChanged?.Invoke();
+        }
         public bool CanInstall(ReleaseInfo release) => Installable;
         public Task<ReleaseInfo?> CheckNowAsync() { CheckCount++; return Task.FromResult<ReleaseInfo?>(Release); }
+        public Task DownloadAvailableAsync() { AvailableDownloadCount++; return Task.CompletedTask; }
         public Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken)
         {
             DownloadCount++;
@@ -278,6 +354,11 @@ public sealed class PlatformBoundaryTests
             return Download;
         }
         public void SkipVersion(string tag) => SkippedVersion = tag;
+        public bool RestartAndInstall(IEnumerable<string> openFiles)
+        {
+            RestartFiles.AddRange(openFiles);
+            return true;
+        }
     }
 
     private sealed class ManualDispatcher : IUiDispatcher

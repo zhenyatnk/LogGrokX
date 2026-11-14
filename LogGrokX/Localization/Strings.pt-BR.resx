@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Mostrar separadores de grupos de threads</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>Indicador de atualização na barra de título</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>Ignorar esta versão</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>Atualização disponível</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>A versão {0} está disponível. Clique para baixar a atualização.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>Reinicie para instalar o LogGrokX {0} e reabrir os logs atuais.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>Não foi possível salvar os arquivos abertos para a reinicialização.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>Atualizar para {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>Baixando {0:0}%</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>Reiniciar: {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>Falha ao verificar atualizações: {0}</value>

@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests
@@ -88,6 +91,49 @@ namespace LogGrokX.Tests
             using var notFound = new System.Net.Http.HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
             notFound.Headers.Add("X-RateLimit-Remaining", "0");
             Assert.IsNull(UpdateCheckService.GetRateLimitResetUtc(notFound.StatusCode, notFound.Headers, now));
+        }
+
+        [TestMethod]
+        public void AvailableReleaseSurvivesRestartUntilInstallation()
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-available-{Guid.NewGuid():N}.json");
+            var release = UpdateCheckService.CreateFallbackRelease("v99.0");
+            try
+            {
+                Assert.IsTrue(UpdateCheckService.TrySaveAvailableRelease(fileName, release));
+
+                var restored = UpdateCheckService.ReadAvailableRelease(fileName, "1.0");
+                Assert.IsNotNull(restored);
+                Assert.AreEqual(release.Tag, restored.Tag);
+                Assert.AreEqual(release.PageUrl, restored.PageUrl);
+                Assert.AreEqual(release.Notes, restored.Notes);
+                Assert.AreEqual(release.Assets["SHA256SUMS.txt"], restored.Assets["SHA256SUMS.txt"]);
+                Assert.IsTrue(File.Exists(fileName));
+
+                Assert.IsNull(UpdateCheckService.ReadAvailableRelease(fileName, "99.0"));
+                Assert.IsFalse(File.Exists(fileName));
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        }
+
+        [TestMethod]
+        public void RestartFilesAreRestoredOnlyOnce()
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-restart-{Guid.NewGuid():N}.json");
+            var expected = new[] { @"C:\Logs\first.log", @"D:\Logs with spaces\second.log" };
+            try
+            {
+                Assert.IsTrue(UpdateCheckService.TrySaveRestartFiles(fileName, expected));
+                CollectionAssert.AreEqual(expected, UpdateCheckService.TakeRestartFiles(fileName).ToArray());
+                Assert.AreEqual(0, UpdateCheckService.TakeRestartFiles(fileName).Count);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
         }
 
         [TestMethod]

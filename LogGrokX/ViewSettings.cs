@@ -43,5 +43,7 @@ namespace LogGrokX
         }
 
         public UpdateModeKind UpdateMode { get; set; } = UpdateModeKind.Check;
+
+        public bool ShowUpdateIndicator { get; set; } = true;
     }
 }

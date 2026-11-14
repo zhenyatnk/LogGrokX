@@ -30,7 +30,7 @@ namespace LogGrokX.Bootstrap
             if (dumpCommand != CrashDumpCommand.Configure)
                 return;
 
-            var fullPaths = args.Select(Path.GetFullPath).ToArray();
+            var fullPaths = args.Select(arg => arg == UpdateCheckService.RestoreFilesArgument ? arg : Path.GetFullPath(arg)).ToArray();
             var manager = new SingleInstanceManager();
             manager.Run(fullPaths);
         }

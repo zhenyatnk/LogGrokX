@@ -35,6 +35,8 @@ namespace LogGrokX
         private readonly IUiDispatcher _dispatcher;
         private readonly IDesktopService _desktop;
         private readonly DisplaySettingsMonitor _displaySettings;
+        private readonly UpdateIndicatorService _updateIndicatorService;
+        private readonly IUpdateService _updates;
         private bool _disposed;
         private ProfileSettings _selectedProfile;
         private ProfileSettings _appliedProfile;
@@ -71,11 +73,13 @@ namespace LogGrokX
             IAppDialogs dialogs,
             Func<ObservableCollection<DocumentViewModel>, MarkedLinesViewModel> markedLinesViewModelFactory,
             IColorValidator colorValidator, IUiDispatcher dispatcher, IDesktopService desktop,
-            DisplaySettingsMonitor displaySettings)
+            DisplaySettingsMonitor displaySettings, UpdateIndicatorService updateIndicatorService, IUpdateService updates)
         {
             _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
             _desktop = desktop ?? throw new ArgumentNullException(nameof(desktop));
             _displaySettings = displaySettings ?? throw new ArgumentNullException(nameof(displaySettings));
+            _updateIndicatorService = updateIndicatorService ?? throw new ArgumentNullException(nameof(updateIndicatorService));
+            _updates = updates ?? throw new ArgumentNullException(nameof(updates));
             _applicationSettings = applicationSettings;
             Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
             _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
@@ -109,6 +113,9 @@ namespace LogGrokX
             ClearSearchCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.ClearSearchCommand, document => document.SearchViewModel.ClearSearchCommand));
             FindNextCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindNextCommand, document => document.FindNextCommand));
             FindPreviousCommand = new DelegateCommand(() => ExecuteActiveSearchCommand(search => search.FindPreviousCommand, document => document.FindPreviousCommand));
+            UpdateCommand = new DelegateCommand(ExecuteUpdate);
+            _updateIndicatorService.Changed += OnUpdateIndicatorChanged;
+            _updates.StatusChanged += OnUpdateStatusChanged;
 
             MarkedLinesViewModel.NavigationRequested += (document, index) =>
             {
@@ -259,6 +266,8 @@ namespace LogGrokX
 
         public ICommand FindPreviousCommand { get; }
 
+        public ICommand UpdateCommand { get; }
+
         private void ExecuteActiveSearchCommand(Func<SearchViewModel, ICommand> mergedCommand,
             Func<DocumentViewModel, ICommand> documentCommand)
         {
@@ -273,6 +282,76 @@ namespace LogGrokX
         public bool IsDarkTheme => _themeService.IsDark;
 
         public string WindowTitle => $"LogGrokX {BuildInfo.Version}";
+
+        public bool IsUpdateVisible => _updateIndicatorService.IsVisible && _updates.Status.State != UpdateState.None;
+
+        private void OnUpdateIndicatorChanged() => InvokePropertyChanged(nameof(IsUpdateVisible));
+
+        public bool IsUpdateAvailable => _updates.Status.State == UpdateState.Available;
+
+        public bool IsUpdateDownloading => _updates.Status.State == UpdateState.Downloading;
+
+        public bool IsUpdateReady => _updates.Status.State == UpdateState.Ready;
+
+        public bool IsUpdateActionAvailable => IsUpdateAvailable || IsUpdateReady;
+
+        public double UpdateProgress => _updates.Status.Progress;
+
+        public string UpdateText
+        {
+            get
+            {
+                var status = _updates.Status;
+                return status.State switch
+                {
+                    UpdateState.Available => Strings.Format("UpdateActionAvailable", status.Version ?? string.Empty),
+                    UpdateState.Downloading => Strings.Format("UpdateActionDownloading", status.Progress),
+                    UpdateState.Ready => Strings.Format("UpdateActionReady", status.Version ?? string.Empty),
+                    _ => string.Empty
+                };
+            }
+        }
+
+        public string UpdateToolTip
+        {
+            get
+            {
+                var status = _updates.Status;
+                return status.State switch
+                {
+                    UpdateState.Available => Strings.Format("UpdateAvailableHint", status.Version ?? string.Empty),
+                    UpdateState.Ready => Strings.Format("UpdateRestartHint", status.Version ?? string.Empty),
+                    UpdateState.Downloading => UpdateText,
+                    _ => string.Empty
+                };
+            }
+        }
+
+        private void OnUpdateStatusChanged()
+        {
+            InvokePropertyChanged(nameof(IsUpdateVisible));
+            InvokePropertyChanged(nameof(IsUpdateAvailable));
+            InvokePropertyChanged(nameof(IsUpdateDownloading));
+            InvokePropertyChanged(nameof(IsUpdateReady));
+            InvokePropertyChanged(nameof(IsUpdateActionAvailable));
+            InvokePropertyChanged(nameof(UpdateProgress));
+            InvokePropertyChanged(nameof(UpdateText));
+            InvokePropertyChanged(nameof(UpdateToolTip));
+        }
+
+        private async void ExecuteUpdate()
+        {
+            if (IsUpdateAvailable)
+                await _updates.DownloadAvailableAsync();
+            else if (IsUpdateReady)
+                RestartUpdate();
+        }
+
+        private void RestartUpdate()
+        {
+            if (!_updates.RestartAndInstall(Documents.Select(document => document.DocumentId)))
+                _dialogs.ShowWarning(Strings.Get("UpdateRestartFailed"), Strings.Get("UpdateAvailable"));
+        }
 
         public bool IsTimelineAtTop
         {
@@ -458,6 +537,8 @@ namespace LogGrokX
 
             _disposed = true;
             _applicationSettings.ProfilesChanged -= OnProfilesChanged;
+            _updateIndicatorService.Changed -= OnUpdateIndicatorChanged;
+            _updates.StatusChanged -= OnUpdateStatusChanged;
             _timelinePlacementService.Changed -= OnTimelinePlacementChanged;
             _threadGroupingService.Changed -= OnThreadGroupingChanged;
             _mergedFilesViewService.Changed -= OnMergedFilesViewChanged;

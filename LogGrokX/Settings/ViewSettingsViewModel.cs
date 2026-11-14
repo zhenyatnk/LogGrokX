@@ -25,6 +25,7 @@ namespace LogGrokX.Settings
         private bool _detectBase64;
         private bool _detectHex;
         private ViewSettings.UpdateModeKind _updateMode;
+        private bool _showUpdateIndicator;
 
         public ViewSettingsViewModel(ViewSettings settings)
         {
@@ -42,6 +43,7 @@ namespace LogGrokX.Settings
             _detectBase64 = settings.DetectBase64;
             _detectHex = settings.DetectHex;
             _updateMode = settings.UpdateMode;
+            _showUpdateIndicator = settings.ShowUpdateIndicator;
         }
 
         public IReadOnlyList<LanguageOption> LanguageOptions => LocalizationService.Languages;
@@ -227,6 +229,18 @@ namespace LogGrokX.Settings
                 if (_detectHex == value)
                     return;
                 _detectHex = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool ShowUpdateIndicator
+        {
+            get => _showUpdateIndicator;
+            set
+            {
+                if (_showUpdateIndicator == value)
+                    return;
+                _showUpdateIndicator = value;
                 InvokePropertyChanged();
             }
         }

@@ -33,6 +33,89 @@
                 <ResourceDictionary Source="Styles/ListViewItemStyle.xaml" />
                 <ResourceDictionary Source="Styles/LayoutItemStyles.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+            <Style x:Key="UpdatePillButtonStyle" TargetType="{x:Type ui:Button}">
+                <Setter Property="Height" Value="32" />
+                <Setter Property="MinWidth" Value="180" />
+                <Setter Property="MaxWidth" Value="230" />
+                <Setter Property="FontSize" Value="13" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter Property="Margin" Value="4,0,8,0" />
+                <Setter Property="Padding" Value="12,0" />
+                <Setter Property="Background" Value="{DynamicResource AccentFillColorSecondaryBrush}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="AutomationProperties.Name"
+                        Value="{Binding ToolTip, RelativeSource={RelativeSource Self}, TargetNullValue='', FallbackValue=''}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ui:Button}">
+                            <Border x:Name="Root"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="16"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:SymbolIcon x:Name="Icon" Symbol="ArrowDownload24" FontSize="16"
+                                                       Foreground="{TemplateBinding Foreground}" />
+                                        <TextBlock x:Name="Text" Grid.Column="1" Margin="7,0,0,0"
+                                                   Text="{TemplateBinding Content}"
+                                                   Foreground="{TemplateBinding Foreground}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                    <ProgressBar x:Name="DownloadProgress" Grid.Row="1"
+                                                 Height="2" Margin="8,0,8,3"
+                                                 Maximum="100" Value="{Binding UpdateProgress, Mode=OneWay}"
+                                                 Foreground="{DynamicResource AccentFillColorDefaultBrush}"
+                                                 Visibility="Collapsed" />
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsUpdateReady}" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+                                    <Setter TargetName="Icon" Property="Symbol" Value="ArrowSync24" />
+                                    <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                    <Setter TargetName="Text" Property="Foreground" Value="{DynamicResource TextOnAccentFillColorPrimaryBrush}" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsUpdateDownloading}" Value="True">
+                                    <Setter TargetName="Root" Property="Background" Value="{DynamicResource ControlFillColorSecondaryBrush}" />
+                                    <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource ControlStrokeColorDefaultBrush}" />
+                                    <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                    <Setter TargetName="Text" Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                                    <Setter TargetName="DownloadProgress" Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Root" Property="Opacity" Value="0.85" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Root" Property="Opacity" Value="0.75" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter TargetName="Root" Property="BorderThickness" Value="2" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Cursor" Value="Arrow" />
+                                    <Setter TargetName="Root" Property="Opacity" Value="1" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
 
             <Style x:Key="TitleBarToggleButtonStyle" TargetType="{x:Type ToggleButton}"
                    BasedOn="{StaticResource ToolbarToggleButtonStyle}">
@@ -74,6 +157,12 @@
             </localControls:StableTitleBar.Icon>
             <localControls:StableTitleBar.TrailingContent>
                 <StackPanel Margin="0,0,8,0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <ui:Button Style="{StaticResource UpdatePillButtonStyle}"
+                               Content="{Binding UpdateText, Mode=OneWay}"
+                               ToolTip="{Binding UpdateToolTip, Mode=OneWay}"
+                               Command="{Binding UpdateCommand}"
+                               IsEnabled="{Binding IsUpdateActionAvailable, Mode=OneWay}"
+                               Visibility="{Binding IsUpdateVisible, Converter={StaticResource BoolToVisibility}}" />
                     <ComboBox Width="150" Margin="4,0,8,0" VerticalAlignment="Center"
                               ItemsSource="{Binding Profiles}" DisplayMemberPath="Name"
                               SelectedItem="{Binding SelectedProfile, Mode=TwoWay}"

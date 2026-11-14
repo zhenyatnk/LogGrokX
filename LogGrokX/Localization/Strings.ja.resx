@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>スレッドグループの区切りを表示</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>タイトルバーに更新インジケーターを表示</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>このバージョンをスキップ</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>更新があります</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>バージョン {0} が利用できます。クリックして更新をダウンロードします。</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>再起動して LogGrokX {0} をインストールし、開いているログを復元します。</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>再起動のために開いているファイルを保存できませんでした。</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>{0} に更新</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>ダウンロード中 {0:0}%</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>再起動: {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>更新の確認に失敗しました: {0}</value>

@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Afficher les séparateurs de threads</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>Indicateur de mise à jour dans la barre de titre</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>Ignorer cette version</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>Mise à jour disponible</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>La version {0} est disponible. Cliquez pour télécharger la mise à jour.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>Redémarrer pour installer LogGrokX {0} et rouvrir les journaux ouverts.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>Impossible d’enregistrer les fichiers ouverts pour le redémarrage.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>Mettre à jour vers {0}</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>Téléchargement {0:0} %</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>Redémarrer : {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>Échec de la recherche de mises à jour : {0}</value>

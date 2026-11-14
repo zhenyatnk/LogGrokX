@@ -25,6 +25,7 @@ public class UpdateCheckService : IUpdateService, IDisposable
     private const string ReleasePageUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/tag/";
     private const string ReleaseDownloadUrlPrefix = "https://github.com/zhenyatnk/LogGrokX/releases/download/";
     private const string ChecksumsAssetName = "SHA256SUMS.txt";
+    internal const string RestoreFilesArgument = "--restore-update";
 
     internal static string FallbackReleaseNotes => Strings.Get("ReleaseNotesUnavailable");
 
@@ -37,20 +38,45 @@ public class UpdateCheckService : IUpdateService, IDisposable
 
     private readonly ApplicationSettings _settings;
     private string? _pendingInstallerPath;
+    private ReleaseInfo? _availableRelease;
     private bool _isWindowOpen;
     private bool _isDownloading;
 
     private readonly IUpdatePresenter _presenter;
     private readonly IUiDispatcher _dispatcher;
+    private readonly IApplicationLifetime _applicationLifetime;
     private IUiTimer? _checkTimer;
     private bool _disposed;
+    private bool _restartAfterInstall;
 
-    public UpdateCheckService(ApplicationSettings settings, IUpdatePresenter presenter, IUiDispatcher dispatcher)
+    public UpdateCheckService(ApplicationSettings settings, IUpdatePresenter presenter, IUiDispatcher dispatcher,
+        IApplicationLifetime applicationLifetime)
     {
         _settings = settings;
         _presenter = presenter ?? throw new ArgumentNullException(nameof(presenter));
         _dispatcher = dispatcher ?? throw new ArgumentNullException(nameof(dispatcher));
+        _applicationLifetime = applicationLifetime ?? throw new ArgumentNullException(nameof(applicationLifetime));
+        RestoreAvailableRelease();
     }
+
+    private void RestoreAvailableRelease()
+    {
+        var release = ReadAvailableRelease(AvailableReleaseFileName, BuildInfo.Version);
+        if (release == null)
+            return;
+        if (string.Equals(ReadSkippedVersion(), release.Tag, StringComparison.OrdinalIgnoreCase))
+        {
+            DeleteAvailableRelease(AvailableReleaseFileName);
+            return;
+        }
+
+        _availableRelease = release;
+        Status = new UpdateStatus(UpdateState.Available, release.Tag, 0);
+    }
+
+    public UpdateStatus Status { get; private set; } = new(UpdateState.None, null, 0);
+
+    public event Action? StatusChanged;
 
     public bool CanInstall(ReleaseInfo release) => IsInstalled && GetInstallerAssetName(release) != null;
 
@@ -72,6 +98,21 @@ public class UpdateCheckService : IUpdateService, IDisposable
         _disposed = true;
         _checkTimer?.Dispose();
         _checkTimer = null;
+    }
+
+    private void SetStatus(UpdateStatus status)
+    {
+        Status = status;
+        if (_disposed)
+            return;
+        if (_dispatcher.CheckAccess())
+            StatusChanged?.Invoke();
+        else
+            _dispatcher.Post(() =>
+            {
+                if (!_disposed)
+                    StatusChanged?.Invoke();
+            });
     }
 
     public async Task<ReleaseInfo?> CheckNowAsync()
@@ -143,13 +184,88 @@ public class UpdateCheckService : IUpdateService, IDisposable
         }
     }
 
+    public async Task DownloadAvailableAsync()
+    {
+        var release = _availableRelease;
+        if (release == null || Status.State != UpdateState.Available || _isDownloading)
+            return;
+        if (!CanInstall(release))
+        {
+            ShowUpdateWindow(release);
+            return;
+        }
+        try
+        {
+            await DownloadInBackgroundAsync(release);
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Update download failed: {e.Message}");
+        }
+    }
+
     private void ShowUpdateWindow(ReleaseInfo release)
     {
         if (_disposed || _isWindowOpen)
             return;
+        SetAvailableRelease(release);
+        SetStatus(new UpdateStatus(UpdateState.Available, release.Tag, 0));
         _isWindowOpen = true;
         try { _presenter.ShowUpdate(this, release, () => _isWindowOpen = false); }
         catch { _isWindowOpen = false; throw; }
+    }
+
+    private static string AvailableReleaseFileName => HomeDirectoryPathProvider.GetDataFileFullPath("available-update.json");
+
+    private void SetAvailableRelease(ReleaseInfo release)
+    {
+        _availableRelease = release;
+        TrySaveAvailableRelease(AvailableReleaseFileName, release);
+    }
+
+    internal static bool TrySaveAvailableRelease(string fileName, ReleaseInfo release)
+    {
+        try
+        {
+            File.WriteAllText(fileName, JsonSerializer.Serialize(release));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to save available update: {e.Message}");
+            return false;
+        }
+    }
+
+    internal static ReleaseInfo? ReadAvailableRelease(string fileName, string currentVersion)
+    {
+        try
+        {
+            if (!File.Exists(fileName))
+                return null;
+            var release = JsonSerializer.Deserialize<ReleaseInfo>(File.ReadAllText(fileName));
+            if (release != null && UpdateVersion.IsNewer(release.Tag, currentVersion))
+                return release;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to read available update: {e.Message}");
+        }
+
+        DeleteAvailableRelease(fileName);
+        return null;
+    }
+
+    internal static void DeleteAvailableRelease(string fileName)
+    {
+        try
+        {
+            File.Delete(fileName);
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to delete available update: {e.Message}");
+        }
     }
 
     private static string LastCheckFileName => HomeDirectoryPathProvider.GetDataFileFullPath("last-update-check.settings");
@@ -234,48 +350,110 @@ public class UpdateCheckService : IUpdateService, IDisposable
 
     public async Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken)
     {
-        var assetName = GetInstallerAssetName(release) ?? throw new InvalidOperationException(Strings.Get("InstallerUnavailable"));
-        var directory = Path.Combine(Path.GetTempPath(), "LogGrokX", "Update");
-        Directory.CreateDirectory(directory);
-        var path = Path.Combine(directory, assetName);
-
-        using var client = CreateClient(TimeSpan.FromMinutes(10));
-        using (var response = await client.GetAsync(release.Assets[assetName], HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+        SetAvailableRelease(release);
+        SetStatus(new UpdateStatus(UpdateState.Downloading, release.Tag, 0));
+        try
         {
-            response.EnsureSuccessStatusCode();
-            var total = response.Content.Headers.ContentLength ?? 0;
-            await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
-            await using var output = File.Create(path);
-            var buffer = new byte[81920];
-            long received = 0;
-            int read;
-            while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
-            {
-                await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-                received += read;
-                if (total > 0)
-                    progress.Report((double)received / total);
-            }
-        }
+            var assetName = GetInstallerAssetName(release) ?? throw new InvalidOperationException(Strings.Get("InstallerUnavailable"));
+            var directory = Path.Combine(Path.GetTempPath(), "LogGrokX", "Update");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, assetName);
 
-        if (release.Assets.TryGetValue(ChecksumsAssetName, out var sumsUrl))
-        {
-            var sums = await client.GetStringAsync(sumsUrl, cancellationToken);
-            var expected = FindChecksum(sums, assetName);
-            if (expected != null)
+            using var client = CreateClient(TimeSpan.FromMinutes(10));
+            using (var response = await client.GetAsync(release.Assets[assetName], HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
-                await using var stream = File.OpenRead(path);
-                var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken));
-                if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+                response.EnsureSuccessStatusCode();
+                var total = response.Content.Headers.ContentLength ?? 0;
+                await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
+                await using var output = File.Create(path);
+                var buffer = new byte[81920];
+                long received = 0;
+                int read;
+                while ((read = await input.ReadAsync(buffer, cancellationToken)) > 0)
                 {
-                    File.Delete(path);
-                    throw new InvalidOperationException(Strings.Get("ChecksumMismatch"));
+                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    received += read;
+                    if (total > 0)
+                    {
+                        var value = (double)received / total;
+                        SetStatus(new UpdateStatus(UpdateState.Downloading, release.Tag, value * 100));
+                        progress.Report(value);
+                    }
                 }
             }
-        }
 
-        _pendingInstallerPath = path;
-        SavePendingRelease(release);
+            if (release.Assets.TryGetValue(ChecksumsAssetName, out var sumsUrl))
+            {
+                var sums = await client.GetStringAsync(sumsUrl, cancellationToken);
+                var expected = FindChecksum(sums, assetName);
+                if (expected != null)
+                {
+                    await using var stream = File.OpenRead(path);
+                    var actual = Convert.ToHexString(await SHA256.HashDataAsync(stream, cancellationToken));
+                    if (!string.Equals(expected, actual, StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Delete(path);
+                        throw new InvalidOperationException(Strings.Get("ChecksumMismatch"));
+                    }
+                }
+            }
+
+            _pendingInstallerPath = path;
+            SavePendingRelease(release);
+            SetStatus(new UpdateStatus(UpdateState.Ready, release.Tag, 100));
+        }
+        catch
+        {
+            SetStatus(new UpdateStatus(UpdateState.Available, release.Tag, 0));
+            throw;
+        }
+    }
+
+    private static string RestartFilesFileName => HomeDirectoryPathProvider.GetDataFileFullPath("update-restart.json");
+
+    public bool RestartAndInstall(IEnumerable<string> openFiles)
+    {
+        if (Status.State != UpdateState.Ready || _pendingInstallerPath == null || !File.Exists(_pendingInstallerPath))
+            return false;
+        if (!TrySaveRestartFiles(RestartFilesFileName, openFiles))
+            return false;
+
+        _restartAfterInstall = true;
+        _applicationLifetime.Shutdown();
+        return true;
+    }
+
+    internal static bool TrySaveRestartFiles(string fileName, IEnumerable<string> openFiles)
+    {
+        try
+        {
+            File.WriteAllText(fileName, JsonSerializer.Serialize(openFiles.ToArray()));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to save files for update restart: {e.Message}");
+            return false;
+        }
+    }
+
+    public static IReadOnlyList<string> TakeRestartFiles() => TakeRestartFiles(RestartFilesFileName);
+
+    internal static IReadOnlyList<string> TakeRestartFiles(string fileName)
+    {
+        try
+        {
+            if (!File.Exists(fileName))
+                return [];
+            var json = File.ReadAllText(fileName);
+            File.Delete(fileName);
+            return JsonSerializer.Deserialize<string[]>(json)?.Where(file => !string.IsNullOrWhiteSpace(file)).ToArray() ?? [];
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to read files for update restart: {e.Message}");
+            return [];
+        }
     }
 
     public void LaunchPendingInstaller()
@@ -289,9 +467,19 @@ public class UpdateCheckService : IUpdateService, IDisposable
             var installerArgs = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /AUTOUPDATE=1 /LANG=" +
                 LocalizationService.InstallerLanguage + " " + (perMachine ? "/ALLUSERS" : "/CURRENTUSER");
             var verb = perMachine ? " -Verb RunAs" : string.Empty;
-            var script =
-                $"Wait-Process -Id {Environment.ProcessId} -ErrorAction SilentlyContinue; " +
+            var installCommand =
                 $"Start-Process -FilePath '{_pendingInstallerPath.Replace("'", "''")}' -ArgumentList '{installerArgs}'{verb}";
+            var script = $"Wait-Process -Id {Environment.ProcessId} -ErrorAction SilentlyContinue; ";
+            if (_restartAfterInstall)
+            {
+                var appPath = Path.Combine(AppContext.BaseDirectory, "LogGrokX.exe").Replace("'", "''");
+                script += $"try {{ {installCommand} -Wait }} finally {{ " +
+                          $"Start-Process -FilePath '{appPath}' -ArgumentList '{RestoreFilesArgument}' }}";
+            }
+            else
+            {
+                script += installCommand;
+            }
 
             using var process = new Process
             {
@@ -333,6 +521,9 @@ public class UpdateCheckService : IUpdateService, IDisposable
         {
             Trace.TraceWarning($"Failed to save skipped update version: {e.Message}");
         }
+        _availableRelease = null;
+        DeleteAvailableRelease(AvailableReleaseFileName);
+        SetStatus(new UpdateStatus(UpdateState.None, null, 0));
     }
 
     private static bool IsPerMachineInstall()

@@ -350,6 +350,8 @@ Settings:
     DetectHex: true
     # Updates: disabled | check (notify about a new version) | install (install silently on exit)
     UpdateMode: check
+    # Show update availability, download progress and restart action in the title bar
+    ShowUpdateIndicator: true
 
   # Shown as value(mapping); Fields empty = every field
   ValueMappings:

@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Thread-Gruppentrenner anzeigen</value>
   </data>
+  <data xml:space="preserve" name="ShowUpdateIndicator">
+    <value>Update-Anzeige in der Titelleiste</value>
+  </data>
   <data xml:space="preserve" name="SkipVersion">
     <value>Diese Version überspringen</value>
   </data>
@@ -617,6 +620,24 @@
   </data>
   <data xml:space="preserve" name="UpdateAvailable">
     <value>Update verfügbar</value>
+  </data>
+  <data xml:space="preserve" name="UpdateAvailableHint">
+    <value>Version {0} ist verfügbar. Klicken, um das Update herunterzuladen.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartHint">
+    <value>Neu starten, um LogGrokX {0} zu installieren und die geöffneten Protokolle wieder zu öffnen.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateRestartFailed">
+    <value>Die geöffneten Dateien konnten für den Neustart nicht gespeichert werden.</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionAvailable">
+    <value>Auf {0} aktualisieren</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionDownloading">
+    <value>Download: {0:0} %</value>
+  </data>
+  <data xml:space="preserve" name="UpdateActionReady">
+    <value>Neu starten: {0}</value>
   </data>
   <data xml:space="preserve" name="UpdateCheckFailed">
     <value>Update-Suche fehlgeschlagen: {0}</value>

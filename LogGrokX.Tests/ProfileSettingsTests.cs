@@ -389,5 +389,5 @@ public class ProfileSettingsTests
 
     internal static SettingsViewModel CreateEditor(ApplicationSettings settings) => new(settings,
         new TimelinePlacementService(settings), new ThreadGroupingService(settings),
-        new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator(), TestServices.Desktop);
+        new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator(), TestServices.Desktop, new UpdateIndicatorService(settings));
 }
