@@ -1,0 +1,196 @@
+Settings:
+  SelectedProfile: Classic
+  Profiles:
+    - Name: Classic
+      InheritLegacySettings: false
+      ColorSettings:
+        # Find list of supported values for Color here https://docs.microsoft.com/ru-ru/dotnet/api/system.drawing.color?view=net-6.0
+        # or use "#AARRGGBB" notation
+        Rules:
+          - RegexString: No error #use default color
+
+          - RegexString: "error: 0x0"
+
+          - RegexString: (?:\tERR\t|\Werror\W)
+            ForegroundColor: Red
+
+          - RegexString: \tIMP\t
+            ForegroundColor: DarkRed
+
+          - RegexString: \tWRN\t
+            ForegroundColor: Chocolate
+
+          - RegexString: \tDBG\t
+            ForegroundColor: Gray
+
+          - RegexString: (?i)fatal
+            BackgroundColor: "#FFCD5C5C"
+
+      LogFormats:
+        - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)
+          IndexedFields:
+            - Level
+            - Thread
+            - Component
+        # Tab-separated product logs (hex thread id)
+        - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?:(?'Component'[^\t]+)?\t)?(?'Message'.*)
+          IndexedFields:
+            - Thread
+            - Severity
+            - Component
+          TimeFormat: HH:mm:ss.fff
+          Transformations:
+            - lic\t\[.*ContentImp.*\].*"TicketBody"\s+:\s+\{[^}]+"Data"\s+:\s+(?'Base64Decode'"[^"]+")
+        # XOR-obfuscated tab-separated logs (hex thread id)
+        - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?:(?'Component'[^\t]+)?\t)?(?'Message'.*)
+          IndexedFields:
+            - Thread
+            - Severity
+            - Component
+          XorMask : 0xef
+          TimeFormat: HH:mm:ss.fff
+          Transformations:
+            - lic\t\[ContentImp\.cpp.*\].*"TicketBody".*"(?'Base64DecodeFormatJson'[\w]+==)"
+        # LogGrokX logs
+        - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?'Component'[^\t]+\t)?(?'Message'.*)
+          IndexedFields:
+            - Thread
+            - Severity
+            - Component
+          TimeFormat: HH:mm:ss.fff
+        # TestRun logs
+        - Regex: ^(?'time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'process_thread'\[\d+-\d+\])\t(?'Severity'\w+)?\t(?:[\w|\d]+\.)*(?'Component'[^-\s]+)\t(?'Message'.*)
+          IndexedFields:
+            - process_thread
+            - Severity
+            - Component
+          TimeFormat: HH:mm:ss.fff
+    - Name: Venn
+      InheritLegacySettings: false
+      ColorSettings:
+        Rules:
+          - RegexString: \[CRIT\]
+            BackgroundColor: "#FFCD5C5C"
+          - RegexString: \[ERRO\]
+            ForegroundColor: Red
+          - RegexString: \[WARN\]
+            ForegroundColor: Chocolate
+          - RegexString: \[TRAC\]
+            ForegroundColor: Gray
+      LogFormats:
+        - Regex: ^(?<Time>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.\d{3})\s-\s\[(?<Level>[A-Z]+)\]\s-\s\[(?<Context>(?:(?<Sid>\d+):)?(?<Pid>\d+):(?<Thread>\d+)(?::[MU-]:[MU-])?|[^\]]*)\](?:\s-\s\[(?<Process>[^\]]*)\]\s-\s\[irql\s(?<Irql>\d+)\](?:\s-\s\[(?<Source>[^\]]*)\])?|\s-\s\[(?<Process>[^\]]*)\]\s-\s\[(?<Source>[^\]]*)\]|\s-\s\[(?<Source>[^\]]*)\])?\s-\s(?<Message>.*)
+          IndexedFields:
+            - Level
+            - Sid
+            - Pid
+            - Thread
+            - Process
+            - Source
+            - Irql
+          TimeField: Time
+          TimeFormat: yyyy-MM-dd H:mm:ss.fff
+    - Name: Plain text
+      InheritLegacySettings: false
+      ColorSettings:
+        Rules: []
+      LogFormats:
+        - Regex: ^(?'Text'.*)
+
+    - Name: Regression
+      InheritLegacySettings: false
+      ColorSettings:
+        Rules:
+          - RegexString: '\bERROR\b'
+            ForegroundColor: Red
+          - RegexString: '\bWARN\b'
+            ForegroundColor: Chocolate
+      LogFormats:
+        # RegA: dated, Level, Thread in [], Component
+        - Regex: '^(?<Time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) (?<Level>[A-Z]{3,5}) \[(?<Thread>[^\]]+)\] (?<Component>\S+) - (?<Message>.*)'
+          IndexedFields:
+            - Level
+            - Thread
+            - Component
+          TimeFormat: yyyy-MM-dd HH:mm:ss.fff
+        # RegB: ISO 'T', lower-case thread/component, Severity, explicit TimeField
+        - Regex: '^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3})\|(?<Severity>\w+)\|(?<thread>[^|]+)\|(?<component>[^|]+)\|(?<Message>.*)'
+          IndexedFields:
+            - Severity
+            - thread
+            - component
+          TimeField: time
+          TimeFormat: yyyy-MM-ddTHH:mm:ss.fff
+        # RegN: no Component field
+        - Regex: '^(?<Time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3}) :: (?<Level>\w+) :: (?<Message>.*)'
+          IndexedFields:
+            - Level
+          TimeFormat: yyyy-MM-dd HH:mm:ss.fff
+
+  DebugSettings:
+    # Restart required after changing debug settings
+    EnableCrashDumps: false
+    MaxDumpsCount: 10
+
+  SymbolSettings:
+    # Resolve call stacks like "0# module.dll!<PDB GUID>,<age>!<rva>" to functions and source lines
+    Enabled: true
+    # WinDbg syntax: srv*<cache>*<server>;<directory> (Settings → Symbols edits one element per line). Empty uses _NT_SYMBOL_PATH
+    SymbolPath: ''
+    # Local source roots separated by ';' or new lines. "srv*" uses the source server data of the PDB files
+    SourcePath: 'srv*'
+    # Download cache for PDB and source files. Empty uses %LOCALAPPDATA%\LogGrokX\Symbols
+    CachePath: ''
+    # Allow running source server commands (tf.exe, git, ...) to extract source files
+    AllowSourceServerCommands: false
+
+  ViewSettings:
+    # UI language: system, en, ru, de, fr, es, ja, pl, pt-BR (applied on restart)
+    Language: en
+    # BigLine: prune|break
+    BigLine: prune
+    BigLineSize: 4096
+    # Timeline position: true - at the top of the log view, false - above the search bar
+    TimelineAtTop: false
+    TimelineVisible: true
+    # Log text font size (Ctrl+= / Ctrl+- / Ctrl+0 or Ctrl+mouse wheel)
+    LogFontSize: 12
+    # Group consecutive log lines with the same Thread field
+    GroupByThread: false
+    # Draw horizontal separators between thread groups
+    ShowThreadGroupSeparators: true
+    # Binary data detection for the BIN toggle: DetectBinary turns it off completely,
+    # DetectPem (PEM blocks and Base64 keys/certificates), DetectBase64 and DetectHex select the kinds
+    DetectBinary: true
+    DetectPem: true
+    DetectBase64: true
+    DetectHex: true
+    # Updates: disabled - do not check, check - notify about a new version, install - download and install silently on exit
+    UpdateMode: disabled
+    # Show update availability, download progress and restart action in the title bar
+    ShowUpdateIndicator: true
+
+  # Value mappings: values found in Fields (all fields when empty) are shown as value(mapping), e.g. 0x80070005(E_ACCESSDENIED).
+  # Lists can be edited, imported and exported as JSON in Settings -> Value mappings.
+  ValueMappings:
+    - Name: HRESULT
+      Enabled: false
+      IgnoreCase: true
+      Fields:
+        - Message
+      Items:
+        - Value: 0x80004001
+          Mapping: E_NOTIMPL
+        - Value: 0x80004002
+          Mapping: E_NOINTERFACE
+        - Value: 0x80004003
+          Mapping: E_POINTER
+        - Value: 0x80004005
+          Mapping: E_FAIL
+        - Value: 0x80070002
+          Mapping: ERROR_FILE_NOT_FOUND
+        - Value: 0x80070005
+          Mapping: E_ACCESSDENIED
+        - Value: 0x8007000E
+          Mapping: E_OUTOFMEMORY
+        - Value: 0x80070057
+          Mapping: E_INVALIDARG

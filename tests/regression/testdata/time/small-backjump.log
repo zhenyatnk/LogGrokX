@@ -1,0 +1,6 @@
+10:00:00.000	0x0E02	INF	Clock	[R01] small back-jump
+10:00:00.250	0x0E02	INF	Clock	[R02] small back-jump
+10:00:00.500	0x0E02	INF	Clock	[R03] small back-jump
+09:59:58.000	0x0E02	INF	Clock	[R04] 2 seconds back (clamped)
+10:00:01.000	0x0E02	INF	Clock	[R05] small back-jump
+10:00:01.250	0x0E02	INF	Clock	[R06] small back-jump

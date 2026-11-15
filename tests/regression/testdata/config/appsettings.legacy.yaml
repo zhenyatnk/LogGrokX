@@ -1,0 +1,15 @@
+Settings:
+  ColorSettings:
+    Rules:
+      - RegexString: \tERR\t
+        ForegroundColor: Red
+  LogFormats:
+    - Regex: ^(?'Time'\d{2}\:\d{2}\:\d{2}\.\d{3})\t(?'Thread'0x[0-9a-fA-F]+)\t(?'Severity'\w+)\t(?:(?'Component'[^\t]+)?\t)?(?'Message'.*)
+      IndexedFields:
+        - Thread
+        - Severity
+        - Component
+      TimeFormat: HH:mm:ss.fff
+  ViewSettings:
+    Language: en
+    UpdateMode: disabled

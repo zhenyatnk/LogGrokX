@@ -1,0 +1,18 @@
+{
+  "Name": "Reg-Types",
+  "Enabled": true,
+  "IgnoreCase": true,
+  "Fields": [
+    "Message"
+  ],
+  "Items": [
+    {
+      "Value": "0x00001",
+      "Mapping": "type 1"
+    },
+    {
+      "Value": "0x00002",
+      "Mapping": "type 2"
+    }
+  ]
+}

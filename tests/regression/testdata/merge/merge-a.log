@@ -1,0 +1,12 @@
+2026-05-14 10:00:00.100 INFO [T-1] Api - [A01] api event 1
+2026-05-14 10:00:00.300 INFO [T-2] Api - [A02] api event 2
+2026-05-14 10:00:00.500 INFO [T-1] Api - [A03] api event 3
+2026-05-14 10:00:00.700 INFO [T-2] Api - [A04] api event 4
+2026-05-14 10:00:00.900 ERROR [T-1] Api - [A05] api event 5
+2026-05-14 10:00:01.100 INFO [T-2] Api - [A06] api event 6
+2026-05-14 10:00:01.300 INFO [T-1] Api - [A07] api event 7
+2026-05-14 10:00:01.500 INFO [T-2] Api - [A08] api event 8
+2026-05-14 10:00:01.700 INFO [T-1] Api - [A09] api event 9
+2026-05-14 10:00:01.900 INFO [T-2] Api - [A10] api event 10
+2026-05-14 10:00:02.100 INFO [T-1] Api - [A11] api event 11
+2026-05-14 10:00:02.200 INFO [T-2] Api - [A12] same time as B11

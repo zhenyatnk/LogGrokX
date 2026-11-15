@@ -1,0 +1,9 @@
+2026-05-14 10:00:00.000 INF Thread-01 Startup [M01] application started version=1.2.3
+2026-05-14 10:00:00.250 ERR Thread-02 PaymentService [M02] Payment authorization failed orderId=1001
+   at LogGrokX.Demo.PaymentService.Process(Order order) in C:\src\PaymentService.cs:line 118
+   at LogGrokX.Demo.OrderService.Handle(Request request) in C:\src\OrderService.cs:line 42
+   continuation-only-token-QX7 appears only in this continuation line
+2026-05-14 10:00:00.500 INF Thread-01 Startup [M03] Сервер запущен, ошибка не обнаружена
+2026-05-14 10:00:00.750 WRN Thread-03 Cache [M04] Ошибка кэша: ключ не найден
+2026-05-14 10:00:01.000 INF Thread-03 Cache [M05] 日本語のメッセージ and emoji-free unicode ✓
+2026-05-14 10:00:01.250 INF Thread-01 Startup [M06] last record of file

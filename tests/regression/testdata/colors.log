@@ -1,0 +1,11 @@
+10:00:00.000	0x0C01	ERR	Color	[C01] tab ERR line
+10:00:00.250	0x0C01	WRN	Color	[C02] tab WRN line
+10:00:00.500	0x0C01	DBG	Color	[C03] tab DBG line
+10:00:00.750	0x0C01	IMP	Color	[C04] tab IMP line
+10:00:01.000	0x0C01	INF	Color	[C05] something FATAL happened
+10:00:01.250	0x0C01	INF	Color	[C06] an error occurred (word error)
+10:00:01.500	0x0C01	ERR	Color	[C07] No error here
+10:00:01.750	0x0C01	INF	Color	[C08] status error: 0x0 means ok
+10:00:02.000	0x0C01	ERR	Color	[C09] fatal and ERR together
+10:00:02.250	0x0C01	INF	Color	[C10] plain info line
+10:00:02.500	0x0C01	INF	Color	[C11] custom-rule-token here

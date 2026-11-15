@@ -1,0 +1,8 @@
+10:00:00.000	0x0D01	INF	0x00001	[V01] request type 0x00001 failed: 0x80070005
+10:00:00.250	0x0D01	INF	Core	[V02] boundary 0x000010 and x0x00001 and 0x00001x
+10:00:00.500	0x0D01	INF	Core	[V03] case TYPE_A vs type_a
+10:00:00.750	0x0D01	INF	Core	[V04] phrase disk full and disk alone
+10:00:01.000	0x0D01	INF	Core	[V05] json {"code":5,"name":"0x00001","0x00001":1,"list":[5,"TYPE_A"]}
+10:00:01.250	0x0D01	INF	Core	[V06] xml <r a="0x00001"><v>0x00002</v><c><![CDATA[0x00001]]></c></r>
+10:00:01.500	0x0D01	INF	Core	[V07] dup value 0x00003
+10:00:01.750	0x0D01	INF	Core	[V08] amp value AMP_CODE

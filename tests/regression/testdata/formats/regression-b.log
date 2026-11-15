@@ -1,0 +1,4 @@
+2026-05-14T10:00:00.000|Info|worker-0|svc.api|[RB01] regression format B
+2026-05-14T10:00:01.000|Error|worker-1|svc.db|[RB02] regression format B
+2026-05-14T10:00:02.000|Info|worker-0|svc.api|[RB03] regression format B
+2026-05-14T10:00:03.000|Warn|worker-1|svc.db|[RB04] regression format B

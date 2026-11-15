@@ -1,0 +1,7 @@
+2026-05-14 10:00:00.000 ERR Thread-01 Crash [K01] unhandled exception, Call stack:
+ 0# test_.dll!38B3DC8D-3D1D-FADD-E67B-593D48ABEC14,1!86da0
+ 1# kernel32.dll!14ad
+ 2# ntdll.dll+0x5aa58
+2026-05-14 10:00:00.250 INF Thread-01 Crash [K02] not a stack: 0# is just text here
+2026-05-14 10:00:00.500 ERR Thread-01 Crash [K03] single frame stack:
+ 0# missing_module.dll+0x10
