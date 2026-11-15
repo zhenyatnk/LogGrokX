@@ -201,13 +201,13 @@ namespace LogGrokX
 
         internal static ApplicationSettings LoadFromFile(string fileName, bool reloadOnChange = false)
         {
-            var builder = new ConfigurationBuilder()
-                .Add(new ProfileYamlConfigurationSource
-                {
-                    Path = fileName,
-                    Optional = true,
-                    ReloadOnChange = reloadOnChange
-                });
+            var source = new ProfileYamlConfigurationSource
+            {
+                Path = fileName,
+                Optional = true,
+                ReloadOnChange = reloadOnChange
+            };
+            var builder = new ConfigurationBuilder().Add(source);
 
             var configuration = builder.Build();
             var settings = BindSettings(configuration, fileName);
@@ -217,6 +217,9 @@ namespace LogGrokX
 
             ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
             {
+                if (source.LastLoadFailed)
+                    return;
+
                 var newSettings = BindSettings(configuration);
                 settings.ColorSettings = newSettings.ColorSettings;
                 settings.LogFormats = newSettings.LogFormats;

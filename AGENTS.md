@@ -575,7 +575,11 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   validation (`Revalidate`, no save) and navigates to the field.
 - The app writes diagnostic logs to `%LOCALAPPDATA%\LogGrokX\`.
 - Runtime configuration is `appsettings.yaml` (watched and hot-reloaded),
-  next to the executable.
+  next to the executable. A malformed file never crashes the app
+  (`Settings/ProfileYamlConfigurationSource.cs`): parse/IO failures are logged
+  and, on hot reload, the last good configuration is kept (`LastLoadFailed`
+  makes `ApplicationSettings.LoadFromFile` skip the reload); at startup the app
+  falls back to defaults (#116).
 - **Build version** is injected by the `GenerateBuildInfo` / `GenerateAppManifest`
   targets in `LogGrokX.csproj`: they write `BuildInfo.g.cs`, `VersionInfo.g.cs`
   and a version-stamped `LogGrokX.generated.manifest`. The manifest is fed to

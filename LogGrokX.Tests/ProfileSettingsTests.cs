@@ -10,6 +10,8 @@ using LogGrokX.Platform.Colors.Configuration;
 using LogGrokX.Data;
 using LogGrokX.Data.Monikers;
 using LogGrokX.Settings;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Primitives;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -88,6 +90,33 @@ public class ProfileSettingsTests
         await changed.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.AreEqual(0, settings.GetSelectedProfile().LogFormats!.Length);
         Assert.AreEqual(0, settings.GetSelectedProfile().ColorSettings!.Rules.Length);
+    }
+
+    [TestMethod]
+    public void MalformedYamlFallsBackToDefaultsWithoutThrowing()
+    {
+        File.WriteAllText(_path, "Settings:\n  ViewSettings: [broken\n    Language: en\n");
+        var settings = ApplicationSettings.LoadFromFile(_path);
+        Assert.AreEqual(ApplicationSettings.LegacyProfileName, settings.GetSelectedProfile().Name);
+        Assert.AreEqual(0, settings.LogFormats.Length);
+    }
+
+    [TestMethod]
+    public async Task MalformedReloadKeepsLastGoodConfiguration()
+    {
+        File.WriteAllText(_path, "Settings:\n  LogFormats:\n    - Regex: ^legacy$\n");
+        var source = new ProfileYamlConfigurationSource { Path = _path, Optional = true, ReloadOnChange = true };
+        var configuration = new ConfigurationBuilder().Add(source).Build();
+        Assert.AreEqual("^legacy$", configuration["Settings:LogFormats:0:Regex"]);
+
+        var reloaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        ChangeToken.OnChange(() => configuration.GetReloadToken(), () => reloaded.TrySetResult());
+
+        File.WriteAllText(_path, "Settings:\n  ViewSettings: [broken\n    Language: en\n");
+        await reloaded.Task.WaitAsync(TimeSpan.FromSeconds(10));
+
+        Assert.IsTrue(source.LastLoadFailed);
+        Assert.AreEqual("^legacy$", configuration["Settings:LogFormats:0:Regex"]);
     }
 
     [TestMethod]
