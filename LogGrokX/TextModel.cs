@@ -351,13 +351,15 @@ public class TextModel : IReadOnlyList<StringRange>
         }
         else
         {
-            var textLines = source.Tokenize().ToList();
+            var textLines = source.Tokenize()
+                .SelectMany(c => TextOperations.Normalize(c, viewSettings).Tokenize())
+                .ToList();
             if (textLines.Count > 1)
             {
-                _textLines = textLines.Select(c => TextOperations.Normalize(c, viewSettings)).ToList();
+                _textLines = textLines;
             }
 
-            if (textLines.Count > CollapseToLines + 1)
+            if (source.Tokenize().Count() > CollapseToLines + 1)
             {
                 var linesToCollapse = textLines.Count - CollapseToLines;
                 CollapsibleRanges = new List<(int start, int length)>
@@ -372,8 +374,7 @@ public class TextModel : IReadOnlyList<StringRange>
 
             }
             
-            _sourceText = StringRange.FromString(TextOperations.Normalize(source,
-                ApplicationSettings.Instance().ViewSettings));
+            _sourceText = StringRange.FromString(TextOperations.Normalize(source, viewSettings));
             _plainSource = source;
         }
     }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -32,6 +33,84 @@ namespace LogGrokX.Tests
             var model = new TextModel(1, source);
 
             Assert.AreEqual(source, model.GetDisplayedText(null));
+        }
+
+        [TestMethod]
+        [DataRow(4096, 1)]
+        [DataRow(4097, 2)]
+        [DataRow(10000, 3)]
+        [DataRow(100000, 25)]
+        public void LongSingleLineIsWrappedIntoVisualLines(int length, int expectedVisualLines)
+        {
+            WithBigLine(ViewSettings.ViewBigLine.Break, 4096, () =>
+            {
+                var source = new string('a', length);
+                var model = new TextModel(1, source);
+
+                Assert.AreEqual(expectedVisualLines, model.Count);
+
+                for (var i = 0; i < model.Count; i++)
+                    Assert.IsTrue(model[i].Length <= 4096, $"Visual line {i} is too long.");
+
+                Assert.AreEqual(source, model.GetDisplayedText(null));
+            });
+        }
+
+        [TestMethod]
+        public void LongLineInsideMultiLineMessageIsWrapped()
+        {
+            WithBigLine(ViewSettings.ViewBigLine.Break, 4096, () =>
+            {
+                var source = "first\n" + new string('b', 5000) + "\nlast";
+                var model = new TextModel(1, source);
+
+                Assert.AreEqual(4, model.Count);
+                Assert.AreEqual("first", model[0].ToString());
+                Assert.AreEqual(new string('b', 4096), model[1].ToString());
+                Assert.AreEqual(new string('b', 904), model[2].ToString());
+                Assert.AreEqual("last", model[3].ToString());
+                StringAssert.Contains(model.GetDisplayedText(null), new string('b', 5000));
+            });
+        }
+
+        [TestMethod]
+        public void WrappedSingleLineDoesNotCollapseItsVisualLines()
+        {
+            WithBigLine(ViewSettings.ViewBigLine.Break, 4096, () =>
+            {
+                var model = new TextModel(1, new string('a', 100000));
+
+                Assert.AreEqual(25, model.Count);
+                Assert.IsNull(model.CollapsibleRanges);
+            });
+        }
+
+        [TestMethod]
+        public void BigLineSizeChangeReWrapsSingleLine()
+        {
+            WithBigLine(ViewSettings.ViewBigLine.Break, 5000, () =>
+            {
+                Assert.AreEqual(2, new TextModel(1, new string('a', 10000)).Count);
+                Assert.AreEqual(1, new TextModel(2, new string('a', 4097)).Count);
+            });
+        }
+
+        private static void WithBigLine(ViewSettings.ViewBigLine bigLine, int bigLineSize, Action action)
+        {
+            var settings = ApplicationSettings.Instance().ViewSettings;
+            var previousBigLine = settings.BigLine;
+            var previousBigLineSize = settings.BigLineSize;
+            try
+            {
+                settings.BigLine = bigLine;
+                settings.BigLineSize = bigLineSize;
+                action();
+            }
+            finally
+            {
+                settings.BigLine = previousBigLine;
+                settings.BigLineSize = previousBigLineSize;
+            }
         }
 
         [TestMethod]
