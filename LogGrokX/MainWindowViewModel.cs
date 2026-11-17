@@ -15,6 +15,7 @@ using LogGrokX.MarkedLines;
 using LogGrokX.MergedView;
 using LogGrokX.Search;
 using LogGrokX.Platform;
+using LogGrokX.Settings;
 
 namespace LogGrokX
 {
@@ -86,8 +87,9 @@ namespace LogGrokX
             BulkOperations = bulkOperations ?? throw new ArgumentNullException(nameof(bulkOperations));
             _applicationSettings = applicationSettings;
             Profiles = new ObservableCollection<ProfileSettings>(applicationSettings.GetProfiles());
-            _selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
+            var selectedProfile = Profiles.First(profile => string.Equals(profile.Name,
                 applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
+            _selectedProfile = ResolveStartupProfile(applicationSettings, selectedProfile);
             _appliedProfile = _selectedProfile;
             _searchAutocompleteCache = searchAutocompleteCache;
             _savedSearchPatternStore = savedSearchPatternStore;
@@ -182,7 +184,7 @@ namespace LogGrokX
             var profiles = _applicationSettings.GetProfiles();
             var selected = profiles.First(profile => string.Equals(profile.Name,
                 _applicationSettings.GetSelectedProfile().Name, StringComparison.OrdinalIgnoreCase));
-            if (!TryApplyProfile(selected))
+            if (!TryApplyProfile(selected, notify: false))
                 selected = profiles.FirstOrDefault(profile => string.Equals(profile.Name,
                     _appliedProfile.Name, StringComparison.OrdinalIgnoreCase)) ?? _appliedProfile;
             _refreshingProfiles = true;
@@ -200,7 +202,21 @@ namespace LogGrokX
             }
         }
 
-        private bool TryApplyProfile(ProfileSettings profile)
+        private ProfileSettings ResolveStartupProfile(ApplicationSettings applicationSettings, ProfileSettings selected)
+        {
+            if (LogFormatValidation.GetInvalidProfileError(selected) == null)
+                return selected;
+
+            LogFormatValidation.GetValidFormats(selected);
+            var fallback = Profiles.FirstOrDefault(profile =>
+                string.Equals(profile.Name, ApplicationSettings.LegacyProfileName, StringComparison.OrdinalIgnoreCase) &&
+                LogFormatValidation.GetInvalidProfileError(profile) == null) ?? applicationSettings.GetLegacyProfile();
+            if (!Profiles.Contains(fallback))
+                Profiles.Insert(0, fallback);
+            return fallback;
+        }
+
+        private bool TryApplyProfile(ProfileSettings profile, bool notify = true)
         {
             if (_appliedProfile.HasSameConfiguration(profile))
             {
@@ -214,6 +230,9 @@ namespace LogGrokX
             Platform.Colors.ColorRuleSet colors;
             try
             {
+                var logFormatError = LogFormatValidation.GetInvalidProfileError(profile);
+                if (logFormatError != null)
+                    throw new InvalidOperationException(logFormatError);
                 colors = new Platform.Colors.ColorRuleSet(profile.ColorSettings ?? new Platform.Colors.Configuration.ColorSettings(), _colorValidator);
                 foreach (var document in documents)
                 {
@@ -234,8 +253,9 @@ namespace LogGrokX
                 {
                     _lastFailedProfile = profile;
                     Trace.TraceError($"Cannot apply profile '{profile.Name}': {e}");
-                    _dialogs.ShowWarning(Strings.Format("ProfileChangeError", profile.Name, e.Message), Strings.Get("ProfileChangeFailed"));
                 }
+                if (notify)
+                    _dialogs.ShowWarning(Strings.Format("ProfileChangeError", profile.Name, e.Message), Strings.Get("ProfileChangeFailed"));
                 return false;
             }
             for (var i = 0; i < replacements.Count; i++)

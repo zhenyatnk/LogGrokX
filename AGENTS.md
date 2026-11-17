@@ -579,7 +579,23 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   (`Settings/ProfileYamlConfigurationSource.cs`): parse/IO failures are logged
   and, on hot reload, the last good configuration is kept (`LastLoadFailed`
   makes `ApplicationSettings.LoadFromFile` skip the reload); at startup the app
-  falls back to defaults (#116).
+  falls back to defaults (#116). The `ChangeToken.OnChange` subscription must be
+  stored in `ApplicationSettings._reloadSubscription`: an unreferenced
+  registration is collected by the GC and hot reload silently stops working
+  (#115, #106). Applying a profile whose log formats are all invalid fails with
+  `Profile change failed` and keeps the previous profile. `TryApplyProfile`
+  reports a failed attempt through the dialog on every user selection
+  (`notify`), while hot-reload applications pass `notify: false` and keep the
+  repeated-error suppression (`_lastFailedProfile`); when such a profile is
+  the selected one at startup, `MainWindowViewModel.ResolveStartupProfile` skips
+  its formats (logging them) and switches to the legacy `Default` (plain text)
+  profile without a dialog, so the selector shows the profile actually applied
+  (#114). The title-bar profile
+  `ComboBox` (`ProfileSelector`) binds `SelectedItem` one-way and applies the
+  selection in `MainWindow.OnProfileSelectionChanged` through
+  `ProfileSelectorSync.ApplySelection`, which sets the item back to the profile
+  that is really applied (matched by reference, else by name): a two-way binding
+  leaves the `ComboBox` on the rejected item when the setter reverts.
 - **Build version** is injected by the `GenerateBuildInfo` / `GenerateAppManifest`
   targets in `LogGrokX.csproj`: they write `BuildInfo.g.cs`, `VersionInfo.g.cs`
   and a version-stamped `LogGrokX.generated.manifest`. The manifest is fed to

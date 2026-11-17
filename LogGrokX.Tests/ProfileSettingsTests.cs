@@ -416,6 +416,25 @@ public class ProfileSettingsTests
         Assert.IsFalse(settings.ViewSettings.DetectHex);
     }
 
+    [TestMethod]
+    public async Task ReloadSurvivesGarbageCollection()
+    {
+        File.WriteAllText(_path, "Settings:\n  Profiles:\n    - Name: First\n");
+        var settings = ApplicationSettings.LoadFromFile(_path, reloadOnChange: true);
+        var changed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        settings.ProfilesChanged += () => changed.TrySetResult();
+        await Task.Delay(300);
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+        File.WriteAllText(_path,
+            "Settings:\n  SelectedProfile: Second\n  Profiles:\n    - Name: Second\n" +
+            "  ViewSettings:\n    DetectHex: false\n");
+        await changed.Task.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.AreEqual("Second", settings.GetSelectedProfile().Name);
+        Assert.IsFalse(settings.ViewSettings.DetectHex);
+    }
+
     internal static SettingsViewModel CreateEditor(ApplicationSettings settings) => new(settings,
         new TimelinePlacementService(settings), new ThreadGroupingService(settings),
         new MergedFilesViewService(), new TextZoomService(settings), new LogGrokX.Theming.UiThemeService(), new Platform.WpfColorValidator(), TestServices.Desktop, new UpdateIndicatorService(settings));

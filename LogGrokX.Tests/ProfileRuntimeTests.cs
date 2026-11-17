@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -7,11 +8,15 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Threading;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Platform.Colors.Configuration;
 using LogGrokX.Data;
 using LogGrokX.MarkedLines;
 using LogGrokX.MergedView;
+using LogGrokX.Platform;
 using LogGrokX.Search;
 using LogGrokX.Settings;
 using LogGrokX.Theming;
@@ -455,6 +460,140 @@ public class ProfileRuntimeTests
     }
 
     [TestMethod]
+    public void ProfileWithInvalidLogFormatIsNotApplied()
+    {
+        RunOnSta(() =>
+        {
+            var path = Path.GetTempFileName();
+            File.WriteAllText(path, "sample\n");
+            using var errors = new StringWriter();
+            using var listener = new TextWriterTraceListener(errors);
+            Trace.Listeners.Add(listener);
+            try
+            {
+                using var main = CreateMain(InvalidFormatSettings());
+                main.AddDocument(path);
+                var document = main.CurrentDocument!;
+                WaitFor(() => !document.LogViewModel.IsLoading);
+                main.SelectedProfile = main.Profiles[1];
+                Assert.AreEqual("Valid", main.SelectedProfile.Name);
+                Assert.AreSame(document, main.CurrentDocument);
+                Assert.AreEqual(1, main.Documents.Count);
+                StringAssert.Contains(errors.ToString(), "Cannot apply profile 'Broken'");
+            }
+            finally
+            {
+                Trace.Listeners.Remove(listener);
+                File.Delete(path);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void FailedProfileSelectionRevertsComboBox()
+    {
+        RunOnSta(() =>
+        {
+            var directory = Path.Combine(Path.GetTempPath(), $"loggrokx-profile-combo-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(directory);
+            var path = Path.Combine(directory, "tab.log");
+            var settingsPath = Path.Combine(directory, "appsettings.yaml");
+            File.WriteAllText(path, "sample\n");
+            File.WriteAllText(settingsPath,
+                "Settings:\n  SelectedProfile: Broken\n  Profiles:\n" +
+                "    - Name: Valid\n      InheritLegacySettings: false\n      LogFormats:\n        - Regex: ^(?'Message'.*)\n" +
+                "    - Name: Broken\n      InheritLegacySettings: false\n      LogFormats:\n        - Regex: '^(?<Time>[unclosed'\n");
+            var settings = ApplicationSettings.LoadFromFile(settingsPath, reloadOnChange: true);
+            try
+            {
+                var dialogs = new NestedLoopDialogs(TimeSpan.FromMilliseconds(700));
+                using var main = TestServices.CreateMain(settings, dialogs: dialogs);
+                main.AddDocument(path);
+                WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading);
+                var comboBox = new ComboBox
+                {
+                    ItemsSource = main.Profiles,
+                    DisplayMemberPath = "Name",
+                    SelectedItem = main.Profiles.Single(profile => profile.Name == "Broken")
+                };
+                comboBox.SetBinding(Selector.SelectedItemProperty, new Binding(nameof(MainWindowViewModel.SelectedProfile))
+                {
+                    Source = main,
+                    Mode = BindingMode.OneWay
+                });
+                comboBox.SelectionChanged += (_, e) =>
+                {
+                    if (e.AddedItems.Count > 0 && e.AddedItems[0] is ProfileSettings selected)
+                        ProfileSelectorSync.ApplySelection(comboBox, main, selected);
+                };
+                var window = new Window
+                {
+                    Content = comboBox,
+                    Width = 300,
+                    Height = 100,
+                    Left = -10000,
+                    Top = -10000,
+                    ShowActivated = false,
+                    ShowInTaskbar = false,
+                    WindowStartupLocation = WindowStartupLocation.Manual
+                };
+                window.Show();
+                try
+                {
+                    WaitFor(() => comboBox.IsLoaded);
+                    comboBox.SelectedItem = main.Profiles.Single(profile => profile.Name == "Valid");
+                    WaitFor(() => SelectedName(comboBox) == "Valid" && main.SelectedProfile.Name == "Valid");
+                    comboBox.SelectedItem = main.Profiles.Single(profile => profile.Name == "Broken");
+                    WaitFor(() => SelectedName(comboBox) == "Valid");
+                    Assert.AreEqual("Valid", SelectedName(comboBox));
+                    Assert.AreEqual("Valid", main.SelectedProfile.Name);
+                    Assert.AreEqual(1, dialogs.Warnings.Count);
+
+                    comboBox.SelectedItem = main.Profiles.Single(profile => profile.Name == "Broken");
+                    WaitFor(() => SelectedName(comboBox) == "Valid");
+                    Assert.AreEqual(2, dialogs.Warnings.Count);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+            finally
+            {
+                Directory.Delete(directory, true);
+            }
+        });
+    }
+
+    private static string? SelectedName(ComboBox comboBox) => (comboBox.SelectedItem as ProfileSettings)?.Name;
+
+    [TestMethod]
+    public void StartupOnBrokenProfileFallsBackToLegacyProfile()
+    {
+        RunOnSta(() =>
+        {
+            var path = Path.GetTempFileName();
+            File.WriteAllText(path, "sample\n");
+            var settings = InvalidFormatSettings();
+            settings.SelectedProfile = "Broken";
+            try
+            {
+                using var main = CreateMain(settings);
+                Assert.AreEqual("Default", main.SelectedProfile.Name);
+                Assert.AreSame(main.Profiles[0], main.SelectedProfile);
+
+                main.AddDocument(path);
+                WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading);
+                CollectionAssert.AreEqual(new[] { "Text" }, main.CurrentDocument!.MetaInformation.FieldNames);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [TestMethod]
     public void FailedReloadRefreshesProfilesKeepsAppliedSettingsAndSuppressesRepeatedErrors()
     {
         RunOnSta(() =>
@@ -533,6 +672,40 @@ public class ProfileRuntimeTests
         InheritLegacySettings = false,
         LogFormats = [new LogFormat { Regex = regex }],
         ColorSettings = new ColorSettings { Rules = [new ColorRule { RegexString = ".*", ForegroundColor = color }] }
+    };
+
+    private sealed class NestedLoopDialogs(TimeSpan delay) : IAppDialogs
+    {
+        public List<string> Warnings { get; } = [];
+
+        public IReadOnlyList<string> SelectLogFiles() => [];
+
+        public void ShowWarning(string message, string title)
+        {
+            Warnings.Add(message);
+            var frame = new DispatcherFrame();
+            var timer = new DispatcherTimer(delay, DispatcherPriority.Background,
+                (_, _) => frame.Continue = false, Dispatcher.CurrentDispatcher);
+            timer.Start();
+            Dispatcher.PushFrame(frame);
+            timer.Stop();
+        }
+
+        public void ShowSettings() { }
+        public void ShowSupport() { }
+        public void ShowSavedSearches() { }
+    }
+
+    private static ApplicationSettings InvalidFormatSettings() => new()
+    {
+        Profiles = [Profile("Valid", "^(?'Message'.*)", "Red"), new ProfileSettings
+        {
+            Name = "Broken",
+            InheritLegacySettings = false,
+            ColorSettings = new ColorSettings(),
+            LogFormats = [new LogFormat { Regex = "^(?<Time>[unclosed" }]
+        }],
+        SelectedProfile = "Valid"
     };
 
     private static MainWindowViewModel CreateMain(ApplicationSettings settings) => TestServices.CreateMain(settings);

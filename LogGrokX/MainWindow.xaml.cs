@@ -80,6 +80,14 @@ namespace LogGrokX
                 UpdateMergedDocument();
         }
 
+        private void OnProfileSelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.AddedItems.Count == 0 || e.AddedItems[0] is not ProfileSettings selected)
+                return;
+
+            ProfileSelectorSync.ApplySelection(ProfileSelector, _viewModel, selected);
+        }
+
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             if (e.Key == Key.Escape && Keyboard.Modifiers == ModifierKeys.None && _viewModel.BulkOperations.IsActive)
