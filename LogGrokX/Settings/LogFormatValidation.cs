@@ -20,6 +20,24 @@ internal static class LogFormatValidation
     public static string WithContext(string profileName, int formatNumber, string message) =>
         Strings.Format("LogFormatError", profileName, formatNumber, message);
 
+    public static string? GetInvalidProfileError(ProfileSettings profile)
+    {
+        var formats = profile.LogFormats;
+        if (formats == null || formats.Length == 0)
+            return null;
+
+        string? firstError = null;
+        for (var index = 0; index < formats.Length; index++)
+        {
+            var message = GetMessages(formats[index]).FirstOrDefault();
+            if (message == null)
+                return null;
+            firstError ??= WithContext(profile.Name, index + 1, message);
+        }
+
+        return firstError;
+    }
+
     public static LogFormat[] GetValidFormats(ProfileSettings profile)
     {
         return (profile.LogFormats ?? [])

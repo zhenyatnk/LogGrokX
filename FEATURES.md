@@ -923,7 +923,11 @@ The selection takes effect immediately, is saved, and applies to **all open
 documents** and subsequently opened files. Changing formats or colors rereads
 the open logs and preserves marked lines; renaming a profile with unchanged
 configuration does not trigger a reparse. If a profile cannot be applied, the
-last successfully applied configuration stays in use.
+last successfully applied configuration stays in use: the selector returns to the
+profile that is really active, and picking the failing profile again shows the
+`Profile change failed` message every time. A configuration hot reload keeps the
+previous profile silently, and an invalid selected profile at startup falls back
+to **Default** (plain text) without a dialog.
 
 Fresh configurations include **Classic** (the original formats and colors),
 **Venn** (its own structured format and colors) and **Plain text** (whole-line

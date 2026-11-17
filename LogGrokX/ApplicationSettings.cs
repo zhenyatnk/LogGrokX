@@ -19,6 +19,7 @@ namespace LogGrokX
         public const string LegacyProfileName = "Default";
         private static ApplicationSettings? instance;
         private readonly string _fileName;
+        private IDisposable? _reloadSubscription;
 
         public static string SettingsFileName => PathHelpers.GetLocalFilePath("appsettings.yaml");
 
@@ -56,9 +57,15 @@ namespace LogGrokX
                     LogFormats = profile.LogFormats ??
                         (profile.InheritLegacySettings == false ? Array.Empty<LogFormat>() : LogFormats)
                 }).ToArray();
-            return configured.Length > 0 ? configured :
-                [new ProfileSettings { Name = LegacyProfileName, ColorSettings = ColorSettings, LogFormats = LogFormats }];
+            return configured.Length > 0 ? configured : [GetLegacyProfile()];
         }
+
+        internal ProfileSettings GetLegacyProfile() => new()
+        {
+            Name = LegacyProfileName,
+            ColorSettings = ColorSettings,
+            LogFormats = LogFormats
+        };
 
         public ProfileSettings GetSelectedProfile()
         {
@@ -215,7 +222,7 @@ namespace LogGrokX
             ValueMapper.Current = new ValueMapper(settings.ValueMappings);
             SymbolOptions.Current = SymbolOptions.FromSettings(settings.SymbolSettings);
 
-            ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
+            settings._reloadSubscription = ChangeToken.OnChange(() => configuration.GetReloadToken(), () =>
             {
                 if (source.LastLoadFailed)
                     return;

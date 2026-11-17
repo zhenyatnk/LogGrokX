@@ -19,7 +19,7 @@ internal static class TestServices
     internal static IUiDispatcher Inline { get; } = new InlineDispatcher();
     internal static DisplaySettingsMonitor DisplaySettings { get; } = new(Inline);
 
-    internal static MainWindowViewModel CreateMain(ApplicationSettings settings, UpdatesStub? updates = null)
+    internal static MainWindowViewModel CreateMain(ApplicationSettings settings, UpdatesStub? updates = null, IAppDialogs? dialogs = null)
     {
         if (Thread.CurrentThread.GetApartmentState() != ApartmentState.STA)
             throw new InvalidOperationException("UI fixtures require an STA thread.");
@@ -27,7 +27,7 @@ internal static class TestServices
         var bulkOperations = new BulkOperationService(dispatcher);
         return new MainWindowViewModel(settings, new SearchAutocompleteCache(), new SavedSearchPatternStore(),
             new UiThemeService(), new TimelinePlacementService(settings), new TextZoomService(settings),
-            new ThreadGroupingService(settings), new MergedFilesViewService(), Dialogs,
+            new ThreadGroupingService(settings), new MergedFilesViewService(), dialogs ?? Dialogs,
             documents => new MarkedLinesViewModel(documents, bulkOperations), new WpfColorValidator(), dispatcher, Desktop,
             new DisplaySettingsMonitor(dispatcher), new UpdateIndicatorService(settings), updates ?? Updates, bulkOperations);
     }

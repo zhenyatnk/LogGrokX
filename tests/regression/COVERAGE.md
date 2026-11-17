@@ -196,7 +196,7 @@
 | `REQ-PRF-01` | Селектор профиля в заголовке: переключение сразу применяется ко всем открытым документам и сохраняется (SelectedProfile). | [RT-PRF-001](cases/RT-PRF-001.md) |
 | `REQ-PRF-02` | Settings → Profiles: New, Copy (`{0} copy`), Remove (остаётся минимум один), уникальные непустые имена. | [RT-PRF-002](cases/RT-PRF-002.md) |
 | `REQ-PRF-03` | Смена форматов/цветов перечитывает открытые логи с сохранением меток; переименование без изменения конфигурации не перечитывает. | [RT-PRF-001](cases/RT-PRF-001.md), [RT-PRF-002](cases/RT-PRF-002.md) |
-| `REQ-PRF-04` | Профиль, который не удаётся применить, показывает `Profile change failed` / `Cannot apply profile '{0}': {1}`, сохраняется последняя рабочая конфигурация. | [RT-PRF-003](cases/RT-PRF-003.md) |
+| `REQ-PRF-04` | Профиль, который не удаётся применить вручную из селектора, показывает `Profile change failed` / `Cannot apply profile '{0}': {1}` (при каждом выборе) и сохраняет последнюю рабочую конфигурацию; hot reload и старт применяют ошибочный профиль без диалога (на старте селектор показывает реально применённый профиль `Default`). | [RT-PRF-003](cases/RT-PRF-003.md) |
 | `REQ-PRF-05` | Старая конфигурация без Profiles отображается как `Default`; наследование legacy-настроек для ручных профилей, `InheritLegacySettings: false`, явные пустые списки. | [RT-PRF-003](cases/RT-PRF-003.md) |
 | `REQ-THM-01` | View → Theme → Light/Dark (и переключатель в заголовке) применяются ко всему приложению сразу и сохраняются в `Theme.json`. | [RT-THM-001](cases/RT-THM-001.md) |
 | `REQ-THM-02` | Accent color: Blue, Purple, Pink, Red, Orange, Green, Teal — применяется сразу и сохраняется. | [RT-THM-001](cases/RT-THM-001.md) |
