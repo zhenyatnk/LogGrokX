@@ -66,14 +66,14 @@ namespace LogGrokX.Data
             // try to detect BOM-less utf-16 by nulls distribution
             var evenNullCount = 0;
             var oddNullCount = 0;
-            for (var i = 0; i < buffer.Length / 2; i++)
+            for (var i = 0; i < length / 2; i++)
             {
                 if (buffer[i*2] == 0) evenNullCount++;
                 if (buffer[i*2 + 1] == 0) oddNullCount++;
             }
 
-            var possibleUnicodeCharPercent = oddNullCount * 2 * 100 / buffer.Length;
-            var possibleBigEndianCharPercent =  evenNullCount * 2 * 100/ buffer.Length;
+            var possibleUnicodeCharPercent = length == 0 ? 0 : oddNullCount * 2 * 100 / length;
+            var possibleBigEndianCharPercent = length == 0 ? 0 : evenNullCount * 2 * 100 / length;
             if (possibleUnicodeCharPercent > 70 && possibleBigEndianCharPercent < 10)
             {
                 return Encoding.Unicode;
@@ -84,7 +84,7 @@ namespace LogGrokX.Data
                 return Encoding.BigEndianUnicode;
             }
 
-            var detectResult = CharsetDetector.DetectFromBytes(buffer);
+            var detectResult = CharsetDetector.DetectFromBytes(buffer, 0, length);
             var detectedEncoding = detectResult?.Detected?.Encoding ?? Encoding.UTF8;
             
             return detectedEncoding != Encoding.ASCII ? detectedEncoding : Encoding.UTF8;

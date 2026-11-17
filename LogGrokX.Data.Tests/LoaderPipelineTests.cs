@@ -262,6 +262,64 @@ public class LoaderPipelineTests
         }
     }
 
+    private const string VennFormat =
+        @"^(?<Time>\d{4}-\d{2}-\d{2}\s\d{1,2}:\d{2}:\d{2}\.\d{3})\s-\s\[(?<Level>[A-Z]+)\]\s-\s\[(?<Context>(?:(?<Sid>\d+):)?(?<Pid>\d+):(?<Thread>\d+)(?::[MU-]:[MU-])?|[^\]]*)\](?:\s-\s\[(?<Process>[^\]]*)\]\s-\s\[irql\s(?<Irql>\d+)\](?:\s-\s\[(?<Source>[^\]]*)\])?|\s-\s\[(?<Process>[^\]]*)\]\s-\s\[(?<Source>[^\]]*)\]|\s-\s\[(?<Source>[^\]]*)\])?\s-\s(?<Message>.*)";
+
+    [TestMethod]
+    public void LoadsIndexedFieldsThatAppearOutOfTextOrder()
+    {
+        var lines = new[]
+        {
+            "2026-05-14 9:05:01.123 - [INFO] - [1:200:300] - [svc.exe] - [Core] - [V01] venn info",
+            "2026-05-14 9:05:02.456 - [ERRO] - [1:200:301] - [svc.exe] - [Core] - [V02] venn error",
+            "2026-05-14 9:05:03.789 - [WARN] - [1:200:300] - [svc.exe] - [Net] - [V03] venn warn",
+            "2026-05-14 9:05:04.000 - [CRIT] - [1:200:302] - [svc.exe] - [irql 2] - [Drv] - [V04] venn crit",
+            "2026-05-14 9:05:05.000 - [TRAC] - [1:200:300] - [Core] - [V05] venn trace"
+        };
+        var meta = TestHelpers.CreateMeta(VennFormat,
+            new[] { "Level", "Sid", "Pid", "Thread", "Process", "Source", "Irql" },
+            "Time", "yyyy-MM-dd H:mm:ss.fff");
+        var path = TestHelpers.WriteTempFile(string.Join("\r\n", lines));
+        try
+        {
+            var model = TestHelpers.LoadFile(path, meta);
+
+            Assert.AreEqual(5, model.LineCount);
+            Assert.IsTrue(model.IsLoaded);
+            CollectionAssert.Contains(model.Indexer.GetAllComponents(6).ToList(), "2");
+            CollectionAssert.AreEquivalent(new[] { "Core", "Net", "Drv" }, model.Indexer.GetAllComponents(5).ToList());
+            CollectionAssert.AreEquivalent(new[] { "INFO", "ERRO", "WARN", "CRIT", "TRAC" },
+                model.Indexer.GetAllComponents(0).ToList());
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void LoadsBomlessUtf16Lines()
+    {
+        var lines = Enumerable.Range(1, 5)
+            .Select(index => $"2024-01-02 03:04:05.678 [INFO] привет ü umlaut №{index}")
+            .ToArray();
+        var path = TestHelpers.WriteTempBytes(
+            System.Text.Encoding.Unicode.GetBytes(string.Join("\r\n", lines)));
+        try
+        {
+            var model = TestHelpers.LoadFile(path, Meta());
+
+            Assert.AreEqual(5, model.LineCount);
+            var fetched = new (int, string)[model.LineCount];
+            model.LineProvider.Fetch(0, fetched);
+            StringAssert.Contains(fetched[2].Item2, "umlaut №3");
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
     [TestMethod]
     public void LoaderCompletesAndReportsNotLoading()
     {

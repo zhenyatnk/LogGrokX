@@ -95,7 +95,7 @@ public static partial class HexText
         foreach (Match match in HexRunRegex().Matches(fragment))
         {
             var jsonString = jsonStrings != null ? FindRange(jsonStrings, match.Index, match.Length) : null;
-            if (jsonStrings != null && jsonString == null)
+            if (jsonStrings != null && (jsonString == null || jsonString.Value.isPropertyName))
                 continue;
 
             if (!TryDecodeRun(match.ValueSpan, out var text))
@@ -109,8 +109,7 @@ public static partial class HexText
             {
                 replacement = SecurityElement.Escape(text);
             }
-            else if (jsonString is var (stringStart, stringEnd) && stringStart == start && stringEnd == end &&
-                     !IsJsonPropertyName(fragment, stringEnd) &&
+            else if (jsonString is var (stringStart, stringEnd, _) && stringStart == start && stringEnd == end &&
                      Base64Detector.TryFormatKeyDescriptionAsJson(text, out var json))
             {
                 start--;
@@ -161,9 +160,9 @@ public static partial class HexText
         return encoded.Substring(1, encoded.Length - 2);
     }
 
-    private static List<(int start, int end)> GetJsonStringContents(string json)
+    private static List<(int start, int end, bool isPropertyName)> GetJsonStringContents(string json)
     {
-        var result = new List<(int start, int end)>();
+        var result = new List<(int start, int end, bool isPropertyName)>();
         var start = -1;
         for (var i = 0; i < json.Length; i++)
         {
@@ -183,7 +182,7 @@ public static partial class HexText
             }
             else
             {
-                result.Add((start, i));
+                result.Add((start, i, IsJsonPropertyName(json, i)));
                 start = -1;
             }
         }
@@ -191,7 +190,8 @@ public static partial class HexText
         return result;
     }
 
-    private static (int start, int end)? FindRange(List<(int start, int end)> ranges, int start, int length)
+    private static (int start, int end, bool isPropertyName)? FindRange(
+        List<(int start, int end, bool isPropertyName)> ranges, int start, int length)
     {
         foreach (var range in ranges)
         {
