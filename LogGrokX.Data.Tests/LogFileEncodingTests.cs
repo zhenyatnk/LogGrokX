@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Text;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -61,6 +62,38 @@ public class LogFileEncodingTests
     public void DetectsBomlessUnicodeByCrlf()
     {
         var path = TestHelpers.WriteTempBytes(Encoding.Unicode.GetBytes("\u0100\r\n"));
+        try
+        {
+            Assert.AreEqual(Encoding.Unicode, new LogFile(path, 0).Encoding);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void DetectsBomlessUnicodeWhenFileIsShorterThanProbe()
+    {
+        var content = string.Join("\r\n", Enumerable.Range(1, 5).Select(index =>
+            $"2026-05-14 10:00:00.000 INF Thread-01 Enc [E0{index}] привет ü umlaut №{index}"));
+        var path = TestHelpers.WriteTempBytes(Encoding.Unicode.GetBytes(content));
+        try
+        {
+            Assert.AreEqual(Encoding.Unicode, new LogFile(path, 0).Encoding);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
+    public void DetectsBomlessUnicodeWithLineFeedsOnly()
+    {
+        var content = string.Join("\n", Enumerable.Range(1, 5).Select(index =>
+            $"2026-05-14 10:00:00.000 INF Thread-01 Enc [E0{index}] привет ü umlaut №{index}"));
+        var path = TestHelpers.WriteTempBytes(Encoding.Unicode.GetBytes(content));
         try
         {
             Assert.AreEqual(Encoding.Unicode, new LogFile(path, 0).Encoding);

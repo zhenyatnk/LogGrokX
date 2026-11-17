@@ -50,6 +50,16 @@ public class HexTextTests
     }
 
     [TestMethod]
+    public void DoesNotDecodeHexJsonPropertyNames()
+    {
+        const string source = "{\"payload\":\"48656C6C6F2022776F726C64220A\",\"48656C6C6F20776F726C64\":1}";
+
+        Assert.IsTrue(HexText.TryDecode(source, out var decoded));
+        Assert.AreEqual("{\"payload\":\"Hello \\\"world\\\"\\n\",\"48656C6C6F20776F726C64\":1}", decoded);
+        Assert.AreEqual(1, TextOperations.GetStructuredRanges(decoded).Count);
+    }
+
+    [TestMethod]
     public void DoesNotDecodeHexOutsideJsonStrings()
     {
         const string source = "{\"a\":41424344}";
