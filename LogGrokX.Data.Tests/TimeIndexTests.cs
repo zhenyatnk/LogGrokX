@@ -140,4 +140,21 @@ public class TimeIndexTests
         Assert.AreEqual(0, range.Value.StartLine);
         Assert.AreEqual(5, range.Value.EndLine);
     }
+
+    [TestMethod]
+    public void DenseMillisecondTimestampsUseCompactPages()
+    {
+        const int count = 200000;
+        const long step = 3 * TimeSpan.TicksPerMillisecond;
+        var index = new TimeIndex();
+        var start = At(0);
+        var allocated = GC.GetAllocatedBytesForCurrentThread();
+        for (var i = 0; i < count; i++)
+            index.Add(start + i * step);
+        var bytes = GC.GetAllocatedBytesForCurrentThread() - allocated;
+
+        Assert.IsLessThan(600000L, bytes);
+        Assert.AreEqual(start + (count - 1) * step, index.GetTicksAt(count - 1));
+        Assert.AreEqual((4000, 4201), index.FindLineRange(start + 4000 * step, start + 4200 * step));
+    }
 }

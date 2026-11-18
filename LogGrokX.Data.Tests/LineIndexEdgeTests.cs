@@ -33,6 +33,48 @@ public class LineIndexEdgeTests
     }
 
     [TestMethod]
+    public void FetchSpansOffsetBlocksBeyondFourGiB()
+    {
+        var index = new LineIndex();
+        const long first = 1L << 32;
+        for (var i = 0; i < 515; i++)
+            index.Add(first + i * 100);
+        index.Finish(7);
+
+        var lines = new (long, int)[4];
+        index.Fetch(511, lines);
+
+        CollectionAssert.AreEqual(new[]
+        {
+            (first + 51100, 100), (first + 51200, 100), (first + 51300, 100), (first + 51400, 7)
+        }, lines);
+    }
+
+    [TestMethod]
+    public void WideOffsetBlockPreservesAlreadyPublishedOffsets()
+    {
+        var index = new LineIndex();
+        const int largeLine = 1_500_000_000;
+        index.Add(30);
+        index.Add(31);
+        for (var i = 1; i <= 2; i++)
+            index.Add(31 + (long)i * largeLine);
+
+        Assert.AreEqual((31L, largeLine), index.GetLine(1));
+
+        index.Add(31 + 3L * largeLine);
+        index.Finish(9);
+
+        var lines = new (long, int)[5];
+        index.Fetch(0, lines);
+        CollectionAssert.AreEqual(new[]
+        {
+            (30L, 1), (31L, largeLine), (31L + largeLine, largeLine),
+            (31L + 2L * largeLine, largeLine), (31L + 3L * largeLine, 9)
+        }, lines);
+    }
+
+    [TestMethod]
     public async Task FetchRangesRefreshesCountAfterDelay()
     {
         var index = new LineIndex();

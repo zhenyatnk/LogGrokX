@@ -30,7 +30,7 @@ public class Indexer : IndexerBase, IComponentIndexer
 
     private readonly ConcurrentDictionary<int, HashSet<IndexKey>> _components = new();
 
-    private readonly ChunkedList<IndexKeyNum> _lineAndKeyIndex = new(16384);
+    private readonly LineKeyIndex _lineAndKeyIndex = new();
 
     private int _currentCount = 0;
     public Indexer() 

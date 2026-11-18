@@ -9,6 +9,7 @@ namespace LogGrokX.Data
         private const string DateTimeShortFormat = "yyyy-MM-dd HH:mm:ss";
         private const string TimeOnlyFormat = "HH:mm:ss.fff";
         private const string TimeOnlyShortFormat = "HH:mm:ss";
+        private const int DateTimeLength = 19;
 
         public static bool TryGetTicks(ReadOnlySpan<char> text, string? format, out long ticks)
         {
@@ -17,7 +18,9 @@ namespace LogGrokX.Data
                 return false;
 
             var hasFormat = !string.IsNullOrWhiteSpace(format);
-            if (hasFormat && TryParseFast(text, format!, out ticks))
+            if (hasFormat
+                ? TryParseFast(text, format!, out ticks)
+                : TryParseDate(text, text.Length == DateTimeLength ? 0 : 3, out ticks))
                 return true;
 
             DateTime timestamp;
@@ -58,7 +61,7 @@ namespace LogGrokX.Data
         private static bool TryParseDate(ReadOnlySpan<char> text, int fractionDigits, out long ticks)
         {
             ticks = -1;
-            var length = 19 + (fractionDigits > 0 ? 1 + fractionDigits : 0);
+            var length = DateTimeLength + (fractionDigits > 0 ? 1 + fractionDigits : 0);
             if (text.Length != length)
                 return false;
 

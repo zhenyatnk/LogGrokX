@@ -4,11 +4,11 @@ namespace LogGrokX.Data;
 
 public readonly struct TimeIndexPrefix
 {
-    private readonly long[] _ticks;
+    private readonly TimeIndex.Page[] _pages;
 
-    internal TimeIndexPrefix(long[] ticks, int count, bool hasTime, bool isMonotonic)
+    internal TimeIndexPrefix(TimeIndex.Page[] pages, int count, bool hasTime, bool isMonotonic)
     {
-        _ticks = ticks;
+        _pages = pages;
         Count = count;
         HasTime = hasTime;
         IsMonotonic = isMonotonic;
@@ -24,6 +24,6 @@ public readonly struct TimeIndexPrefix
     {
         ArgumentOutOfRangeException.ThrowIfNegative(index);
         ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, Count);
-        return _ticks[index];
+        return TimeIndex.ReadTicks(_pages, index);
     }
 }

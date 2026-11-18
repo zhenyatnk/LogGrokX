@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using LogGrokX.Data.IndexTree;
 using LogGrokX.Data.Virtualization;
 
 namespace LogGrokX.Data
@@ -12,18 +10,22 @@ namespace LogGrokX.Data
     public class LineIndex : ILineIndex, IItemProvider<(long offset, int length)>
     {
         private const int MinRangeSize = 256;
+        private const int OffsetBlockSize = 512;
+        private readonly List<OffsetBlock> _lineStarts = new();
+        private int _storedCount;
+        private int? _lastLineLength;
+
         public (long offset, int length) GetLine(int index)
         {
-            Debug.Assert(index < Count);
             lock (_lineStarts)
             {
-                var lineStart = _lineStarts[index];
-                if (index < _lineStarts.Count - 1)
-                    return (lineStart, (int)(_lineStarts[index + 1] - lineStart));
-                
-                if (!_lastLineLength.HasValue)
+                if ((uint)index >= (uint)PublishedCount)
                     throw new IndexOutOfRangeException();
-                return (lineStart, _lastLineLength!.Value);
+
+                var lineStart = GetOffset(index);
+                return index < _storedCount - 1
+                    ? (lineStart, (int)(GetOffset(index + 1) - lineStart))
+                    : (lineStart, _lastLineLength!.Value);
             }
         }
 
@@ -31,30 +33,27 @@ namespace LogGrokX.Data
         {
             lock (_lineStarts)
             {
-                var lineStartsEnumerable = _lineStarts.GetEnumerableFromIndex(start);
-                using var enumerator = lineStartsEnumerable.GetEnumerator();
-                if (!enumerator.MoveNext())
+                if ((uint)start >= (uint)_storedCount || values.Length > PublishedCount - start)
                     throw new IndexOutOfRangeException();
-                var first = enumerator.Current;
 
-                var index = 0;
-                while (enumerator.MoveNext() && index < values.Length)
+                var offset = GetOffset(start);
+                var availableWithNext = _storedCount - start - 1;
+                var consecutive = Math.Min(values.Length, availableWithNext);
+                for (var i = 0; i < consecutive; i++)
                 {
-                    var second = enumerator.Current;
-                    values[index] = (first, (int) (second - first));
-                    first = second;
-                    index++;
+                    var next = GetOffset(start + i + 1);
+                    values[i] = (offset, (int)(next - offset));
+                    offset = next;
                 }
 
-                if (index >= values.Length) return;
-                
-                if (start + index == Count - 1 &&_lastLineLength.HasValue)
-                    values[index] = (first, _lastLineLength!.Value);
-                else
-                    throw new IndexOutOfRangeException();
+                if (consecutive < values.Length)
+                    values[consecutive] = (offset, _lastLineLength!.Value);
             }
         }
 
+        private long GetOffset(int index) => _lineStarts[index / OffsetBlockSize][index % OffsetBlockSize];
+
+        private int PublishedCount => _storedCount > 0 && !_lastLineLength.HasValue ? _storedCount - 1 : _storedCount;
 
         public async IAsyncEnumerable<(int start, int count)> FetchRanges(
             [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -111,12 +110,7 @@ namespace LogGrokX.Data
             get
             {
                 lock (_lineStarts)
-                    return (_lastLineLength, _lineStarts.Count) switch
-                        {
-                            (_, 0) => 0,
-                            (null, var count) => count - 1,    
-                            var (_, count) => count
-                        };
+                    return PublishedCount;
             }
         }
 
@@ -125,8 +119,13 @@ namespace LogGrokX.Data
             int lineNum;
             lock (_lineStarts)
             {
-                lineNum = _lineStarts.Count;
-                _lineStarts.Add(lineStart);
+                lineNum = _storedCount;
+                var blockIndex = lineNum % OffsetBlockSize;
+                if (blockIndex == 0)
+                    _lineStarts.Add(new OffsetBlock(lineStart));
+                else
+                    _lineStarts[^1].Add(blockIndex, lineStart);
+                _storedCount++;
             }
             if (lineNum > 0 && lineNum % MinRangeSize == 0)
                 NotifyDataChanged();
@@ -149,8 +148,46 @@ namespace LogGrokX.Data
             }
         }
 
-        private readonly IndexTree<long, LongsLeaf> _lineStarts 
-            = new(16, l => new LongsLeaf(l, 0));
-        private int? _lastLineLength;
+        private sealed class OffsetBlock(long firstOffset)
+        {
+            private Array _storage = new ushort[OffsetBlockSize];
+
+            public long this[int index] => _storage switch
+            {
+                ushort[] narrow => firstOffset + narrow[index],
+                uint[] medium => firstOffset + medium[index],
+                _ => ((long[])_storage)[index]
+            };
+
+            public void Add(int index, long offset)
+            {
+                var delta = offset >= firstOffset ? unchecked((ulong)(offset - firstOffset)) : ulong.MaxValue;
+                switch (_storage)
+                {
+                    case ushort[] narrow when delta <= ushort.MaxValue:
+                        narrow[index] = (ushort)delta;
+                        return;
+                    case ushort[] narrow when delta <= uint.MaxValue:
+                        var expanded = new uint[OffsetBlockSize];
+                        for (var i = 0; i < index; i++)
+                            expanded[i] = narrow[i];
+                        expanded[index] = (uint)delta;
+                        _storage = expanded;
+                        return;
+                    case uint[] medium when delta <= uint.MaxValue:
+                        medium[index] = (uint)delta;
+                        return;
+                    case long[] wide:
+                        wide[index] = offset;
+                        return;
+                }
+
+                var offsets = new long[OffsetBlockSize];
+                for (var i = 0; i < index; i++)
+                    offsets[i] = this[i];
+                offsets[index] = offset;
+                _storage = offsets;
+            }
+        }
     }
 }

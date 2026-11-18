@@ -77,4 +77,27 @@ public class TimeIndexPrefixTests
         Assert.AreEqual(100000000, count);
         Assert.IsLessThan(1024L, bytes);
     }
+
+    [TestMethod]
+    [DataRow(1L)]
+    [DataRow(-1L)]
+    [DataRow(65536L * TimeSpan.TicksPerMillisecond)]
+    public void GrowingBeyondCompactRepresentationPreservesCapturedTicks(long offset)
+    {
+        var index = new TimeIndex();
+        var start = new DateTime(2026, 10, 23).Ticks;
+        index.Add(start);
+        index.Add(start + TimeSpan.TicksPerMillisecond);
+        var compact = index.CapturePrefix(2);
+
+        index.Add(start + offset);
+        var expanded = index.CapturePrefix(3);
+        index.Clear();
+
+        Assert.AreEqual(start, compact.GetTicksAt(0));
+        Assert.AreEqual(start + TimeSpan.TicksPerMillisecond, compact.GetTicksAt(1));
+        Assert.AreEqual(start, expanded.GetTicksAt(0));
+        Assert.AreEqual(start + TimeSpan.TicksPerMillisecond, expanded.GetTicksAt(1));
+        Assert.AreEqual(start + offset, expanded.GetTicksAt(2));
+    }
 }

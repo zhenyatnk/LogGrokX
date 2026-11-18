@@ -6,11 +6,14 @@ namespace LogGrokX.Data
 {
     public sealed class TimeIndex
     {
+        private const int PageShift = 12;
+        private const int PageSize = 1 << PageShift;
+        private const int PageMask = PageSize - 1;
+
         private readonly object _sync = new();
-        private long[] _ticks = Array.Empty<long>();
+        private Page[] _pages = Array.Empty<Page>();
+        private Page? _lastPage;
         private int _count;
-        // Captured prefixes share this array; Clear must detach before reusing it.
-        private bool _prefixCaptured;
         private readonly List<int> _dayBoundaries = new();
         private long _lastTicks;
         private long _lastRawTicks;
@@ -38,9 +41,8 @@ namespace LogGrokX.Data
         {
             lock (_sync)
             {
-                if (_prefixCaptured)
-                    _ticks = Array.Empty<long>();
-                _prefixCaptured = false;
+                _pages = Array.Empty<Page>();
+                _lastPage = null;
                 _count = 0;
                 _dayBoundaries.Clear();
                 _lastTicks = 0;
@@ -75,12 +77,18 @@ namespace LogGrokX.Data
 
         private void Append(long ticks)
         {
-            if (_count == _ticks.Length)
+            var offset = _count & PageMask;
+            if (offset == 0)
             {
-                Array.Resize(ref _ticks, _count == 0 ? 4 : checked(_count * 2));
-                _prefixCaptured = false;
+                var pageIndex = _count >> PageShift;
+                if (pageIndex == _pages.Length)
+                    Array.Resize(ref _pages, pageIndex == 0 ? 4 : pageIndex * 2);
+                _lastPage = new Page(ticks, pageIndex == 0 ? 16 : PageSize);
+                _pages[pageIndex] = _lastPage;
             }
-            _ticks[_count++] = ticks;
+
+            _lastPage!.Add(offset, ticks);
+            _count++;
         }
 
         private void AddCore(long ticks)
@@ -129,7 +137,7 @@ namespace LogGrokX.Data
             {
                 ArgumentOutOfRangeException.ThrowIfNegative(index);
                 ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(index, _count);
-                return _ticks[index];
+                return ReadTicks(_pages, index);
             }
         }
 
@@ -139,8 +147,7 @@ namespace LogGrokX.Data
             lock (_sync)
             {
                 var capturedCount = Math.Min(count, _count);
-                _prefixCaptured |= capturedCount > 0;
-                return new TimeIndexPrefix(_ticks, capturedCount, _hasTime, _isMonotonic);
+                return new TimeIndexPrefix(_pages, capturedCount, _hasTime, _isMonotonic);
             }
         }
 
@@ -166,7 +173,7 @@ namespace LogGrokX.Data
             while (low < high)
             {
                 var mid = low + (high - low) / 2;
-                if (_ticks[mid] < ticks)
+                if (ReadTicks(_pages, mid) < ticks)
                     low = mid + 1;
                 else
                     high = mid;
@@ -182,13 +189,79 @@ namespace LogGrokX.Data
             while (low < high)
             {
                 var mid = low + (high - low) / 2;
-                if (_ticks[mid] <= ticks)
+                if (ReadTicks(_pages, mid) <= ticks)
                     low = mid + 1;
                 else
                     high = mid;
             }
 
             return low;
+        }
+
+        internal static long ReadTicks(Page[] pages, int index) =>
+            pages[index >> PageShift].GetTicks(index & PageMask);
+
+        internal sealed class Page(long baseTicks, int initialCapacity)
+        {
+            // Prefixes can read an old buffer during growth. Its initialized entries must remain unchanged.
+            private Array _values = Array.Empty<ushort>();
+
+            public long GetTicks(int index)
+            {
+                var values = Volatile.Read(ref _values);
+                if (values is long[] absolute)
+                    return absolute[index];
+
+                var deltas = (ushort[])values;
+                return deltas.Length == 0 ? baseTicks : baseTicks + deltas[index] * TimeSpan.TicksPerMillisecond;
+            }
+
+            public void Add(int index, long ticks)
+            {
+                if (_values is long[] absolute)
+                {
+                    Append(absolute, index, ticks);
+                    return;
+                }
+
+                var deltas = (ushort[])_values;
+                var delta = unchecked((ulong)ticks - (ulong)baseTicks);
+                if (delta == 0 && deltas.Length == 0)
+                    return;
+
+                var milliseconds = delta / TimeSpan.TicksPerMillisecond;
+                if (milliseconds <= ushort.MaxValue && milliseconds * TimeSpan.TicksPerMillisecond == delta)
+                {
+                    Append(deltas, index, (ushort)milliseconds);
+                    return;
+                }
+
+                var expanded = new long[GetCapacity(index, deltas.Length)];
+                if (deltas.Length == 0)
+                    Array.Fill(expanded, baseTicks, 0, index);
+                else
+                    for (var i = 0; i < index; i++)
+                        expanded[i] = baseTicks + deltas[i] * TimeSpan.TicksPerMillisecond;
+                expanded[index] = ticks;
+                Volatile.Write(ref _values, expanded);
+            }
+
+            private void Append<T>(T[] values, int index, T value)
+            {
+                if (index < values.Length)
+                {
+                    values[index] = value;
+                    return;
+                }
+
+                var expanded = new T[GetCapacity(index, values.Length)];
+                values.CopyTo(expanded, 0);
+                expanded[index] = value;
+                Volatile.Write(ref _values, expanded);
+            }
+
+            private int GetCapacity(int index, int length) =>
+                Math.Min(PageSize, Math.Max(index + 1, length == 0 ? initialCapacity : length * 2));
         }
     }
 }

@@ -43,6 +43,7 @@ public class TimestampParserTests
     {
         var formats = new[]
         {
+            null,
             "yyyy-MM-dd HH:mm:ss.fff",
             "yyyy-MM-dd HH:mm:ss",
             "HH:mm:ss.fff",
@@ -94,17 +95,19 @@ public class TimestampParserTests
         }
     }
 
-    private static bool ReferenceTryGetTicks(string text, string format, out long ticks)
+    private static bool ReferenceTryGetTicks(string text, string? format, out long ticks)
     {
         ticks = -1;
         if (text.Length == 0)
             return false;
 
-        if (!DateTime.TryParseExact(text, format, CultureInfo.InvariantCulture,
-                DateTimeStyles.None, out var timestamp))
+        var parsed = format == null
+            ? DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.None, out var timestamp)
+            : DateTime.TryParseExact(text, format, CultureInfo.InvariantCulture, DateTimeStyles.None, out timestamp);
+        if (!parsed)
             return false;
 
-        ticks = format.IndexOf('y') < 0 && format.IndexOf('M') < 0 && format.IndexOf('d') < 0
+        ticks = format != null && format.IndexOf('y') < 0 && format.IndexOf('M') < 0 && format.IndexOf('d') < 0
             ? timestamp.TimeOfDay.Ticks
             : timestamp.Ticks;
         return true;
