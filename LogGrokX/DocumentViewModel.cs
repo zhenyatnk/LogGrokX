@@ -195,7 +195,8 @@ namespace LogGrokX
 
                 for (var i = 0; i < count; i++)
                 {
-                    if (regex.IsMatch(buffer[i].Item2))
+                    var line = buffer[i].Item2.AsSpan().TrimEnd("\r\n");
+                    if (regex.IsMatch(line))
                         matches.Add(start + i);
                 }
             }

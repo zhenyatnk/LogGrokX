@@ -65,6 +65,38 @@ public class SearchPipelineTests
     }
 
     [TestMethod]
+    [DataRow("\r\n", DisplayName = "End anchor with CRLF")]
+    [DataRow("\n", DisplayName = "End anchor with LF")]
+    public async Task RegexEndAnchorMatchesBeforeLineEnding(string newline)
+    {
+        var lines = new[]
+        {
+            "2024-01-02 03:04:05.000 [ERROR] Payment failed for order 1",
+            "2024-01-02 03:04:06.000 [ERROR] Payment failed for order 2",
+            "2024-01-02 03:04:07.000 [ERROR] Payment failed for order 3",
+            "2024-01-02 03:04:08.000 [ERROR] Payment failed for order 4 "
+        };
+        var path = TestHelpers.WriteTempFile(string.Join(newline, lines) + newline);
+        try
+        {
+            var model = TestHelpers.LoadFile(path, Meta());
+            var (progress, _, lineIndex) = LogGrokX.Data.Search.Search.CreateSearchIndex(
+                model, new Regex(@"order \d+$"), CancellationToken.None);
+
+            await progress.Completion;
+
+            Assert.AreEqual(3, lineIndex.Count);
+            var matches = new int[lineIndex.Count];
+            lineIndex.Fetch(0, matches);
+            CollectionAssert.AreEqual(new[] { 0, 1, 2 }, matches);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
     public async Task SearchRespectsLineRange()
     {
         var path = TestHelpers.WriteTempFile(string.Join("\r\n", SampleLines()));
