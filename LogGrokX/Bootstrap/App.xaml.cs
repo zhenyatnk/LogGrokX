@@ -88,6 +88,7 @@ namespace LogGrokX.Bootstrap
 
         protected override void OnExit(ExitEventArgs e)
         {
+            base.OnExit(e);
             _container.Resolve<UpdateCheckService>().LaunchPendingInstaller();
             _container.Resolve<SearchAutocompleteCache>().Save();
             _container.Resolve<SavedSearchPatternStore>().Save();
