@@ -45,7 +45,7 @@ namespace LogGrokX.Controls.ListControls
 
         private System.Windows.Controls.GridView? _layoutGridView;
         private readonly List<GridViewColumn> _allColumns = new();
-        private readonly Dictionary<GridViewColumn, int> _hiddenColumns = new();
+        private readonly HashSet<GridViewColumn> _hiddenColumns = new();
         private ColumnSettings? _subscribedColumnSettings;
         private bool _updatingColumnVisibility;
         
@@ -643,10 +643,10 @@ namespace LogGrokX.Controls.ListControls
             _updatingColumnVisibility = true;
             try
             {
-                foreach (var (column, index) in _hiddenColumns.OrderBy(pair => pair.Value).ToArray())
+                foreach (var column in _hiddenColumns)
                 {
                     if (!gridView.Columns.Contains(column))
-                        gridView.Columns.Insert(Math.Clamp(index, 0, gridView.Columns.Count), column);
+                        gridView.Columns.Insert(GetInsertIndex(gridView, column), column);
                 }
                 _hiddenColumns.Clear();
 
@@ -659,7 +659,7 @@ namespace LogGrokX.Controls.ListControls
                         continue;
 
                     CaptureColumnWidth(column);
-                    _hiddenColumns[column] = _allColumns.IndexOf(column);
+                    _hiddenColumns.Add(column);
                     gridView.Columns.Remove(column);
                 }
             }
@@ -693,19 +693,32 @@ namespace LogGrokX.Controls.ListControls
                 if (!gridView.Columns.Contains(column))
                     return;
                 CaptureColumnWidth(column);
-                _hiddenColumns[column] = _allColumns.IndexOf(column);
+                _hiddenColumns.Add(column);
                 gridView.Columns.Remove(column);
                 settings.SetColumnHidden(fieldName, true);
             }
             else
             {
-                if (!_hiddenColumns.Remove(column, out var index))
+                if (!_hiddenColumns.Remove(column))
                     return;
-                gridView.Columns.Insert(Math.Clamp(index, 0, gridView.Columns.Count), column);
+                gridView.Columns.Insert(GetInsertIndex(gridView, column), column);
                 settings.SetColumnHidden(fieldName, false);
             }
 
             _panel?.InvalidateMeasure();
+        }
+
+        private int GetInsertIndex(System.Windows.Controls.GridView gridView, GridViewColumn column)
+        {
+            var originalIndex = _allColumns.IndexOf(column);
+            var insertIndex = 0;
+            foreach (var visible in gridView.Columns)
+            {
+                if (_allColumns.IndexOf(visible) < originalIndex)
+                    insertIndex++;
+            }
+
+            return insertIndex;
         }
 
         protected override void OnPreviewMouseRightButtonDown(MouseButtonEventArgs e)

@@ -50,6 +50,38 @@ public class ColumnVisibilityTests
     }
 
     [TestMethod]
+    public void RestoringColumnKeepsOrderWhenOtherColumnsStayHidden()
+    {
+        RunOnSta(() =>
+        {
+            var view = CreateView();
+            var settings = new ColumnSettings();
+            var list = new LogListView
+            {
+                ColumnSettings = settings,
+                ItemsSource = Array.Empty<object>(),
+                View = view
+            };
+            WithWindow(list, window =>
+            {
+                ToggleColumn(list, view, "Time", false);
+                Flush(window);
+                ToggleColumn(list, view, "Level", false);
+                Flush(window);
+                Assert.IsFalse(HasColumn(view, "Time"));
+                Assert.IsFalse(HasColumn(view, "Level"));
+
+                ToggleColumn(list, view, "Level", true);
+                Flush(window);
+
+                Assert.IsTrue(HasColumn(view, "Level"));
+                Assert.IsFalse(HasColumn(view, "Time"));
+                Assert.IsTrue(FieldColumnIndex(view, "Level") < FieldColumnIndex(view, "Message"));
+            });
+        });
+    }
+
+    [TestMethod]
     public void ColumnMenuCheckboxTogglesVisibility()
     {
         RunOnSta(() =>
@@ -130,6 +162,23 @@ public class ColumnVisibilityTests
 
         Assert.AreEqual(4, changes);
         Assert.AreEqual(0, settings.HiddenColumns.Count);
+    }
+
+    private static void ToggleColumn(LogListView list, System.Windows.Controls.GridView view, string fieldName, bool isChecked)
+    {
+        var anchor = view.Columns.OfType<LogGridViewColumn>().First();
+        var menu = list.BuildColumnContextMenu(view, anchor);
+        Assert.IsNotNull(menu);
+        var item = FindMenuItem(menu, fieldName);
+        item.IsChecked = isChecked;
+        item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent, item));
+    }
+
+    private static int FieldColumnIndex(System.Windows.Controls.GridView view, string fieldName)
+    {
+        var columns = view.Columns.Cast<LogGridViewColumn>().ToList();
+        return columns.FindIndex(column =>
+            string.Equals(column.FieldName, fieldName, StringComparison.OrdinalIgnoreCase));
     }
 
     private static System.Windows.Controls.GridView CreateView()
