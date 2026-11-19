@@ -233,6 +233,17 @@ public class DataUtilitiesTests
     }
 
     [TestMethod]
+    public void LogMetaInformationResolvesTimeFieldIgnoringCase()
+    {
+        var meta = TestHelpers.CreateMeta(@"^(?<time>\d{2}:\d{2}:\d{2})\|(?<Message>.*)$",
+            Array.Empty<string>(), "Time", "HH:mm:ss");
+
+        Assert.IsTrue(meta.HasTime);
+        Assert.AreEqual(0, meta.TimeFieldIndex);
+        Assert.AreEqual(1, meta.TimeGroupNumber);
+    }
+
+    [TestMethod]
     public void RegexParserParsesComponents()
     {
         var meta = TestHelpers.CreateMeta(@"^(?'A'\w+) (?'B'\w+) (?'C'.*)$");
