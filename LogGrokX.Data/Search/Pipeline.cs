@@ -230,7 +230,8 @@ public class Pipeline
                 }
             }
 
-            if (regex.IsMatch(stringBuffer.AsSpan()[..stringLength]))
+            var line = stringBuffer.AsSpan(0, stringLength).TrimEnd("\r\n");
+            if (regex.IsMatch(line))
             {
                 result.Add(index);
             }

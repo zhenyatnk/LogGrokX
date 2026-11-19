@@ -213,6 +213,19 @@ public class MergedRebuildTests
     }
 
     [TestMethod]
+    public void SearchEndAnchorMatchesBeforeLineEnding()
+    {
+        RunOnSta(() =>
+        {
+            using var fixture = new Fixture();
+            fixture.Enable();
+            using var search = new MergedSearchDocumentViewModel(fixture.Merged, new SearchPattern(@"match \d+$", false, true));
+            WaitFor(() => !search.IsSearching);
+            Assert.AreEqual(12, search.Lines.Count);
+        });
+    }
+
+    [TestMethod]
     public void SearchThreadGroupingRemainsScopedToSourceAfterFiltering()
     {
         RunOnSta(() =>
