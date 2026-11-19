@@ -224,13 +224,13 @@ namespace LogGrokX.Settings
 
         private static void AddValueMappingFixes(List<SettingsFix> fixes, ValueMappingListViewModel list)
         {
-            var missing = list.Items.FirstOrDefault(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value));
-            if (missing != null)
+            var missing = list.Items.Where(item => string.IsNullOrWhiteSpace(item.Value)).ToArray();
+            if (missing.Length > 0)
             {
                 fixes.Add(new(new(Strings.Format("FixMappingValueMissing", list.DisplayName), SettingsField.MappingValue,
-                    ValueMapping: list, MappingItem: missing), () =>
+                    ValueMapping: list, MappingItem: missing[0]), () =>
                 {
-                    foreach (var item in list.Items.Where(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value)).ToArray())
+                    foreach (var item in missing)
                         list.Items.Remove(item);
                 }));
             }

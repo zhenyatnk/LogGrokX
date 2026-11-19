@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using LogGrokX.Data;
+using LogGrokX.Localization;
 using LogGrokX.Settings;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -82,6 +83,42 @@ public sealed class SettingsAutoFixTests
             Assert.AreEqual(1, mapping.Items.Count);
             Assert.AreEqual("A", mapping.Items[0].Value);
             Assert.AreEqual("1", mapping.Items[0].Mapping);
+        });
+    }
+
+    [TestMethod]
+    public void SaveReportsBlankMappingAndDuplicateBeforeFixingBoth()
+    {
+        WithSettings(dialog =>
+        {
+            dialog.ImportValueMappings([new ValueMappingList
+            {
+                Name = "Reg-Types",
+                Items = [new ValueMappingItem { Value = "0x00001", Mapping = "first" }]
+            }]);
+            var list = dialog.ValueMappings.Single();
+            var first = list.Items.Single();
+            list.AddItemCommand.Execute(null);
+            var empty = list.Items[^1];
+            list.AddItemCommand.Execute(null);
+            var duplicate = list.Items[^1];
+            duplicate.Value = first.Value;
+            duplicate.Mapping = "second";
+
+            Assert.IsFalse(dialog.Save());
+            CollectionAssert.AreEqual(new[]
+            {
+                Strings.Format("MappingValueMissing", list.Name),
+                Strings.Format("MappingDuplicates", list.Name, first.Value)
+            }, dialog.Problems.Select(problem => problem.Message).ToArray());
+            CollectionAssert.AreEqual(new[] { empty, duplicate },
+                dialog.AutoFixes.Select(fix => fix.MappingItem).ToArray());
+            Assert.AreEqual(Strings.Get("FixAndSave"), dialog.FixAllActionText);
+            Assert.AreEqual(3, list.Items.Count);
+
+            Assert.IsTrue(dialog.FixAndSave(), dialog.ValidationMessage);
+            Assert.IsFalse(dialog.HasProblems);
+            Assert.AreSame(first, list.Items.Single());
         });
     }
 

@@ -199,7 +199,7 @@ namespace LogGrokX.Settings
         public IEnumerable<SettingsProblem> GetValidationProblems()
         {
             var title = DisplayName;
-            var missing = Items.FirstOrDefault(item => !item.IsEmpty && string.IsNullOrWhiteSpace(item.Value));
+            var missing = Items.FirstOrDefault(item => string.IsNullOrWhiteSpace(item.Value));
             if (missing != null)
                 yield return new(Strings.Format("MappingValueMissing", title), SettingsField.MappingValue,
                     ValueMapping: this, MappingItem: missing);
