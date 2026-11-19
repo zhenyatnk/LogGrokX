@@ -6,6 +6,8 @@ namespace LogGrokX.Controls.GridView
     {
         public string PropertyName { get; } = "";
 
+        public string? FieldName { get; set; }
+
         public bool FitToContent { get; set; }
 
         public Func<object, string>? ContentTextProvider { get; set; }

@@ -732,6 +732,15 @@
   <data xml:space="preserve" name="NewSearch">
     <value>Новый поиск</value>
   </data>
+  <data xml:space="preserve" name="HideColumn">
+    <value>Скрыть столбец</value>
+  </data>
+  <data xml:space="preserve" name="Columns">
+    <value>Столбцы</value>
+  </data>
+  <data xml:space="preserve" name="ShowAllColumns">
+    <value>Показать все столбцы</value>
+  </data>
   <data xml:space="preserve" name="FilterColumn">
     <value>Фильтр столбца</value>
   </data>

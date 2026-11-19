@@ -9,11 +9,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.TextRender;
+using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
 
 namespace LogGrokX.Controls.ListControls
@@ -39,6 +42,12 @@ namespace LogGrokX.Controls.ListControls
         private DispatcherOperation? _resetColumnsWidthOperation;
 
         private readonly List<(INotifyPropertyChanged Column, PropertyChangedEventHandler Handler)> _columnWidthHandlers = new();
+
+        private System.Windows.Controls.GridView? _layoutGridView;
+        private readonly List<GridViewColumn> _allColumns = new();
+        private readonly Dictionary<GridViewColumn, int> _hiddenColumns = new();
+        private ColumnSettings? _subscribedColumnSettings;
+        private bool _updatingColumnVisibility;
         
         public static readonly DependencyProperty ReadonlySelectedItemsProperty =
             DependencyProperty.Register(nameof(ReadonlySelectedItems), typeof(IEnumerable), typeof(ListView));
@@ -84,7 +93,13 @@ namespace LogGrokX.Controls.ListControls
                 _contentFitTimer.Stop();
                 TryFitColumnsToContent();
             };
-            Loaded += (_, _) => ScheduleRemeasure(0);
+            Loaded += (_, _) =>
+            {
+                SubscribeColumnSettings(ColumnSettings);
+                if (View is System.Windows.Controls.GridView gridView)
+                    ApplyColumnVisibility(gridView);
+                ScheduleRemeasure(0);
+            };
             IsVisibleChanged += (_, args) =>
             {
                 if (args.NewValue is true)
@@ -96,6 +111,7 @@ namespace LogGrokX.Controls.ListControls
             {
                 _contentFitTimer.Stop();
                 _panel = null;
+                SubscribeColumnSettings(null);
             };
 
             CommandBindings.Add(new CommandBinding(RoutedCommands.ToggleMarks,
@@ -239,6 +255,8 @@ namespace LogGrokX.Controls.ListControls
             _headerAdjusted = false;
             _contentFitDone = false;
             _previousItemCount = 0;
+            if (e.NewValue is System.Windows.Controls.GridView gridView)
+                EnsureColumnLayout(gridView);
             ScheduleRemeasure(0);
         }
 
@@ -374,6 +392,10 @@ namespace LogGrokX.Controls.ListControls
             listView._settingsGridView = null;
             listView._haveExternalColumnSettings = null;
             listView._contentFitDone = false;
+            if (listView.IsLoaded)
+                listView.SubscribeColumnSettings(e.NewValue as ColumnSettings);
+            if (listView.View is System.Windows.Controls.GridView gridView)
+                listView.ApplyColumnVisibility(gridView);
             listView.ScheduleContentFit();
         }
 
@@ -581,8 +603,187 @@ namespace LogGrokX.Controls.ListControls
             }
         }
 
+        private void SubscribeColumnSettings(ColumnSettings? settings)
+        {
+            if (ReferenceEquals(_subscribedColumnSettings, settings))
+                return;
+
+            if (_subscribedColumnSettings != null)
+                _subscribedColumnSettings.HiddenColumnsChanged -= OnHiddenColumnsChanged;
+
+            _subscribedColumnSettings = settings;
+
+            if (_subscribedColumnSettings != null)
+                _subscribedColumnSettings.HiddenColumnsChanged += OnHiddenColumnsChanged;
+        }
+
+        private void OnHiddenColumnsChanged(object? sender, EventArgs e)
+        {
+            if (View is System.Windows.Controls.GridView gridView)
+                ApplyColumnVisibility(gridView);
+        }
+
+        private void EnsureColumnLayout(System.Windows.Controls.GridView gridView)
+        {
+            if (ReferenceEquals(_layoutGridView, gridView))
+                return;
+
+            _layoutGridView = gridView;
+            _allColumns.Clear();
+            _allColumns.AddRange(gridView.Columns);
+            _hiddenColumns.Clear();
+            ApplyColumnVisibility(gridView);
+        }
+
+        private void ApplyColumnVisibility(System.Windows.Controls.GridView gridView)
+        {
+            if (_updatingColumnVisibility || !ReferenceEquals(gridView, _layoutGridView))
+                return;
+
+            _updatingColumnVisibility = true;
+            try
+            {
+                foreach (var (column, index) in _hiddenColumns.OrderBy(pair => pair.Value).ToArray())
+                {
+                    if (!gridView.Columns.Contains(column))
+                        gridView.Columns.Insert(Math.Clamp(index, 0, gridView.Columns.Count), column);
+                }
+                _hiddenColumns.Clear();
+
+                var settings = ColumnSettings;
+                foreach (var column in _allColumns)
+                {
+                    if (column is not LogGridViewColumn { FieldName: { Length: > 0 } fieldName })
+                        continue;
+                    if (settings?.IsColumnHidden(fieldName) != true || !gridView.Columns.Contains(column))
+                        continue;
+
+                    CaptureColumnWidth(column);
+                    _hiddenColumns[column] = _allColumns.IndexOf(column);
+                    gridView.Columns.Remove(column);
+                }
+            }
+            finally
+            {
+                _updatingColumnVisibility = false;
+            }
+
+            _panel?.InvalidateMeasure();
+            ScheduleContentFit();
+        }
+
+        private static void CaptureColumnWidth(GridViewColumn column)
+        {
+            var width = double.IsNaN(column.Width) ? column.ActualWidth : column.Width;
+            column.Width = double.IsFinite(width) && width > 0 ? width : MinColumnWidth;
+        }
+
+        private void SetColumnHidden(System.Windows.Controls.GridView gridView, string fieldName, bool hidden)
+        {
+            if (ColumnSettings is not { } settings)
+                return;
+
+            var column = _allColumns.OfType<LogGridViewColumn>().FirstOrDefault(candidate =>
+                string.Equals(candidate.FieldName, fieldName, StringComparison.OrdinalIgnoreCase));
+            if (column == null)
+                return;
+
+            if (hidden)
+            {
+                if (!gridView.Columns.Contains(column))
+                    return;
+                CaptureColumnWidth(column);
+                _hiddenColumns[column] = _allColumns.IndexOf(column);
+                gridView.Columns.Remove(column);
+                settings.SetColumnHidden(fieldName, true);
+            }
+            else
+            {
+                if (!_hiddenColumns.Remove(column, out var index))
+                    return;
+                gridView.Columns.Insert(Math.Clamp(index, 0, gridView.Columns.Count), column);
+                settings.SetColumnHidden(fieldName, false);
+            }
+
+            _panel?.InvalidateMeasure();
+        }
+
+        protected override void OnPreviewMouseRightButtonDown(MouseButtonEventArgs e)
+        {
+            if (View is System.Windows.Controls.GridView gridView &&
+                FindAncestor<GridViewColumnHeader>(e.OriginalSource as DependencyObject) is { Column: { } column } header)
+            {
+                ShowColumnContextMenu(gridView, column, header);
+                e.Handled = true;
+                return;
+            }
+
+            base.OnPreviewMouseRightButtonDown(e);
+        }
+
+        private void ShowColumnContextMenu(System.Windows.Controls.GridView gridView, GridViewColumn column, GridViewColumnHeader header)
+        {
+            var menu = BuildColumnContextMenu(gridView, column);
+            if (menu == null)
+                return;
+
+            header.ContextMenu = menu;
+            menu.IsOpen = true;
+        }
+
+        internal ContextMenu? BuildColumnContextMenu(System.Windows.Controls.GridView gridView, GridViewColumn column)
+        {
+            if (ColumnSettings is not { } settings)
+                return null;
+
+            var menu = new ContextMenu { Placement = PlacementMode.MousePoint };
+            if (column is LogGridViewColumn { FieldName: { Length: > 0 } fieldName } && gridView.Columns.Contains(column))
+            {
+                var hide = new MenuItem { Header = Strings.Get("HideColumn") };
+                hide.Click += (_, _) => SetColumnHidden(gridView, fieldName, true);
+                menu.Items.Add(hide);
+            }
+
+            var columnsMenu = new MenuItem { Header = Strings.Get("Columns"), StaysOpenOnClick = true };
+            foreach (var candidate in _allColumns.OfType<LogGridViewColumn>()
+                         .Where(candidate => !string.IsNullOrEmpty(candidate.FieldName)))
+            {
+                var name = candidate.FieldName!;
+                var item = new MenuItem
+                {
+                    Header = name,
+                    IsCheckable = true,
+                    IsChecked = gridView.Columns.Contains(candidate),
+                    StaysOpenOnClick = true
+                };
+                item.Click += (_, _) => SetColumnHidden(gridView, name, !item.IsChecked);
+                columnsMenu.Items.Add(item);
+            }
+            menu.Items.Add(columnsMenu);
+
+            menu.Items.Add(new Separator());
+            var showAll = new MenuItem
+            {
+                Header = Strings.Get("ShowAllColumns"),
+                IsEnabled = _hiddenColumns.Count > 0 || settings.HiddenColumns.Count > 0
+            };
+            showAll.Click += (_, _) => settings.ShowAllColumns();
+            menu.Items.Add(showAll);
+
+            return menu;
+        }
+
+        private static T? FindAncestor<T>(DependencyObject? source) where T : DependencyObject
+        {
+            while (source != null && source is not T)
+                source = source is Visual or Visual3D ? VisualTreeHelper.GetParent(source) : LogicalTreeHelper.GetParent(source);
+            return source as T;
+        }
+
         private bool EnsureColumnSettings(System.Windows.Controls.GridView gridView)
         {
+            EnsureColumnLayout(gridView);
+
             if (!ReferenceEquals(gridView, _settingsGridView))
             {
                 DetachColumnWidthHandlers();
@@ -595,39 +796,47 @@ namespace LogGrokX.Controls.ListControls
             {
                 var columnSettings = ColumnSettings;
                 if (columnSettings?.ColumnWidths is { } storedWidths &&
-                    storedWidths.Length != gridView.Columns.Count)
+                    storedWidths.Length != _allColumns.Count)
                 {
                     columnSettings.ColumnWidths = null;
                 }
 
-                _haveExternalColumnSettings = gridView.Columns.All(column =>
+                _haveExternalColumnSettings = _allColumns.All(column =>
                     double.IsFinite(column.Width) && column.Width > 0);
 
                 if (columnSettings != null)
                 {
-                    foreach (var column in gridView.Columns)
-                    {
-                        if (column is not INotifyPropertyChanged notifyPropertyChanged)
-                            continue;
-
-                        var capturedGridView = gridView;
-                        PropertyChangedEventHandler handler = (_, args) =>
-                        {
-                            if (args.PropertyName != "ActualWidth")
-                                return;
-
-                            if (!ReferenceEquals(capturedGridView, View))
-                                return;
-
-                            StoreColumnWidths(capturedGridView);
-                        };
-                        notifyPropertyChanged.PropertyChanged += handler;
-                        _columnWidthHandlers.Add((notifyPropertyChanged, handler));
-                    }
+                    foreach (var column in _allColumns)
+                        AttachColumnWidthHandler(column);
                 }
             }
 
             return _haveExternalColumnSettings != true;
+        }
+
+        private void AttachColumnWidthHandler(GridViewColumn column)
+        {
+            if (column is not INotifyPropertyChanged notifyPropertyChanged)
+                return;
+            if (_columnWidthHandlers.Any(entry => ReferenceEquals(entry.Column, notifyPropertyChanged)))
+                return;
+
+            var capturedGridView = _settingsGridView;
+            if (capturedGridView == null)
+                return;
+
+            PropertyChangedEventHandler handler = (_, args) =>
+            {
+                if (args.PropertyName != "ActualWidth")
+                    return;
+
+                if (!ReferenceEquals(capturedGridView, View))
+                    return;
+
+                StoreColumnWidths(capturedGridView);
+            };
+            notifyPropertyChanged.PropertyChanged += handler;
+            _columnWidthHandlers.Add((notifyPropertyChanged, handler));
         }
 
         private void StoreColumnWidths(System.Windows.Controls.GridView gridView)
@@ -635,7 +844,10 @@ namespace LogGrokX.Controls.ListControls
             if (!_contentFitDone || !IsLoaded || !IsVisible || ColumnSettings is not { } settings)
                 return;
 
-            var widths = gridView.Columns.Select(column =>
+            var columns = ReferenceEquals(gridView, _layoutGridView) && _allColumns.Count > 0
+                ? _allColumns
+                : gridView.Columns.Cast<GridViewColumn>().ToList();
+            var widths = columns.Select(column =>
                 double.IsNaN(column.Width) ? column.ActualWidth : column.Width).ToArray();
             if (widths.All(width => double.IsFinite(width) && width > 0))
                 settings.ColumnWidths = widths;

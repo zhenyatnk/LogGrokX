@@ -102,6 +102,19 @@ background seam between rows. Selection is painted with the theme accent
 (`LogLineSelectionBrush`) and has no border; the text selection brush
 (`LogGridViewCellStyle.xaml`'s `Selection`) uses the accent too.
 
+Field columns can be hidden from the grid header's right-click menu
+(`Controls/ListControls/ListView.cs`): `Hide column`, the checkable `Columns`
+submenu (`StaysOpenOnClick`) and `Show all columns`. Only columns whose
+`LogGridViewColumn.FieldName` is set (the `Component`/`Message`-style field
+columns, assigned in `GridViewFactory.CreateView`) are affected; the line-number
+and pin columns are not. Hidden state lives in `ColumnSettings.HiddenColumns`
+with `IsColumnHidden`/`SetColumnHidden`/`ShowAllColumns` and the
+`HiddenColumnsChanged` event; `ListView` keeps the full ordered set in
+`_allColumns`, removes hidden columns and re-inserts them at their original
+position on restore. Like column widths it is per-view and in-memory (not
+persisted in `appsettings.yaml`). Menu labels are the `Strings` keys
+`HideColumn`/`Columns`/`ShowAllColumns`.
+
 The timeline/minimap strip is `Controls/LogMinimapControl.cs` (a
 `FrameworkElement` that draws the time-range handles, markers, search matches and
 a hover readout). Hovering shows a vertical guide line plus the timestamp under

@@ -173,8 +173,11 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
 - **Multiple documents** — dockable tabs powered by AvalonDock. Open files from
   the command line or by drag & drop, and use the tab context menu to copy a
   path or file name or open the containing folder.
-- **Grid conveniences** — horizontal scrolling, auto-width columns, and
-  copy-as-displayed / copy-as-native for whole rows or single cells. Large
+- **Grid conveniences** — horizontal scrolling, auto-width columns, hide/show
+  field columns from the header context menu (**Hide column**, the checkable
+  **Columns** submenu and **Show all columns**; the line-number and pin columns
+  are not hideable), and copy-as-displayed / copy-as-native for whole rows or
+  single cells. Large
   selections, including `Ctrl+A`, are stored as compact ranges and processed in
   cancellable batches; operations longer than one second show a floating,
   non-focusable progress card with localized operation titles and Cancel (also

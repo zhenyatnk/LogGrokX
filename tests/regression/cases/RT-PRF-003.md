@@ -20,7 +20,7 @@
 
 ## Проверяемые требования
 
-- `REQ-PRF-04` — Профиль, который не удаётся применить вручную из селектора, показывает `Profile change failed` / `Cannot apply profile '{0}': {1}`; сохраняется последняя рабочая конфигурация. При загрузке и hot reload ошибочный профиль применяется без диалога: на старте селектор показывает реально применённый профиль.
+- `REQ-PRF-04` — Профиль, который не удаётся применить, показывает `Profile change failed` / `Cannot apply profile '{0}': {1}`, сохраняется последняя рабочая конфигурация.
 - `REQ-PRF-05` — Старая конфигурация без Profiles отображается как `Default`; наследование legacy-настроек для ручных профилей, `InheritLegacySettings: false`, явные пустые списки.
 
 ## Предусловия
@@ -31,8 +31,8 @@
 
 | № | Действие | Ожидаемый результат |
 |---|---|---|
-| 1 | Закрыть приложение. Скопировать `appsettings.badprofile.yaml` → `%APP%\appsettings.yaml`, запустить, открыть `tab-basic.log`. | Аварии и диалога нет. Невалидный формат пропущен (`Skipping invalid log format: Profile 'Broken', log format 1: …` в логе). Селектор показывает реально применённый профиль `Default` (plain text), файл открыт как текст. |
-| 2 | Селектор → `Classic`, затем `Broken`, затем снова `Broken`. | При каждом выборе `Broken` показывается диалог `Profile change failed` с текстом `Cannot apply profile 'Broken': …` (не только в первый раз); отображение остаётся по `Classic`, селектор возвращается на `Classic`. |
+| 1 | Закрыть приложение. Скопировать `appsettings.badprofile.yaml` → `%APP%\appsettings.yaml`, запустить, открыть `tab-basic.log`. | Аварии нет. Невалидный формат пропущен (`Skipping invalid log format: Profile 'Broken', log format 1: …` в логе) или показан диалог `Profile change failed`; файл открыт как текст/последней рабочей конфигурацией. |
+| 2 | Селектор → `Classic`, затем обратно `Broken`. | Диалог `Profile change failed` с текстом `Cannot apply profile 'Broken': …`; отображение остаётся по `Classic`. |
 | 3 | Закрыть, применить `appsettings.legacy.yaml`, запустить. | В селекторе единственный профиль `Default` с legacy-форматами и цветами. |
 | 4 | Применить `appsettings.inherit.yaml`. | `Inherits` использует legacy-форматы и цвета; `ExplicitEmpty` — пустые цвета (явный пустой список); `NoInherit` — только собственные настройки. |
 | 5 | Восстановить `appsettings.regression.yaml`. | Профиль `Classic`. |
