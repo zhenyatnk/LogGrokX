@@ -3,6 +3,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Windows;
@@ -12,6 +13,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Markup;
 using System.Windows.Media;
 using System.Windows.Threading;
+using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;
@@ -127,6 +129,60 @@ public class ToolbarBindingTests
         thread.Join();
         if (error != null)
             throw error;
+    }
+
+    [STATestMethod]
+    public void UpdatePillFillsItsBackgroundWithTheCurrentAccent()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "LogGrokX", "MainWindow.xaml");
+        var window = XDocument.Load(path).Root!;
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        const string styleKey = "UpdatePillButtonStyle";
+        var style = window.Descendants(presentation + "Style")
+            .Single(element => (string?)element.Attribute(x + "Key") == styleKey);
+        var dictionary = new XElement(presentation + "ResourceDictionary",
+            new XAttribute(XNamespace.Xmlns + "x", x.NamespaceName),
+            new XAttribute(XNamespace.Xmlns + "ui", window.GetNamespaceOfPrefix("ui")!.NamespaceName),
+            style);
+        var resources = (ResourceDictionary)XamlReader.Parse(dictionary.ToString());
+        var button = new Wpf.Ui.Controls.Button
+        {
+            Style = (Style)resources[styleKey],
+            IsEnabled = false,
+            Content = "Downloading 43%"
+        };
+        button.Resources["AccentFillColorDefaultBrush"] = Brushes.Blue;
+        button.ApplyTemplate();
+        var progress = (ProgressBar)button.Template.FindName("DownloadProgress", button);
+        Assert.AreEqual(Visibility.Collapsed, progress.Visibility);
+
+        foreach (var percent in new[] { 0d, 43.4, 100d })
+        {
+            button.DataContext = new { IsUpdateDownloading = true, IsUpdateReady = false, UpdateProgress = percent };
+            var size = new Size(200, 32);
+            button.Measure(size);
+            button.Arrange(new Rect(size));
+            FlushBindings();
+            button.UpdateLayout();
+
+            Assert.AreEqual(Visibility.Visible, progress.Visibility);
+            Assert.AreEqual(30, progress.ActualHeight, 0.01);
+            var track = (FrameworkElement)progress.Template.FindName("PART_Track", progress);
+            var indicator = (Border)progress.Template.FindName("PART_Indicator", progress);
+            Assert.AreEqual(track.ActualWidth * percent / 100, indicator.ActualWidth, 1);
+            Assert.AreEqual(track.ActualWidth, ((Border)indicator.Child).ActualWidth, 1);
+        }
+
+        var fill = (Border)((Border)progress.Template.FindName("PART_Indicator", progress)).Child;
+        Assert.AreSame(Brushes.Blue, fill.Background);
+        button.Resources["AccentFillColorDefaultBrush"] = Brushes.Green;
+        FlushBindings();
+        Assert.AreSame(Brushes.Green, fill.Background);
+
+        button.DataContext = new { IsUpdateDownloading = false, IsUpdateReady = true, UpdateProgress = 100d };
+        FlushBindings();
+        Assert.AreEqual(Visibility.Collapsed, progress.Visibility);
     }
 
     private static void FlushBindings() =>
