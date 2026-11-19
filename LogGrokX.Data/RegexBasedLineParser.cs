@@ -7,8 +7,12 @@ namespace LogGrokX.Data
 {
     public class RegexBasedLineParser : ILineParser
     {
+        private const string ClassicLineRegex =
+            @"^(?<Time>\d{4}-\d{2}-\d{2}\s[^\s]+)\s+(?<Level>[^\s]+)\s+(?<Thread>[^\s]+)\s+(?<Component>[^\s]+)\s+(?<Message>.*)";
+
         private readonly Regex _regex;
         private readonly Regex? _firstLineRegex;
+        private readonly bool _isClassic;
         private readonly int _componentCount;
         private readonly int[] _fieldsToStore;
         private readonly int _timeGroupNumber;
@@ -17,10 +21,12 @@ namespace LogGrokX.Data
         public RegexBasedLineParser(LogMetaInformation logMetaInformation, 
             bool onlyIndexed = false)
         {
-            _regex = new Regex(logMetaInformation.LineRegex, 
+            var lineRegex = logMetaInformation.LineRegex;
+            _isClassic = lineRegex == ClassicLineRegex;
+            _regex = new Regex(lineRegex,
                 onlyIndexed ? RegexOptions.Compiled : RegexOptions.Compiled | RegexOptions.Singleline);
             if (!onlyIndexed)
-                _firstLineRegex = new Regex(logMetaInformation.LineRegex, RegexOptions.Compiled);
+                _firstLineRegex = new Regex(lineRegex, RegexOptions.Compiled);
             _componentCount = logMetaInformation.ComponentCount;
             _fieldsToStore = onlyIndexed
                 ? logMetaInformation.IndexedFieldNumbers
@@ -42,6 +48,9 @@ namespace LogGrokX.Data
         public bool TryParse(string input, int beginning, int length,
             in ParsedLineComponents parsedLineComponents, out long timeTicks)
         {
+            if (_isClassic && TryParseClassic(input.AsSpan(beginning, length), parsedLineComponents, out timeTicks))
+                return true;
+
             timeTicks = -1;
 
             var match = MatchRecord(input, beginning, length, out var hasContinuation);
@@ -94,6 +103,75 @@ namespace LogGrokX.Data
             }
 
             return true;
+        }
+
+        private bool TryParseClassic(ReadOnlySpan<char> record, in ParsedLineComponents parsedLineComponents,
+            out long timeTicks)
+        {
+            timeTicks = -1;
+            if (record.Length < 12 || record[4] != '-' || record[7] != '-' ||
+                !char.IsWhiteSpace(record[10]) || char.IsWhiteSpace(record[11]) ||
+                record[..4].ContainsAnyExceptInRange('0', '9') ||
+                record.Slice(5, 2).ContainsAnyExceptInRange('0', '9') ||
+                record.Slice(8, 2).ContainsAnyExceptInRange('0', '9'))
+                return false;
+
+            if (_firstLineRegex != null)
+            {
+                var firstLineEnd = record.IndexOfAny('\r', '\n');
+                if (firstLineEnd >= 0 && !record[firstLineEnd..].TrimEnd("\r\n").IsEmpty)
+                    return false;
+            }
+
+            Span<(int Start, int Length)> fields = stackalloc (int, int)[5];
+            var position = FindWhiteSpace(record, 12);
+            fields[0] = (0, position);
+            for (var field = 1; field <= 3; field++)
+            {
+                var start = SkipWhiteSpace(record, position);
+                position = FindWhiteSpace(record, start);
+                if (position == start)
+                    return false;
+
+                fields[field] = (start, position - start);
+            }
+
+            if (position == record.Length)
+                return false;
+
+            var messageStart = SkipWhiteSpace(record, position);
+            var message = record[messageStart..];
+            var lineFeed = _firstLineRegex == null ? message.IndexOf('\n') : -1;
+            fields[4] = (messageStart, lineFeed < 0 ? message.Length : lineFeed);
+
+            for (var index = 0; index < _fieldsToStore.Length; index++)
+            {
+                var field = fields[_fieldsToStore[index]];
+                parsedLineComponents.ComponentStart(index) = field.Start;
+                parsedLineComponents.ComponentLength(index) = field.Length;
+            }
+
+            if (_timeGroupNumber > 0)
+            {
+                var time = fields[_timeGroupNumber - 1];
+                TimestampParser.TryGetTicks(record.Slice(time.Start, time.Length), _timeFormat, out timeTicks);
+            }
+
+            return true;
+        }
+
+        private static int SkipWhiteSpace(ReadOnlySpan<char> text, int position)
+        {
+            while (position < text.Length && char.IsWhiteSpace(text[position]))
+                position++;
+            return position;
+        }
+
+        private static int FindWhiteSpace(ReadOnlySpan<char> text, int position)
+        {
+            while (position < text.Length && !char.IsWhiteSpace(text[position]))
+                position++;
+            return position;
         }
 
         private Match? MatchRecord(string input, int beginning, int length, out bool hasContinuation)

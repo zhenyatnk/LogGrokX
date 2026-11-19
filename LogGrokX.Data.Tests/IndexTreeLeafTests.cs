@@ -71,6 +71,33 @@ public class IndexTreeLeafTests
     }
 
     [TestMethod]
+    public void SimpleLeafPreservesWideGapsAndSeeksAcrossCheckpoints()
+    {
+        var tree = new IndexTree<int, SimpleLeaf<int>>(16, value => new SimpleLeaf<int>(value, 0));
+        var values = Enumerable.Range(0, 1059).Select(index => index switch
+        {
+            < 17 => int.MinValue + index * 5,
+            < 31 => int.MinValue + 300 + index * 5,
+            < 63 => int.MinValue + 70_000 + index * 5,
+            _ => int.MaxValue - 10_000 + index * 5
+        }).ToArray();
+
+        foreach (var value in values)
+            tree.Add(value);
+
+        for (var index = 0; index < values.Length; index++)
+        {
+            Assert.AreEqual(values[index], tree[index]);
+            Assert.AreEqual(index, tree.FindIndexByValue(values[index]));
+        }
+
+        Assert.AreEqual(17, tree.FindIndexByValue(values[16] + 1));
+        Assert.AreEqual(63, tree.FindIndexByValue(0));
+        Assert.AreEqual(values.Length, tree.FindIndexByValue(int.MaxValue));
+        CollectionAssert.AreEqual(values[1000..], tree.GetEnumerableFromIndex(1000).ToArray());
+    }
+
+    [TestMethod]
     public void LongsLeafStoresDeltas()
     {
         var leaf = new LongsLeaf(1000, 0);
