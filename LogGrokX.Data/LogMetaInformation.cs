@@ -48,13 +48,16 @@ namespace LogGrokX.Data
         private int ResolveTimeFieldIndex()
         {
             if (!string.IsNullOrEmpty(_logFormat.TimeField))
-                return GetFieldIndexByName(_logFormat.TimeField);
+                return GetFieldIndexByName(_logFormat.TimeField, StringComparison.OrdinalIgnoreCase);
 
             return Array.FindIndex(FieldNames,
                 name => string.Equals(name, "Time", StringComparison.OrdinalIgnoreCase));
         }
 
         private int GetFieldIndexByName(string fieldName) => Array.IndexOf(FieldNames, fieldName);
+
+        private int GetFieldIndexByName(string fieldName, StringComparison comparison) =>
+            Array.FindIndex(FieldNames, name => string.Equals(name, fieldName, comparison));
 
         public int GetIndexedFieldIndexByName(string fieldName) =>
             GetIndexedFieldIndexByFieldIndex(GetFieldIndexByName(fieldName));
