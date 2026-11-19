@@ -138,7 +138,8 @@ namespace LogGrokX.Controls.GridView
                     CellTemplate = CreateCellTemplate(),
                     Width = widths == null ? double.NaN : widths[columnIndex++],
                     FitToContent = IsMessageField(fieldHeader),
-                    ContentTextProvider = contentTextProvider
+                    ContentTextProvider = contentTextProvider,
+                    FieldName = fieldHeader
                 });
             }
 

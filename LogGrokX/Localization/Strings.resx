@@ -732,6 +732,15 @@
   <data xml:space="preserve" name="NewSearch">
     <value>New search</value>
   </data>
+  <data xml:space="preserve" name="HideColumn">
+    <value>Hide column</value>
+  </data>
+  <data xml:space="preserve" name="Columns">
+    <value>Columns</value>
+  </data>
+  <data xml:space="preserve" name="ShowAllColumns">
+    <value>Show all columns</value>
+  </data>
   <data xml:space="preserve" name="FilterColumn">
     <value>Filter column</value>
   </data>

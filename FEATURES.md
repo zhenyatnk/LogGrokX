@@ -800,6 +800,11 @@ navigation comfortable:
   columns are wider than the viewport, so no field is unreachable.
 - **Auto-width columns** — double-clicking a column header separator sizes the
   column to its content; the `Message` column can be widened once and stays.
+- **Hide columns** — the header's right-click menu hides any field column
+  (**Hide column**), toggles them from a checkable **Columns** submenu and
+  restores them all with **Show all columns**. A hidden column returns to its
+  original position, and indexing, filters and search keep working on its
+  values. The line-number and pin columns cannot be hidden.
 - **Copy** — `Ctrl+C` copies the selected lines as displayed (after any textual
   transformation, Base64/HEX decoding or value mapping); the per-cell context
   menu offers **Copy** and **Copy as native** (the original, undecoded value).
