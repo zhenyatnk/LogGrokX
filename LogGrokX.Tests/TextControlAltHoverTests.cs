@@ -48,7 +48,9 @@ public class TextControlAltHoverTests
                          ("artifact = 'payload_42.bin'", "payload_42", "'payload_42.bin'"),
                          (@"volumePath: \\?\Volume{12345678-abcd-4321-9876-0123456789ab}\", "Volume",
                              @"\\?\Volume{12345678-abcd-4321-9876-0123456789ab}\"),
-                         (@"deviceName: \Device\SyntheticVolume7", "SyntheticVolume7", @"\Device\SyntheticVolume7")
+                         (@"deviceName: \Device\SyntheticVolume7", "SyntheticVolume7", @"\Device\SyntheticVolume7"),
+                         (@"path: C:\temp\data", "path", @"path: C:\temp\data"),
+                         (@"path: C:\temp\data", "temp", @"C:\temp\data")
                      })
             {
                 using var line = CreateLine(text);

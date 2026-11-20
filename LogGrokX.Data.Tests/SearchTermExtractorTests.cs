@@ -46,6 +46,14 @@ public class SearchTermExtractorTests
     [DataRow(@"deviceName: \Device\SyntheticVolume7", ":", @"deviceName: \Device\SyntheticVolume7")]
     [DataRow(@"deviceName: \Device\SyntheticVolume7", "Device", @"\Device\SyntheticVolume7")]
     [DataRow(@"deviceName: \Device\SyntheticVolume7", "SyntheticVolume7", @"\Device\SyntheticVolume7")]
+    [DataRow(@"path: C:\temp\data", "path", @"path: C:\temp\data")]
+    [DataRow(@"path: C:\temp\data", ":", @"path: C:\temp\data")]
+    [DataRow(@"path: C:\temp\data", "C", @"C:\temp\data")]
+    [DataRow(@"path: C:\temp\data", "temp", @"C:\temp\data")]
+    [DataRow(@"path: C:\temp\data", "data", @"C:\temp\data")]
+    [DataRow(@"path: C:\temp\data role=admin", "path", @"path: C:\temp\data")]
+    [DataRow("2026-05-14 10:00:00.000 INF Thread-01 Search [S01] user = alice role=admin path: C:\\temp\\data",
+        "path", @"path: C:\temp\data")]
     [DataRow("Building provider factory='acme_demo.inventory.SampleProvider', providerKey=0x1234abcd",
         "Building", "Building")]
     [DataRow("Building provider factory='acme_demo.inventory.SampleProvider', providerKey=0x1234abcd",
