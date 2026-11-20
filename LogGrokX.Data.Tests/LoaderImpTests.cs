@@ -17,6 +17,14 @@ namespace LogGrokX.Data.Tests
         private const int BufferSize = 256;
 
         [TestMethod]
+        public void CheckEmptyStreamHasNoLines()
+        {
+            var lineIndex = DoLoad(Array.Empty<byte>());
+
+            Assert.AreEqual(0, lineIndex.LineStarts.Count);
+        }
+
+        [TestMethod]
         public void CheckNoCrlfsInBuffer()
         {
             CheckLines(BufferSize);
