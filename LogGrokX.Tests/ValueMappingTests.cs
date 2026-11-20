@@ -159,7 +159,8 @@ namespace LogGrokX.Tests
             CollectionAssert.AreEqual(new[] { "Message", "Type" }, data.Fields);
             Assert.AreEqual(1, data.Items.Length);
             Assert.AreEqual("0x00001", data.Items[0].Value);
-            Assert.AreEqual(0, list.GetValidationErrors().Count());
+            Assert.AreEqual(Localization.Strings.Format("MappingValueMissing", list.DisplayName),
+                list.GetValidationErrors().Single());
         }
 
         [TestMethod]
