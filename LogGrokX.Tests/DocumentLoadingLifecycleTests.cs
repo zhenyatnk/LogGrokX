@@ -81,6 +81,54 @@ public class DocumentLoadingLifecycleTests
         });
     }
 
+    [TestMethod]
+    public void OpeningEmptyFile_MarksDocumentAsEmpty()
+    {
+        RunOnDispatcher(() =>
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-empty-{Guid.NewGuid():N}.log");
+            try
+            {
+                File.WriteAllBytes(fileName, Array.Empty<byte>());
+                var settings = new ApplicationSettings
+                {
+                    Profiles =
+                    [
+                        new ProfileSettings
+                        {
+                            Name = "Empty file test",
+                            InheritLegacySettings = false,
+                            LogFormats =
+                            [
+                                new LogFormat
+                                {
+                                    Regex = @"^(?<Message>.*)",
+                                    IndexedFields = [],
+                                    TimeField = string.Empty,
+                                    TimeFormat = string.Empty
+                                }
+                            ]
+                        }
+                    ],
+                    SelectedProfile = "Empty file test"
+                };
+                using var viewModel = TestServices.CreateMain(settings);
+
+                viewModel.AddDocument(fileName);
+                var document = viewModel.CurrentDocument;
+                Assert.IsNotNull(document);
+                Assert.IsTrue(PumpUntil(() => !document.LogViewModel.IsLoading, TimeSpan.FromSeconds(10)));
+
+                Assert.AreEqual(0, document.LineCount);
+                Assert.IsTrue(document.IsFileEmpty);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        });
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static Dictionary<string, WeakReference> OpenAndCloseDocument(MainWindowViewModel viewModel,
         string fileName, int totalLineCount, bool waitUntilLoaded)

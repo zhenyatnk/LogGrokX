@@ -172,6 +172,8 @@ namespace LogGrokX
 
         public int LineCount => _logModelFacade.LineCount;
 
+        public bool IsFileEmpty => _logModelFacade.LogFile.FileSize == 0;
+
         public string GetTransformedLine(int lineNumber)
         {
             var lines = new (int, string)[1];

@@ -208,6 +208,24 @@ public class LoaderPipelineTests
     }
 
     [TestMethod]
+    public void LoadsEmptyFileWithPlainTextFormat()
+    {
+        var meta = LogMetaInformation.CreateTextFileMetaInformation();
+        var path = TestHelpers.WriteTempFile(string.Empty);
+        try
+        {
+            var model = TestHelpers.LoadFile(path, meta);
+
+            Assert.AreEqual(0, model.LineCount);
+            Assert.AreEqual(0, model.LoadProgress);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [TestMethod]
     public void HandlesTinyBufferBoundaries()
     {
         var lines = Enumerable.Range(0, 50)

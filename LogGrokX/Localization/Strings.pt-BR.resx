@@ -711,6 +711,12 @@
   <data xml:space="preserve" name="WelcomeShortcuts">
     <value>Ctrl+O para abrir · ou arraste o arquivo aqui</value>
   </data>
+  <data xml:space="preserve" name="EmptyFileTitle">
+    <value>Este arquivo está vazio</value>
+  </data>
+  <data xml:space="preserve" name="EmptyFileDescription">
+    <value>O arquivo de log aberto não contém dados.</value>
+  </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Linha do tempo</value>
   </data>

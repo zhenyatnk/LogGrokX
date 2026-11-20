@@ -711,6 +711,12 @@
   <data xml:space="preserve" name="WelcomeShortcuts">
     <value>Strg+O zum Öffnen · oder die Datei hierher ziehen</value>
   </data>
+  <data xml:space="preserve" name="EmptyFileTitle">
+    <value>Diese Datei ist leer</value>
+  </data>
+  <data xml:space="preserve" name="EmptyFileDescription">
+    <value>Die geöffnete Protokolldatei enthält keine Daten.</value>
+  </data>
   <data xml:space="preserve" name="TimelineTitle">
     <value>Zeitleiste</value>
   </data>

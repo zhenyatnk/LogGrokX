@@ -3,8 +3,10 @@
                     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
                     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                     xmlns:local="clr-namespace:LogGrokX"
+                    xmlns:loc="clr-namespace:LogGrokX.Localization"
                     xmlns:controls="clr-namespace:LogGrokX.Controls"
                     xmlns:colors="clr-namespace:LogGrokX.Colors"
+                    xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                     mc:Ignorable="d">
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="LogViewTemplate.xaml" />
@@ -53,6 +55,28 @@
                             Content="{Binding SearchViewModel}"
                             Visibility="{Binding SearchViewModel.IsFilterEnabled,
                                 Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+            <Border Grid.RowSpan="3"
+                    Background="{DynamicResource ApplicationBackgroundBrush}"
+                    Visibility="{Binding IsFileEmpty,
+                                Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel MaxWidth="420" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Border Width="72" Height="72" HorizontalAlignment="Center"
+                            Style="{StaticResource FluentCardStyle}">
+                        <ui:SymbolIcon Symbol="DocumentText24" FontSize="32"
+                                       Foreground="{DynamicResource AccentFillColorDefaultBrush}" />
+                    </Border>
+                    <TextBlock Margin="0,20,0,8" FontSize="24" FontWeight="SemiBold"
+                               TextAlignment="Center" Text="{loc:Loc EmptyFileTitle}" />
+                    <TextBlock Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               TextAlignment="Center" TextWrapping="Wrap"
+                               Text="{loc:Loc EmptyFileDescription}" />
+                    <ui:Button Margin="0,20,0,0" HorizontalAlignment="Center" Appearance="Primary"
+                               Command="{Binding DataContext.OpenFileCommand,
+                                         RelativeSource={RelativeSource AncestorType={x:Type Window}}}"
+                               Content="{loc:Loc OpenLogLabel}" />
+                </StackPanel>
+            </Border>
         </Grid>
         </controls:RootDocumentControl>
     </DataTemplate>

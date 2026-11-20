@@ -145,11 +145,15 @@ namespace LogGrokX.Data
             
                 void FinishProcessing(int lastLineOffsetFromBufferStart, int bufferEndOffset, long totalBytesRead)
                 {
-                    _lineDataConsumer.AddLineData(
-                        bufferStartPosition + lastLineOffsetFromBufferStart,
-                        buffer.AsSpan().Slice(
-                            lastLineOffsetFromBufferStart,
-                            bufferEndOffset - lastLineOffsetFromBufferStart));
+                    if (bufferEndOffset > lastLineOffsetFromBufferStart)
+                    {
+                        _lineDataConsumer.AddLineData(
+                            bufferStartPosition + lastLineOffsetFromBufferStart,
+                            buffer.AsSpan().Slice(
+                                lastLineOffsetFromBufferStart,
+                                bufferEndOffset - lastLineOffsetFromBufferStart));
+                    }
+
                     _lineDataConsumer.CompleteAdding(totalBytesRead);
                 }
             }
