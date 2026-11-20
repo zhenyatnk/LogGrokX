@@ -155,7 +155,12 @@ public static class SearchTermExtractor
             return pathEnd > valueStart + 1 ? pathEnd : null;
         }
 
-        return IsTokenPart(text[valueStart]) ? GetToken(text, valueStart).end : null;
+        if (!IsTokenPart(text[valueStart])) return null;
+
+        var tokenEnd = GetToken(text, valueStart).end;
+        if (IsDrivePathStart(text, valueStart))
+            return GetWindowsPathEnd(text, tokenEnd);
+        return tokenEnd;
     }
 
     private static bool TryGetCurlyBracedValueRange(ReadOnlySpan<char> text, int position,
@@ -240,15 +245,25 @@ public static class SearchTermExtractor
         var segmentStart = position;
         while (segmentStart > 0 && IsWindowsPathPart(text[segmentStart - 1])) segmentStart--;
 
-        var start = text.Slice(segmentStart, position - segmentStart + 1).IndexOf('\\');
+        var start = IsDrivePathStart(text, segmentStart)
+            ? segmentStart
+            : FindBackslashBefore(text, segmentStart, position);
         if (start < 0) return false;
-        start += segmentStart;
 
         var end = GetWindowsPathEnd(text, start);
         if (position >= end || end <= start + 1) return false;
         range = (start, end);
         return true;
     }
+
+    private static int FindBackslashBefore(ReadOnlySpan<char> text, int segmentStart, int position)
+    {
+        var backslash = text.Slice(segmentStart, position - segmentStart + 1).IndexOf('\\');
+        return backslash < 0 ? -1 : backslash + segmentStart;
+    }
+
+    private static bool IsDrivePathStart(ReadOnlySpan<char> text, int start) =>
+        start + 2 < text.Length && char.IsLetter(text[start]) && text[start + 1] == ':' && text[start + 2] == '\\';
 
     private static bool IsWindowsPathStart(ReadOnlySpan<char> text, int position) =>
         position >= 0 && position < text.Length && text[position] == '\\';
