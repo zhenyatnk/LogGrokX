@@ -58,14 +58,28 @@
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     CornerRadius="16"
-                                    Padding="{TemplateBinding Padding}"
                                     SnapsToDevicePixels="True">
                                 <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <ProgressBar x:Name="DownloadProgress"
+                                                 Maximum="100" Value="{Binding UpdateProgress, Mode=OneWay}"
+                                                 Foreground="{DynamicResource AccentFillColorDefaultBrush}"
+                                                 Opacity="0.32"
+                                                 IsHitTestVisible="False"
+                                                 Visibility="Collapsed">
+                                        <ProgressBar.Template>
+                                            <ControlTemplate TargetType="{x:Type ProgressBar}">
+                                                <Grid x:Name="PART_Track">
+                                                    <Border x:Name="PART_Indicator" HorizontalAlignment="Left" ClipToBounds="True">
+                                                        <Border Width="{Binding ActualWidth, ElementName=PART_Track}"
+                                                                HorizontalAlignment="Left" CornerRadius="15"
+                                                                Background="{TemplateBinding Foreground}" />
+                                                    </Border>
+                                                </Grid>
+                                            </ControlTemplate>
+                                        </ProgressBar.Template>
+                                    </ProgressBar>
+                                    <Grid HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          Margin="{TemplateBinding Padding}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
@@ -77,11 +91,6 @@
                                                    Foreground="{TemplateBinding Foreground}"
                                                    TextTrimming="CharacterEllipsis" />
                                     </Grid>
-                                    <ProgressBar x:Name="DownloadProgress" Grid.Row="1"
-                                                 Height="2" Margin="8,0,8,3"
-                                                 Maximum="100" Value="{Binding UpdateProgress, Mode=OneWay}"
-                                                 Foreground="{DynamicResource AccentFillColorDefaultBrush}"
-                                                 Visibility="Collapsed" />
                                 </Grid>
                             </Border>
                             <ControlTemplate.Triggers>
