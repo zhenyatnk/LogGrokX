@@ -2,10 +2,12 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using DryIoc;
 using LogGrokX.Platform;
 using LogGrokX.Search;
@@ -61,6 +63,35 @@ public sealed class PlatformBoundaryTests
         Assert.IsInstanceOfType<IThemeService>(container.Resolve<IThemeService>());
         Assert.IsInstanceOfType<IAppDialogs>(container.Resolve<IAppDialogs>());
         Assert.IsInstanceOfType<IUpdateService>(container.Resolve<IUpdateService>());
+    }
+
+    [STATestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void CopyFullPathCopiesAbsolutePath(bool relative)
+    {
+        var fileName = $"лог файл {Guid.NewGuid():N}.log";
+        var fullPath = Path.Combine(Directory.GetCurrentDirectory(), fileName);
+        File.WriteAllText(fullPath, "2026-01-01 00:00:00 INFO 1 Test Message");
+        try
+        {
+            var desktop = new Desktop();
+            using var container = new DryIoc.Container();
+            Bootstrap.App.RegisterDependencies(container, new WpfUiDispatcher(Dispatcher.CurrentDispatcher), desktop);
+            var viewModel = container.Resolve<MainWindowViewModel>();
+            viewModel.AddDocument(relative ? Path.Combine(".", fileName) : fullPath);
+
+            var document = viewModel.CurrentDocument;
+            Assert.IsNotNull(document);
+            document.CopyPathToClipboardCommand.Execute(null);
+
+            Assert.AreEqual(fullPath, desktop.Clipboard);
+            Assert.AreEqual(fullPath, document.DocumentId);
+        }
+        finally
+        {
+            File.Delete(fullPath);
+        }
     }
 
     [TestMethod]

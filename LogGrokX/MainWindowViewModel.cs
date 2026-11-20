@@ -476,40 +476,17 @@ namespace LogGrokX
                 return;
             }
 
-            var alreadyOpen = FindOpenDocument(fileName);
             try
             {
-                CurrentDocument = alreadyOpen ?? CreateDocument(fileName);
+                var fullPath = Path.GetFullPath(fileName);
+                var alreadyOpen = Documents.FirstOrDefault(document =>
+                    string.Equals(document.DocumentId, fullPath, StringComparison.OrdinalIgnoreCase));
+                CurrentDocument = alreadyOpen ?? CreateDocument(fullPath);
             }
             catch (Exception e) when (e is FormatException or ArgumentException)
             {
                 Trace.TraceError($"Cannot open '{fileName}': {e.Message}");
                 _dialogs.ShowWarning(e.Message, Strings.Get("LogFormats"));
-            }
-        }
-
-        private DocumentViewModel? FindOpenDocument(string fileName)
-        {
-            var target = TryGetFullPath(fileName);
-            foreach (var document in Documents)
-            {
-                if (string.Equals(TryGetFullPath(document.DocumentId), target,
-                        StringComparison.OrdinalIgnoreCase))
-                    return document;
-            }
-
-            return null;
-        }
-
-        private static string TryGetFullPath(string path)
-        {
-            try
-            {
-                return Path.GetFullPath(path);
-            }
-            catch (Exception)
-            {
-                return path;
             }
         }
 
