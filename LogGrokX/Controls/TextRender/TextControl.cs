@@ -16,6 +16,7 @@ public class TextControl : Control
 {
     private readonly TextView _textView;
     private Point? _startSelectionPoint;
+    private bool _altClickAppended;
     private Rect? _altHoverBounds;
     private Window? _window;
     private ScrollViewer? _scrollViewer;
@@ -331,11 +332,8 @@ public class TextControl : Control
         Focus();
         if (e.ChangedButton == MouseButton.Left)
         {
-            if (Keyboard.Modifiers == ModifierKeys.Alt)
+            if (HandleAltClick(e.GetPosition(this), e.ClickCount, Keyboard.Modifiers))
             {
-                _startSelectionPoint = null;
-                if (e.ClickCount == 1 && TextLines is { Count: > 0 })
-                    AppendTermUnderPointToSearch(e.GetPosition(this));
                 e.Handled = true;
                 return;
             }
@@ -354,6 +352,21 @@ public class TextControl : Control
         }
 
         base.OnMouseDown(e);
+    }
+
+    internal bool HandleAltClick(Point point, int clickCount, ModifierKeys modifiers)
+    {
+        if (modifiers != ModifierKeys.Alt)
+        {
+            _altClickAppended = false;
+            return false;
+        }
+
+        _startSelectionPoint = null;
+        if (TextLines is { Count: > 0 } && (clickCount == 1 || !_altClickAppended))
+            AppendTermUnderPointToSearch(point);
+        _altClickAppended = true;
+        return true;
     }
 
     private void SelectWordUnderPoint(Point point, IList<(GlyphLine glyphLine, bool isCollapsible)> textLines)

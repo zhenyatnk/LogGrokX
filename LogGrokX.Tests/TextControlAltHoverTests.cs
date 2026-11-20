@@ -282,6 +282,47 @@ public class TextControlAltHoverTests
         });
     }
 
+    [TestMethod]
+    public void AltClickAppendsOnSecondClickOfDoubleClickAfterPlainClick()
+    {
+        RunOnSta(() =>
+        {
+            const string text = "[S05] [outer [inner] tail] <a<b>c> (x(y)z)";
+            using var line = CreateLine(text);
+            var control = CreateControl(false, line);
+            var appended = CaptureAppendedTerms(control);
+            var bracket = GetCharacterPoint(line, 6);
+
+            Assert.IsFalse(control.HandleAltClick(bracket, 1, ModifierKeys.None));
+            Assert.AreEqual(0, appended.Count);
+
+            Assert.IsTrue(control.HandleAltClick(bracket, 1, ModifierKeys.Alt));
+            Assert.AreEqual(1, appended.Count);
+            Assert.AreEqual("outer [inner] tail", appended[0]);
+
+            Assert.IsTrue(control.HandleAltClick(bracket, 2, ModifierKeys.Alt));
+            Assert.AreEqual(1, appended.Count);
+
+            Assert.IsTrue(control.HandleAltClick(bracket, 1, ModifierKeys.Alt));
+            Assert.AreEqual(2, appended.Count);
+            Assert.AreEqual("outer [inner] tail", appended[1]);
+
+            control.HandleAltClick(bracket, 1, ModifierKeys.None);
+            Assert.IsTrue(control.HandleAltClick(bracket, 2, ModifierKeys.Alt));
+            Assert.AreEqual(3, appended.Count);
+            Assert.AreEqual("outer [inner] tail", appended[2]);
+        });
+    }
+
+    private static List<string> CaptureAppendedTerms(TextControl control)
+    {
+        var appended = new List<string>();
+        control.CommandBindings.Add(new CommandBinding(RoutedCommands.AppendToSearch,
+            (_, e) => appended.Add((string)e.Parameter),
+            (_, e) => e.CanExecute = true));
+        return appended;
+    }
+
     private static TextControl CreateControl(bool isCollapsible, params GlyphLine[] lines)
     {
         var textLines = new List<(GlyphLine glyphLine, bool isCollapsible)>();

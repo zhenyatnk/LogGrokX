@@ -528,7 +528,12 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   part of the word instead of opening a quoted range; curly-braced values stay
   intact) and routes `RoutedCommands.AppendToSearch` to
   `RootDocumentControl.AppendToSearchCommand` ->
-  `SearchViewModel.AppendToSearchCommand`. The same range resolver drives the
+  `SearchViewModel.AppendToSearchCommand`. `TextControl.HandleAltClick` also
+  appends the term when the click is the second one of a double-click
+  (`e.ClickCount > 1`), not only on the first: the leading click may have been
+  consumed by window activation or row selection, so ignoring it left the search
+  box empty (#104). `_altClickAppended` deduplicates, so a genuine
+  Alt+double-click still appends the term once. The same range resolver drives the
   transient Alt-hover rectangle drawn by `TextControl.OnRender` with
   `SelectionBrush`; window preview key events update it without mouse movement,
   and pointer leave, scrolling, text replacement, unloading or window
