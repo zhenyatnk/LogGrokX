@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\search.log` |
 | Ориентировочная длительность | 10 мин |
-| Дефекты (регрессия) | [#97](https://github.com/zhenyatnk/LogGrokX/issues/97) |
+| Дефекты (регрессия) | [#97](https://github.com/zhenyatnk/LogGrokX/issues/97), [#104](https://github.com/zhenyatnk/LogGrokX/issues/104) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

@@ -89,6 +89,16 @@ public class SearchTermExtractorTests
     }
 
     [TestMethod]
+    public void ExtractsOuterBracketOfNestedBracketGroupAfterLeadingLabel()
+    {
+        const string text = "[S05] [outer [inner] tail] <a<b>c> (x(y)z)";
+
+        Assert.AreEqual("outer [inner] tail", SearchTermExtractor.GetTerm(text, 6));
+        Assert.AreEqual("outer [inner] tail", SearchTermExtractor.GetTerm(text, 25));
+        Assert.AreEqual("S05", SearchTermExtractor.GetTerm(text, 4));
+    }
+
+    [TestMethod]
     public void AppendsTermsWithWildcard()
     {
         var pattern = SearchTermExtractor.AppendToPattern(string.Empty, false, "Event = 1244");
