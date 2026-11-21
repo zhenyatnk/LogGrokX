@@ -10,6 +10,7 @@ namespace LogGrokX.Tests
     {
         private static int _total;
         private static int _failed;
+        private static int _started;
 
         [AssemblyInitialize]
         public static void CaptureTesthostFailures(TestContext context)
@@ -28,15 +29,12 @@ namespace LogGrokX.Tests
         [GlobalTestInitialize]
         public static void ReportStart(TestContext context)
         {
-            if (!context.FullyQualifiedTestClassName.EndsWith("FoldingStateSharingTests")
-                && !context.FullyQualifiedTestClassName.EndsWith("GlyphLineScalingTests")
-                && context.TestName is not "AppendedAndReorderedColorRulesRefreshOpenDocumentWithoutRebuilding"
-                    and not "VennProfileGroupsConsecutiveLinesByThreadInBothViews"
-                    and not "PreviewCombinesSelectedListWithOtherEnabledLists")
+            var index = Interlocked.Increment(ref _started);
+            if (index % 50 != 0)
                 return;
 
             WriteCommand("notice", "MSTest start",
-                $"{context.FullyQualifiedTestClassName}.{context.TestName}");
+                $"{index}: {context.FullyQualifiedTestClassName}.{context.TestName}");
         }
 
         [GlobalTestCleanup]
