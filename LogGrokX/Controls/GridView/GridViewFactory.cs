@@ -96,7 +96,10 @@ namespace LogGrokX.Controls.GridView
                         });
                     }
                     if (messageFieldIndex >= 0 && fieldIndex == messageFieldIndex)
+                    {
                         frameworkElementFactory.SetValue(TextView.HasExternalRootExpanderProperty, true);
+                        frameworkElementFactory.SetValue(TextView.UseFixedFoldingGutterProperty, true);
+                    }
                     if (fieldHeader == ThreadFieldName)
                     {
                         var opacityBinding = new Binding

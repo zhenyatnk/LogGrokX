@@ -301,6 +301,25 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     #endregion
 
+    #region UseFixedFoldingGutter property
+
+    public static readonly DependencyProperty UseFixedFoldingGutterProperty = DependencyProperty.RegisterAttached(
+        "UseFixedFoldingGutter", typeof(bool), typeof(TextView),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits,
+            static (d, _) => (d as TextView)?.OnFoldingLayoutChanged(null, EventArgs.Empty)));
+
+    public static void SetUseFixedFoldingGutter(DependencyObject element, bool value)
+    {
+        element.SetValue(UseFixedFoldingGutterProperty, value);
+    }
+
+    public static bool GetUseFixedFoldingGutter(DependencyObject element)
+    {
+        return (bool)element.GetValue(UseFixedFoldingGutterProperty);
+    }
+
+    #endregion
+
     #region HasExternalRootExpander property
 
     public static readonly DependencyProperty HasExternalRootExpanderProperty = DependencyProperty.RegisterAttached(

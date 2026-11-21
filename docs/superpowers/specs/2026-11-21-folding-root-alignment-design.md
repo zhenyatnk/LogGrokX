@@ -10,9 +10,9 @@ Add a temporary checkable View menu item named `Root + left of message` that swi
 
 ## Variant 1: fixed folding gutter
 
-Every `TextView` reserves the existing 12 DIP folding margin on the left, including plain text and lines without an expander. Root and nested expanders keep their current positions. Text in structured and ordinary rows therefore starts at the same horizontal coordinate within the corresponding cell.
+Only the generated `Message` cell reserves the existing 12 DIP folding margin on the left for every line, including plain text and lines without an expander. Its root and nested expanders keep their current positions, and structured and ordinary Message rows start at the same horizontal coordinate. Every other column retains the previous behavior: the margin is present only on lines that need inline folding.
 
-Measurement, rendering, selection, search highlights, Alt-hover, and hit testing must all use the same offset. No folding-state changes are required for this variant.
+The inherited attached `TextView.UseFixedFoldingGutter` property defaults to false and is set only on the generated Message cell. Measurement, rendering, selection, search highlights, Alt-hover, and hit testing must all use the same per-cell offset. No folding-state changes are required for this variant.
 
 ## Variant 2: root expander at the right of the column before Message
 

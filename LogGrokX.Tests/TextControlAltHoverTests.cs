@@ -239,7 +239,12 @@ public class TextControlAltHoverTests
         RunOnSta(FoldingLayoutMode.FixedGutter, () =>
         {
             using var line = CreateLine("plain");
-            var control = CreateControl(false, line);
+            var textView = new TextView();
+            TextView.SetUseFixedFoldingGutter(textView, true);
+            var control = new TextControl(textView)
+            {
+                TextLines = new List<(GlyphLine glyphLine, bool isCollapsible)> { (line, false) }
+            };
             var point = GetCharacterPoint(line, 1, TextView.ExpanderMargin);
 
             control.UpdateAltHover(point, ModifierKeys.Alt);

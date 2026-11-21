@@ -25,8 +25,8 @@ public class FoldingLayoutTests
         {
             using var plain = CreateLine("same");
             using var collapsible = CreateLine("same");
-            var plainControl = CreateControl((plain, false));
-            var collapsibleControl = CreateControl((collapsible, true));
+            var plainControl = CreateControl(true, (plain, false));
+            var collapsibleControl = CreateControl(true, (collapsible, true));
 
             plainControl.Measure(Infinite);
             collapsibleControl.Measure(Infinite);
@@ -35,6 +35,35 @@ public class FoldingLayoutTests
                 plainControl.DesiredSize.Width);
             Assert.AreEqual(plainControl.DesiredSize.Width,
                 collapsibleControl.DesiredSize.Width);
+        });
+    }
+
+    [TestMethod]
+    public void FixedGutterAppliesOnlyToMessageTextView()
+    {
+        RunOnSta(FoldingLayoutMode.FixedGutter, () =>
+        {
+            using var messagePlain = CreateLine("same");
+            using var messageCollapsible = CreateLine("same");
+            using var otherPlain = CreateLine("same");
+            using var otherCollapsible = CreateLine("same");
+            var messagePlainControl = CreateControl(true, (messagePlain, false));
+            var messageCollapsibleControl = CreateControl(true, (messageCollapsible, true));
+            var otherPlainControl = CreateControl(false, (otherPlain, false));
+            var otherCollapsibleControl = CreateControl(false, (otherCollapsible, true));
+
+            messagePlainControl.Measure(Infinite);
+            messageCollapsibleControl.Measure(Infinite);
+            otherPlainControl.Measure(Infinite);
+            otherCollapsibleControl.Measure(Infinite);
+
+            Assert.AreEqual(messagePlain.Size.Width + TextView.ExpanderMargin,
+                messagePlainControl.DesiredSize.Width);
+            Assert.AreEqual(messagePlainControl.DesiredSize.Width,
+                messageCollapsibleControl.DesiredSize.Width);
+            Assert.AreEqual(otherPlain.Size.Width, otherPlainControl.DesiredSize.Width);
+            Assert.AreEqual(otherCollapsible.Size.Width + TextView.ExpanderMargin,
+                otherCollapsibleControl.DesiredSize.Width);
         });
     }
 
@@ -99,8 +128,8 @@ public class FoldingLayoutTests
         {
             using var plain = CreateLine("same");
             using var collapsible = CreateLine("same");
-            var plainControl = CreateControl((plain, false));
-            var collapsibleControl = CreateControl((collapsible, true));
+            var plainControl = CreateControl(true, (plain, false));
+            var collapsibleControl = CreateControl(true, (collapsible, true));
             var regex = new Regex("same");
 
             var plainBounds = plainControl.GetHighlightGeometries(plainControl.TextLines, regex)!.Bounds;
@@ -216,6 +245,7 @@ public class FoldingLayoutTests
             var model = new TextModel(9, "{\"a\":{\"b\":1}}");
             var view = new TextView { TextModel = model };
             TextView.SetHasExternalRootExpander(view, true);
+            TextView.SetUseFixedFoldingGutter(view, true);
             TextView.SetSharedFoldingState(view, state);
             var expander = new RootFoldingExpander { TextModel = model, SharedFoldingState = state };
             view.Measure(Infinite);
@@ -257,9 +287,15 @@ public class FoldingLayoutTests
     }
 
     private static TextControl CreateControl(
+        params (GlyphLine glyphLine, bool isCollapsible)[] textLines) =>
+        CreateControl(false, textLines);
+
+    private static TextControl CreateControl(bool useFixedGutter,
         params (GlyphLine glyphLine, bool isCollapsible)[] textLines)
     {
-        return new TextControl(new TextView()) { TextLines = textLines };
+        var textView = new TextView();
+        TextView.SetUseFixedFoldingGutter(textView, useFixedGutter);
+        return new TextControl(textView) { TextLines = textLines };
     }
 
     private static GlyphLine CreateLine(string text)

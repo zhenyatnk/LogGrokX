@@ -254,7 +254,7 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void OnlyMessageCellEnablesExternalRootSuppression()
+        public void OnlyMessageCellEnablesExternalRootSuppressionAndFixedGutter()
         {
             RunOnSta(() =>
             {
@@ -273,6 +273,8 @@ namespace LogGrokX.Tests
                     Assert.IsNotNull(cell);
                     Assert.AreEqual(columnIndex == 6, TextView.GetHasExternalRootExpander(cell),
                         $"Unexpected external-root setting on column {columnIndex}.");
+                    Assert.AreEqual(columnIndex == 6, TextView.GetUseFixedFoldingGutter(cell),
+                        $"Unexpected fixed-gutter setting on column {columnIndex}.");
                 }
             });
         }

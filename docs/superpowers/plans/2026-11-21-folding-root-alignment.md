@@ -12,7 +12,8 @@
 
 - [x] Layout modes, shared root state, generated-column hosts, and marked-line placement are implemented.
 - [x] Final review fixes are complete: hiding the external host restores Message's inline root, and root selection is integrated into the linear structural interval walk.
-- [x] Focused regressions and full unit verification pass: 1,150 tests, plus a clean rebuild with zero warnings and errors.
+- [x] The fixed gutter is limited to the generated Message cell through inherited `TextView.UseFixedFoldingGutter`; all other columns retain collapsible-only margins.
+- [x] Message-only fixed-gutter regressions and full unit verification pass: 1,151 tests, plus a clean rebuild with zero warnings and errors.
 - [ ] Live comparison is delegated to the user; the implementation agent did not launch or automate the GUI.
 - [ ] Final layout cleanup is pending the user's layout choice. No final layout has been chosen.
 
