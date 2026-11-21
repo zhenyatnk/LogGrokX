@@ -159,6 +159,17 @@ public sealed class PresentationBoundaryTests
     }
 
     [TestMethod]
+    public void MarkedLinesTemplateUsesFixedFoldingGutter()
+    {
+        var root = LoadMarkedTemplate().Root!;
+        XNamespace textRender = "clr-namespace:LogGrokX.Controls.TextRender";
+        var wholeText = root.Descendants(textRender + "TextView")
+            .Single(view => view.Attribute("TextModel")?.Value == "{Binding Text.TextModel, Mode=OneWay}");
+
+        Assert.AreEqual("True", wholeText.Attribute(textRender + "TextView.UseFixedFoldingGutter")?.Value);
+    }
+
+    [TestMethod]
     public void MarkedLinesTemplateGroupsRowsByDocumentAndUpdatesGroups()
     {
         RunOnSta(() =>

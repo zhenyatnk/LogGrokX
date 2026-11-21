@@ -300,8 +300,8 @@ using the same `TextModel.UniqueId`, otherwise expansion falls out of sync.
 
 By default, every Message line reserves the same 12 DIP folding gutter, including
 plain text, so a root expander does not shift structured content relative to
-ordinary rows. Other columns and marked-lines whole text keep the previous
-collapsible-only margin. **Settings → View → Fixed folding gutter in Message**
+ordinary rows. Marked-lines whole text uses the same gutter; other columns keep
+the previous collapsible-only margin. **Settings → View → Fixed folding gutter in Message**
 controls this behavior and applies without reopening documents. Turn it off to
 restore the legacy Message margin; the choice is persisted in `appsettings.yaml`:
 

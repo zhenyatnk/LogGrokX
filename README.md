@@ -103,8 +103,8 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   unformatted substring, and raw-source search matches are highlighted in the
   formatted view. The folding state is shared across the log grid, search results
   and the marked-lines view of the same document. By default, Message reserves a
-  fixed folding gutter so expanders do not shift ordinary text; other columns keep
-  collapsible-only margins. Disable **Settings → View → Fixed folding gutter in
+  fixed folding gutter so expanders do not shift ordinary text; marked-lines whole
+  text uses it too, while other columns keep collapsible-only margins. Disable **Settings → View → Fixed folding gutter in
   Message** (`UseMessageFoldingGutter: false`) to restore the legacy Message layout.
 - **HEX to text** — cell values that contain HEX-encoded text (UTF-8 or
   UTF-16LE, blocks longer than 64 bits, e.g. `48656C6C6F20776F726C64`, `48 65 6C 6C 6F 20 77 …`,
