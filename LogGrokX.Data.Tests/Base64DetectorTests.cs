@@ -25,12 +25,14 @@ public class Base64DetectorTests
     }
 
     [TestMethod]
-    public void QuotedWholeTextIsDecodedAndSurroundingIsKept()
+    public void QuotedWholeTextIsDecodedWithoutQuotesAndSurroundingIsKept()
     {
         var source = $"  \"{Encode("{\"a\":1}")}\"  ";
 
         Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
-        Assert.AreEqual("  \"{\"a\":1}\"  ", decoded);
+        Assert.AreEqual("  {\"a\":1}  ", decoded);
+        Assert.IsTrue(Base64Detector.TryDecode($"'{Encode("Hello!!")}'", out decoded));
+        Assert.AreEqual("Hello!!", decoded);
     }
 
     [TestMethod]
