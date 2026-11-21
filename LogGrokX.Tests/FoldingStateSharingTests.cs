@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using LogGrokX.Controls.TextRender;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -20,39 +19,6 @@ namespace LogGrokX.Tests
             Assert.AreEqual(model.CollapsibleRanges!.Count, collapsed.Count);
             foreach (var range in model.CollapsibleRanges)
                 Assert.IsTrue(collapsed.Contains(range.start));
-        }
-
-        [TestMethod]
-        public void ToggleRootChangesOnlyRootAndPreservesNestedState()
-        {
-            var model = new TextModel(42, "{\"a\":{\"b\":1,\"c\":2}}");
-            var state = new TextViewSharedFoldingState();
-            var root = model.RootFoldingLine!.Value;
-            var nested = model.CollapsibleRanges!.Single(range => range.start != root).start;
-
-            state.ToggleRoot(model);
-
-            Assert.IsFalse(state.IsRootCollapsed(model));
-            Assert.IsTrue(state[model.UniqueId]!.Contains(nested));
-
-            state.ToggleRoot(model);
-
-            Assert.IsTrue(state.IsRootCollapsed(model));
-            Assert.IsTrue(state[model.UniqueId]!.Contains(nested));
-        }
-
-        [TestMethod]
-        public void GlobalResetsRaiseChanged()
-        {
-            var state = new TextViewSharedFoldingState();
-            var changedCount = 0;
-            state.Changed += (_, _) => changedCount++;
-
-            state.CollapseAll();
-            state.ExpandAll();
-            state.ResetAllToDefault();
-
-            Assert.AreEqual(3, changedCount);
         }
 
         [TestMethod]

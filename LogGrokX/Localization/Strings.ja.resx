@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowOriginal">
     <value>元の内容を表示</value>
   </data>
+  <data xml:space="preserve" name="UseMessageFoldingGutter">
+    <value>Message に固定の折りたたみ余白を表示</value>
+  </data>
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>スレッドグループの区切りを表示</value>
   </data>

@@ -220,9 +220,6 @@
                                 <MenuItem Header="{loc:Loc ThreadGrouping}"
                                           IsCheckable="True"
                                           IsChecked="{Binding IsGroupByThread, Mode=TwoWay}" />
-                                <MenuItem Header="Root + left of message"
-                                          IsCheckable="True"
-                                          IsChecked="{Binding IsRootFoldingInPreviousColumn, Mode=TwoWay}" />
                                 <MenuItem Header="{loc:Loc MergeFiles}"
                                           IsCheckable="True"
                                           IsChecked="{Binding IsMergedView, Mode=TwoWay}" />

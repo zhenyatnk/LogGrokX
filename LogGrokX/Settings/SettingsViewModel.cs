@@ -392,6 +392,7 @@ namespace LogGrokX.Settings
             _mergedFilesViewService.SetEnabled(View.MergedFilesView);
             _updateIndicatorService.SetVisible(View.ShowUpdateIndicator);
             _textZoomService.SetFontSize(View.LogFontSize);
+            _applicationSettings.SetUseMessageFoldingGutter(View.UseMessageFoldingGutter);
             _applicationSettings.SetBinaryDetection(View.DetectBinary, View.DetectPem, View.DetectBase64, View.DetectHex);
 
             var valueMappings = GetValueMappingsData();
@@ -413,6 +414,7 @@ namespace LogGrokX.Settings
             file.SetScalar("ViewSettings", "LogFontSize", View.LogFontSize.ToString(CultureInfo.InvariantCulture));
             file.SetScalar("ViewSettings", "GroupByThread", View.GroupByThread ? "true" : "false");
             file.SetScalar("ViewSettings", "ShowThreadGroupSeparators", View.ShowThreadGroupSeparators ? "true" : "false");
+            file.SetScalar("ViewSettings", "UseMessageFoldingGutter", View.UseMessageFoldingGutter ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectBinary", View.DetectBinary ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectPem", View.DetectPem ? "true" : "false");
             file.SetScalar("ViewSettings", "DetectBase64", View.DetectBase64 ? "true" : "false");

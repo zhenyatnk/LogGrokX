@@ -19,11 +19,9 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     private class OutlineData
     {
         public OutlineData(int lineCount,
-            int? rootFoldingLine,
             (int start, int length)[] collapsibleRegions,
             Func<HashSet<int>?> collapsedLineIndicesGetter)
         {
-            RootFoldingLine = rootFoldingLine;
             CollapsibleRegionsMachine = new CollapsibleRegionsMachine(lineCount, collapsibleRegions, collapsedLineIndicesGetter);
             CollapsibleLines = new bool[lineCount];
 
@@ -45,7 +43,6 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
             }
         }
         
-        public readonly int? RootFoldingLine;
         public readonly CollapsibleRegionsMachine CollapsibleRegionsMachine;
         public readonly bool[] CollapsibleLines;
         public bool IsCollapsible(int index) => (uint)index < (uint)CollapsibleLines.Length && CollapsibleLines[index];
@@ -175,7 +172,6 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         var collapsibleRangesArray = collapsibleRanges.ToArray();
         _outlineData = new OutlineData(
             count,
-            TextModel?.RootFoldingLine,
             collapsibleRangesArray,
             GetSharedFoldingState);
         
@@ -320,45 +316,6 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     #endregion
 
-    #region HasExternalRootExpander property
-
-    public static readonly DependencyProperty HasExternalRootExpanderProperty = DependencyProperty.RegisterAttached(
-        "HasExternalRootExpander", typeof(bool), typeof(TextView),
-        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits,
-            static (d, _) => (d as TextView)?.OnFoldingLayoutChanged(null, EventArgs.Empty)));
-
-    public static void SetHasExternalRootExpander(DependencyObject element, bool value)
-    {
-        element.SetValue(HasExternalRootExpanderProperty, value);
-    }
-
-    public static bool GetHasExternalRootExpander(DependencyObject element)
-    {
-        return (bool)element.GetValue(HasExternalRootExpanderProperty);
-    }
-
-    #endregion
-
-    #region IsExternalRootExpanderHostVisible property
-
-    public static readonly DependencyProperty IsExternalRootExpanderHostVisibleProperty =
-        DependencyProperty.RegisterAttached(
-            "IsExternalRootExpanderHostVisible", typeof(bool), typeof(TextView),
-            new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.Inherits,
-                static (d, _) => (d as TextView)?.OnFoldingLayoutChanged(null, EventArgs.Empty)));
-
-    public static void SetIsExternalRootExpanderHostVisible(DependencyObject element, bool value)
-    {
-        element.SetValue(IsExternalRootExpanderHostVisibleProperty, value);
-    }
-
-    public static bool GetIsExternalRootExpanderHostVisible(DependencyObject element)
-    {
-        return (bool)element.GetValue(IsExternalRootExpanderHostVisibleProperty);
-    }
-
-    #endregion
-
     #region TransientSettings property
     
     public static readonly DependencyProperty SharedFoldingStateProperty = DependencyProperty.RegisterAttached(
@@ -401,6 +358,12 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     private void OnFoldingLayoutChanged(object? sender, EventArgs e)
     {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => OnFoldingLayoutChanged(sender, e)));
+            return;
+        }
+
         _isCollapsibleStateDirty = true;
         InvalidateMeasure();
         InvalidateVisual();
@@ -644,8 +607,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
             var yCenter = Math.Round((verticalPosition + textLine.Size.Height / 2) * pixelsPerDip,
                 MidpointRounding.ToEven) / pixelsPerDip;
 
-            var isExternalRoot = IsRootHostedExternally(index, outlineData.RootFoldingLine);
-            if (outline is not None && !isExternalRoot)
+            if (outline is not None)
             {
                 var ySize = ExpanderSize;
                 var xSize = ExpanderSize;
@@ -690,12 +652,6 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         _textLineCollapsedStates = null;
     }
 
-    private bool IsRootHostedExternally(int index, int? rootFoldingLine) =>
-        FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
-        GetHasExternalRootExpander(this) &&
-        GetIsExternalRootExpanderHostVisible(this) &&
-        index == rootFoldingLine;
-
     private List<(GlyphLine glyphLine, bool isCollapsible)> CreateVisibleTextLines(TextModel text)
     {
         var pixelsPerDip = (float)VisualTreeHelper.GetDpi(this).PixelsPerDip;
@@ -714,9 +670,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         for (var i = 0; i < machine.LineCount; i++)
         {
             var (_, index) = machine[i];
-            var needsInlineMargin = outlineData.IsCollapsible(index) &&
-                                    !IsRootHostedExternally(index, outlineData.RootFoldingLine);
-            visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), needsInlineMargin));
+            visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), outlineData.IsCollapsible(index)));
         }
 
         return visibleLines;

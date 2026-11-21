@@ -132,7 +132,7 @@ public class TextControl : Control
 
     private double GetHorizontalOffset(bool isCollapsible)
     {
-        var useFixedGutter = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.FixedGutter &&
+        var useFixedGutter = FoldingLayoutOptions.Instance.UseMessageGutter &&
                              TextView.GetUseFixedFoldingGutter(_textView);
         return useFixedGutter || isCollapsible
             ? TextView.ExpanderMargin

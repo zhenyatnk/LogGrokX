@@ -236,7 +236,7 @@ public class TextControlAltHoverTests
     [TestMethod]
     public void FixedGutterAltHoverUsesMarginForNonCollapsibleGlyph()
     {
-        RunOnSta(FoldingLayoutMode.FixedGutter, () =>
+        RunOnSta(true, () =>
         {
             using var line = CreateLine("plain");
             var textView = new TextView();
@@ -367,17 +367,17 @@ public class TextControlAltHoverTests
         return new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    private static void RunOnSta(Action action) => RunOnSta(FoldingLayoutMode.RootInPreviousColumn, action);
+    private static void RunOnSta(Action action) => RunOnSta(false, action);
 
-    private static void RunOnSta(FoldingLayoutMode mode, Action action)
+    private static void RunOnSta(bool useMessageGutter, Action action)
     {
         Exception error = null;
         var thread = new Thread(() =>
         {
-            var previous = FoldingLayoutOptions.Instance.Current;
+            var previous = FoldingLayoutOptions.Instance.UseMessageGutter;
             try
             {
-                FoldingLayoutOptions.Instance.Current = mode;
+                FoldingLayoutOptions.Instance.UseMessageGutter = useMessageGutter;
                 action();
             }
             catch (Exception e)
@@ -386,7 +386,7 @@ public class TextControlAltHoverTests
             }
             finally
             {
-                FoldingLayoutOptions.Instance.Current = previous;
+                FoldingLayoutOptions.Instance.UseMessageGutter = previous;
             }
         });
         thread.SetApartmentState(ApartmentState.STA);

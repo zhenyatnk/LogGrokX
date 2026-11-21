@@ -32,8 +32,6 @@ public class TextModel : IReadOnlyList<StringRange>
 
     public int UniqueId { get; }
 
-    public int? RootFoldingLine { get; }
-
     public List<(int start, int length)>? CollapsibleRanges { get; }
 
     public StringRange GetCollapsedTextSubstitution(int index)
@@ -349,7 +347,7 @@ public class TextModel : IReadOnlyList<StringRange>
         {
             if (enableOriginalTextSearch)
                 _originalStructuredSource = source;
-            (_textLines, CollapsibleRanges, RootFoldingLine) = GetStructuredProperties(source, structuredRanges);
+            (_textLines, CollapsibleRanges) = GetStructuredProperties(source, structuredRanges);
         }
         else
         {
@@ -381,7 +379,7 @@ public class TextModel : IReadOnlyList<StringRange>
         }
     }
 
-    private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges, int? rootFoldingLine)
+    private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)
         GetStructuredProperties(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var (text, formattedRanges) = TextOperations.FormatInlineStructured(source, structuredRanges);
@@ -394,12 +392,11 @@ public class TextModel : IReadOnlyList<StringRange>
         return GetCollapsibleRanges(text, formattedRanges);
     }
 
-    private static (List<StringRange> textLines, List<(int start, int length)> ranges, int? rootFoldingLine)
+    private static (List<StringRange> textLines, List<(int start, int length)> ranges)
         GetCollapsibleRanges(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var lines = source.Tokenize().ToList();
         var result = new List<(int start, int length)>();
-        (int start, int length)? root = null;
 
         int GetLineNumber(int position)
         {
@@ -412,13 +409,8 @@ public class TextModel : IReadOnlyList<StringRange>
             var startLine = GetLineNumber(start);
             var endLine = GetLineNumber(start + length);
             var lengthLines = endLine - startLine + 1;
-            if (lengthLines <= 1)
-                return;
-
-            result.Add((startLine, lengthLines));
-            if (root is not { } current || startLine < current.start ||
-                startLine == current.start && lengthLines > current.length)
-                root = (startLine, lengthLines);
+            if (lengthLines > 1)
+                result.Add((startLine, lengthLines));
         }
 
         var bracesStack = new Stack<(char brace, int position)>();
@@ -466,7 +458,7 @@ public class TextModel : IReadOnlyList<StringRange>
             }
         }
 
-        return (lines, result, root?.start);
+        return (lines, result);
     }
 
     public string GetDisplayedText(IReadOnlySet<int>? collapsedLines)

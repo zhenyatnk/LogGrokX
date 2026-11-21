@@ -159,34 +159,6 @@ public sealed class PresentationBoundaryTests
     }
 
     [TestMethod]
-    public void MarkedLinesTemplateHostsRootInIndexActionArea()
-    {
-        var root = LoadMarkedTemplate().Root!;
-        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
-        XNamespace textRender = "clr-namespace:LogGrokX.Controls.TextRender";
-        var columns = root.Descendants(presentation + "GridViewColumn").ToArray();
-        var pinColumn = columns[0];
-        var indexColumn = columns.Single(column => column.Attribute("Header")?.Value == "Index");
-
-        Assert.IsFalse(pinColumn.Descendants(textRender + "RootFoldingExpander").Any());
-        var grid = indexColumn.Descendants(presentation + "Grid").Single();
-        var content = grid.Elements(presentation + "ContentControl").Single();
-        Assert.AreEqual("0", content.Attribute("Grid.Column")?.Value);
-        var actions = grid.Elements(presentation + "StackPanel").Single();
-        Assert.AreEqual("1", actions.Attribute("Grid.Column")?.Value);
-        Assert.AreEqual("Horizontal", actions.Attribute("Orientation")?.Value);
-        var expander = actions.Elements(textRender + "RootFoldingExpander").Single();
-        Assert.AreEqual("8", expander.Attribute("Width")?.Value);
-        Assert.AreEqual("8", expander.Attribute("Height")?.Value);
-        Assert.AreEqual("{Binding Text.TextModel}", expander.Attribute("TextModel")?.Value);
-        Assert.AreEqual("{Binding Document.FoldingState}", expander.Attribute("SharedFoldingState")?.Value);
-
-        var wholeText = root.Descendants(textRender + "TextView")
-            .Single(view => view.Attribute("TextModel")?.Value == "{Binding Text.TextModel, Mode=OneWay}");
-        Assert.AreEqual("True", wholeText.Attribute(textRender + "TextView.HasExternalRootExpander")?.Value);
-    }
-
-    [TestMethod]
     public void MarkedLinesTemplateGroupsRowsByDocumentAndUpdatesGroups()
     {
         RunOnSta(() =>

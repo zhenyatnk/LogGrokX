@@ -89,10 +89,10 @@ namespace LogGrokX.Tests
             Exception error = null;
             var thread = new Thread(() =>
             {
-                var previous = FoldingLayoutOptions.Instance.Current;
+                var previous = FoldingLayoutOptions.Instance.UseMessageGutter;
                 try
                 {
-                    FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPreviousColumn;
+                    FoldingLayoutOptions.Instance.UseMessageGutter = false;
                     action();
                 }
                 catch (Exception e)
@@ -101,7 +101,7 @@ namespace LogGrokX.Tests
                 }
                 finally
                 {
-                    FoldingLayoutOptions.Instance.Current = previous;
+                    FoldingLayoutOptions.Instance.UseMessageGutter = previous;
                 }
             });
             thread.SetApartmentState(ApartmentState.STA);

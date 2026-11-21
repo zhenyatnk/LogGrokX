@@ -19,6 +19,7 @@ namespace LogGrokX.Settings
         private double _logFontSize;
         private bool _groupByThread;
         private bool _showThreadGroupSeparators;
+        private bool _useMessageFoldingGutter;
         private bool _mergedFilesView;
         private bool _detectBinary;
         private bool _detectPem;
@@ -38,6 +39,7 @@ namespace LogGrokX.Settings
             _logFontSize = settings.LogFontSize;
             _groupByThread = settings.GroupByThread;
             _showThreadGroupSeparators = settings.ShowThreadGroupSeparators;
+            _useMessageFoldingGutter = settings.UseMessageFoldingGutter;
             _detectBinary = settings.DetectBinary;
             _detectPem = settings.DetectPem;
             _detectBase64 = settings.DetectBase64;
@@ -169,6 +171,18 @@ namespace LogGrokX.Settings
                 if (_showThreadGroupSeparators == value)
                     return;
                 _showThreadGroupSeparators = value;
+                InvokePropertyChanged();
+            }
+        }
+
+        public bool UseMessageFoldingGutter
+        {
+            get => _useMessageFoldingGutter;
+            set
+            {
+                if (_useMessageFoldingGutter == value)
+                    return;
+                _useMessageFoldingGutter = value;
                 InvokePropertyChanged();
             }
         }

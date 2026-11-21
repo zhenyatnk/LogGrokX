@@ -2,25 +2,19 @@ using System;
 
 namespace LogGrokX.Controls.TextRender;
 
-public enum FoldingLayoutMode
-{
-    FixedGutter,
-    RootInPreviousColumn
-}
-
 public sealed class FoldingLayoutOptions
 {
-    private FoldingLayoutMode _current = FoldingLayoutMode.FixedGutter;
+    private bool _useMessageGutter = true;
 
     public static FoldingLayoutOptions Instance { get; } = new();
 
-    public FoldingLayoutMode Current
+    public bool UseMessageGutter
     {
-        get => _current;
+        get => _useMessageGutter;
         set
         {
-            if (_current == value) return;
-            _current = value;
+            if (_useMessageGutter == value) return;
+            _useMessageGutter = value;
             Changed?.Invoke(this, EventArgs.Empty);
         }
     }

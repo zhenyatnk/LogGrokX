@@ -427,18 +427,6 @@ namespace LogGrokX
             set => _threadGroupingService.SetEnabled(value);
         }
 
-        public bool IsRootFoldingInPreviousColumn
-        {
-            get => FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn;
-            set
-            {
-                FoldingLayoutOptions.Instance.Current = value
-                    ? FoldingLayoutMode.RootInPreviousColumn
-                    : FoldingLayoutMode.FixedGutter;
-                InvokePropertyChanged();
-            }
-        }
-
         private void OnThreadGroupingChanged()
         {
             InvokePropertyChanged(nameof(IsGroupByThread));

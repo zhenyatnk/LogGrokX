@@ -68,13 +68,14 @@ JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
 `TextModel` builds collapsible line ranges from braces and brackets (JSON) or
 `GetXmlElementRanges` (XML). XML is recognized only when the root element has
 child elements, so text like `List<int>` or `<br/>` stays plain (#49).
-The session-only `FoldingLayoutOptions` prototype supports a fixed gutter only
-for Message and moving the Message root to the preceding column. Other columns
-keep the previous collapsible-only margin. If the external host column is hidden,
-`ListView` makes the inherited host-visibility state false so Message restores
-its inline root and margin; restoring the host moves the root back externally.
-Marked lines host their whole-text root in the Index cell in the second mode;
-non-Message fields keep their existing behavior.
+`ViewSettings.UseMessageFoldingGutter` (Settings -> View, default on) reserves
+the 12 DIP folding gutter for every Message line, including plain text. It is
+published through `FoldingLayoutOptions.Instance.UseMessageGutter` on settings
+load, hot reload and save. The inherited `TextView.UseFixedFoldingGutter`
+attached property opts in only generated Message cells; other columns and marked
+lines keep the previous collapsible-only margin. Turning the setting off restores
+that legacy margin in Message too. Changes invalidate text measurement and
+highlight geometry on the owning UI dispatcher.
 Thread grouping is driven by `ThreadGroupingService` (toggled from the title-bar View menu,
 persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on

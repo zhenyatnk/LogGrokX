@@ -86,21 +86,8 @@
                         <GridViewColumn Header="Index">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate DataType="markedLines:MarkedLineViewModel">
-                                    <Grid>
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <ContentControl Grid.Column="0"
-                                                        ContentTemplate="{StaticResource MarkedLineCellTemplate}"
-                                                        Content="{Binding IndexViewModel}" />
-                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                            <textRender:RootFoldingExpander Width="8" Height="8"
-                                                                            VerticalAlignment="Top"
-                                                                            TextModel="{Binding Text.TextModel}"
-                                                                            SharedFoldingState="{Binding Document.FoldingState}" />
-                                        </StackPanel>
-                                    </Grid>
+                                    <ContentControl ContentTemplate="{StaticResource MarkedLineCellTemplate}"
+                                                    Content="{Binding IndexViewModel}" />
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -108,7 +95,6 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate DataType="markedLines:MarkedLineViewModel">
                                     <textRender:TextView
-                                        textRender:TextView.HasExternalRootExpander="True"
                                         TextModel="{Binding Text.TextModel, Mode=OneWay}"
                                         FontSize="{DynamicResource LogFontSize}"
                                         textRender:TextView.SharedFoldingState="{Binding Document.FoldingState}"
