@@ -25,6 +25,7 @@
 - Modify: `LogGrokX/Controls/TextRender/TextControl.cs:54-67,117-140`
 - Modify: `LogGrokX/TextModel.cs:33-35,341-368`
 - Test: `LogGrokX.Tests/FoldingLayoutTests.cs`
+- Modify: `LogGrokX.Tests/TextControlAltHoverTests.cs` and `LogGrokX.Tests/GlyphLineScalingTests.cs` to isolate legacy coordinate/scaling cases from the new default mode.
 
 **Interfaces:**
 - Produces: `FoldingLayoutOptions.Instance.Current` of type `FoldingLayoutMode` (`FixedGutter`, `RootInPinColumn`) and `FoldingLayoutOptions.Changed`.
@@ -59,7 +60,7 @@ public void FixedGutterMeasuresPlainAndCollapsibleTextWithSameOffset()
 [TestMethod]
 public void PlainMultilineFoldingHasNoStructuredRootLine()
 {
-    var model = new TextModel(8, string.Join("\n", Enumerable.Range(0, 20)));
+    var model = new TextModel(8, string.Join("\n", Enumerable.Range(0, 22)));
 
     Assert.IsNotNull(model.CollapsibleRanges);
     Assert.IsNull(model.RootFoldingLine);
@@ -379,9 +380,9 @@ public bool IsRootFoldingInPinColumn
 
 Add a checkable `MenuItem Header="Root + in pin column"` beside thread grouping, with `IsChecked="{Binding IsRootFoldingInPinColumn, Mode=TwoWay}"`. Do not add a YAML setting or localization resource for this temporary prototype item.
 
-- [ ] **Step 7: Preserve existing Alt-hover tests and add fixed-gutter coverage**
+- [ ] **Step 7: Add fixed-gutter Alt-hover coverage**
 
-The old Alt-hover tests assume zero offset for non-collapsible lines. In their STA helper, temporarily select `RootInPinColumn` and restore the previous mode in `finally`, preserving those test coordinates. Add one new fixed-gutter Alt-hover test that points at a non-collapsible glyph using `TextView.ExpanderMargin` and verifies the returned rectangle uses the same margin.
+The legacy Alt-hover and scaling STA helpers were isolated under `RootInPinColumn` in Task 1. Add one new fixed-gutter Alt-hover test that points at a non-collapsible glyph using `TextView.ExpanderMargin` and verifies the returned rectangle uses the same margin.
 
 - [ ] **Step 8: Run all UI tests**
 
