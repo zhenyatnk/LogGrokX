@@ -39,7 +39,7 @@ namespace LogGrokX.Controls.GridView
                 {
                     VisualTree = new FrameworkElementFactory(typeof(PinGridViewhHeader))
                 },
-                CellTemplate =  CreatePinCellTemplate(componentFieldName == null),
+                CellTemplate =  CreatePinCellTemplate(componentFieldName == null, sharedFoldingStatePath),
                 Width = widths == null ? double.NaN : Math.Max(widths[0], PinColumnMinWidth + PinColumnPadding)
             });
 
@@ -161,7 +161,7 @@ namespace LogGrokX.Controls.GridView
             };
         }
         
-        private static DataTemplate CreatePinCellTemplate(bool includeDecodeToggles)
+        private static DataTemplate CreatePinCellTemplate(bool includeDecodeToggles, string? sharedFoldingStatePath)
         {
             var panel = new FrameworkElementFactory(typeof(StackPanel));
             panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
@@ -176,6 +176,23 @@ namespace LogGrokX.Controls.GridView
                 UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged
             });
             panel.AppendChild(pin);
+
+            var root = new FrameworkElementFactory(typeof(RootFoldingExpander));
+            root.SetValue(FrameworkElement.WidthProperty, 8d);
+            root.SetValue(FrameworkElement.HeightProperty, 8d);
+            root.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            root.SetBinding(RootFoldingExpander.TextModelProperty,
+                new Binding(nameof(BaseLogLineViewModel.FoldingTextModel)) { Mode = BindingMode.OneWay });
+            var foldingStateBinding = sharedFoldingStatePath != null
+                ? new Binding(sharedFoldingStatePath) { Mode = BindingMode.OneWay }
+                : new Binding("DataContext.FoldingState")
+                {
+                    Mode = BindingMode.OneWay,
+                    RelativeSource = new RelativeSource(RelativeSourceMode.FindAncestor,
+                        typeof(System.Windows.Controls.ListView), 1)
+                };
+            root.SetBinding(RootFoldingExpander.SharedFoldingStateProperty, foldingStateBinding);
+            panel.AppendChild(root);
 
             if (includeDecodeToggles)
                 panel.AppendChild(CreateDecodeToggles(HorizontalAlignment.Center));

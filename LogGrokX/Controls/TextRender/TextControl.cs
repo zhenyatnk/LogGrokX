@@ -42,7 +42,7 @@ public class TextControl : Control
         Unloaded += OnUnloaded;
     }
 
-    private void OnTextLinesChanged()
+    internal void OnTextLinesChanged()
     {
         ClearAltHover();
         _cachedStringRanges = null;

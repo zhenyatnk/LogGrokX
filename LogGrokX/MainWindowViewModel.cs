@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.AvalonDockExtensions;
+using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.Localization;
 using LogGrokX.MarkedLines;
@@ -424,6 +425,18 @@ namespace LogGrokX
         {
             get => _threadGroupingService.IsEnabled;
             set => _threadGroupingService.SetEnabled(value);
+        }
+
+        public bool IsRootFoldingInPinColumn
+        {
+            get => FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn;
+            set
+            {
+                FoldingLayoutOptions.Instance.Current = value
+                    ? FoldingLayoutMode.RootInPinColumn
+                    : FoldingLayoutMode.FixedGutter;
+                InvokePropertyChanged();
+            }
         }
 
         private void OnThreadGroupingChanged()

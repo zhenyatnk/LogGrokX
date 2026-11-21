@@ -56,6 +56,10 @@ namespace LogGrokX
 
         private List<LinePartViewModel>? _decodableParts;
 
+        public TextModel? FoldingTextModel => DecodableParts
+            .Select(part => part.TextModel)
+            .FirstOrDefault(model => model.RootFoldingLine != null);
+
         public bool IsPem => DecodableParts.Any(p => p.IsPem);
 
         public bool IsBase64 => DecodableParts.Any(p => p.IsBase64);
@@ -121,6 +125,9 @@ namespace LogGrokX
 
         private void OnPartPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(LinePartViewModel.TextModel))
+                InvokePropertyChanged(nameof(FoldingTextModel));
+
             if (e.PropertyName is nameof(LinePartViewModel.IsPem)
                 or nameof(LinePartViewModel.IsBase64)
                 or nameof(LinePartViewModel.IsHex))

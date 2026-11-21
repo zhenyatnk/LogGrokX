@@ -18,10 +18,12 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     private const int MaxLineLength = 8192;  
     private class OutlineData
     {
-        public OutlineData(int lineCount, 
+        public OutlineData(int lineCount,
+            int? rootFoldingLine,
             (int start, int length)[] collapsibleRegions,
             Func<HashSet<int>?> collapsedLineIndicesGetter)
         {
+            RootFoldingLine = rootFoldingLine;
             CollapsibleRegionsMachine = new CollapsibleRegionsMachine(lineCount, collapsibleRegions, collapsedLineIndicesGetter);
             CollapsibleLines = new bool[lineCount];
 
@@ -43,6 +45,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
             }
         }
         
+        public readonly int? RootFoldingLine;
         public readonly CollapsibleRegionsMachine CollapsibleRegionsMachine;
         public readonly bool[] CollapsibleLines;
         public bool IsCollapsible(int index) => (uint)index < (uint)CollapsibleLines.Length && CollapsibleLines[index];
@@ -171,7 +174,8 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         var count = TextModel?.Count ?? 0;
         var collapsibleRangesArray = collapsibleRanges.ToArray();
         _outlineData = new OutlineData(
-            count, 
+            count,
+            TextModel?.RootFoldingLine,
             collapsibleRangesArray,
             GetSharedFoldingState);
         
@@ -333,6 +337,16 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     {
         _textControl = new TextControl(this);
         _glyphTypeface = new Lazy<GlyphTypeface>(CreateGlyphTypeface);
+        WeakEventManager<FoldingLayoutOptions, EventArgs>.AddHandler(
+            FoldingLayoutOptions.Instance, nameof(FoldingLayoutOptions.Changed), OnFoldingLayoutChanged);
+    }
+
+    private void OnFoldingLayoutChanged(object? sender, EventArgs e)
+    {
+        _isCollapsibleStateDirty = true;
+        InvalidateMeasure();
+        InvalidateVisual();
+        _textControl.OnTextLinesChanged();
     }
 
     static TextView()
@@ -572,7 +586,9 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
             var yCenter = Math.Round((verticalPosition + textLine.Size.Height / 2) * pixelsPerDip,
                 MidpointRounding.ToEven) / pixelsPerDip;
 
-            if (outline is not None)
+            var isRootInPinColumn = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
+                                    index == outlineData.RootFoldingLine;
+            if (outline is not None && !isRootInPinColumn)
             {
                 var ySize = ExpanderSize;
                 var xSize = ExpanderSize;
@@ -635,7 +651,10 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         for (var i = 0; i < machine.LineCount; i++)
         {
             var (_, index) = machine[i];
-            visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), outlineData.IsCollapsible(index)));
+            var needsInlineMargin = outlineData.IsCollapsible(index) &&
+                !(FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
+                  index == outlineData.RootFoldingLine);
+            visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), needsInlineMargin));
         }
 
         return visibleLines;

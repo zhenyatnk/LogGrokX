@@ -1,14 +1,19 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Threading;
 using System.Windows.Controls;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
+using LogGrokX.Controls.TextRender;
 using ColumnSettings = LogGrokX.Controls.ListControls.ColumnSettings;
 using LogGrokX.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -155,6 +160,85 @@ namespace LogGrokX.Tests
                 {
                     CultureInfo.CurrentUICulture = previous;
                 }
+            });
+        }
+
+        [TestMethod]
+        public void PinColumnContainsRootExpanderBoundToFoldingTextModel()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null);
+                var template = view.Columns[0].CellTemplate;
+                template.Seal();
+                var panel = (StackPanel)template.LoadContent();
+                var expander = panel.Children.OfType<RootFoldingExpander>().Single();
+
+                var binding = expander.GetBindingExpression(RootFoldingExpander.TextModelProperty)!.ParentBinding;
+                Assert.AreEqual(nameof(BaseLogLineViewModel.FoldingTextModel), binding.Path.Path);
+                Assert.AreEqual(8d, expander.Width);
+                Assert.AreEqual(8d, expander.Height);
+
+                var stateBinding = expander.GetBindingExpression(RootFoldingExpander.SharedFoldingStateProperty)!.ParentBinding;
+                Assert.AreEqual("DataContext.FoldingState", stateBinding.Path.Path);
+                Assert.AreEqual(RelativeSourceMode.FindAncestor, stateBinding.RelativeSource.Mode);
+                Assert.AreEqual(typeof(ListView), stateBinding.RelativeSource.AncestorType);
+            });
+        }
+
+        [TestMethod]
+        public void MergedPinColumnBindsRootExpanderToSourceDocumentState()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null,
+                    sharedFoldingStatePath: "Source.Document.FoldingState");
+                var template = view.Columns[0].CellTemplate;
+                template.Seal();
+                var panel = (StackPanel)template.LoadContent();
+                var expander = panel.Children.OfType<RootFoldingExpander>().Single();
+
+                var binding = expander.GetBindingExpression(RootFoldingExpander.SharedFoldingStateProperty)!.ParentBinding;
+                Assert.AreEqual("Source.Document.FoldingState", binding.Path.Path);
+                Assert.AreEqual(BindingMode.OneWay, binding.Mode);
+            });
+        }
+
+        [TestMethod]
+        public void FoldingTextModelUsesFirstStructuredFieldModel()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var line = CreateLine(meta,
+                    "2024-01-15 08:32:11.482 INFO ThreadA {\"component\":1} {\"message\":{\"value\":2}}");
+                Assert.AreSame(line[3].TextModel, line.FoldingTextModel);
+                Assert.IsNotNull(line.FoldingTextModel!.RootFoldingLine);
+            });
+        }
+
+        [TestMethod]
+        public void FoldingTextModelFollowsDecodedTextModelChanges()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var encodedJson = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"message\":{\"value\":2}}"));
+                var line = CreateLine(meta,
+                    $"2024-01-15 08:32:11.482 INFO ThreadA Component1 {encodedJson}");
+                var changed = new List<string>();
+                ((INotifyPropertyChanged)line).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+                Assert.IsNull(line.FoldingTextModel);
+
+                line[4].IsBase64Decoded = true;
+
+                Assert.IsNotNull(line[4].TextModel.RootFoldingLine);
+                CollectionAssert.Contains(changed, nameof(BaseLogLineViewModel.FoldingTextModel));
+                Assert.AreSame(line[4].TextModel, line.FoldingTextModel);
             });
         }
 

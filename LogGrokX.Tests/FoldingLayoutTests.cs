@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -64,6 +67,81 @@ public class FoldingLayoutTests
 
             Assert.AreEqual(OutlineExpanderState.ExpandedUpper, expander.State);
             Assert.AreEqual(1, changedCount);
+        });
+    }
+
+    [TestMethod]
+    public void PinColumnModeMarksOnlyRootLineAsNotRequiringInlineMargin()
+    {
+        RunOnSta(FoldingLayoutMode.RootInPinColumn, () =>
+        {
+            var state = new TextViewSharedFoldingState();
+            state.ExpandAll();
+            var view = new TextView();
+            TextView.SetSharedFoldingState(view, state);
+            view.TextModel = new TextModel(7, "{\"a\":{\"b\":1}}");
+
+            view.Measure(Infinite);
+            var control = (TextControl)VisualTreeHelper.GetChild(view, 0);
+
+            Assert.IsFalse(control.TextLines![0].isCollapsible);
+            Assert.IsTrue(control.TextLines.Skip(1).Any(line => line.isCollapsible));
+
+            view.Arrange(new Rect(view.DesiredSize));
+            var outlineCount = Enumerable.Range(0, VisualTreeHelper.GetChildrenCount(view))
+                .Select(index => VisualTreeHelper.GetChild(view, index))
+                .OfType<OutlineExpander>()
+                .Count();
+            Assert.AreEqual(view.TextModel.CollapsibleRanges!.Count * 2 - 1, outlineCount);
+        });
+    }
+
+    [TestMethod]
+    public void LayoutSwitchInvalidatesMeasureAndHighlightGeometryAndHidesRootExpander()
+    {
+        RunOnSta(FoldingLayoutMode.RootInPinColumn, () =>
+        {
+            var state = new TextViewSharedFoldingState();
+            state.ExpandAll();
+            var model = new TextModel(9, "{\"a\":{\"b\":1}}");
+            var view = new TextView { TextModel = model };
+            TextView.SetSharedFoldingState(view, state);
+            var expander = new RootFoldingExpander { TextModel = model, SharedFoldingState = state };
+            view.Measure(Infinite);
+            var control = (TextControl)VisualTreeHelper.GetChild(view, 0);
+            var regex = new Regex("\\{");
+            var initialBounds = control.GetHighlightGeometries(control.TextLines, regex)!.Bounds;
+            Assert.IsTrue(view.IsMeasureValid);
+            Assert.AreEqual(Visibility.Visible, expander.Visibility);
+
+            FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.FixedGutter;
+
+            var isMeasureValid = view.IsMeasureValid;
+            var updatedBounds = control.GetHighlightGeometries(control.TextLines, regex)!.Bounds;
+            Assert.IsFalse(isMeasureValid);
+            Assert.AreEqual(Visibility.Collapsed, expander.Visibility);
+            Assert.AreEqual(initialBounds.X + TextView.ExpanderMargin, updatedBounds.X, 0.001);
+        });
+    }
+
+    [TestMethod]
+    public void MainWindowViewModelSwitchesRootLayoutAndNotifies()
+    {
+        RunOnSta(FoldingLayoutMode.FixedGutter, () =>
+        {
+            using var viewModel = TestServices.CreateMain(ApplicationSettings.Instance());
+            var changed = new List<string>();
+            ((INotifyPropertyChanged)viewModel).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
+
+            Assert.IsFalse(viewModel.IsRootFoldingInPinColumn);
+            viewModel.IsRootFoldingInPinColumn = true;
+
+            Assert.AreEqual(FoldingLayoutMode.RootInPinColumn, FoldingLayoutOptions.Instance.Current);
+            Assert.IsTrue(viewModel.IsRootFoldingInPinColumn);
+            CollectionAssert.Contains(changed, nameof(MainWindowViewModel.IsRootFoldingInPinColumn));
+
+            viewModel.IsRootFoldingInPinColumn = false;
+            Assert.AreEqual(FoldingLayoutMode.FixedGutter, FoldingLayoutOptions.Instance.Current);
         });
     }
 

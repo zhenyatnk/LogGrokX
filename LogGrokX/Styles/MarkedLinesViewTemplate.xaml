@@ -76,6 +76,10 @@
                                     <StackPanel VerticalAlignment="Top" MinWidth="{x:Static gridView:GridViewFactory.PinColumnMinWidth}">
                                         <gridView:PinControl HorizontalAlignment="Center"
                                                              IsChecked="{Binding IsMarked}"/>
+                                        <textRender:RootFoldingExpander Width="8" Height="8"
+                                                                        HorizontalAlignment="Center"
+                                                                        TextModel="{Binding FoldingTextModel}"
+                                                                        SharedFoldingState="{Binding Document.FoldingState}" />
                                         <ContentControl Content="{Binding}"
                                                         Focusable="False"
                                                         ContentTemplate="{StaticResource DecodeTogglesTemplate}"/>

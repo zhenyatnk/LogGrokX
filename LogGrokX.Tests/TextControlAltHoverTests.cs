@@ -234,6 +234,22 @@ public class TextControlAltHoverTests
     }
 
     [TestMethod]
+    public void FixedGutterAltHoverUsesMarginForNonCollapsibleGlyph()
+    {
+        RunOnSta(FoldingLayoutMode.FixedGutter, () =>
+        {
+            using var line = CreateLine("plain");
+            var control = CreateControl(false, line);
+            var point = GetCharacterPoint(line, 1, TextView.ExpanderMargin);
+
+            control.UpdateAltHover(point, ModifierKeys.Alt);
+
+            Assert.AreEqual(line.GetTextBounds(new Point(TextView.ExpanderMargin, 0), 0, line.Text.Length),
+                control.AltHoverBounds!.Value);
+        });
+    }
+
+    [TestMethod]
     public void AltHoverRequiresOnlyAltAndTextUnderPointer()
     {
         RunOnSta(() =>
@@ -346,7 +362,9 @@ public class TextControlAltHoverTests
         return new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    private static void RunOnSta(Action action)
+    private static void RunOnSta(Action action) => RunOnSta(FoldingLayoutMode.RootInPinColumn, action);
+
+    private static void RunOnSta(FoldingLayoutMode mode, Action action)
     {
         Exception error = null;
         var thread = new Thread(() =>
@@ -354,7 +372,7 @@ public class TextControlAltHoverTests
             var previous = FoldingLayoutOptions.Instance.Current;
             try
             {
-                FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPinColumn;
+                FoldingLayoutOptions.Instance.Current = mode;
                 action();
             }
             catch (Exception e)
