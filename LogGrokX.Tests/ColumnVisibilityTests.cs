@@ -5,8 +5,11 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Media;
+using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
+using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using LogListView = LogGrokX.Controls.ListControls.ListView;
@@ -146,6 +149,70 @@ public class ColumnVisibilityTests
     }
 
     [TestMethod]
+    public void HidingRootHostRestoresInlineMessageRootUntilHostReturns()
+    {
+        RunOnSta(() =>
+        {
+            var previousMode = FoldingLayoutOptions.Instance.Current;
+            try
+            {
+                FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPreviousColumn;
+                var view = CreateView();
+                var settings = new ColumnSettings();
+                var state = new TextViewSharedFoldingState();
+                var meta = new LogMetaInformation(new LogFormat { Regex = Regex });
+                var parser = new RegexBasedLineParser(meta);
+                var line = new LineViewModel(0, "12:00 INFO {\"a\":{\"b\":1}}", parser, new Selection(),
+                    new TransformationPerformer(Array.Empty<string>()), TestServices.DisplaySettings);
+                var list = new LogListView
+                {
+                    ColumnSettings = settings,
+                    DataContext = new { FoldingState = state },
+                    ItemsSource = new[] { line },
+                    View = view
+                };
+                TextView.SetSharedFoldingState(list, state);
+                list.Resources.MergedDictionaries.Add(ProfileColumnSizingTests.LoadAppResources());
+
+                WithWindow(list, window =>
+                {
+                    var message = GetMessageTextView(list);
+                    AssertInlineRoot(message, false);
+                    var host = list.GetVisualChildren<RootFoldingExpander>().Single();
+                    Assert.AreEqual(Visibility.Visible, host.Visibility);
+                    Assert.AreSame(message.TextModel, host.TextModel);
+
+                    settings.SetColumnHidden("Level", true);
+                    Flush(window);
+
+                    message = GetMessageTextView(list);
+                    AssertInlineRoot(message, true);
+                    Assert.IsTrue(message.GetVisualChildren<OutlineExpander>().Any());
+                    Assert.IsFalse(list.GetVisualChildren<RootFoldingExpander>()
+                        .Any(expander => expander.Visibility == Visibility.Visible));
+                    state.ToggleRoot(message.TextModel!);
+                    Flush(window);
+                    Assert.IsFalse(state.IsRootCollapsed(message.TextModel!));
+
+                    settings.SetColumnHidden("Level", false);
+                    Flush(window);
+
+                    message = GetMessageTextView(list);
+                    AssertInlineRoot(message, false);
+                    host = list.GetVisualChildren<RootFoldingExpander>().Single();
+                    Assert.AreEqual(Visibility.Visible, host.Visibility);
+                    host.ToggleRoot();
+                    Assert.IsTrue(state.IsRootCollapsed(message.TextModel!));
+                });
+            }
+            finally
+            {
+                FoldingLayoutOptions.Instance.Current = previousMode;
+            }
+        });
+    }
+
+    [TestMethod]
     public void ColumnSettingsRaiseChangeOnlyWhenHiddenStateChanges()
     {
         var settings = new ColumnSettings();
@@ -179,6 +246,15 @@ public class ColumnVisibilityTests
         var columns = view.Columns.Cast<LogGridViewColumn>().ToList();
         return columns.FindIndex(column =>
             string.Equals(column.FieldName, fieldName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static TextView GetMessageTextView(LogListView list) =>
+        list.GetVisualChildren<TextView>().Single(view => TextView.GetHasExternalRootExpander(view));
+
+    private static void AssertInlineRoot(TextView message, bool expected)
+    {
+        var control = (TextControl)VisualTreeHelper.GetChild(message, 0);
+        Assert.AreEqual(expected, control.TextLines![0].isCollapsible);
     }
 
     private static System.Windows.Controls.GridView CreateView()

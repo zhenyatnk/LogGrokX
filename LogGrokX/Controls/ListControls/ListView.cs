@@ -668,8 +668,17 @@ namespace LogGrokX.Controls.ListControls
                 _updatingColumnVisibility = false;
             }
 
+            UpdateRootExpanderHostVisibility(gridView);
             _panel?.InvalidateMeasure();
             ScheduleContentFit();
+        }
+
+        private void UpdateRootExpanderHostVisibility(System.Windows.Controls.GridView gridView)
+        {
+            var message = _allColumns.OfType<LogGridViewColumn>()
+                .FirstOrDefault(column => column.RootExpanderHost != null);
+            var hostVisible = message == null || gridView.Columns.Contains(message.RootExpanderHost);
+            TextView.SetIsExternalRootExpanderHostVisible(this, hostVisible);
         }
 
         private static void CaptureColumnWidth(GridViewColumn column)

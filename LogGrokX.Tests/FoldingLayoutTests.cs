@@ -48,6 +48,72 @@ public class FoldingLayoutTests
     }
 
     [TestMethod]
+    public void XmlRootFoldingLineSelectsOutermostElement()
+    {
+        var model = new TextModel(10, "<root><item><name>first</name></item><item><name>second</name></item></root>");
+        var outermost = model.CollapsibleRanges!.OrderByDescending(range => range.length).First();
+
+        Assert.IsTrue(model.CollapsibleRanges.Count >= 3);
+        Assert.AreEqual(0, outermost.start);
+        Assert.AreEqual(outermost.start, model.RootFoldingLine);
+    }
+
+    [TestMethod]
+    public void RootFoldingLineSelectsOutermostRangeAcrossManyNestedSiblings()
+    {
+        const int siblingCount = 40;
+        const int depth = 6;
+        string CreateValue(int index)
+        {
+            var value = index.ToString();
+            for (var level = 0; level < depth; level++)
+                value = $"{{\"level{level}\":{value}}}";
+            return value;
+        }
+
+        var source = "{" + string.Join(",", Enumerable.Range(0, siblingCount)
+            .Select(index => $"\"item{index}\":{CreateValue(index)}")) + "}";
+        var model = new TextModel(11, source);
+        var outermost = model.CollapsibleRanges!.OrderByDescending(range => range.length).First();
+
+        Assert.IsTrue(model.CollapsibleRanges.Count > siblingCount * depth);
+        Assert.AreEqual(model.Count, outermost.length);
+        Assert.AreEqual(outermost.start, model.RootFoldingLine);
+    }
+
+    [TestMethod]
+    public void RootFoldingLineSelectsFirstOfMultipleOutermostJsonAndXmlFragments()
+    {
+        var model = new TextModel(12,
+            "{\"first\":{\"nested\":1}} between <second><child>2</child></second> and {\"third\":[3]}");
+
+        Assert.IsNotNull(model.CollapsibleRanges);
+        Assert.AreEqual(model.CollapsibleRanges.Min(range => range.start), model.RootFoldingLine);
+        Assert.IsTrue(model.CollapsibleRanges.Count >= 4);
+    }
+
+    [TestMethod]
+    public void FixedGutterUsesSameHighlightAndHitTestOffsetForPlainAndCollapsibleText()
+    {
+        RunOnSta(FoldingLayoutMode.FixedGutter, () =>
+        {
+            using var plain = CreateLine("same");
+            using var collapsible = CreateLine("same");
+            var plainControl = CreateControl((plain, false));
+            var collapsibleControl = CreateControl((collapsible, true));
+            var regex = new Regex("same");
+
+            var plainBounds = plainControl.GetHighlightGeometries(plainControl.TextLines, regex)!.Bounds;
+            var collapsibleBounds = collapsibleControl.GetHighlightGeometries(
+                collapsibleControl.TextLines, regex)!.Bounds;
+
+            Assert.AreEqual(collapsibleBounds, plainBounds);
+            Assert.AreEqual("same", plainControl.GetTermTextAtPoint(
+                new Point(TextView.ExpanderMargin + 1, 1)));
+        });
+    }
+
+    [TestMethod]
     public void RootExpanderFollowsSharedRootStateChanges()
     {
         RunOnSta(FoldingLayoutMode.RootInPreviousColumn, () =>

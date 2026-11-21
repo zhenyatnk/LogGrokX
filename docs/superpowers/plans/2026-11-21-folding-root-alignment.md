@@ -8,6 +8,14 @@
 
 **Tech Stack:** C#, WPF, .NET 10, MSTest, existing `GlyphLine`/`TextView` rendering.
 
+## Current status
+
+- [x] Layout modes, shared root state, generated-column hosts, and marked-line placement are implemented.
+- [x] Final review fixes are complete: hiding the external host restores Message's inline root, and root selection is integrated into the linear structural interval walk.
+- [x] Focused regressions and full unit verification pass: 1,150 tests, plus a clean rebuild with zero warnings and errors.
+- [ ] Live comparison is delegated to the user; the implementation agent did not launch or automate the GUI.
+- [ ] Final layout cleanup is pending the user's layout choice. No final layout has been chosen.
+
 ## Global Constraints
 
 - Follow `AGENTS.md`: nullable enabled, file-scoped namespaces for new files, no unnecessary comments, MSTest assertions are `(expected, actual)`.
@@ -32,7 +40,7 @@
 - Produces: `TextModel.RootFoldingLine` of type `int?`; it is non-null only for the first outermost JSON/XML folding range.
 - Later tasks consume both APIs to hide an externally hosted Message root inline expander and position its replacement in the preceding column.
 
-- [ ] **Step 1: Write failing layout tests**
+- [x] **Step 1: Write failing layout tests**
 
 Create `LogGrokX.Tests/FoldingLayoutTests.cs` with STA tests using the existing `GlyphLine` pattern:
 
@@ -69,13 +77,13 @@ public void PlainMultilineFoldingHasNoStructuredRootLine()
 
 Use a mode-restoring `RunOnSta` helper, `CreateLine` from `TextControlAltHoverTests`, and a `CreateControl` helper that assigns the supplied `(GlyphLine glyphLine, bool isCollapsible)` tuples.
 
-- [ ] **Step 2: Run the tests and confirm the new APIs are missing**
+- [x] **Step 2: Run the tests and confirm the new APIs are missing**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter FullyQualifiedName~FoldingLayoutTests`
 
 Expected: build failure for missing `FoldingLayoutMode` and `RootFoldingLine`.
 
-- [ ] **Step 3: Add the session layout publisher**
+- [x] **Step 3: Add the session layout publisher**
 
 Create `FoldingLayoutOptions.cs`:
 
@@ -111,7 +119,7 @@ public sealed class FoldingLayoutOptions
 }
 ```
 
-- [ ] **Step 4: Apply the fixed gutter in `TextControl`**
+- [x] **Step 4: Apply the fixed gutter in `TextControl`**
 
 Replace the conditional offset with:
 
@@ -126,25 +134,11 @@ private static double GetHorizontalOffset(bool isCollapsible)
 
 All existing callers already use this method for measurement, rendering, selection, highlighting, Alt-hover, and mouse position mapping.
 
-- [ ] **Step 5: Identify the first outermost structured root in `TextModel`**
+- [x] **Step 5: Identify the first outermost structured root in `TextModel`**
 
-Add `public int? RootFoldingLine { get; }` beside `UniqueId`. After `CollapsibleRanges` is constructed in the constructor, calculate it only when `structuredRanges.Count != 0`:
+Add `public int? RootFoldingLine { get; }` beside `UniqueId`. Integrate its calculation into `GetCollapsibleRanges`: whenever `AddInterval` adds a structured range, retain the candidate with the earliest start line, preferring the longer range if both start on the same line. This chooses the earliest outermost range in one pass, excludes ordinary multiline collapsing, and avoids containment scans and sorting.
 
-```csharp
-RootFoldingLine = structuredRanges.Count == 0
-    ? null
-    : CollapsibleRanges?
-        .Where(candidate => !CollapsibleRanges.Any(other =>
-            other.start < candidate.start &&
-            other.start + other.length >= candidate.start + candidate.length))
-        .OrderBy(candidate => candidate.start)
-        .Cast<(int start, int length)?>()
-        .FirstOrDefault()?.start;
-```
-
-This chooses the earliest range not contained by another range and excludes ordinary multiline collapsing.
-
-- [ ] **Step 6: Run the focused tests**
+- [x] **Step 6: Run the focused tests**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter FullyQualifiedName~FoldingLayoutTests`
 
@@ -165,7 +159,7 @@ Expected: fixed-gutter and plain-multiline tests pass.
 - Produces: `TextViewSharedFoldingState.ToggleRoot(TextModel)`, `IsRootCollapsed(TextModel)`, and `Changed`.
 - Produces: `RootFoldingExpander.TextModel`, `RootFoldingExpander.SharedFoldingState`, and internal `ToggleRoot()` for tests and `OnClick`.
 
-- [ ] **Step 1: Add failing shared-state tests**
+- [x] **Step 1: Add failing shared-state tests**
 
 Add tests that start with default collapsed JSON, call `state.ToggleRoot(model)`, and assert:
 
@@ -183,13 +177,13 @@ Assert.IsTrue(state[model.UniqueId]!.Contains(nested));
 
 Also create a `RootFoldingExpander`, assign `TextModel`, `SharedFoldingState`, and `FoldingLayoutMode.RootInPreviousColumn`, then assert that `state.ToggleRoot(model)` changes `RootFoldingExpander.State` from `Collapsed` to `ExpandedUpper` and raises its `Changed` notification path.
 
-- [ ] **Step 2: Run the tests and confirm failure**
+- [x] **Step 2: Run the tests and confirm failure**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter "FullyQualifiedName~FoldingStateSharingTests|FullyQualifiedName~FoldingLayoutTests"`
 
 Expected: compilation fails because root toggle APIs and `RootFoldingExpander` do not exist.
 
-- [ ] **Step 3: Implement root operations in `TextViewSharedFoldingState`**
+- [x] **Step 3: Implement root operations in `TextViewSharedFoldingState`**
 
 Change `NotifyChanged` to accept `ITextFoldingClient? source`, invoke `Changed?.Invoke(this, EventArgs.Empty)` after notifying clients, and raise `Changed` after global reset operations. Add:
 
@@ -224,7 +218,7 @@ public void ToggleRoot(TextModel textModel)
 }
 ```
 
-- [ ] **Step 4: Implement `RootFoldingExpander`**
+- [x] **Step 4: Implement `RootFoldingExpander`**
 
 Derive from `OutlineExpander`. Add regular dependency properties `TextModel` and `SharedFoldingState`; property callbacks and both weak event subscriptions call `UpdateState`:
 
@@ -258,7 +252,7 @@ protected override void OnClick()
 
 Use `WeakEventManager<FoldingLayoutOptions, EventArgs>` for `FoldingLayoutOptions.Instance.Changed` and `WeakEventManager<TextViewSharedFoldingState, EventArgs>` for state changes. Remove the old state handler when `SharedFoldingState` changes. Set `Width`, `Height`, and `Foreground` from the host templates; do not assign `Expandable`.
 
-- [ ] **Step 5: Run focused tests**
+- [x] **Step 5: Run focused tests**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter "FullyQualifiedName~FoldingStateSharingTests|FullyQualifiedName~FoldingLayoutTests"`
 
@@ -287,7 +281,7 @@ Expected: all focused shared-state and layout tests pass.
 - Produces: `MainWindowViewModel.IsRootFoldingInPreviousColumn` for the temporary checkable menu item.
 - Uses `FoldingLayoutMode.RootInPreviousColumn`; no row-level `FoldingTextModel` aggregate is introduced.
 
-- [ ] **Step 1: Add failing external-root and host-template tests**
+- [x] **Step 1: Add failing external-root and host-template tests**
 
 Add folding tests proving that an external Message root loses only its own inline margin/upper expander, while a `TextView` without `HasExternalRootExpander` retains its root margin and all inline expanders in `RootInPreviousColumn` mode. Verify the attached property defaults to false and inherits.
 
@@ -295,25 +289,26 @@ Update `GridViewFactoryTests` to assert that the pin cell has no root control; t
 
 Retain the runtime mode-switch test for measure invalidation, highlight geometry, and expander visibility, setting `HasExternalRootExpander` on its `TextView`.
 
-- [ ] **Step 2: Run integration tests and confirm failure**
+- [x] **Step 2: Run integration tests and confirm failure**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter "FullyQualifiedName~GridViewFactoryTests|FullyQualifiedName~FoldingLayoutTests|FullyQualifiedName~PresentationBoundaryTests.MarkedLinesTemplateHostsRootInIndexActionArea"`
 
 Expected: failures show that the root is still in pin cells, the preceding-column and Index hosts are missing, non-Message roots are incorrectly suppressed, and `HasExternalRootExpander` does not exist.
 
-- [ ] **Step 3: Add the external-root contract and rename the mode**
+- [x] **Step 3: Add the external-root contract and rename the mode**
 
-Add inherited attached `TextView.HasExternalRootExpander` with default false. Inline root-margin removal and upper-expander suppression require all of:
+Add inherited attached `TextView.HasExternalRootExpander` with default false and inherited `IsExternalRootExpanderHostVisible` with default true. Inline root-margin removal and upper-expander suppression require all of:
 
 ```csharp
 FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
 TextView.GetHasExternalRootExpander(textView) &&
+TextView.GetIsExternalRootExpanderHostVisible(textView) &&
 index == outlineData.RootFoldingLine
 ```
 
-Leave nested outlines and fixed-gutter behavior unchanged. Rename every `RootInPinColumn` use to `RootInPreviousColumn`, including legacy Alt-hover and scaling helpers. Retain weak layout-change subscriptions and cache invalidation.
+`ListView` updates host visibility from the original Message/host column metadata whenever hidden columns change. Hiding the host therefore restores Message's inline root, while newly virtualized cells inherit the current state without per-cell event subscriptions. Leave nested outlines and fixed-gutter behavior unchanged. Rename every `RootInPinColumn` use to `RootInPreviousColumn`, including legacy Alt-hover and scaling helpers. Retain weak layout-change subscriptions and cache invalidation.
 
-- [ ] **Step 4: Generalize the generated right-action cell layout**
+- [x] **Step 4: Generalize the generated right-action cell layout**
 
 Find the case-insensitive `Message` field index. Its own `LogGridViewCell` sets `HasExternalRootExpander=true`; no other generated field sets it. The column at `messageFieldIndex - 1` hosts the root, which naturally selects Index (`fieldIndex == -1`) when Message is first.
 
@@ -329,19 +324,19 @@ root.SetBinding(RootFoldingExpander.TextModelProperty, new Binding
 
 For merged rows bind `SharedFoldingState` to `sharedFoldingStatePath`; otherwise bind to `DataContext.FoldingState` with `RelativeSource FindAncestor` for `ListView`. Restore pin cells to their original pin/BIN-only content and remove any row-level `FoldingTextModel` aggregate.
 
-- [ ] **Step 5: Place the marked-line root in Index**
+- [x] **Step 5: Place the marked-line root in Index**
 
 Wrap the existing marked-line Index content in a star-sized content area and auto-sized horizontal action area. Bind the 8x8 root to `Text.TextModel` and `Document.FoldingState`. Set `TextView.HasExternalRootExpander="True"` on the whole-line `TextView`; remove the root from the pin cell.
 
-- [ ] **Step 6: Rename the temporary View-menu switch**
+- [x] **Step 6: Rename the temporary View-menu switch**
 
 Rename the view-model property to `IsRootFoldingInPreviousColumn` using the same session-only setter. Use exactly `MenuItem Header="Root + left of message"` with a two-way `IsChecked` binding. Do not add YAML or localization settings.
 
-- [ ] **Step 7: Preserve fixed-gutter coordinate coverage**
+- [x] **Step 7: Preserve fixed-gutter coordinate coverage**
 
 Keep the fixed-gutter Alt-hover test and all legacy coordinate/scaling tests, updating only the enum name. The non-external folding test must prove structured fields other than Message keep their inline root behavior.
 
-- [ ] **Step 8: Run all UI tests**
+- [x] **Step 8: Run all UI tests**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj`
 
@@ -355,21 +350,21 @@ Expected: all tests pass, including both layouts, root state sharing, preceding-
 - Verify only; remove generated logs or test artifacts created by these runs if they are not already ignored.
 - Update: `AGENTS.md` only if the prototype changes its documented folding behavior; otherwise leave it unchanged until final cleanup.
 
-- [ ] **Step 1: Run the required clean build**
+- [x] **Step 1: Run the required clean build**
 
 Run: `dotnet build LogGrokX.sln -t:Rebuild`
 
 Expected: build succeeds with `0 Warning(s)` and `0 Error(s)`.
 
-- [ ] **Step 2: Run the full solution tests**
+- [x] **Step 2: Run the full solution tests**
 
 Run: `dotnet test LogGrokX.sln`
 
 Expected: all tests pass with zero failed tests.
 
-- [ ] **Step 3: Exercise the real application**
+- [ ] **Step 3: User-delegated live comparison**
 
-Run `dotnet run --project LogGrokX/LogGrokX.csproj` and open `assets/demo/demo-app.log`. Use the JSON rows around lines 34 and 48, the XML row around line 150, and adjacent plain rows.
+The implementation agent was explicitly limited to unit tests and did not run this step. For the user's live comparison, run `dotnet run --project LogGrokX/LogGrokX.csproj` and open `assets/demo/demo-app.log`. Use the JSON rows around lines 34 and 48, the XML row around line 150, and adjacent plain rows.
 
 In each mode verify:
 - plain and structured text alignment;
@@ -379,7 +374,7 @@ In each mode verify:
 - selection, Alt-hover, search highlighting, and horizontal scrolling;
 - marked-lines folding synchronization and merged-view folding.
 
-- [ ] **Step 4: Inspect the final working tree**
+- [x] **Step 4: Inspect the final working tree**
 
 Run: `git status --short`
 

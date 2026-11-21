@@ -68,6 +68,11 @@ JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
 `TextModel` builds collapsible line ranges from braces and brackets (JSON) or
 `GetXmlElementRanges` (XML). XML is recognized only when the root element has
 child elements, so text like `List<int>` or `<br/>` stays plain (#49).
+The session-only `FoldingLayoutOptions` prototype supports a fixed gutter and
+moving the Message root to the preceding column. If that host column is hidden,
+`ListView` makes the inherited host-visibility state false so Message restores
+its inline root and margin; restoring the host moves the root back externally.
+Marked lines and non-Message fields keep their existing behavior.
 Thread grouping is driven by `ThreadGroupingService` (toggled from the title-bar View menu,
 persisted as `ViewSettings.GroupByThread`); group boundaries are attached
 properties (`IsGroupFirst` / `IsGroupLast` / `IsGroupContinuation`) on

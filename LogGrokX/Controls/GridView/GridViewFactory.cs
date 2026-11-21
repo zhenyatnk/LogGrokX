@@ -144,15 +144,19 @@ namespace LogGrokX.Controls.GridView
                     };
                 }
 
-                view.Columns.Add(new LogGridViewColumn
-                {  
+                var column = new LogGridViewColumn
+                {
                     HeaderTemplate = BuildHeaderTemplate(),
                     CellTemplate = CreateCellTemplate(),
                     Width = widths == null ? double.NaN : widths[columnIndex++],
                     FitToContent = IsMessageField(fieldHeader),
                     ContentTextProvider = contentTextProvider,
                     FieldName = fieldHeader
-                });
+                };
+                if (messageFieldIndex >= 0 && fieldIndex == messageFieldIndex &&
+                    view.Columns[^1] is LogGridViewColumn host)
+                    column.RootExpanderHost = host;
+                view.Columns.Add(column);
             }
 
             return view;

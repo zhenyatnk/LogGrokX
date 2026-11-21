@@ -349,7 +349,7 @@ public class TextModel : IReadOnlyList<StringRange>
         {
             if (enableOriginalTextSearch)
                 _originalStructuredSource = source;
-            (_textLines, CollapsibleRanges) = GetStructuredProperties(source, structuredRanges);
+            (_textLines, CollapsibleRanges, RootFoldingLine) = GetStructuredProperties(source, structuredRanges);
         }
         else
         {
@@ -379,19 +379,9 @@ public class TextModel : IReadOnlyList<StringRange>
             _sourceText = StringRange.FromString(TextOperations.Normalize(source, viewSettings));
             _plainSource = source;
         }
-
-        RootFoldingLine = structuredRanges.Count == 0
-            ? null
-            : CollapsibleRanges?
-                .Where(candidate => !CollapsibleRanges.Any(other =>
-                    other.start < candidate.start &&
-                    other.start + other.length >= candidate.start + candidate.length))
-                .OrderBy(candidate => candidate.start)
-                .Cast<(int start, int length)?>()
-                .FirstOrDefault()?.start;
     }
 
-    private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)
+    private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges, int? rootFoldingLine)
         GetStructuredProperties(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var (text, formattedRanges) = TextOperations.FormatInlineStructured(source, structuredRanges);
@@ -404,11 +394,12 @@ public class TextModel : IReadOnlyList<StringRange>
         return GetCollapsibleRanges(text, formattedRanges);
     }
 
-    private static (List<StringRange> textLines, List<(int start, int length)> ranges) GetCollapsibleRanges(
-        string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
+    private static (List<StringRange> textLines, List<(int start, int length)> ranges, int? rootFoldingLine)
+        GetCollapsibleRanges(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var lines = source.Tokenize().ToList();
         var result = new List<(int start, int length)>();
+        (int start, int length)? root = null;
 
         int GetLineNumber(int position)
         {
@@ -421,8 +412,13 @@ public class TextModel : IReadOnlyList<StringRange>
             var startLine = GetLineNumber(start);
             var endLine = GetLineNumber(start + length);
             var lengthLines = endLine - startLine + 1;
-            if (lengthLines > 1)
-                result.Add((startLine, lengthLines));
+            if (lengthLines <= 1)
+                return;
+
+            result.Add((startLine, lengthLines));
+            if (root is not { } current || startLine < current.start ||
+                startLine == current.start && lengthLines > current.length)
+                root = (startLine, lengthLines);
         }
 
         var bracesStack = new Stack<(char brace, int position)>();
@@ -470,7 +466,7 @@ public class TextModel : IReadOnlyList<StringRange>
             }
         }
 
-        return (lines, result);
+        return (lines, result, root?.start);
     }
 
     public string GetDisplayedText(IReadOnlySet<int>? collapsedLines)

@@ -12,6 +12,8 @@ namespace LogGrokX.Controls.GridView
 
         public Func<object, string>? ContentTextProvider { get; set; }
 
+        internal LogGridViewColumn? RootExpanderHost { get; set; }
+
         public LogGridViewColumn()
         {
             InitializeComponent();
