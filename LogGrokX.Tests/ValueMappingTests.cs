@@ -194,6 +194,38 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void PreviewCombinesSelectedListWithOtherEnabledLists()
+        {
+            var settings = new ApplicationSettings
+            {
+                ValueMappings =
+                [
+                    new ValueMappingList
+                    {
+                        Name = "Reg-Types",
+                        Fields = ["Message"],
+                        Items = [new ValueMappingItem { Value = "0x00002", Mapping = "type 2" }]
+                    },
+                    new ValueMappingList
+                    {
+                        Name = "Reg-Phrase",
+                        Enabled = false,
+                        Items = [new ValueMappingItem { Value = "disk full", Mapping = "long wins" }]
+                    }
+                ]
+            };
+            var dialog = ProfileSettingsTests.CreateEditor(settings);
+            var selected = dialog.ValueMappings.Single(list => list.Name == "Reg-Phrase");
+            dialog.SelectedValueMapping = selected;
+            selected.SampleText = "code 0x00002 and disk full";
+
+            Assert.AreEqual("code 0x00002(type 2) and disk full(long wins)", selected.SamplePreview);
+
+            dialog.ValueMappings[0].Enabled = false;
+            Assert.AreEqual("code 0x00002 and disk full(long wins)", selected.SamplePreview);
+        }
+
+        [TestMethod]
         public void ListViewModelRaisesItemsChangedWhenItemIsEdited()
         {
             var list = new ValueMappingListViewModel();
