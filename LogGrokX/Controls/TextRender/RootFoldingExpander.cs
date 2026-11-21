@@ -79,7 +79,7 @@ public class RootFoldingExpander : OutlineExpander
 
         var model = TextModel;
         var state = SharedFoldingState;
-        var visible = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
+        var visible = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
                       model?.RootFoldingLine != null && state != null;
         Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (!visible) return;

@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a session-switchable prototype that compares a fixed folding gutter with moving only the first JSON/XML root expander into the existing pin column.
+**Goal:** Build a session-switchable prototype that compares a fixed folding gutter with moving only the Message field's first JSON/XML root expander to the right edge of the column immediately before Message.
 
 **Architecture:** `FoldingLayoutOptions` publishes the session-only layout to text and expander controls. `TextModel` identifies the first outermost structured folding line, while `TextViewSharedFoldingState` owns root toggling and change notifications so every view remains synchronized. The existing `TextView` keeps nested expanders; a new `RootFoldingExpander` hosts only the relocated root button.
 
@@ -28,9 +28,9 @@
 - Modify: `LogGrokX.Tests/TextControlAltHoverTests.cs` and `LogGrokX.Tests/GlyphLineScalingTests.cs` to isolate legacy coordinate/scaling cases from the new default mode.
 
 **Interfaces:**
-- Produces: `FoldingLayoutOptions.Instance.Current` of type `FoldingLayoutMode` (`FixedGutter`, `RootInPinColumn`) and `FoldingLayoutOptions.Changed`.
+- Produces: `FoldingLayoutOptions.Instance.Current` of type `FoldingLayoutMode` (`FixedGutter`, `RootInPreviousColumn`) and `FoldingLayoutOptions.Changed`.
 - Produces: `TextModel.RootFoldingLine` of type `int?`; it is non-null only for the first outermost JSON/XML folding range.
-- Later tasks consume both APIs to hide the root inline expander and position its pin-column replacement.
+- Later tasks consume both APIs to hide an externally hosted Message root inline expander and position its replacement in the preceding column.
 
 - [ ] **Step 1: Write failing layout tests**
 
@@ -87,7 +87,7 @@ namespace LogGrokX.Controls.TextRender;
 public enum FoldingLayoutMode
 {
     FixedGutter,
-    RootInPinColumn
+    RootInPreviousColumn
 }
 
 public sealed class FoldingLayoutOptions
@@ -152,7 +152,7 @@ Expected: fixed-gutter and plain-multiline tests pass.
 
 ---
 
-### Task 2: Shared root toggling and the pin-column expander
+### Task 2: Shared root toggling and the external root expander
 
 **Files:**
 - Modify: `LogGrokX/Controls/TextRender/TextViewSharedFoldingState.cs`
@@ -181,7 +181,7 @@ Assert.IsTrue(state.IsRootCollapsed(model));
 Assert.IsTrue(state[model.UniqueId]!.Contains(nested));
 ```
 
-Also create a `RootFoldingExpander`, assign `TextModel`, `SharedFoldingState`, and `FoldingLayoutMode.RootInPinColumn`, then assert that `state.ToggleRoot(model)` changes `RootFoldingExpander.State` from `Collapsed` to `ExpandedUpper` and raises its `Changed` notification path.
+Also create a `RootFoldingExpander`, assign `TextModel`, `SharedFoldingState`, and `FoldingLayoutMode.RootInPreviousColumn`, then assert that `state.ToggleRoot(model)` changes `RootFoldingExpander.State` from `Collapsed` to `ExpandedUpper` and raises its `Changed` notification path.
 
 - [ ] **Step 2: Run the tests and confirm failure**
 
@@ -233,7 +233,7 @@ private void UpdateState()
 {
     var model = TextModel;
     var state = SharedFoldingState;
-    var visible = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
+    var visible = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
                   model?.RootFoldingLine != null && state != null;
     Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
     if (!visible) return;
@@ -256,7 +256,7 @@ protected override void OnClick()
 }
 ```
 
-Use `WeakEventManager<FoldingLayoutOptions, EventArgs>` for `FoldingLayoutOptions.Instance.Changed` and `WeakEventManager<TextViewSharedFoldingState, EventArgs>` for state changes. Remove the old state handler when `SharedFoldingState` changes. Set `Width`, `Height`, and `Foreground` from the pin templates; do not assign `Expandable`.
+Use `WeakEventManager<FoldingLayoutOptions, EventArgs>` for `FoldingLayoutOptions.Instance.Changed` and `WeakEventManager<TextViewSharedFoldingState, EventArgs>` for state changes. Remove the old state handler when `SharedFoldingState` changes. Set `Width`, `Height`, and `Foreground` from the host templates; do not assign `Expandable`.
 
 - [ ] **Step 5: Run focused tests**
 
@@ -269,126 +269,83 @@ Expected: all focused shared-state and layout tests pass.
 ### Task 3: Integrate both layouts into all log views and the View menu
 
 **Files:**
-- Modify: `LogGrokX/Controls/TextRender/TextView.cs:19-51,147-199,332-336,566-600,620-642`
-- Modify: `LogGrokX/BaseLogLineViewModel.cs:36-55,122-140`
-- Modify: `LogGrokX/Controls/GridView/GridViewFactory.cs:22-44,164-195`
-- Modify: `LogGrokX/Styles/MarkedLinesViewTemplate.xaml:73-83`
-- Modify: `LogGrokX/MainWindowViewModel.cs:423-438`
-- Modify: `LogGrokX/MainWindow.xaml:220-226`
-- Modify: `LogGrokX.Tests/TextControlAltHoverTests.cs`
+- Modify: `LogGrokX/Controls/TextRender/TextView.cs`
+- Modify: `LogGrokX/Controls/TextRender/FoldingLayoutOptions.cs`
+- Modify: `LogGrokX/Controls/TextRender/RootFoldingExpander.cs`
+- Modify: `LogGrokX/Controls/GridView/GridViewFactory.cs`
+- Modify: `LogGrokX/Styles/MarkedLinesViewTemplate.xaml`
+- Modify: `LogGrokX/MainWindowViewModel.cs`
+- Modify: `LogGrokX/MainWindow.xaml`
+- Modify: `LogGrokX.Tests/TextControlAltHoverTests.cs` and `LogGrokX.Tests/GlyphLineScalingTests.cs` for the enum rename.
 - Test: `LogGrokX.Tests/GridViewFactoryTests.cs`
 - Test: `LogGrokX.Tests/FoldingLayoutTests.cs`
+- Test: `LogGrokX.Tests/PresentationBoundaryTests.cs`
 
 **Interfaces:**
 - Consumes: all Task 1 and Task 2 APIs.
-- Produces: `BaseLogLineViewModel.FoldingTextModel` of type `TextModel?` for pin-template binding.
-- Produces: `MainWindowViewModel.IsRootFoldingInPinColumn` for the temporary checkable menu item.
+- Produces: inherited attached `TextView.HasExternalRootExpander` of type `bool`, defaulting to false.
+- Produces: `MainWindowViewModel.IsRootFoldingInPreviousColumn` for the temporary checkable menu item.
+- Uses `FoldingLayoutMode.RootInPreviousColumn`; no row-level `FoldingTextModel` aggregate is introduced.
 
-- [ ] **Step 1: Add failing inline-root and pin-template tests**
+- [ ] **Step 1: Add failing external-root and host-template tests**
 
-Add `PinColumnModeMarksOnlyRootLineAsNotRequiringInlineMargin` to `FoldingLayoutTests`:
+Add folding tests proving that an external Message root loses only its own inline margin/upper expander, while a `TextView` without `HasExternalRootExpander` retains its root margin and all inline expanders in `RootInPreviousColumn` mode. Verify the attached property defaults to false and inherits.
 
-```csharp
-RunOnSta(FoldingLayoutMode.RootInPinColumn, () =>
-{
-    var state = new TextViewSharedFoldingState();
-    state.ExpandAll();
-    var view = new TextView();
-    TextView.SetSharedFoldingState(view, state);
-    view.TextModel = new TextModel(7, "{\"a\":{\"b\":1}}");
+Update `GridViewFactoryTests` to assert that the pin cell has no root control; the Component cell immediately before Message has a star-sized text area and auto-sized horizontal action area with the 8x8 root before BIN; and Index hosts the root when Message is the first parsed field. Assert direct Message-part `TextModel` bindings and the existing normal/merged shared-state bindings. Add marked-line template coverage for the Index action area and whole-text external-root opt-in.
 
-    view.Measure(Infinite);
-    var control = (TextControl)VisualTreeHelper.GetChild(view, 0);
-
-    Assert.IsFalse(control.TextLines![0].isCollapsible);
-    Assert.IsTrue(control.TextLines.Skip(1).Any(line => line.isCollapsible));
-});
-```
-
-In `GridViewFactoryTests`, create a normal view, load `view.Columns[0].CellTemplate`, find the single `RootFoldingExpander` in the resulting `StackPanel`, and assert:
-
-```csharp
-var binding = expander.GetBindingExpression(RootFoldingExpander.TextModelProperty)!.ParentBinding;
-Assert.AreEqual(nameof(BaseLogLineViewModel.FoldingTextModel), binding.Path.Path);
-Assert.AreEqual(8d, expander.Width);
-Assert.AreEqual(8d, expander.Height);
-```
-
-Add an STA test that switches `FoldingLayoutOptions.Instance.Current` at runtime and asserts an existing `TextView` is invalidated and a visible `RootFoldingExpander` gets `Visibility.Collapsed` in `FixedGutter` mode. Restore the previous mode in `finally`.
+Retain the runtime mode-switch test for measure invalidation, highlight geometry, and expander visibility, setting `HasExternalRootExpander` on its `TextView`.
 
 - [ ] **Step 2: Run integration tests and confirm failure**
 
-Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter "FullyQualifiedName~GridViewFactoryTests|FullyQualifiedName~FoldingLayoutTests"`
+Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj --filter "FullyQualifiedName~GridViewFactoryTests|FullyQualifiedName~FoldingLayoutTests|FullyQualifiedName~PresentationBoundaryTests.MarkedLinesTemplateHostsRootInIndexActionArea"`
 
-Expected: the inline-root test fails because the root still reserves an inline margin, and the pin-template test fails because no root expander or `FoldingTextModel` binding exists.
+Expected: failures show that the root is still in pin cells, the preceding-column and Index hosts are missing, non-Message roots are incorrectly suppressed, and `HasExternalRootExpander` does not exist.
 
-- [ ] **Step 3: Hide only the root inline expander in pin-column mode**
+- [ ] **Step 3: Add the external-root contract and rename the mode**
 
-Extend `TextView.OutlineData` with `int? RootFoldingLine`, supplied from `TextModel` when collapsible ranges are set. In `CreateVisibleTextLines`, use:
+Add inherited attached `TextView.HasExternalRootExpander` with default false. Inline root-margin removal and upper-expander suppression require all of:
 
 ```csharp
-var needsInlineMargin = outlineData.IsCollapsible(index) &&
-    !(FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
-      index == outlineData.RootFoldingLine);
-visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), needsInlineMargin));
+FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
+TextView.GetHasExternalRootExpander(textView) &&
+index == outlineData.RootFoldingLine
 ```
 
-In `UpdateChildren`, treat the matching root line as `Outline.None` only in `RootInPinColumn`; leave every nested outline unchanged. Add `FrameworkPropertyMetadataOptions.Inherits` to `TextView.SharedFoldingStateProperty` so the state assigned on the main/search `ListView` reaches its text cells.
+Leave nested outlines and fixed-gutter behavior unchanged. Rename every `RootInPinColumn` use to `RootInPreviousColumn`, including legacy Alt-hover and scaling helpers. Retain weak layout-change subscriptions and cache invalidation.
 
-In the `TextView` constructor, weak-subscribe to `FoldingLayoutOptions.Instance.Changed`; the handler sets `_isCollapsibleStateDirty = true`, calls `InvalidateMeasure()`, `InvalidateVisual()`, and `_textControl.OnTextLinesChanged()` through an internal cache-reset method so stale highlight geometry is not reused.
+- [ ] **Step 4: Generalize the generated right-action cell layout**
 
-- [ ] **Step 4: Expose the first structured field model**
+Find the case-insensitive `Message` field index. Its own `LogGridViewCell` sets `HasExternalRootExpander=true`; no other generated field sets it. The column at `messageFieldIndex - 1` hosts the root, which naturally selects Index (`fieldIndex == -1`) when Message is first.
 
-Add to `BaseLogLineViewModel`:
-
-```csharp
-public TextModel? FoldingTextModel => DecodableParts
-    .Select(part => part.TextModel)
-    .FirstOrDefault(model => model.RootFoldingLine != null);
-```
-
-When a part raises `PropertyChanged` for `TextModel`, call `InvokePropertyChanged(nameof(FoldingTextModel))`. Existing lazy `DecodableParts` caching is reused; no second parts collection is introduced.
-
-- [ ] **Step 5: Add the root button to generated and marked-line pin cells**
-
-Pass `sharedFoldingStatePath` into `CreatePinCellTemplate`. Insert an 8x8 `RootFoldingExpander` below `PinControl` and before decode toggles. Bind:
+For a host cell and/or the existing Component BIN cell, use a Grid with star-sized content and auto-sized actions. The horizontal action area contains the 8x8 root first when hosted, then the existing decode toggles when present. Do not add a GridViewColumn. Bind the root directly to the Message part:
 
 ```csharp
-root.SetBinding(RootFoldingExpander.TextModelProperty,
-    new Binding(nameof(BaseLogLineViewModel.FoldingTextModel)) { Mode = BindingMode.OneWay });
-```
-
-For merged rows bind `SharedFoldingState` to `sharedFoldingStatePath`; otherwise bind to `DataContext.FoldingState` with `RelativeSource FindAncestor` for `ListView`. In `MarkedLinesViewTemplate.xaml`, add the same 8x8 control below `PinControl`, binding `TextModel="{Binding FoldingTextModel}"` and `SharedFoldingState="{Binding Document.FoldingState}"`.
-
-- [ ] **Step 6: Add the temporary View-menu switch**
-
-Add to `MainWindowViewModel`:
-
-```csharp
-public bool IsRootFoldingInPinColumn
+root.SetBinding(RootFoldingExpander.TextModelProperty, new Binding
 {
-    get => FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn;
-    set
-    {
-        FoldingLayoutOptions.Instance.Current = value
-            ? FoldingLayoutMode.RootInPinColumn
-            : FoldingLayoutMode.FixedGutter;
-        InvokePropertyChanged();
-    }
-}
+    Path = new PropertyPath(".[(0)].TextModel", messageFieldIndex),
+    Mode = BindingMode.OneWay
+});
 ```
 
-Add a checkable `MenuItem Header="Root + in pin column"` beside thread grouping, with `IsChecked="{Binding IsRootFoldingInPinColumn, Mode=TwoWay}"`. Do not add a YAML setting or localization resource for this temporary prototype item.
+For merged rows bind `SharedFoldingState` to `sharedFoldingStatePath`; otherwise bind to `DataContext.FoldingState` with `RelativeSource FindAncestor` for `ListView`. Restore pin cells to their original pin/BIN-only content and remove any row-level `FoldingTextModel` aggregate.
 
-- [ ] **Step 7: Add fixed-gutter Alt-hover coverage**
+- [ ] **Step 5: Place the marked-line root in Index**
 
-The legacy Alt-hover and scaling STA helpers were isolated under `RootInPinColumn` in Task 1. Add one new fixed-gutter Alt-hover test that points at a non-collapsible glyph using `TextView.ExpanderMargin` and verifies the returned rectangle uses the same margin.
+Wrap the existing marked-line Index content in a star-sized content area and auto-sized horizontal action area. Bind the 8x8 root to `Text.TextModel` and `Document.FoldingState`. Set `TextView.HasExternalRootExpander="True"` on the whole-line `TextView`; remove the root from the pin cell.
+
+- [ ] **Step 6: Rename the temporary View-menu switch**
+
+Rename the view-model property to `IsRootFoldingInPreviousColumn` using the same session-only setter. Use exactly `MenuItem Header="Root + left of message"` with a two-way `IsChecked` binding. Do not add YAML or localization settings.
+
+- [ ] **Step 7: Preserve fixed-gutter coordinate coverage**
+
+Keep the fixed-gutter Alt-hover test and all legacy coordinate/scaling tests, updating only the enum name. The non-external folding test must prove structured fields other than Message keep their inline root behavior.
 
 - [ ] **Step 8: Run all UI tests**
 
 Run: `dotnet test LogGrokX.Tests/LogGrokX.Tests.csproj`
 
-Expected: all tests pass, including both new layouts, root state sharing, pin-template bindings, Alt-hover, highlighting, and existing folding measurements.
+Expected: all tests pass, including both layouts, root state sharing, preceding-column and Index bindings, marked-line placement, non-Message inline roots, Alt-hover, highlighting, and existing folding measurements.
 
 ---
 
@@ -416,7 +373,7 @@ Run `dotnet run --project LogGrokX/LogGrokX.csproj` and open `assets/demo/demo-a
 
 In each mode verify:
 - plain and structured text alignment;
-- only the root button moves in pin-column mode;
+- only the Message root button moves to the preceding column in `RootInPreviousColumn` mode;
 - root collapse/expand and nested collapse/expand;
 - live switching without restart or loss of folding state;
 - selection, Alt-hover, search highlighting, and horizontal scrolling;

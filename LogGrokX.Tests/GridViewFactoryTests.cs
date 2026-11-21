@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
-using System.Text;
 using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
@@ -164,7 +161,7 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void PinColumnContainsRootExpanderBoundToFoldingTextModel()
+        public void PinColumnDoesNotContainRootExpander()
         {
             RunOnSta(() =>
             {
@@ -174,13 +171,39 @@ namespace LogGrokX.Tests
                 var template = view.Columns[0].CellTemplate;
                 template.Seal();
                 var panel = (StackPanel)template.LoadContent();
-                var expander = panel.Children.OfType<RootFoldingExpander>().Single();
 
-                var binding = expander.GetBindingExpression(RootFoldingExpander.TextModelProperty)!.ParentBinding;
-                Assert.AreEqual(nameof(BaseLogLineViewModel.FoldingTextModel), binding.Path.Path);
+                Assert.IsFalse(panel.Children.OfType<RootFoldingExpander>().Any());
+            });
+        }
+
+        [TestMethod]
+        public void ComponentBeforeMessageHostsRootBeforeDecodeToggles()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null);
+                var template = view.Columns[5].CellTemplate;
+                template.Seal();
+                var grid = (Grid)template.LoadContent();
+
+                Assert.AreEqual(2, grid.ColumnDefinitions.Count);
+                Assert.AreEqual(new GridLength(1, GridUnitType.Star), grid.ColumnDefinitions[0].Width);
+                Assert.AreEqual(GridLength.Auto, grid.ColumnDefinitions[1].Width);
+                var content = grid.Children.OfType<LogGridViewCell>().Single();
+                Assert.AreEqual(0, Grid.GetColumn(content));
+                var actions = grid.Children.OfType<StackPanel>().Single();
+                Assert.AreEqual(1, Grid.GetColumn(actions));
+                Assert.AreEqual(Orientation.Horizontal, actions.Orientation);
+                Assert.AreEqual(2, actions.Children.Count);
+                var expander = (RootFoldingExpander)actions.Children[0];
+                Assert.IsInstanceOfType(actions.Children[1], typeof(ContentControl));
                 Assert.AreEqual(8d, expander.Width);
                 Assert.AreEqual(8d, expander.Height);
 
+                var binding = expander.GetBindingExpression(RootFoldingExpander.TextModelProperty)!.ParentBinding;
+                Assert.AreEqual(".[(0)].TextModel", binding.Path.Path);
                 var stateBinding = expander.GetBindingExpression(RootFoldingExpander.SharedFoldingStateProperty)!.ParentBinding;
                 Assert.AreEqual("DataContext.FoldingState", stateBinding.Path.Path);
                 Assert.AreEqual(RelativeSourceMode.FindAncestor, stateBinding.RelativeSource.Mode);
@@ -189,7 +212,28 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void MergedPinColumnBindsRootExpanderToSourceDocumentState()
+        public void IndexHostsRootWhenMessageIsFirstField()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = "^(?<Message>.*)$" });
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null);
+                var template = view.Columns[1].CellTemplate;
+                template.Seal();
+                var grid = (Grid)template.LoadContent();
+                var actions = grid.Children.OfType<StackPanel>().Single();
+                var expander = actions.Children.OfType<RootFoldingExpander>().Single();
+
+                Assert.AreEqual(1, actions.Children.Count);
+                Assert.AreEqual(1, Grid.GetColumn(actions));
+                Assert.AreEqual(".[(0)].TextModel",
+                    expander.GetBindingExpression(RootFoldingExpander.TextModelProperty)!.ParentBinding.Path.Path);
+            });
+        }
+
+        [TestMethod]
+        public void MergedPreviousColumnBindsRootToSourceDocumentState()
         {
             RunOnSta(() =>
             {
@@ -197,10 +241,11 @@ namespace LogGrokX.Tests
                 var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
                     new LogGridModel(meta, new ColumnSettings()), null,
                     sharedFoldingStatePath: "Source.Document.FoldingState");
-                var template = view.Columns[0].CellTemplate;
+                var template = view.Columns[5].CellTemplate;
                 template.Seal();
-                var panel = (StackPanel)template.LoadContent();
-                var expander = panel.Children.OfType<RootFoldingExpander>().Single();
+                var grid = (Grid)template.LoadContent();
+                var expander = grid.Children.OfType<StackPanel>().Single()
+                    .Children.OfType<RootFoldingExpander>().Single();
 
                 var binding = expander.GetBindingExpression(RootFoldingExpander.SharedFoldingStateProperty)!.ParentBinding;
                 Assert.AreEqual("Source.Document.FoldingState", binding.Path.Path);
@@ -209,36 +254,26 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void FoldingTextModelUsesFirstStructuredFieldModel()
+        public void OnlyMessageCellEnablesExternalRootSuppression()
         {
             RunOnSta(() =>
             {
                 var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
-                var line = CreateLine(meta,
-                    "2024-01-15 08:32:11.482 INFO ThreadA {\"component\":1} {\"message\":{\"value\":2}}");
-                Assert.AreSame(line[3].TextModel, line.FoldingTextModel);
-                Assert.IsNotNull(line.FoldingTextModel!.RootFoldingLine);
-            });
-        }
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null);
 
-        [TestMethod]
-        public void FoldingTextModelFollowsDecodedTextModelChanges()
-        {
-            RunOnSta(() =>
-            {
-                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
-                var encodedJson = Convert.ToBase64String(Encoding.UTF8.GetBytes("{\"message\":{\"value\":2}}"));
-                var line = CreateLine(meta,
-                    $"2024-01-15 08:32:11.482 INFO ThreadA Component1 {encodedJson}");
-                var changed = new List<string>();
-                ((INotifyPropertyChanged)line).PropertyChanged += (_, e) => changed.Add(e.PropertyName ?? string.Empty);
-                Assert.IsNull(line.FoldingTextModel);
-
-                line[4].IsBase64Decoded = true;
-
-                Assert.IsNotNull(line[4].TextModel.RootFoldingLine);
-                CollectionAssert.Contains(changed, nameof(BaseLogLineViewModel.FoldingTextModel));
-                Assert.AreSame(line[4].TextModel, line.FoldingTextModel);
+                for (var columnIndex = 1; columnIndex < view.Columns.Count; columnIndex++)
+                {
+                    var template = view.Columns[columnIndex].CellTemplate;
+                    template.Seal();
+                    var content = (FrameworkElement)template.LoadContent();
+                    var cell = content as LogGridViewCell ?? (content is Grid grid
+                        ? grid.Children.OfType<LogGridViewCell>().Single()
+                        : null);
+                    Assert.IsNotNull(cell);
+                    Assert.AreEqual(columnIndex == 6, TextView.GetHasExternalRootExpander(cell),
+                        $"Unexpected external-root setting on column {columnIndex}.");
+                }
             });
         }
 

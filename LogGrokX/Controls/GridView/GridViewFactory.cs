@@ -31,6 +31,8 @@ namespace LogGrokX.Controls.GridView
             var indexFieldName = "Index";
             var componentFieldName = meta.FieldNames
                 .FirstOrDefault(field => field.Equals(ComponentFieldName, StringComparison.OrdinalIgnoreCase));
+            var messageFieldIndex = Array.FindIndex(meta.FieldNames,
+                field => field.Equals("Message", StringComparison.OrdinalIgnoreCase));
             var view = new System.Windows.Controls.GridView();
 
             view.Columns.Add(new LogGridViewColumn
@@ -39,7 +41,7 @@ namespace LogGrokX.Controls.GridView
                 {
                     VisualTree = new FrameworkElementFactory(typeof(PinGridViewhHeader))
                 },
-                CellTemplate =  CreatePinCellTemplate(componentFieldName == null, sharedFoldingStatePath),
+                CellTemplate =  CreatePinCellTemplate(componentFieldName == null),
                 Width = widths == null ? double.NaN : Math.Max(widths[0], PinColumnMinWidth + PinColumnPadding)
             });
 
@@ -93,6 +95,8 @@ namespace LogGrokX.Controls.GridView
                             Mode = BindingMode.OneWay
                         });
                     }
+                    if (messageFieldIndex >= 0 && fieldIndex == messageFieldIndex)
+                        frameworkElementFactory.SetValue(TextView.HasExternalRootExpanderProperty, true);
                     if (fieldHeader == ThreadFieldName)
                     {
                         var opacityBinding = new Binding
@@ -103,7 +107,10 @@ namespace LogGrokX.Controls.GridView
                         };
                         frameworkElementFactory.SetBinding(UIElement.OpacityProperty, opacityBinding);
                     }
-                    if (fieldHeader != componentFieldName)
+
+                    var hostsRootExpander = fieldIndex == messageFieldIndex - 1;
+                    var includeDecodeToggles = fieldHeader == componentFieldName;
+                    if (!hostsRootExpander && !includeDecodeToggles)
                     {
                         return new DataTemplate(typeof(DependencyObject))
                         {
@@ -114,17 +121,22 @@ namespace LogGrokX.Controls.GridView
                     var grid = new FrameworkElementFactory(typeof(Grid));
                     var contentColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
                     contentColumn.SetValue(ColumnDefinition.WidthProperty, new GridLength(1, GridUnitType.Star));
-                    var togglesColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
-                    togglesColumn.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
+                    var actionsColumn = new FrameworkElementFactory(typeof(ColumnDefinition));
+                    actionsColumn.SetValue(ColumnDefinition.WidthProperty, GridLength.Auto);
                     grid.AppendChild(contentColumn);
-                    grid.AppendChild(togglesColumn);
+                    grid.AppendChild(actionsColumn);
 
                     frameworkElementFactory.SetValue(Grid.ColumnProperty, 0);
                     grid.AppendChild(frameworkElementFactory);
 
-                    var toggles = CreateDecodeToggles(HorizontalAlignment.Right);
-                    toggles.SetValue(Grid.ColumnProperty, 1);
-                    grid.AppendChild(toggles);
+                    var actions = new FrameworkElementFactory(typeof(StackPanel));
+                    actions.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+                    actions.SetValue(Grid.ColumnProperty, 1);
+                    if (hostsRootExpander)
+                        actions.AppendChild(CreateRootExpander(messageFieldIndex, sharedFoldingStatePath));
+                    if (includeDecodeToggles)
+                        actions.AppendChild(CreateDecodeToggles(HorizontalAlignment.Right));
+                    grid.AppendChild(actions);
 
                     return new DataTemplate(typeof(DependencyObject))
                     {
@@ -161,7 +173,7 @@ namespace LogGrokX.Controls.GridView
             };
         }
         
-        private static DataTemplate CreatePinCellTemplate(bool includeDecodeToggles, string? sharedFoldingStatePath)
+        private static DataTemplate CreatePinCellTemplate(bool includeDecodeToggles)
         {
             var panel = new FrameworkElementFactory(typeof(StackPanel));
             panel.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
@@ -177,12 +189,24 @@ namespace LogGrokX.Controls.GridView
             });
             panel.AppendChild(pin);
 
+            if (includeDecodeToggles)
+                panel.AppendChild(CreateDecodeToggles(HorizontalAlignment.Center));
+
+            return new DataTemplate {VisualTree = panel};
+        }
+
+        private static FrameworkElementFactory CreateRootExpander(int messageFieldIndex,
+            string? sharedFoldingStatePath)
+        {
             var root = new FrameworkElementFactory(typeof(RootFoldingExpander));
             root.SetValue(FrameworkElement.WidthProperty, 8d);
             root.SetValue(FrameworkElement.HeightProperty, 8d);
-            root.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            root.SetBinding(RootFoldingExpander.TextModelProperty,
-                new Binding(nameof(BaseLogLineViewModel.FoldingTextModel)) { Mode = BindingMode.OneWay });
+            root.SetValue(FrameworkElement.VerticalAlignmentProperty, VerticalAlignment.Top);
+            root.SetBinding(RootFoldingExpander.TextModelProperty, new Binding
+            {
+                Path = new PropertyPath(".[(0)].TextModel", messageFieldIndex),
+                Mode = BindingMode.OneWay
+            });
             var foldingStateBinding = sharedFoldingStatePath != null
                 ? new Binding(sharedFoldingStatePath) { Mode = BindingMode.OneWay }
                 : new Binding("DataContext.FoldingState")
@@ -192,12 +216,7 @@ namespace LogGrokX.Controls.GridView
                         typeof(System.Windows.Controls.ListView), 1)
                 };
             root.SetBinding(RootFoldingExpander.SharedFoldingStateProperty, foldingStateBinding);
-            panel.AppendChild(root);
-
-            if (includeDecodeToggles)
-                panel.AppendChild(CreateDecodeToggles(HorizontalAlignment.Center));
-
-            return new DataTemplate {VisualTree = panel};
+            return root;
         }
 
         private static FrameworkElementFactory CreateDecodeToggles(HorizontalAlignment horizontalAlignment)

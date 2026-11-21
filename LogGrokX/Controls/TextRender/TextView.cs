@@ -301,6 +301,25 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     #endregion
 
+    #region HasExternalRootExpander property
+
+    public static readonly DependencyProperty HasExternalRootExpanderProperty = DependencyProperty.RegisterAttached(
+        "HasExternalRootExpander", typeof(bool), typeof(TextView),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits,
+            static (d, _) => (d as TextView)?.OnFoldingLayoutChanged(null, EventArgs.Empty)));
+
+    public static void SetHasExternalRootExpander(DependencyObject element, bool value)
+    {
+        element.SetValue(HasExternalRootExpanderProperty, value);
+    }
+
+    public static bool GetHasExternalRootExpander(DependencyObject element)
+    {
+        return (bool)element.GetValue(HasExternalRootExpanderProperty);
+    }
+
+    #endregion
+
     #region TransientSettings property
     
     public static readonly DependencyProperty SharedFoldingStateProperty = DependencyProperty.RegisterAttached(
@@ -586,9 +605,10 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
             var yCenter = Math.Round((verticalPosition + textLine.Size.Height / 2) * pixelsPerDip,
                 MidpointRounding.ToEven) / pixelsPerDip;
 
-            var isRootInPinColumn = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
-                                    index == outlineData.RootFoldingLine;
-            if (outline is not None && !isRootInPinColumn)
+            var isExternalRoot = FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
+                                 GetHasExternalRootExpander(this) &&
+                                 index == outlineData.RootFoldingLine;
+            if (outline is not None && !isExternalRoot)
             {
                 var ySize = ExpanderSize;
                 var xSize = ExpanderSize;
@@ -652,7 +672,8 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         {
             var (_, index) = machine[i];
             var needsInlineMargin = outlineData.IsCollapsible(index) &&
-                !(FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn &&
+                !(FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn &&
+                  GetHasExternalRootExpander(this) &&
                   index == outlineData.RootFoldingLine);
             visibleLines.Add((GetOrCreateTextLine(text, index, pixelsPerDip), needsInlineMargin));
         }

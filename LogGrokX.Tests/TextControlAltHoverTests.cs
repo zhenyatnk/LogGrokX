@@ -362,7 +362,7 @@ public class TextControlAltHoverTests
         return new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    private static void RunOnSta(Action action) => RunOnSta(FoldingLayoutMode.RootInPinColumn, action);
+    private static void RunOnSta(Action action) => RunOnSta(FoldingLayoutMode.RootInPreviousColumn, action);
 
     private static void RunOnSta(FoldingLayoutMode mode, Action action)
     {

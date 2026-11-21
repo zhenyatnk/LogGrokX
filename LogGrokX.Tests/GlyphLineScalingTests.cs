@@ -92,7 +92,7 @@ namespace LogGrokX.Tests
                 var previous = FoldingLayoutOptions.Instance.Current;
                 try
                 {
-                    FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPinColumn;
+                    FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPreviousColumn;
                     action();
                 }
                 catch (Exception e)

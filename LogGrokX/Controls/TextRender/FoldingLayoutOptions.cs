@@ -5,7 +5,7 @@ namespace LogGrokX.Controls.TextRender;
 public enum FoldingLayoutMode
 {
     FixedGutter,
-    RootInPinColumn
+    RootInPreviousColumn
 }
 
 public sealed class FoldingLayoutOptions

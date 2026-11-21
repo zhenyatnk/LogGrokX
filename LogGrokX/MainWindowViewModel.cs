@@ -427,13 +427,13 @@ namespace LogGrokX
             set => _threadGroupingService.SetEnabled(value);
         }
 
-        public bool IsRootFoldingInPinColumn
+        public bool IsRootFoldingInPreviousColumn
         {
-            get => FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPinColumn;
+            get => FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.RootInPreviousColumn;
             set
             {
                 FoldingLayoutOptions.Instance.Current = value
-                    ? FoldingLayoutMode.RootInPinColumn
+                    ? FoldingLayoutMode.RootInPreviousColumn
                     : FoldingLayoutMode.FixedGutter;
                 InvokePropertyChanged();
             }
