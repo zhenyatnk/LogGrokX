@@ -22,7 +22,7 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
-        public void CollapseInOneTextViewPropagatesToSharedStateClients()
+        public void ExpandingAndCollapsingOneTextViewUpdatesAnotherViewOfTheSameText()
         {
             RunOnSta(() =>
             {
@@ -39,10 +39,14 @@ namespace LogGrokX.Tests
                 Assert.IsTrue(second.FoldingManager!.ExpandRecursivelyCommand!.CanExecute(null));
 
                 first.FoldingManager.ExpandRecursivelyCommand.Execute(null);
+                Assert.IsTrue(second.FoldingManager.CollapseRecursivelyCommand!.CanExecute(null));
+                Assert.IsFalse(second.FoldingManager.ExpandRecursivelyCommand.CanExecute(null));
+
                 first.FoldingManager.CollapseRecursivelyCommand!.Execute(null);
 
                 Assert.IsTrue(first.FoldingManager.ExpandRecursivelyCommand.CanExecute(null));
-                Assert.IsTrue(second.FoldingManager!.ExpandRecursivelyCommand!.CanExecute(null));
+                Assert.IsTrue(second.FoldingManager.ExpandRecursivelyCommand.CanExecute(null));
+                Assert.IsFalse(second.FoldingManager.CollapseRecursivelyCommand.CanExecute(null));
             });
         }
 
