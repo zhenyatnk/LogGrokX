@@ -43,6 +43,30 @@ public class FoldingLayoutTests
         Assert.IsNull(model.RootFoldingLine);
     }
 
+    [TestMethod]
+    public void RootExpanderFollowsSharedRootStateChanges()
+    {
+        RunOnSta(FoldingLayoutMode.RootInPinColumn, () =>
+        {
+            var model = new TextModel(42, "{\"a\":{\"b\":1,\"c\":2}}");
+            var state = new TextViewSharedFoldingState();
+            var expander = new RootFoldingExpander
+            {
+                TextModel = model,
+                SharedFoldingState = state
+            };
+            var changedCount = 0;
+            state.Changed += (_, _) => changedCount++;
+
+            Assert.AreEqual(OutlineExpanderState.Collapsed, expander.State);
+
+            state.ToggleRoot(model);
+
+            Assert.AreEqual(OutlineExpanderState.ExpandedUpper, expander.State);
+            Assert.AreEqual(1, changedCount);
+        });
+    }
+
     private static TextControl CreateControl(
         params (GlyphLine glyphLine, bool isCollapsible)[] textLines)
     {
