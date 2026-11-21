@@ -136,18 +136,7 @@ public static partial class Base64Detector
             if (wholePem)
                 found |= Base64Content.Pem;
             if (decodeBase64 || decodePem && wholePem)
-            {
-                var replacementStart = start;
-                var replacementLength = length;
-                if (start > 0 && start + length < source.Length
-                    && source[start - 1] is '"' or '\''
-                    && source[start + length] == source[start - 1])
-                {
-                    replacementStart--;
-                    replacementLength += 2;
-                }
-                replacements.Add((replacementStart, replacementLength, whole));
-            }
+                replacements.Add((start, length, whole));
             return;
         }
 
