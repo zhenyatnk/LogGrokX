@@ -62,7 +62,7 @@ public static partial class Base64Detector
         var replacements = new List<(int index, int length, string text)>();
         if (structuredSpans is not { Count: > 0 })
         {
-            CollectPlain(source, decode, replacements, ref found);
+            CollectPlain(source, decode, replacements, ref found, stripWholeTextQuotes: true);
         }
         else
         {
@@ -113,7 +113,7 @@ public static partial class Base64Detector
             return;
         if (start == 0 && length == source.Length)
         {
-            CollectPlain(source, decode, replacements, ref found);
+            CollectPlain(source, decode, replacements, ref found, stripWholeTextQuotes: true);
             return;
         }
 
@@ -124,19 +124,23 @@ public static partial class Base64Detector
     }
 
     private static void CollectPlain(string source, Base64Content decode,
-        List<(int index, int length, string text)> replacements, ref Base64Content found)
+        List<(int index, int length, string text)> replacements, ref Base64Content found,
+        bool stripWholeTextQuotes = false)
     {
         var decodePem = decode.HasFlag(Base64Content.Pem);
         var decodeBase64 = decode.HasFlag(Base64Content.Base64);
 
-        var (start, length) = GetWholeTextRange(source);
+        var (start, length, quoted) = GetWholeTextRange(source);
         if (length >= MinWholeTextLength && TryDecodeTokenDeep(source.AsSpan(start, length), out var whole, out var wholePem))
         {
             found |= Base64Content.Base64;
             if (wholePem)
                 found |= Base64Content.Pem;
             if (decodeBase64 || decodePem && wholePem)
-                replacements.Add((start, length, whole));
+            {
+                var quoteWidth = quoted && decodeBase64 && stripWholeTextQuotes ? 1 : 0;
+                replacements.Add((start - quoteWidth, length + 2 * quoteWidth, whole));
+            }
             return;
         }
 
@@ -632,7 +636,7 @@ public static partial class Base64Detector
         return builder.ToString();
     }
 
-    private static (int start, int length) GetWholeTextRange(string source)
+    private static (int start, int length, bool quoted) GetWholeTextRange(string source)
     {
         var start = 0;
         var end = source.Length;
@@ -641,13 +645,14 @@ public static partial class Base64Detector
         while (end > start && char.IsWhiteSpace(source[end - 1]))
             end--;
 
-        if (end - start >= 2 && source[start] is '"' or '\'' && source[end - 1] == source[start])
+        var quoted = end - start >= 2 && source[start] is '"' or '\'' && source[end - 1] == source[start];
+        if (quoted)
         {
             start++;
             end--;
         }
 
-        return (start, end - start);
+        return (start, end - start, quoted);
     }
 
     public static bool TryDecodeToken(ReadOnlySpan<char> token, out string decoded)

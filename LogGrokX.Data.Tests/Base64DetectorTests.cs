@@ -25,12 +25,14 @@ public class Base64DetectorTests
     }
 
     [TestMethod]
-    public void QuotedWholeTextIsDecodedAndSurroundingIsKept()
+    [DataRow("\"SGVsbG8hIQ==\"", "Hello!!")]
+    [DataRow("  \"eyJhIjoxfQ==\"  ", "  {\"a\":1}  ")]
+    [DataRow("\t'SGVsbG8=' ", "\tHello ")]
+    public void QuotedWholeTextIsDecodedWithoutItsQuotes(string source, string expected)
     {
-        var source = $"  \"{Encode("{\"a\":1}")}\"  ";
-
-        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
-        Assert.AreEqual("  \"{\"a\":1}\"  ", decoded);
+        Assert.IsTrue(Base64Detector.TryDecode(source, Base64Content.Base64, out var decoded, out var found));
+        Assert.AreEqual(expected, decoded);
+        Assert.AreEqual(Base64Content.Base64, found);
     }
 
     [TestMethod]
@@ -48,6 +50,16 @@ public class Base64DetectorTests
 
         Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
         Assert.AreEqual($"Request payload={payload} accepted", decoded);
+    }
+
+    [TestMethod]
+    public void QuotedFragmentKeepsItsQuotes()
+    {
+        const string payload = "Hello from a fragment";
+        var source = $"payload=\"{Encode(payload)}\" accepted";
+
+        Assert.IsTrue(Base64Detector.TryDecode(source, out var decoded));
+        Assert.AreEqual($"payload=\"{payload}\" accepted", decoded);
     }
 
     [TestMethod]
@@ -419,6 +431,15 @@ public class Base64DetectorTests
 
         using var document = JsonDocument.Parse(decoded);
         Assert.AreEqual(SampleJwtDecoded, document.RootElement.GetProperty("token").GetString());
+    }
+
+    [TestMethod]
+    public void JsonStringKeepsLiteralQuotesAroundDecodedValue()
+    {
+        const string source = """{"data":"\"SGVsbG8hIQ==\""}""";
+
+        using var document = JsonDocument.Parse(DecodeAll(source, Json(source)));
+        Assert.AreEqual("\"Hello!!\"", document.RootElement.GetProperty("data").GetString());
     }
 
     [TestMethod]
