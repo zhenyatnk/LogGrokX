@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests
@@ -15,8 +14,7 @@ namespace LogGrokX.Tests
 
             var name = $"{context.FullyQualifiedTestClassName}.{context.TestName}"
                 .Replace("%", "%25").Replace("\r", "%0D").Replace("\n", "%0A");
-            using var writer = new StreamWriter(Console.OpenStandardError()) { AutoFlush = true };
-            writer.WriteLine($"::error title=MSTest failure::{name}");
+            throw new InvalidOperationException($"\n::error title=MSTest failure::{name}");
         }
     }
 }
