@@ -12,6 +12,7 @@ public class GlyphLine : IDisposable
 {
     private readonly List<GlyphRun> _runs = new();
     private readonly PooledList<double> _advanceWidthForChar = new();
+    private readonly double _baselineOffset;
 
     private static readonly ConcurrentDictionary<(GlyphTypeface typeface, double fontSize, char ch), GlyphParameters>
         TypefaceCache = new();
@@ -147,6 +148,11 @@ public class GlyphLine : IDisposable
         List<ushort>? glyphIndices = null;
         List<double>? advanceWidths = null;
         double runStart = 0;
+        var baseline = Math.Round(typeface.Baseline * fontSize);
+        var height = typeface.Height * fontSize;
+        var ascent = baseline;
+        var descent = height - baseline;
+        var usesFallback = false;
 
         void FlushRun()
         {
@@ -157,7 +163,7 @@ public class GlyphLine : IDisposable
                 isSideways: false,
                 renderingEmSize: fontSize,
                 glyphIndices: glyphIndices,
-                baselineOrigin: new Point(runStart, Math.Round(runTypeface.Baseline * fontSize)),
+                baselineOrigin: new Point(runStart, baseline),
                 advanceWidths: advanceWidths,
                 glyphOffsets: null,
                 characters: null,
@@ -177,6 +183,13 @@ public class GlyphLine : IDisposable
                 glyphIndices = new List<ushort>();
                 advanceWidths = new List<double>();
                 runStart = totalWidth;
+                if (runTypeface != typeface)
+                {
+                    var runAscent = Math.Round(runTypeface.Baseline * fontSize);
+                    ascent = Math.Max(ascent, runAscent);
+                    descent = Math.Max(descent, runTypeface.Height * fontSize - runAscent);
+                    usesFallback = true;
+                }
             }
             glyphIndices!.Add(parameters.GlyphIndex);
             advanceWidths!.Add(parameters.AdvanceWidth);
@@ -209,12 +222,18 @@ public class GlyphLine : IDisposable
         }
 
         FlushRun();
-        Size = new Size(totalWidth, typeface.Height * fontSize);
+        if (usesFallback)
+        {
+            _baselineOffset = ascent - baseline;
+            height = Math.Max(AdvanceHeight, ascent + descent);
+            AdvanceHeight = height;
+        }
+        Size = new Size(totalWidth, height);
     }
 
     public void Render(Point position, Brush brush, DrawingContext drawingContext)
     {
-        drawingContext.PushTransform(new TranslateTransform(position.X, position.Y));
+        drawingContext.PushTransform(new TranslateTransform(position.X, position.Y + _baselineOffset));
         foreach (var run in _runs)
             drawingContext.DrawGlyphRun(brush, run);
         drawingContext.Pop();

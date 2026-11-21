@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Windows;
 using System.Windows.Media;
@@ -83,6 +85,37 @@ namespace LogGrokX.Tests
                 Assert.AreEqual(line.Size.Width, GlyphLine.MeasureWidth(text.AsSpan(), glyphTypeface, 12), 0.001);
             });
         }
+
+        [TestMethod]
+        public void MixedFontRunsShareOneBaselineAndFitTheLineBox()
+        {
+            RunOnSta(() =>
+            {
+                Assert.IsTrue(new Typeface("Consolas").TryGetGlyphTypeface(out var typeface));
+                const double size = 36;
+                using var line = new GlyphLine(StringRange.FromString("A日本語B"), typeface, size, 1.5f, double.PositiveInfinity);
+                var drawing = new DrawingGroup();
+                using (var context = drawing.Open())
+                    line.Render(new Point(), Brushes.Black, context);
+
+                var runs = GlyphRuns(drawing).ToArray();
+                Assert.IsGreaterThan(1, runs.Select(run => run.GlyphTypeface).Distinct().Count());
+                Assert.IsFalse(runs.SelectMany(run => run.GlyphIndices).Contains((ushort)0));
+                Assert.HasCount(1, runs.Select(run => run.BaselineOrigin.Y).Distinct());
+
+                var ascent = runs.Max(run => Math.Round(run.GlyphTypeface.Baseline * size));
+                var descent = runs.Max(run => run.GlyphTypeface.Height * size - Math.Round(run.GlyphTypeface.Baseline * size));
+                Assert.IsGreaterThanOrEqualTo(ascent + descent - 0.001, line.Size.Height);
+                Assert.IsGreaterThanOrEqualTo(line.Size.Height, line.AdvanceHeight);
+            });
+        }
+
+        private static IEnumerable<GlyphRun> GlyphRuns(Drawing drawing) => drawing switch
+        {
+            GlyphRunDrawing run => [run.GlyphRun],
+            DrawingGroup group => group.Children.SelectMany(GlyphRuns),
+            _ => []
+        };
 
         private static void RunOnSta(Action action)
         {
