@@ -415,6 +415,52 @@ public sealed class PresentationBoundaryTests
         new(new SearchViewModel(_ => throw new InvalidOperationException(), new SearchAutocompleteCache(), store,
             TestServices.Inline, TestServices.Dialogs));
 
+    [TestMethod]
+    public void ClearingMarksReleasesRowsWhileTheirDocumentStaysOpen()
+    {
+        RunOnSta(() =>
+        {
+            var path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllText(path, "marked message\n");
+                using var model = TestServices.CreateMain(new ApplicationSettings());
+                model.AddDocument(path);
+                var document = model.CurrentDocument!;
+                WaitFor(() => !document.LogViewModel.IsLoading);
+
+                var clearedRows = new[]
+                {
+                    MarkAndClearRow(model.MarkedLinesViewModel, document),
+                    MarkAndClearRow(model.MarkedLinesViewModel, document),
+                    MarkAndClearRow(model.MarkedLinesViewModel, document)
+                };
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                Assert.AreEqual(0, clearedRows.Count(row => row.IsAlive));
+                Assert.AreSame(document, model.CurrentDocument);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference MarkAndClearRow(MarkedLinesViewModel markedLines, DocumentViewModel document)
+    {
+        document.MarkedLines.Add(0);
+        WaitFor(() => markedLines.MarkedLines.Count == 1);
+        var row = new WeakReference(markedLines.MarkedLines[0]);
+        markedLines.ClearDocumentMarksCommand.Execute(document);
+        WaitFor(() => markedLines.MarkedLines.Count == 0);
+        return row;
+    }
+
     private static SavedSearchPattern Saved(string name) => SavedSearchPattern.FromSearchPattern(name, new SearchPattern(name, false, false));
 
     private static void WithMessageGutter(bool enabled, Action action)

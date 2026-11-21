@@ -22,7 +22,7 @@
     <Style x:Key="MarkedLinesItemContainerStyle" TargetType="{x:Type ListViewItem}"
            BasedOn="{StaticResource ItemContainerStyle}">
         <Style.Setters>
-            <Setter Property="colors:ColorSettings.ColorSettings" Value="{Binding ColorSettings}" />
+            <Setter Property="colors:ColorSettings.ColorSettings" Value="{Binding Document.ColorSettings}" />
         </Style.Setters>
     </Style>
     <DataTemplate DataType="{x:Type markedLines:MarkedLinesViewModel}">
