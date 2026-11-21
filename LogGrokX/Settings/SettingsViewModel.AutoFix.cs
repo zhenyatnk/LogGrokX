@@ -328,6 +328,9 @@ namespace LogGrokX.Settings
 
         private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(ValueMappingListViewModel.SamplePreview))
+                return;
+
             SelectedValueMapping?.RefreshPreview();
             RevalidateIfVisible();
         }
