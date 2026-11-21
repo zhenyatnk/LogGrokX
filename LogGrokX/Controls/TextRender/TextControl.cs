@@ -132,7 +132,9 @@ public class TextControl : Control
 
     private static double GetHorizontalOffset(bool isCollapsible)
     {
-        return isCollapsible ? TextView.ExpanderMargin : 0.0;
+        return FoldingLayoutOptions.Instance.Current == FoldingLayoutMode.FixedGutter || isCollapsible
+            ? TextView.ExpanderMargin
+            : 0.0;
     }
 
     private static double GetHorizontalOffset((GlyphLine glyphLine, bool isCollapsible) textLine)

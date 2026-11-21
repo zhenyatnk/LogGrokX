@@ -32,6 +32,8 @@ public class TextModel : IReadOnlyList<StringRange>
 
     public int UniqueId { get; }
 
+    public int? RootFoldingLine { get; }
+
     public List<(int start, int length)>? CollapsibleRanges { get; }
 
     public StringRange GetCollapsedTextSubstitution(int index)
@@ -377,6 +379,16 @@ public class TextModel : IReadOnlyList<StringRange>
             _sourceText = StringRange.FromString(TextOperations.Normalize(source, viewSettings));
             _plainSource = source;
         }
+
+        RootFoldingLine = structuredRanges.Count == 0
+            ? null
+            : CollapsibleRanges?
+                .Where(candidate => !CollapsibleRanges.Any(other =>
+                    other.start < candidate.start &&
+                    other.start + other.length >= candidate.start + candidate.length))
+                .OrderBy(candidate => candidate.start)
+                .Cast<(int start, int length)?>()
+                .FirstOrDefault()?.start;
     }
 
     private (List<StringRange> textLines, List<(int start, int length)> collapsibleRanges)

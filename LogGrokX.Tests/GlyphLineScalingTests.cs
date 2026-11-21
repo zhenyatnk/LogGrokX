@@ -89,13 +89,19 @@ namespace LogGrokX.Tests
             Exception error = null;
             var thread = new Thread(() =>
             {
+                var previous = FoldingLayoutOptions.Instance.Current;
                 try
                 {
+                    FoldingLayoutOptions.Instance.Current = FoldingLayoutMode.RootInPinColumn;
                     action();
                 }
                 catch (Exception e)
                 {
                     error = e;
+                }
+                finally
+                {
+                    FoldingLayoutOptions.Instance.Current = previous;
                 }
             });
             thread.SetApartmentState(ApartmentState.STA);
