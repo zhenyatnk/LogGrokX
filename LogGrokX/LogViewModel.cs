@@ -36,7 +36,7 @@ namespace LogGrokX
         private readonly ThreadGroupingService _threadGroupingService;
         private readonly CurrentThreadFilter _currentThreadFilter;
         private readonly int _threadFieldIndex;
-        private int _currentItemIndex;
+        private int _currentItemIndex = -1;
         private readonly IReadOnlyList<ItemViewModel> _headerCollection;
         private readonly CancellationTokenSource _loadingCancellation = new();
         private bool _disposed;
