@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,6 +23,7 @@ using AvalonDock.Themes.VS2013.Themes;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
+using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.MarkedLines;
 using LogGrokX.Platform;
@@ -167,6 +169,57 @@ public sealed class PresentationBoundaryTests
             .Single(view => view.Attribute("TextModel")?.Value == "{Binding Text.TextModel, Mode=OneWay}");
 
         Assert.AreEqual("True", wholeText.Attribute(textRender + "TextView.UseFixedFoldingGutter")?.Value);
+    }
+
+    [TestMethod]
+    public void MarkedLinesEnabledGutterAppliesToPlainText()
+    {
+        RunOnSta(() => WithMessageGutter(true, () =>
+        {
+            var view = CreateMarkedTextView(new TextModel(50, "plain"));
+            AssertMarkedTextWidth(view, TextView.ExpanderMargin);
+        }));
+    }
+
+    [TestMethod]
+    public void MarkedLinesEnabledGutterAppliesToStructuredText()
+    {
+        RunOnSta(() => WithMessageGutter(true, () =>
+        {
+            var view = CreateMarkedTextView(new TextModel(51, "{\"a\":{\"b\":1}}"));
+            AssertMarkedTextWidth(view, TextView.ExpanderMargin);
+        }));
+    }
+
+    [TestMethod]
+    public void MarkedLinesDisabledGutterRestoresLegacyOffsets()
+    {
+        RunOnSta(() => WithMessageGutter(false, () =>
+        {
+            var plain = CreateMarkedTextView(new TextModel(52, "plain"));
+            var structured = CreateMarkedTextView(new TextModel(53, "{\"a\":{\"b\":1}}"));
+
+            AssertMarkedTextWidth(plain, 0);
+            AssertMarkedTextWidth(structured, TextView.ExpanderMargin);
+        }));
+    }
+
+    [TestMethod]
+    public void MarkedLinesSettingChangeUpdatesExistingTextView()
+    {
+        RunOnSta(() => WithMessageGutter(false, () =>
+        {
+            var view = CreateMarkedTextView(new TextModel(54, "plain"));
+            var control = (TextControl)VisualTreeHelper.GetChild(view, 0);
+            var regex = new Regex("plain");
+            var initialBounds = control.GetHighlightGeometries(control.TextLines, regex)!.Bounds;
+
+            FoldingLayoutOptions.Instance.UseMessageGutter = true;
+            var updatedBounds = control.GetHighlightGeometries(control.TextLines, regex)!.Bounds;
+
+            Assert.IsFalse(view.IsMeasureValid);
+            Assert.AreEqual(initialBounds.X + TextView.ExpanderMargin, updatedBounds.X, 0.001);
+        }));
     }
 
     [TestMethod]
@@ -364,11 +417,73 @@ public sealed class PresentationBoundaryTests
 
     private static SavedSearchPattern Saved(string name) => SavedSearchPattern.FromSearchPattern(name, new SearchPattern(name, false, false));
 
+    private static void WithMessageGutter(bool enabled, Action action)
+    {
+        ApplicationSettings.Instance();
+        var previous = FoldingLayoutOptions.Instance.UseMessageGutter;
+        try
+        {
+            FoldingLayoutOptions.Instance.UseMessageGutter = enabled;
+            action();
+        }
+        finally
+        {
+            FoldingLayoutOptions.Instance.UseMessageGutter = previous;
+        }
+    }
+
+    private static TextView CreateMarkedTextView(TextModel model)
+    {
+        var template = LoadMarkedTextTemplate();
+        var view = (TextView)template.LoadContent();
+        view.DataContext = new
+        {
+            Text = new { TextModel = model },
+            Document = new { FoldingState = new TextViewSharedFoldingState() }
+        };
+        view.TextModel = model;
+        var infinite = new Size(double.PositiveInfinity, double.PositiveInfinity);
+        view.Measure(infinite);
+        view.Arrange(new Rect(view.DesiredSize));
+        return view;
+    }
+
+    private static void AssertMarkedTextWidth(TextView view, double expectedMargin)
+    {
+        var control = (TextControl)VisualTreeHelper.GetChild(view, 0);
+        var textWidth = control.TextLines!.Max(line => line.glyphLine.Size.Width);
+        Assert.AreEqual(textWidth + expectedMargin, control.DesiredSize.Width, 0.001);
+    }
+
     private static XDocument LoadMarkedTemplate()
     {
         var path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..",
             "LogGrokX", "Styles", "MarkedLinesViewTemplate.xaml"));
         return XDocument.Load(path);
+    }
+
+    private static DataTemplate LoadMarkedTextTemplate()
+    {
+        var root = LoadMarkedTemplate().Root!;
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace textRender = "clr-namespace:LogGrokX.Controls.TextRender";
+        var template = root.Descendants(presentation + "DataTemplate")
+            .Single(element => element.Elements(textRender + "TextView").Any());
+        foreach (var element in template.Descendants().Where(element =>
+                     element.Name.NamespaceName.StartsWith("clr-namespace:LogGrokX", StringComparison.Ordinal)))
+            element.Name = XName.Get(element.Name.LocalName, element.Name.NamespaceName + ";assembly=LogGrokX");
+        foreach (var attribute in template.Descendants().Attributes().Where(attribute =>
+                     attribute.Name.NamespaceName.StartsWith("clr-namespace:LogGrokX", StringComparison.Ordinal)).ToArray())
+        {
+            attribute.Parent!.SetAttributeValue(XName.Get(attribute.Name.LocalName,
+                attribute.Name.NamespaceName + ";assembly=LogGrokX"), attribute.Value);
+            attribute.Remove();
+        }
+        foreach (var attribute in root.Attributes().Where(attribute => attribute.IsNamespaceDeclaration &&
+                     attribute.Value.StartsWith("clr-namespace:LogGrokX", StringComparison.Ordinal)))
+            attribute.Value += ";assembly=LogGrokX";
+        template.Add(root.Attributes().Where(attribute => attribute.IsNamespaceDeclaration));
+        return (DataTemplate)XamlReader.Parse(template.ToString());
     }
 
     private static ResourceDictionary LoadMarkedResources()
