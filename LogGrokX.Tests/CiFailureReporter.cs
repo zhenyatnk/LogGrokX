@@ -28,6 +28,13 @@ namespace LogGrokX.Tests
         [GlobalTestInitialize]
         public static void ReportStart(TestContext context)
         {
+            if (!context.FullyQualifiedTestClassName.EndsWith("FoldingStateSharingTests")
+                && !context.FullyQualifiedTestClassName.EndsWith("GlyphLineScalingTests")
+                && context.TestName is not "AppendedAndReorderedColorRulesRefreshOpenDocumentWithoutRebuilding"
+                    and not "VennProfileGroupsConsecutiveLinesByThreadInBothViews"
+                    and not "PreviewCombinesSelectedListWithOtherEnabledLists")
+                return;
+
             WriteCommand("notice", "MSTest start",
                 $"{context.FullyQualifiedTestClassName}.{context.TestName}");
         }
