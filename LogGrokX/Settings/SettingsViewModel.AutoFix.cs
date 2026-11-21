@@ -280,6 +280,7 @@ namespace LogGrokX.Settings
 
         private void SubscribeValueMapping(ValueMappingListViewModel list)
         {
+            list.PreviewLists = () => ValueMappings;
             list.PropertyChanged += OnValidationInputChanged;
             list.Items.CollectionChanged += OnMappingItemsChanged;
             foreach (var item in list.Items)
@@ -307,6 +308,7 @@ namespace LogGrokX.Settings
         private void OnValueMappingsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             SubscribeNewItems<ValueMappingListViewModel>(e, SubscribeValueMapping);
+            SelectedValueMapping?.RefreshPreview();
             RevalidateIfVisible();
         }
 
@@ -324,7 +326,11 @@ namespace LogGrokX.Settings
                 subscribe(item);
         }
 
-        private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e) => RevalidateIfVisible();
+        private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            SelectedValueMapping?.RefreshPreview();
+            RevalidateIfVisible();
+        }
 
         private static bool IsRegexValid(string pattern) => TryCreateRegex(pattern) != null;
 

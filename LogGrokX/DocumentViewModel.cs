@@ -162,7 +162,15 @@ namespace LogGrokX
 
         internal ILineParser LineParser => _lineParser;
 
-        public ColorRuleSet ColorSettings { get; }
+        public ColorRuleSet ColorSettings { get; private set; }
+
+        public void SetColorSettings(ColorRuleSet settings)
+        {
+            if (ReferenceEquals(ColorSettings, settings))
+                return;
+            ColorSettings = settings;
+            InvokePropertyChanged(nameof(ColorSettings));
+        }
 
         public TextViewSharedFoldingState FoldingState { get; }
 
