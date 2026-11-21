@@ -62,6 +62,8 @@ namespace LogGrokX.Settings
         private string _fields = string.Empty;
         private string _sampleText = string.Empty;
         private ValueMappingItemViewModel? _selectedItem;
+        private Func<IEnumerable<ValueMappingListViewModel>>? _previewLists;
+        private FieldValueMapper? _previewMapper;
 
         public ValueMappingListViewModel()
             : this(new ValueMappingList())
@@ -124,7 +126,7 @@ namespace LogGrokX.Settings
                 if (_enabled == value)
                     return;
                 _enabled = value;
-                InvokePropertyChanged();
+                OnPreviewConfigurationChanged(nameof(Enabled));
             }
         }
 
@@ -136,8 +138,7 @@ namespace LogGrokX.Settings
                 if (_ignoreCase == value)
                     return;
                 _ignoreCase = value;
-                InvokePropertyChanged();
-                InvokePropertyChanged(nameof(SamplePreview));
+                OnPreviewConfigurationChanged(nameof(IgnoreCase));
             }
         }
 
@@ -183,26 +184,37 @@ namespace LogGrokX.Settings
             }
         }
 
-        public Func<IEnumerable<ValueMappingListViewModel>>? PreviewLists { get; set; }
-
-        public string SamplePreview
+        public Func<IEnumerable<ValueMappingListViewModel>>? PreviewLists
         {
-            get
+            get => _previewLists;
+            set
             {
-                var lists = PreviewLists?.Invoke() ?? new[] { this };
-                var data = lists.Select(list =>
-                {
-                    var item = list.ToData();
-                    item.Fields = Array.Empty<string>();
-                    if (ReferenceEquals(list, this))
-                        item.Enabled = true;
-                    return item;
-                }).ToArray();
-                return ValueMappingText.Apply(_sampleText, new ValueMapper(data).ForField(null));
+                _previewLists = value;
+                InvalidatePreview();
             }
         }
 
+        public string SamplePreview =>
+            ValueMappingText.Apply(_sampleText, _previewMapper ??= CreatePreviewMapper());
+
+        internal void InvalidatePreview() => _previewMapper = null;
+
         public void RefreshPreview() => InvokePropertyChanged(nameof(SamplePreview));
+
+        private FieldValueMapper CreatePreviewMapper()
+        {
+            var lists = PreviewLists?.Invoke() ?? new[] { this };
+            var data = lists
+                .Where(list => list.Enabled || ReferenceEquals(list, this))
+                .Select(list =>
+                {
+                    var item = list.ToData();
+                    item.Fields = Array.Empty<string>();
+                    item.Enabled = true;
+                    return item;
+                });
+            return new ValueMapper(data).ForField(null);
+        }
 
         public IEnumerable<string> GetValidationErrors() => GetValidationProblems().Select(problem => problem.Message);
 
@@ -248,15 +260,17 @@ namespace LogGrokX.Settings
                     item.PropertyChanged += OnItemPropertyChanged;
             }
 
-            OnItemsModified();
+            OnPreviewConfigurationChanged(nameof(Items));
         }
 
-        private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e) => OnItemsModified();
+        private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e) =>
+            OnPreviewConfigurationChanged(nameof(Items));
 
-        private void OnItemsModified()
+        private void OnPreviewConfigurationChanged(string propertyName)
         {
-            InvokePropertyChanged(nameof(Items));
-            InvokePropertyChanged(nameof(SamplePreview));
+            InvalidatePreview();
+            InvokePropertyChanged(propertyName);
+            RefreshPreview();
         }
     }
 }

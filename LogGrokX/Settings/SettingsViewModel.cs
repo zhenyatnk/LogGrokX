@@ -135,6 +135,7 @@ namespace LogGrokX.Settings
             {
                 if (ReferenceEquals(_selectedValueMapping, value))
                     return;
+                _selectedValueMapping?.InvalidatePreview();
                 _selectedValueMapping = value;
                 InvokePropertyChanged();
                 InvokePropertyChanged(nameof(HasSelectedValueMapping));

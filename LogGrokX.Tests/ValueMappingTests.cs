@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using LogGrokX.Controls;
@@ -221,8 +222,66 @@ namespace LogGrokX.Tests
 
             Assert.AreEqual("code 0x00002(type 2) and disk full(long wins)", selected.SamplePreview);
 
+            var previews = new List<string>();
+            selected.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(selected.SamplePreview))
+                    previews.Add(selected.SamplePreview);
+            };
+            dialog.ValueMappings[0].Items[0].Mapping = "updated";
+            CollectionAssert.AreEqual(new[] { "code 0x00002(updated) and disk full(long wins)" }, previews);
+            previews.Clear();
+
             dialog.ValueMappings[0].Enabled = false;
-            Assert.AreEqual("code 0x00002 and disk full(long wins)", selected.SamplePreview);
+            CollectionAssert.AreEqual(new[] { "code 0x00002 and disk full(long wins)" }, previews);
+        }
+
+        [TestMethod]
+        public void EditingSampleTextRaisesOnePreviewChange()
+        {
+            var dialog = ProfileSettingsTests.CreateEditor(new ApplicationSettings
+            {
+                ValueMappings = [new ValueMappingList
+                {
+                    Name = "Test",
+                    Items = [new ValueMappingItem { Value = "word", Mapping = "value" }]
+                }]
+            });
+            var list = dialog.SelectedValueMapping!;
+            var previews = new List<string>();
+            list.PropertyChanged += (_, args) =>
+            {
+                if (args.PropertyName == nameof(list.SamplePreview))
+                    previews.Add(list.SamplePreview);
+            };
+
+            list.SampleText = "a word";
+
+            CollectionAssert.AreEqual(new[] { "a word(value)" }, previews);
+        }
+
+        [TestMethod]
+        public void SampleTextReusesMappingRulesUntilTheyChange()
+        {
+            var list = new ValueMappingListViewModel(new ValueMappingList
+            {
+                Items = [new ValueMappingItem { Value = "word", Mapping = "value" }]
+            });
+            var mapperInputsRead = 0;
+            list.PreviewLists = () =>
+            {
+                mapperInputsRead++;
+                return [list];
+            };
+
+            Assert.AreEqual("word(value)", list.SamplePreview);
+            list.SampleText = "a word";
+            Assert.AreEqual("a word(value)", list.SamplePreview);
+            Assert.AreEqual(1, mapperInputsRead);
+
+            list.Items[0].Mapping = "new";
+            Assert.AreEqual("a word(new)", list.SamplePreview);
+            Assert.AreEqual(2, mapperInputsRead);
         }
 
         [TestMethod]
