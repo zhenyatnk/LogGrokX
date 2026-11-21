@@ -12,6 +12,7 @@ namespace LogGrokX.Settings
     public sealed partial class SettingsViewModel
     {
         private IReadOnlyList<SettingsProblem> _autoFixes = Array.Empty<SettingsProblem>();
+        private HashSet<ValueMappingListViewModel> _observedValueMappings = new();
         private bool _validationActive;
         private bool _suspendValidation;
 
@@ -263,8 +264,7 @@ namespace LogGrokX.Settings
             ValueMappings.CollectionChanged += OnValueMappingsChanged;
             foreach (var profile in Profiles)
                 SubscribeProfile(profile);
-            foreach (var list in ValueMappings)
-                SubscribeValueMapping(list);
+            UpdateValueMappingSubscriptions();
         }
 
         private void SubscribeProfile(ProfileViewModel profile)
@@ -278,13 +278,20 @@ namespace LogGrokX.Settings
                 rule.PropertyChanged += OnValidationInputChanged;
         }
 
-        private void SubscribeValueMapping(ValueMappingListViewModel list)
+        private void UpdateValueMappingSubscriptions()
         {
-            list.PreviewLists = () => ValueMappings;
-            list.PropertyChanged += OnValidationInputChanged;
-            list.Items.CollectionChanged += OnMappingItemsChanged;
-            foreach (var item in list.Items)
-                item.PropertyChanged += OnValidationInputChanged;
+            var currentLists = ValueMappings.ToHashSet();
+            foreach (var list in _observedValueMappings.Except(currentLists))
+            {
+                list.PropertyChanged -= OnValueMappingPropertyChanged;
+                list.PreviewLists = null;
+            }
+            foreach (var list in currentLists.Except(_observedValueMappings))
+            {
+                list.PreviewLists = () => ValueMappings;
+                list.PropertyChanged += OnValueMappingPropertyChanged;
+            }
+            _observedValueMappings = currentLists;
         }
 
         private void OnProfilesChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -307,15 +314,32 @@ namespace LogGrokX.Settings
 
         private void OnValueMappingsChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            SubscribeNewItems<ValueMappingListViewModel>(e, SubscribeValueMapping);
-            SelectedValueMapping?.RefreshPreview();
+            UpdateValueMappingSubscriptions();
+            RefreshValueMappingPreviews();
             RevalidateIfVisible();
         }
 
-        private void OnMappingItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        private void OnValueMappingPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            SubscribeNewItems<ValueMappingItemViewModel>(e, item => item.PropertyChanged += OnValidationInputChanged);
+            if (e.PropertyName is nameof(ValueMappingListViewModel.SampleText)
+                or nameof(ValueMappingListViewModel.SamplePreview) or nameof(ValueMappingListViewModel.SelectedItem))
+                return;
+
+            if (e.PropertyName is nameof(ValueMappingListViewModel.Enabled)
+                or nameof(ValueMappingListViewModel.IgnoreCase) or nameof(ValueMappingListViewModel.Items))
+                RefreshValueMappingPreviews(sender as ValueMappingListViewModel);
+
             RevalidateIfVisible();
+        }
+
+        private void RefreshValueMappingPreviews(ValueMappingListViewModel? changedList = null)
+        {
+            foreach (var list in ValueMappings)
+                list.InvalidatePreview();
+
+            if (SelectedValueMapping is { } selected && !ReferenceEquals(selected, changedList)
+                && _observedValueMappings.Contains(selected))
+                selected.RefreshPreview();
         }
 
         private static void SubscribeNewItems<T>(NotifyCollectionChangedEventArgs e, Action<T> subscribe)
@@ -326,14 +350,7 @@ namespace LogGrokX.Settings
                 subscribe(item);
         }
 
-        private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(ValueMappingListViewModel.SamplePreview))
-                return;
-
-            SelectedValueMapping?.RefreshPreview();
-            RevalidateIfVisible();
-        }
+        private void OnValidationInputChanged(object? sender, PropertyChangedEventArgs e) => RevalidateIfVisible();
 
         private static bool IsRegexValid(string pattern) => TryCreateRegex(pattern) != null;
 
