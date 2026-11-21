@@ -306,6 +306,7 @@ public class ProfileRuntimeTests
                 var document = main.CurrentDocument!;
                 WaitFor(() => !document.LogViewModel.IsLoading);
                 var log = document.LogViewModel;
+                Assert.AreEqual(-1, log.CurrentItemIndex);
                 Assert.IsTrue(log.ThreadFieldIndex >= 0);
                 Assert.AreEqual(Array.IndexOf(document.MetaInformation.FieldNames, "Thread"), log.ThreadFieldIndex);
                 var lines = log.Lines.Cast<ItemViewModel>().OfType<LineViewModel>().ToArray();
@@ -315,6 +316,7 @@ public class ProfileRuntimeTests
 
                 main.IsGroupByThread = true;
                 Assert.IsTrue(log.GroupByThread);
+                Assert.AreEqual(-1, log.CurrentItemIndex);
                 Assert.IsTrue(main.MergedViewModel.GroupByThread);
                 main.IsMergedView = true;
                 WaitFor(() => main.MergedViewModel.TotalLineCount == 3);
@@ -420,6 +422,52 @@ public class ProfileRuntimeTests
                 Assert.AreNotSame(original, main.CurrentDocument);
                 CollectionAssert.AreEqual(new[] { "Text" }, main.CurrentDocument!.MetaInformation.FieldNames);
                 WaitFor(() => !main.CurrentDocument!.LogViewModel.IsLoading);
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void AppendedAndReorderedColorRulesRefreshOpenDocumentWithoutRebuilding()
+    {
+        RunOnSta(() =>
+        {
+            var path = Path.GetTempFileName();
+            File.WriteAllText(path, "INFO custom-rule-token\n");
+            try
+            {
+                var settings = new ApplicationSettings
+                {
+                    Profiles = [Profile("Active", "^(?'Message'.*)", "Red")],
+                    SelectedProfile = "Active"
+                };
+                using var main = CreateMain(settings);
+                main.AddDocument(path);
+                var original = main.CurrentDocument!;
+                WaitFor(() => !original.LogViewModel.IsLoading);
+
+                var appended = Profile("Active", "^(?'Message'.*)", "Red");
+                appended.ColorSettings!.Rules =
+                [
+                    .. appended.ColorSettings.Rules,
+                    new ColorRule { RegexString = "custom-rule-token", ForegroundColor = "#FF0000FF", BackgroundColor = "Yellow" }
+                ];
+                settings.UpdateProfiles([appended], "Active");
+
+                Assert.AreSame(original, main.CurrentDocument);
+                Assert.AreEqual(2, original.ColorSettings.Rules.Count);
+                Assert.AreEqual("custom-rule-token", original.ColorSettings.Rules[^1].Regex.ToString());
+                Assert.AreEqual(2, main.MergedViewModel.ColorSettings.Rules.Count);
+
+                var reordered = Profile("Active", "^(?'Message'.*)", "Red");
+                reordered.ColorSettings!.Rules = [appended.ColorSettings.Rules[^1], appended.ColorSettings.Rules[0]];
+                settings.UpdateProfiles([reordered], "Active");
+
+                Assert.AreSame(original, main.CurrentDocument);
+                Assert.AreEqual("custom-rule-token", original.ColorSettings.Rules[0].Regex.ToString());
             }
             finally
             {

@@ -234,6 +234,15 @@ namespace LogGrokX
                 if (logFormatError != null)
                     throw new InvalidOperationException(logFormatError);
                 colors = new Platform.Colors.ColorRuleSet(profile.ColorSettings ?? new Platform.Colors.Configuration.ColorSettings(), _colorValidator);
+                if (_appliedProfile.HasSameLogFormats(profile))
+                {
+                    foreach (var document in documents)
+                        document.SetColorSettings(colors);
+                    MergedViewModel.SetColorSettings(colors);
+                    _appliedProfile = profile;
+                    _lastFailedProfile = null;
+                    return true;
+                }
                 foreach (var document in documents)
                 {
                     var replacement = CreateDocumentResources(document.DocumentId, profile);

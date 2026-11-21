@@ -67,6 +67,23 @@ namespace LogGrokX.Tests
             });
         }
 
+        [TestMethod]
+        public void MissingGlyphsUseFallbackTypeface()
+        {
+            RunOnSta(() =>
+            {
+                var typeface = new Typeface("Segoe UI");
+                Assert.IsTrue(typeface.TryGetGlyphTypeface(out var glyphTypeface));
+                Assert.IsFalse(glyphTypeface.CharacterToGlyphMap.ContainsKey('日'));
+                const string text = "A日本語B";
+
+                using var line = new GlyphLine(StringRange.FromString(text), glyphTypeface, 12, 1f, double.PositiveInfinity);
+
+                Assert.IsGreaterThan(1, line.RunCount);
+                Assert.AreEqual(line.Size.Width, GlyphLine.MeasureWidth(text.AsSpan(), glyphTypeface, 12), 0.001);
+            });
+        }
+
         private static void RunOnSta(Action action)
         {
             Exception error = null;

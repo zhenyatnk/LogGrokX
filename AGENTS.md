@@ -65,7 +65,7 @@ JSON folding lives in `Controls/TextRender` (`TextView`,
 `TextViewSharedFoldingState`, `CollapsibleRegionsMachine`, `FoldingManager`).
 JSON and XML fragments are detected by `TextOperations.GetStructuredRanges`
 (outer range wins on overlap), formatted by `FormatInlineStructured`, and
-`TextModel` builds collapsible line ranges from braces (JSON) or
+`TextModel` builds collapsible line ranges from braces and brackets (JSON) or
 `GetXmlElementRanges` (XML). XML is recognized only when the root element has
 child elements, so text like `List<int>` or `<br/>` stays plain (#49).
 Thread grouping is driven by `ThreadGroupingService` (toggled from the title-bar View menu,

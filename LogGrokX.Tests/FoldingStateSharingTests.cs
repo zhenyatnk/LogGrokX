@@ -9,6 +9,19 @@ namespace LogGrokX.Tests
     public class FoldingStateSharingTests
     {
         [TestMethod]
+        public void DefaultSettingsCollapseJsonRegardlessOfSize()
+        {
+            var model = new TextModel(42, "{\"a\":{\"b\":1,\"c\":2}}");
+            var state = new TextViewSharedFoldingState();
+
+            var collapsed = state.GetDefaultSettings(model.CollapsibleRanges!, model.Count);
+
+            Assert.AreEqual(model.CollapsibleRanges!.Count, collapsed.Count);
+            foreach (var range in model.CollapsibleRanges)
+                Assert.IsTrue(collapsed.Contains(range.start));
+        }
+
+        [TestMethod]
         public void CollapseInOneTextViewPropagatesToSharedStateClients()
         {
             RunOnSta(() =>
@@ -22,13 +35,14 @@ namespace LogGrokX.Tests
                 first.TextModel = new TextModel(42, json);
                 second.TextModel = new TextModel(42, json);
 
-                Assert.IsTrue(first.FoldingManager!.CollapseRecursivelyCommand!.CanExecute(null));
-                Assert.IsTrue(second.FoldingManager!.CollapseRecursivelyCommand!.CanExecute(null));
+                Assert.IsTrue(first.FoldingManager!.ExpandRecursivelyCommand!.CanExecute(null));
+                Assert.IsTrue(second.FoldingManager!.ExpandRecursivelyCommand!.CanExecute(null));
 
+                first.FoldingManager.ExpandRecursivelyCommand.Execute(null);
                 first.FoldingManager.CollapseRecursivelyCommand!.Execute(null);
 
-                Assert.IsFalse(first.FoldingManager.CollapseRecursivelyCommand.CanExecute(null));
-                Assert.IsFalse(second.FoldingManager!.CollapseRecursivelyCommand!.CanExecute(null));
+                Assert.IsTrue(first.FoldingManager.ExpandRecursivelyCommand.CanExecute(null));
+                Assert.IsTrue(second.FoldingManager!.ExpandRecursivelyCommand!.CanExecute(null));
             });
         }
 
@@ -45,8 +59,10 @@ namespace LogGrokX.Tests
                 TextView.SetSharedFoldingState(other, state);
                 first.TextModel = new TextModel(1, json);
                 other.TextModel = new TextModel(2, json);
+                first.FoldingManager!.ExpandRecursivelyCommand!.Execute(null);
+                other.FoldingManager!.ExpandRecursivelyCommand!.Execute(null);
 
-                first.FoldingManager!.CollapseRecursivelyCommand!.Execute(null);
+                first.FoldingManager.CollapseRecursivelyCommand!.Execute(null);
 
                 Assert.IsFalse(first.FoldingManager.CollapseRecursivelyCommand.CanExecute(null));
                 Assert.IsTrue(other.FoldingManager!.CollapseRecursivelyCommand!.CanExecute(null));

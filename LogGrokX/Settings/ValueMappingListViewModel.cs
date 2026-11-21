@@ -183,16 +183,26 @@ namespace LogGrokX.Settings
             }
         }
 
+        public Func<IEnumerable<ValueMappingListViewModel>>? PreviewLists { get; set; }
+
         public string SamplePreview
         {
             get
             {
-                var data = ToData();
-                data.Fields = Array.Empty<string>();
-                data.Enabled = true;
-                return ValueMappingText.Apply(_sampleText, new ValueMapper(new[] { data }).ForField(null));
+                var lists = PreviewLists?.Invoke() ?? new[] { this };
+                var data = lists.Select(list =>
+                {
+                    var item = list.ToData();
+                    item.Fields = Array.Empty<string>();
+                    if (ReferenceEquals(list, this))
+                        item.Enabled = true;
+                    return item;
+                }).ToArray();
+                return ValueMappingText.Apply(_sampleText, new ValueMapper(data).ForField(null));
             }
         }
+
+        public void RefreshPreview() => InvokePropertyChanged(nameof(SamplePreview));
 
         public IEnumerable<string> GetValidationErrors() => GetValidationProblems().Select(problem => problem.Message);
 
