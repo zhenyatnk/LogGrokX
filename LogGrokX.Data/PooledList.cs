@@ -71,7 +71,7 @@ public class PooledList<T> : IList<T>, IList, IDisposable
     public void Remove(object? value)  => throw new NotSupportedException();  
             
     public bool Contains(T item) => IndexOf(item) > 0;
-    public void CopyTo(T[] array, int arrayIndex)  => _data[.._count].CopyTo(array, arrayIndex);
+    public void CopyTo(T[] array, int arrayIndex) => Array.Copy(_data, 0, array, arrayIndex, _count);
     public bool Remove(T item) => throw new NotSupportedException();
     public void CopyTo(Array array, int index) => throw new NotSupportedException();
     public int Count => _count;
