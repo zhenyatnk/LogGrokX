@@ -25,6 +25,13 @@ namespace LogGrokX.Tests
             };
         }
 
+        [GlobalTestInitialize]
+        public static void ReportStart(TestContext context)
+        {
+            WriteCommand("notice", "MSTest start",
+                $"{context.FullyQualifiedTestClassName}.{context.TestName}");
+        }
+
         [GlobalTestCleanup]
         public static void ReportFailure(TestContext context)
         {
@@ -36,6 +43,15 @@ namespace LogGrokX.Tests
             var name = $"{context.FullyQualifiedTestClassName}.{context.TestName}"
                 .Replace("%", "%25").Replace("\r", "%0D").Replace("\n", "%0A");
             throw new InvalidOperationException($"\n::error title=MSTest failure::{name}");
+        }
+
+        private static void WriteCommand(string level, string title, string message)
+        {
+            message = message.Replace("%", "%25").Replace("\r", "%0D").Replace("\n", "%0A");
+            var bytes = Encoding.UTF8.GetBytes($"::{level} title={title}::{message}\n");
+            using var stream = Console.OpenStandardError();
+            stream.Write(bytes, 0, bytes.Length);
+            stream.Flush();
         }
 
         [AssemblyCleanup]
