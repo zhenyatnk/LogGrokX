@@ -16,13 +16,19 @@ public sealed class ProfileSettings
     {
         var rules = ColorSettings?.Rules ?? Array.Empty<ColorRule>();
         var otherRules = other.ColorSettings?.Rules ?? Array.Empty<ColorRule>();
-        var formats = LogFormats ?? Array.Empty<LogFormat>();
-        var otherFormats = other.LogFormats ?? Array.Empty<LogFormat>();
-        return rules.Length == otherRules.Length && formats.Length == otherFormats.Length &&
+        return rules.Length == otherRules.Length &&
                rules.Zip(otherRules).All(pair =>
                    pair.First.RegexString == pair.Second.RegexString &&
                    pair.First.ForegroundColor == pair.Second.ForegroundColor &&
                    pair.First.BackgroundColor == pair.Second.BackgroundColor) &&
+               HasSameLogFormats(other);
+    }
+
+    public bool HasSameLogFormats(ProfileSettings other)
+    {
+        var formats = LogFormats ?? Array.Empty<LogFormat>();
+        var otherFormats = other.LogFormats ?? Array.Empty<LogFormat>();
+        return formats.Length == otherFormats.Length &&
                formats.Zip(otherFormats).All(pair =>
                    pair.First.Regex == pair.Second.Regex &&
                    pair.First.TimeField == pair.Second.TimeField &&

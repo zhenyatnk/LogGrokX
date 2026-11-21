@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
 using System.Windows.Media;
@@ -9,19 +10,28 @@ namespace LogGrokX.Controls.TextRender;
 
 public class GlyphLine : IDisposable
 {
-    private readonly GlyphRun? _run;
-    private readonly PooledList<ushort> _glyphIndices = new();
-    private readonly PooledList<double> _advanceWidthsForGlyph = new();
+    private readonly List<GlyphRun> _runs = new();
     private readonly PooledList<double> _advanceWidthForChar = new();
-        
-    private static readonly ConcurrentDictionary<(GlyphTypeface typeface, double fontSize, char ch), (double advanceWidth, double advanceHeight, ushort glyphIndex)> TypefaceCache = new();
+
+    private static readonly ConcurrentDictionary<(GlyphTypeface typeface, double fontSize, char ch), GlyphParameters>
+        TypefaceCache = new();
+
+    private static readonly Lazy<GlyphTypeface[]> FallbackTypefaces = new(CreateFallbackTypefaces);
+
+    private readonly record struct GlyphParameters(
+        double AdvanceWidth,
+        double AdvanceHeight,
+        ushort GlyphIndex,
+        GlyphTypeface Typeface);
 
     public Size Size { get; }
-        
-    public double AdvanceHeight { get; }
+
+    public double AdvanceHeight { get; private set; }
 
     public StringRange Text { get; }
-       
+
+    internal int RunCount => _runs.Count;
+
     public int GetNearestTextPosition(double relativeHorizontalPosition)
     {
         if (relativeHorizontalPosition <= 0)
@@ -65,13 +75,38 @@ public class GlyphLine : IDisposable
         return new Rect(start + startPoint.X, startPoint.Y, width, height);
     }
 
-    private static (double advanceWidth, double advanceHeight, ushort glyphIndex) GetGlyphParametersForChar(
+    private static GlyphTypeface[] CreateFallbackTypefaces()
+    {
+        var result = new List<GlyphTypeface>();
+        foreach (var name in new[]
+                 {
+                     "Yu Gothic UI", "Microsoft YaHei", "Meiryo", "SimSun",
+                     "Segoe UI Symbol", "Segoe UI Emoji", "Segoe UI"
+                 })
+        {
+            if (new Typeface(name).TryGetGlyphTypeface(out var typeface))
+                result.Add(typeface);
+        }
+        return result.ToArray();
+    }
+
+    private static GlyphParameters GetGlyphParametersForChar(
         (GlyphTypeface typeface, double fontSize, char ch) key)
     {
-        key.typeface.CharacterToGlyphMap.TryGetValue(key.ch, out var glyphIndex);
-        return (key.typeface.AdvanceWidths[glyphIndex] * key.fontSize,
-            key.typeface.AdvanceHeights[glyphIndex] * key.fontSize,
-            glyphIndex);
+        var typeface = key.typeface;
+        if (!typeface.CharacterToGlyphMap.TryGetValue(key.ch, out var glyphIndex)
+            || glyphIndex == 0 && key.ch != '\0')
+        {
+            foreach (var fallback in FallbackTypefaces.Value)
+            {
+                if (!fallback.CharacterToGlyphMap.TryGetValue(key.ch, out glyphIndex) || glyphIndex == 0)
+                    continue;
+                typeface = fallback;
+                break;
+            }
+        }
+        return new GlyphParameters(typeface.AdvanceWidths[glyphIndex] * key.fontSize,
+            typeface.AdvanceHeights[glyphIndex] * key.fontSize, glyphIndex, typeface);
     }
 
     public static double MeasureWidth(ReadOnlySpan<char> text, GlyphTypeface typeface, double fontSize)
@@ -86,14 +121,13 @@ public class GlyphLine : IDisposable
             if (text[n] == '\t')
             {
                 var spaceCount = indexOfGlyph % 8 == 0 ? 8 : 8 - indexOfGlyph % 8;
-                var (spaceWidth, _, _) = TypefaceCache.GetOrAdd((typeface, fontSize, ' '), GetGlyphParametersForChar);
-                totalWidth += spaceWidth * spaceCount;
+                var space = TypefaceCache.GetOrAdd((typeface, fontSize, ' '), GetGlyphParametersForChar);
+                totalWidth += space.AdvanceWidth * spaceCount;
                 indexOfGlyph += spaceCount;
                 continue;
             }
 
-            var (width, _, _) = TypefaceCache.GetOrAdd((typeface, fontSize, text[n]), GetGlyphParametersForChar);
-            totalWidth += width;
+            totalWidth += TypefaceCache.GetOrAdd((typeface, fontSize, text[n]), GetGlyphParametersForChar).AdvanceWidth;
         }
 
         return totalWidth;
@@ -105,34 +139,62 @@ public class GlyphLine : IDisposable
         Text = text;
         var span = text.Span;
         if (text.Length == 0)
-        {
-            _run = null;
             return;
-        }
-            
-        _glyphIndices = new PooledList<ushort>(text.Length);
-        _advanceWidthsForGlyph = new PooledList<double>(text.Length);
-            
+
         double totalWidth = 0;
-
         var indexOfGlyph = 0;
+        GlyphTypeface? runTypeface = null;
+        List<ushort>? glyphIndices = null;
+        List<double>? advanceWidths = null;
+        double runStart = 0;
 
-        for (var n = 0; n < text.Length && totalWidth <= constraintWidth; n++, indexOfGlyph++) 
+        void FlushRun()
         {
-            ushort glyphIndex;
-            double width;
+            if (runTypeface == null || glyphIndices == null || advanceWidths == null)
+                return;
+            _runs.Add(new GlyphRun(runTypeface,
+                bidiLevel: 0,
+                isSideways: false,
+                renderingEmSize: fontSize,
+                glyphIndices: glyphIndices,
+                baselineOrigin: new Point(runStart, Math.Round(runTypeface.Baseline * fontSize)),
+                advanceWidths: advanceWidths,
+                glyphOffsets: null,
+                characters: null,
+                deviceFontName: null,
+                clusterMap: null,
+                caretStops: null,
+                language: null,
+                pixelsPerDip: pixelsPerDip));
+        }
+
+        void AddGlyph(GlyphParameters parameters)
+        {
+            if (runTypeface != parameters.Typeface)
+            {
+                FlushRun();
+                runTypeface = parameters.Typeface;
+                glyphIndices = new List<ushort>();
+                advanceWidths = new List<double>();
+                runStart = totalWidth;
+            }
+            glyphIndices!.Add(parameters.GlyphIndex);
+            advanceWidths!.Add(parameters.AdvanceWidth);
+            AdvanceHeight = Math.Max(AdvanceHeight, parameters.AdvanceHeight);
+            totalWidth += parameters.AdvanceWidth;
+        }
+
+        for (var n = 0; n < text.Length && totalWidth <= constraintWidth; n++, indexOfGlyph++)
+        {
             if (span[n] == '\t')
             {
                 var advanceWidthForChar = 0.0;
-
-                var spaceCount = indexOfGlyph % 8 == 0 ? 8 : (8 - indexOfGlyph % 8); 
-                (width, _, glyphIndex) = TypefaceCache.GetOrAdd((typeface, fontSize, ' '), GetGlyphParametersForChar);
+                var spaceCount = indexOfGlyph % 8 == 0 ? 8 : 8 - indexOfGlyph % 8;
+                var space = TypefaceCache.GetOrAdd((typeface, fontSize, ' '), GetGlyphParametersForChar);
                 while (spaceCount > 0)
                 {
-                    _glyphIndices.Add(glyphIndex);
-                    _advanceWidthsForGlyph.Add(width);
-                    advanceWidthForChar += width;
-                    totalWidth += width;
+                    AddGlyph(space);
+                    advanceWidthForChar += space.AdvanceWidth;
                     indexOfGlyph++;
                     spaceCount--;
                 }
@@ -141,48 +203,24 @@ public class GlyphLine : IDisposable
                 continue;
             }
 
-            double advHeight;
-            (width, advHeight, glyphIndex) = TypefaceCache.GetOrAdd((typeface, fontSize, span[n]), GetGlyphParametersForChar);
-            _glyphIndices.Add(glyphIndex);
-            AdvanceHeight = Math.Max(AdvanceHeight, advHeight);
-            _advanceWidthsForGlyph.Add(width);
-            _advanceWidthForChar.Add(width);
-            totalWidth += width;
+            var parameters = TypefaceCache.GetOrAdd((typeface, fontSize, span[n]), GetGlyphParametersForChar);
+            AddGlyph(parameters);
+            _advanceWidthForChar.Add(parameters.AdvanceWidth);
         }
-            
-        var height = typeface.Height* fontSize;
-            
-        _run = new GlyphRun(typeface,
-            bidiLevel: 0,
-            isSideways: false,
-            renderingEmSize: fontSize,
-            glyphIndices: _glyphIndices,
-            baselineOrigin: new Point(0, Math.Round(typeface.Baseline * fontSize)),
-            advanceWidths: _advanceWidthsForGlyph,
-            glyphOffsets: null,
-            characters: null,
-            deviceFontName: null,
-            clusterMap: null,
-            caretStops: null,
-            language: null, pixelsPerDip:pixelsPerDip);
 
-        Size = new Size(totalWidth, height);
+        FlushRun();
+        Size = new Size(totalWidth, typeface.Height * fontSize);
     }
 
     public void Render(Point position, Brush brush, DrawingContext drawingContext)
     {
-        if (_run == null) return; 
         drawingContext.PushTransform(new TranslateTransform(position.X, position.Y));
-        drawingContext.DrawGlyphRun(brush, _run);
+        foreach (var run in _runs)
+            drawingContext.DrawGlyphRun(brush, run);
         drawingContext.Pop();
     }
 
-    public void Dispose()
-    {
-        _advanceWidthsForGlyph.Dispose();
-        _advanceWidthForChar.Dispose();
-        _glyphIndices.Dispose();
-    }
+    public void Dispose() => _advanceWidthForChar.Dispose();
 
     public (int start, int length)? Selection { get; private set; }
 

@@ -17,6 +17,11 @@ namespace LogGrokX.MarkedLines
             : base(lineNumber, document.MarkedLines, document.DisplaySettings)
         {
             Document = document;
+            Document.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(DocumentViewModel.ColorSettings))
+                    InvokePropertyChanged(nameof(ColorSettings));
+            };
 
             var uniqueId = HashCode.Combine(lineNumber, document.GetFoldingComponentIndex(text));
             Text = new LinePartViewModel(uniqueId, text, DisplaySettings,
