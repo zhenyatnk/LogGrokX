@@ -100,11 +100,38 @@ namespace LogGrokX
 
         public static IEnumerable<(int start, int length)> GetJsonRanges(string source)
         {
-            return GetBracedGroups(source.AsSpan()).Where(interval => 
-                IsValidJson(source.Substring(interval.start, interval.length)));
+            var candidates = GetBracedGroups(source.AsSpan())
+                .Concat(GetBracketedGroups(source.AsSpan()))
+                .Where(interval => IsValidJson(source.Substring(interval.start, interval.length)))
+                .OrderBy(interval => interval.start)
+                .ThenByDescending(interval => interval.length);
+
+            var result = new List<(int start, int length)>();
+            var acceptedEnd = 0;
+            foreach (var candidate in candidates)
+            {
+                if (candidate.start < acceptedEnd)
+                    continue;
+
+                result.Add(candidate);
+                acceptedEnd = candidate.start + candidate.length;
+            }
+
+            return result;
         }
         
         public static IEnumerable<(int start, int length)> GetBracedGroups(ReadOnlySpan<char> sourceText)
+        {
+            return GetGroups(sourceText, '{', '}');
+        }
+
+        private static IEnumerable<(int start, int length)> GetBracketedGroups(ReadOnlySpan<char> sourceText)
+        {
+            return GetGroups(sourceText, '[', ']');
+        }
+
+        private static IEnumerable<(int start, int length)> GetGroups(ReadOnlySpan<char> sourceText,
+            char openBrace, char closeBrace)
         {
             List<(int, int)>? result = null;
             var offset = 0;
@@ -117,7 +144,7 @@ namespace LogGrokX
 
             while (text.Length > 0)
             {
-                var openBraceIndex = text.IndexOf('{') + offset;
+                var openBraceIndex = text.IndexOf(openBrace) + offset;
                 if (openBraceIndex == -1) return MakeResult(result);
                 var nextBraceIndex = -1;
                 var counter = 0;
@@ -127,10 +154,10 @@ namespace LogGrokX
                 
                 while (counter >= 0)
                 {
-                    var localNextBraceIndex = text.IndexOfAny("{}");
+                    var localNextBraceIndex = text.IndexOfAny(openBrace, closeBrace);
                     if (localNextBraceIndex == -1) return MakeResult(result);
                     nextBraceIndex = localNextBraceIndex + offset;
-                    if (sourceText[nextBraceIndex] == '{')
+                    if (sourceText[nextBraceIndex] == openBrace)
                         counter++;
                     else
                         counter--;
@@ -189,7 +216,7 @@ namespace LogGrokX
 
         public static List<(int start, int length, StructuredTextKind kind)> GetStructuredRanges(string source)
         {
-            if (source.AsSpan().IndexOfAny('{', '<') < 0)
+            if (source.AsSpan().IndexOfAny('{', '<', '[') < 0)
                 return new List<(int start, int length, StructuredTextKind kind)>();
 
             var candidates = GetJsonRanges(source)
@@ -458,23 +485,10 @@ namespace LogGrokX
 
         private static bool IsValidJson(string jsonString)
         {
-            // prevent some exceptions
-            // correct json starts with
-            // { <whitespace> }
-            // or
-            // { <whitespace> "
-            var openBraceIndex = jsonString.IndexOf('{');
-            if (openBraceIndex < 0) return false;
-            var startSpan = jsonString.AsSpan(openBraceIndex+1);
-            var nextValidJsonChar = startSpan.IndexOfAny("\"}");
-            if (nextValidJsonChar < 0) return false;
-                
-            foreach (var ch in startSpan[..nextValidJsonChar])
-            {
-                if (!char.IsWhiteSpace(ch))
-                    return false;
-            }
-            
+            var startSpan = jsonString.AsSpan().TrimStart();
+            if (startSpan.IsEmpty || startSpan[0] is not ('{' or '['))
+                return false;
+
             try
             {
                 using var doc = JsonDocument.Parse(jsonString,

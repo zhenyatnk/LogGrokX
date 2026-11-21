@@ -155,6 +155,22 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void CollapsedOuterJsonArrayIsInlined()
+        {
+            const string source = "[{\"k\":1},{\"k\":2},{\"k\":3}]";
+            var model = new TextModel(1, source);
+            Assert.IsNotNull(model.CollapsibleRanges);
+
+            var root = model.CollapsibleRanges!.OrderByDescending(r => r.length).First();
+            var displayed = model.GetDisplayedText(new HashSet<int> { root.start });
+
+            Assert.IsFalse(displayed.Contains('\n'), $"Expected inline json array but got: {displayed}");
+            StringAssert.Contains(displayed, "\"k\": 1");
+            StringAssert.Contains(displayed, "\"k\": 2");
+            StringAssert.Contains(displayed, "\"k\": 3");
+        }
+
+        [TestMethod]
         public void CollapsedInnerJsonIsInlined()
         {
             var model = new TextModel(1, Json);

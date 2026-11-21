@@ -152,6 +152,19 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void GetStructuredRangesRecognizesJsonArray()
+        {
+            const string json = "[1,2,3]";
+            const string source = "prefix " + json + " suffix";
+
+            var ranges = TextOperations.GetStructuredRanges(source);
+
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(StructuredTextKind.Json, ranges[0].kind);
+            Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
+        }
+
+        [TestMethod]
         public void GetStructuredRangesPrefersOuterRange()
         {
             const string source = "<a><b>{\"x\":1}</b></a> {\"y\":\"<c><d/></c>\"}";
