@@ -18,7 +18,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     private const int MaxLineLength = 8192;  
     private class OutlineData
     {
-        public OutlineData(int lineCount, 
+        public OutlineData(int lineCount,
             (int start, int length)[] collapsibleRegions,
             Func<HashSet<int>?> collapsedLineIndicesGetter)
         {
@@ -171,7 +171,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         var count = TextModel?.Count ?? 0;
         var collapsibleRangesArray = collapsibleRanges.ToArray();
         _outlineData = new OutlineData(
-            count, 
+            count,
             collapsibleRangesArray,
             GetSharedFoldingState);
         
@@ -297,6 +297,25 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     #endregion
 
+    #region UseFixedFoldingGutter property
+
+    public static readonly DependencyProperty UseFixedFoldingGutterProperty = DependencyProperty.RegisterAttached(
+        "UseFixedFoldingGutter", typeof(bool), typeof(TextView),
+        new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.Inherits,
+            static (d, _) => (d as TextView)?.OnFoldingLayoutChanged(null, EventArgs.Empty)));
+
+    public static void SetUseFixedFoldingGutter(DependencyObject element, bool value)
+    {
+        element.SetValue(UseFixedFoldingGutterProperty, value);
+    }
+
+    public static bool GetUseFixedFoldingGutter(DependencyObject element)
+    {
+        return (bool)element.GetValue(UseFixedFoldingGutterProperty);
+    }
+
+    #endregion
+
     #region TransientSettings property
     
     public static readonly DependencyProperty SharedFoldingStateProperty = DependencyProperty.RegisterAttached(
@@ -333,6 +352,22 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     {
         _textControl = new TextControl(this);
         _glyphTypeface = new Lazy<GlyphTypeface>(CreateGlyphTypeface);
+        WeakEventManager<FoldingLayoutOptions, EventArgs>.AddHandler(
+            FoldingLayoutOptions.Instance, nameof(FoldingLayoutOptions.Changed), OnFoldingLayoutChanged);
+    }
+
+    private void OnFoldingLayoutChanged(object? sender, EventArgs e)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.BeginInvoke(new Action(() => OnFoldingLayoutChanged(sender, e)));
+            return;
+        }
+
+        _isCollapsibleStateDirty = true;
+        InvalidateMeasure();
+        InvalidateVisual();
+        _textControl.OnTextLinesChanged();
     }
 
     static TextView()

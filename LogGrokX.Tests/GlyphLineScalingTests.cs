@@ -89,13 +89,19 @@ namespace LogGrokX.Tests
             Exception error = null;
             var thread = new Thread(() =>
             {
+                var previous = FoldingLayoutOptions.Instance.UseMessageGutter;
                 try
                 {
+                    FoldingLayoutOptions.Instance.UseMessageGutter = false;
                     action();
                 }
                 catch (Exception e)
                 {
                     error = e;
+                }
+                finally
+                {
+                    FoldingLayoutOptions.Instance.UseMessageGutter = previous;
                 }
             });
             thread.SetApartmentState(ApartmentState.STA);

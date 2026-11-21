@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowOriginal">
     <value>Pokaż oryginał</value>
   </data>
+  <data xml:space="preserve" name="UseMessageFoldingGutter">
+    <value>Stały margines zwijania w Message</value>
+  </data>
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Pokaż separatory grup wątków</value>
   </data>

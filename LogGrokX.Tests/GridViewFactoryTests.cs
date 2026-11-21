@@ -5,10 +5,12 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls.Primitives;
+using System.Windows.Data;
 using System.Windows.Threading;
 using System.Windows.Controls;
 using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
+using LogGrokX.Controls.TextRender;
 using ColumnSettings = LogGrokX.Controls.ListControls.ColumnSettings;
 using LogGrokX.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -154,6 +156,30 @@ namespace LogGrokX.Tests
                 finally
                 {
                     CultureInfo.CurrentUICulture = previous;
+                }
+            });
+        }
+
+        [TestMethod]
+        public void OnlyMessageCellUsesFixedGutter()
+        {
+            RunOnSta(() =>
+            {
+                var meta = new LogMetaInformation(new LogFormat { Regex = RegexPattern });
+                var view = (System.Windows.Controls.GridView)GridViewFactory.CreateView(
+                    new LogGridModel(meta, new ColumnSettings()), null);
+
+                for (var columnIndex = 1; columnIndex < view.Columns.Count; columnIndex++)
+                {
+                    var template = view.Columns[columnIndex].CellTemplate;
+                    template.Seal();
+                    var content = (FrameworkElement)template.LoadContent();
+                    var cell = content as LogGridViewCell ?? (content is Grid grid
+                        ? grid.Children.OfType<LogGridViewCell>().Single()
+                        : null);
+                    Assert.IsNotNull(cell);
+                    Assert.AreEqual(columnIndex == 6, TextView.GetUseFixedFoldingGutter(cell),
+                        $"Unexpected fixed-gutter setting on column {columnIndex}.");
                 }
             });
         }

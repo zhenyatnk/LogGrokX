@@ -579,6 +579,9 @@
   <data xml:space="preserve" name="ShowOriginal">
     <value>Показать оригинал</value>
   </data>
+  <data xml:space="preserve" name="UseMessageFoldingGutter">
+    <value>Фиксированный отступ folding в Message</value>
+  </data>
   <data xml:space="preserve" name="ShowThreadGroupSeparators">
     <value>Разделители групп потоков</value>
   </data>

@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Input;
 using LogGrokX.AvalonDockExtensions;
+using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.Localization;
 using LogGrokX.MarkedLines;

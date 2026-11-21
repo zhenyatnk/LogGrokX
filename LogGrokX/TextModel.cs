@@ -392,8 +392,8 @@ public class TextModel : IReadOnlyList<StringRange>
         return GetCollapsibleRanges(text, formattedRanges);
     }
 
-    private static (List<StringRange> textLines, List<(int start, int length)> ranges) GetCollapsibleRanges(
-        string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
+    private static (List<StringRange> textLines, List<(int start, int length)> ranges)
+        GetCollapsibleRanges(string source, List<(int start, int length, StructuredTextKind kind)> structuredRanges)
     {
         var lines = source.Tokenize().ToList();
         var result = new List<(int start, int length)>();

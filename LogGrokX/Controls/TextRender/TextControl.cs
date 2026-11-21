@@ -42,7 +42,7 @@ public class TextControl : Control
         Unloaded += OnUnloaded;
     }
 
-    private void OnTextLinesChanged()
+    internal void OnTextLinesChanged()
     {
         ClearAltHover();
         _cachedStringRanges = null;
@@ -130,12 +130,16 @@ public class TextControl : Control
         PerfProbe.RecordRender(perfStart);
     }
 
-    private static double GetHorizontalOffset(bool isCollapsible)
+    private double GetHorizontalOffset(bool isCollapsible)
     {
-        return isCollapsible ? TextView.ExpanderMargin : 0.0;
+        var useFixedGutter = FoldingLayoutOptions.Instance.UseMessageGutter &&
+                             TextView.GetUseFixedFoldingGutter(_textView);
+        return useFixedGutter || isCollapsible
+            ? TextView.ExpanderMargin
+            : 0.0;
     }
 
-    private static double GetHorizontalOffset((GlyphLine glyphLine, bool isCollapsible) textLine)
+    private double GetHorizontalOffset((GlyphLine glyphLine, bool isCollapsible) textLine)
     {
         return GetHorizontalOffset(textLine.isCollapsible);
     }
@@ -318,7 +322,7 @@ public class TextControl : Control
         return lines.Count - 1;
     }
 
-    private static (int lineNumber, int textPosition) GetTextPosition(Point point,
+    private (int lineNumber, int textPosition) GetTextPosition(Point point,
         IList<(GlyphLine glyphLine, bool isCollapsible)> lines)
     {
         var y = GetLineByVerticalPosition(point.Y, lines);
@@ -397,7 +401,7 @@ public class TextControl : Control
         return _textView.GetOriginalTerm(lineNumber, start, length) ?? displayedTerm;
     }
 
-    private static (int lineNumber, int start, int length)? GetTermRangeAtPoint(Point point,
+    private (int lineNumber, int start, int length)? GetTermRangeAtPoint(Point point,
         IList<(GlyphLine glyphLine, bool isCollapsible)> textLines)
     {
         var (lineNumber, _) = GetTextPosition(point, textLines);

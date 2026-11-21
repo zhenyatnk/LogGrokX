@@ -31,6 +31,8 @@ namespace LogGrokX.Controls.GridView
             var indexFieldName = "Index";
             var componentFieldName = meta.FieldNames
                 .FirstOrDefault(field => field.Equals(ComponentFieldName, StringComparison.OrdinalIgnoreCase));
+            var messageFieldIndex = Array.FindIndex(meta.FieldNames,
+                field => field.Equals("Message", StringComparison.OrdinalIgnoreCase));
             var view = new System.Windows.Controls.GridView();
 
             view.Columns.Add(new LogGridViewColumn
@@ -93,6 +95,8 @@ namespace LogGrokX.Controls.GridView
                             Mode = BindingMode.OneWay
                         });
                     }
+                    if (messageFieldIndex >= 0 && fieldIndex == messageFieldIndex)
+                        frameworkElementFactory.SetValue(TextView.UseFixedFoldingGutterProperty, true);
                     if (fieldHeader == ThreadFieldName)
                     {
                         var opacityBinding = new Binding
@@ -103,6 +107,7 @@ namespace LogGrokX.Controls.GridView
                         };
                         frameworkElementFactory.SetBinding(UIElement.OpacityProperty, opacityBinding);
                     }
+
                     if (fieldHeader != componentFieldName)
                     {
                         return new DataTemplate(typeof(DependencyObject))
@@ -133,7 +138,7 @@ namespace LogGrokX.Controls.GridView
                 }
 
                 view.Columns.Add(new LogGridViewColumn
-                {  
+                {
                     HeaderTemplate = BuildHeaderTemplate(),
                     CellTemplate = CreateCellTemplate(),
                     Width = widths == null ? double.NaN : widths[columnIndex++],

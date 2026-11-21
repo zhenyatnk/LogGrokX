@@ -95,6 +95,7 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate DataType="markedLines:MarkedLineViewModel">
                                     <textRender:TextView
+                                        textRender:TextView.UseFixedFoldingGutter="True"
                                         TextModel="{Binding Text.TextModel, Mode=OneWay}"
                                         FontSize="{DynamicResource LogFontSize}"
                                         textRender:TextView.SharedFoldingState="{Binding Document.FoldingState}"

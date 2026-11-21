@@ -298,6 +298,19 @@ The implementation lives in `Controls/TextRender`
 `FoldingManager`). Templates bind it via `textRender:TextView.SharedFoldingState`
 using the same `TextModel.UniqueId`, otherwise expansion falls out of sync.
 
+By default, every Message line reserves the same 12 DIP folding gutter, including
+plain text, so a root expander does not shift structured content relative to
+ordinary rows. Marked-lines whole text uses the same gutter; other columns keep
+the previous collapsible-only margin. **Settings → View → Fixed folding gutter in Message**
+controls this behavior and applies without reopening documents. Turn it off to
+restore the legacy Message margin; the choice is persisted in `appsettings.yaml`:
+
+```yaml
+Settings:
+  ViewSettings:
+    UseMessageFoldingGutter: true
+```
+
 ## 🔣 HEX to text
 
 **Business value.** Network, device and protocol logs often dump payloads as HEX
@@ -843,7 +856,7 @@ The Settings window is organised into tabs:
 
 | Tab | Contents |
 | --- | --- |
-| **View** | Interface language, accent color, text size, thread grouping and separators, timeline placement and visibility, merged view, binary detection, big lines, update mode and title-bar update indicator. |
+| **View** | Interface language, accent color, text size, thread grouping and separators, timeline placement and visibility, merged view, Message folding gutter, binary detection, big lines, update mode and title-bar update indicator. |
 | **Profiles → Colors** | Named profiles and their foreground/background color rules. |
 | **Profiles → Log formats** | Each profile's regular expressions, indexed fields, transformations, time parsing and XOR mask. |
 | **Value mappings** | The mapping lists and their JSON import/export. |

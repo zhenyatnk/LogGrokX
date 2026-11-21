@@ -234,6 +234,27 @@ public class TextControlAltHoverTests
     }
 
     [TestMethod]
+    public void FixedGutterAltHoverUsesMarginForNonCollapsibleGlyph()
+    {
+        RunOnSta(true, () =>
+        {
+            using var line = CreateLine("plain");
+            var textView = new TextView();
+            TextView.SetUseFixedFoldingGutter(textView, true);
+            var control = new TextControl(textView)
+            {
+                TextLines = new List<(GlyphLine glyphLine, bool isCollapsible)> { (line, false) }
+            };
+            var point = GetCharacterPoint(line, 1, TextView.ExpanderMargin);
+
+            control.UpdateAltHover(point, ModifierKeys.Alt);
+
+            Assert.AreEqual(line.GetTextBounds(new Point(TextView.ExpanderMargin, 0), 0, line.Text.Length),
+                control.AltHoverBounds!.Value);
+        });
+    }
+
+    [TestMethod]
     public void AltHoverRequiresOnlyAltAndTextUnderPointer()
     {
         RunOnSta(() =>
@@ -346,18 +367,26 @@ public class TextControlAltHoverTests
         return new Point(bounds.Left + bounds.Width / 2, bounds.Top + bounds.Height / 2);
     }
 
-    private static void RunOnSta(Action action)
+    private static void RunOnSta(Action action) => RunOnSta(false, action);
+
+    private static void RunOnSta(bool useMessageGutter, Action action)
     {
         Exception error = null;
         var thread = new Thread(() =>
         {
+            var previous = FoldingLayoutOptions.Instance.UseMessageGutter;
             try
             {
+                FoldingLayoutOptions.Instance.UseMessageGutter = useMessageGutter;
                 action();
             }
             catch (Exception e)
             {
                 error = e;
+            }
+            finally
+            {
+                FoldingLayoutOptions.Instance.UseMessageGutter = previous;
             }
         });
         thread.SetApartmentState(ApartmentState.STA);

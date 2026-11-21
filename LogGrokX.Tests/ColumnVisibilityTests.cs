@@ -5,6 +5,8 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using System.Windows.Media;
+using LogGrokX.Controls;
 using LogGrokX.Controls.GridView;
 using LogGrokX.Controls.ListControls;
 using LogGrokX.Data;

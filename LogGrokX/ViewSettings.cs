@@ -27,6 +27,8 @@ namespace LogGrokX
 
         public bool ShowThreadGroupSeparators { get; set; } = true;
 
+        public bool UseMessageFoldingGutter { get; set; } = true;
+
         public bool DetectBinary { get; set; } = true;
 
         public bool DetectPem { get; set; } = true;

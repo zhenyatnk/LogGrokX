@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using LogGrokX.Platform.Colors.Configuration;
 using LogGrokX.Controls.ListControls;
+using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 using LogGrokX.Settings;
 using LogGrokX.Symbols;
@@ -152,6 +153,13 @@ namespace LogGrokX
             SetViewSetting(ViewSettings.ShowUpdateIndicator, showUpdateIndicator,
                 value => ViewSettings.ShowUpdateIndicator = value, nameof(ViewSettings.ShowUpdateIndicator));
 
+        public void SetUseMessageFoldingGutter(bool useMessageFoldingGutter)
+        {
+            SetViewSetting(ViewSettings.UseMessageFoldingGutter, useMessageFoldingGutter,
+                value => ViewSettings.UseMessageFoldingGutter = value, nameof(ViewSettings.UseMessageFoldingGutter));
+            FoldingLayoutOptions.Instance.UseMessageGutter = ViewSettings.UseMessageFoldingGutter;
+        }
+
         public void SetBinaryDetection(bool detectBinary, bool detectPem, bool detectBase64, bool detectHex)
         {
             SetViewSetting(ViewSettings.DetectBinary, detectBinary, v => ViewSettings.DetectBinary = v, nameof(ViewSettings.DetectBinary));
@@ -218,6 +226,7 @@ namespace LogGrokX
 
             var configuration = builder.Build();
             var settings = BindSettings(configuration, fileName);
+            FoldingLayoutOptions.Instance.UseMessageGutter = settings.ViewSettings.UseMessageFoldingGutter;
             BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
             ValueMapper.Current = new ValueMapper(settings.ValueMappings);
             SymbolOptions.Current = SymbolOptions.FromSettings(settings.SymbolSettings);
@@ -230,10 +239,12 @@ namespace LogGrokX
                 var newSettings = BindSettings(configuration);
                 settings.ColorSettings = newSettings.ColorSettings;
                 settings.LogFormats = newSettings.LogFormats;
+                settings.ViewSettings.UseMessageFoldingGutter = newSettings.ViewSettings.UseMessageFoldingGutter;
                 settings.ViewSettings.DetectBinary = newSettings.ViewSettings.DetectBinary;
                 settings.ViewSettings.DetectPem = newSettings.ViewSettings.DetectPem;
                 settings.ViewSettings.DetectBase64 = newSettings.ViewSettings.DetectBase64;
                 settings.ViewSettings.DetectHex = newSettings.ViewSettings.DetectHex;
+                FoldingLayoutOptions.Instance.UseMessageGutter = settings.ViewSettings.UseMessageFoldingGutter;
                 BinaryDetectionOptions.Current = BinaryDetectionOptions.FromSettings(settings.ViewSettings);
                 settings.SetValueMappings(newSettings.ValueMappings);
                 settings.SetSymbolSettings(newSettings.SymbolSettings);
