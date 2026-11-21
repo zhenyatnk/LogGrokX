@@ -144,14 +144,16 @@ public class GlyphLine : IDisposable
         double totalWidth = 0;
         var indexOfGlyph = 0;
         GlyphTypeface? runTypeface = null;
-        List<ushort>? glyphIndices = null;
-        List<double>? advanceWidths = null;
+        using var glyphIndicesBuffer = new PooledList<ushort>();
+        using var advanceWidthsBuffer = new PooledList<double>();
         double runStart = 0;
 
         void FlushRun()
         {
-            if (runTypeface == null || glyphIndices == null || advanceWidths == null)
+            if (runTypeface == null)
                 return;
+            var glyphIndices = glyphIndicesBuffer.ToArray();
+            var advanceWidths = advanceWidthsBuffer.ToArray();
             _runs.Add(new GlyphRun(runTypeface,
                 bidiLevel: 0,
                 isSideways: false,
@@ -166,6 +168,8 @@ public class GlyphLine : IDisposable
                 caretStops: null,
                 language: null,
                 pixelsPerDip: pixelsPerDip));
+            glyphIndicesBuffer.Clear();
+            advanceWidthsBuffer.Clear();
         }
 
         void AddGlyph(GlyphParameters parameters)
@@ -174,12 +178,10 @@ public class GlyphLine : IDisposable
             {
                 FlushRun();
                 runTypeface = parameters.Typeface;
-                glyphIndices = new List<ushort>();
-                advanceWidths = new List<double>();
                 runStart = totalWidth;
             }
-            glyphIndices!.Add(parameters.GlyphIndex);
-            advanceWidths!.Add(parameters.AdvanceWidth);
+            glyphIndicesBuffer.Add(parameters.GlyphIndex);
+            advanceWidthsBuffer.Add(parameters.AdvanceWidth);
             AdvanceHeight = Math.Max(AdvanceHeight, parameters.AdvanceHeight);
             totalWidth += parameters.AdvanceWidth;
         }
