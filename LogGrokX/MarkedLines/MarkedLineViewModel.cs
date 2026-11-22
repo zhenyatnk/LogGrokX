@@ -1,7 +1,5 @@
-using LogGrokX.Platform.Colors;
 using System;
 using System.Collections.Generic;
-using LogGrokX.Colors;
 using LogGrokX.Controls.TextRender;
 using LogGrokX.Data;
 
@@ -11,17 +9,11 @@ namespace LogGrokX.MarkedLines
     {
         public DocumentViewModel Document { get; }
         public LinePartViewModel Text { get; }
-        public ColorRuleSet ColorSettings => Document.ColorSettings;
 
         public MarkedLineViewModel(DocumentViewModel document, int lineNumber, string text)
             : base(lineNumber, document.MarkedLines, document.DisplaySettings)
         {
             Document = document;
-            Document.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(DocumentViewModel.ColorSettings))
-                    InvokePropertyChanged(nameof(ColorSettings));
-            };
 
             var uniqueId = HashCode.Combine(lineNumber, document.GetFoldingComponentIndex(text));
             Text = new LinePartViewModel(uniqueId, text, DisplaySettings,
