@@ -102,7 +102,7 @@ namespace LogGrokX
         {
             var candidates = GetBracedGroups(source.AsSpan())
                 .Concat(GetBracketedGroups(source.AsSpan()))
-                .Where(interval => IsValidJson(source.Substring(interval.start, interval.length)))
+                .Where(interval => IsFoldableJson(source.Substring(interval.start, interval.length)))
                 .OrderBy(interval => interval.start)
                 .ThenByDescending(interval => interval.length);
 
@@ -483,7 +483,7 @@ namespace LogGrokX
             return string.Join(Environment.NewLine, parts);
         }
 
-        private static bool IsValidJson(string jsonString)
+        private static bool IsFoldableJson(string jsonString)
         {
             var startSpan = jsonString.AsSpan().TrimStart();
             if (startSpan.IsEmpty || startSpan[0] is not ('{' or '['))
@@ -493,12 +493,21 @@ namespace LogGrokX
             {
                 using var doc = JsonDocument.Parse(jsonString,
                     new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
-                return true;
+                return !IsSingleNumberArray(doc.RootElement);
             }
             catch (JsonException)
             {
                 return false;
             }
+        }
+
+        // Массив из одного числа ("retry [3] of [5]") чаще всего обычный текст, а не JSON.
+        private static bool IsSingleNumberArray(JsonElement root)
+        {
+            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() != 1)
+                return false;
+
+            return root[0].ValueKind == JsonValueKind.Number;
         }
 
         private static string FormatJsonText(string jsonString) =>

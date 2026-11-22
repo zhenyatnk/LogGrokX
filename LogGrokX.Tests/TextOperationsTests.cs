@@ -164,6 +164,33 @@ namespace LogGrokX.Tests
             Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
         }
 
+        [DataTestMethod]
+        [DataRow("retry [3] of [5]")]
+        [DataRow("value [-1.5e3] end")]
+        [DataRow("value [ 42 ] end")]
+        [DataRow("value [7,] end")]
+        public void GetStructuredRangesSkipsSingleNumberArray(string source)
+        {
+            Assert.AreEqual(0, TextOperations.GetStructuredRanges(source).Count);
+            Assert.AreEqual(source, TextOperations.FormatInlineJson(source));
+        }
+
+        [DataTestMethod]
+        [DataRow("[3,5]")]
+        [DataRow("[\"3\"]")]
+        [DataRow("[[3]]")]
+        [DataRow("[{\"id\":3}]")]
+        [DataRow("[true]")]
+        public void GetStructuredRangesKeepsOtherArrays(string json)
+        {
+            var source = "prefix " + json + " suffix";
+
+            var ranges = TextOperations.GetStructuredRanges(source);
+
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
+        }
+
         [TestMethod]
         public void GetStructuredRangesPrefersOuterRange()
         {
