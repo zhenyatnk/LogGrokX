@@ -164,6 +164,65 @@ namespace LogGrokX.Tests
             Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
         }
 
+        [DataTestMethod]
+        [DataRow("retry [3] of [5]")]
+        [DataRow("value [-1.5e3] end")]
+        [DataRow("value [ 42 ] end")]
+        [DataRow("value [7,] end")]
+        [DataRow("value [\"abc\"] end")]
+        [DataRow("value [true] [null] end")]
+        [DataRow("value [[3]] end")]
+        [DataRow("value [[[\"a\"]]] end")]
+        public void GetStructuredRangesSkipsSingleElementArray(string source)
+        {
+            Assert.AreEqual(0, TextOperations.GetStructuredRanges(source).Count);
+            Assert.AreEqual(source, TextOperations.FormatInlineJson(source));
+        }
+
+        [DataTestMethod]
+        [DataRow("[{\"id\":1,\"name\":\"a\"}]", "{\"id\":1,\"name\":\"a\"}")]
+        [DataRow("[[1,2]]", "[1,2]")]
+        [DataRow("[[[1,2]]]", "[1,2]")]
+        [DataRow("[ {\"a\":1} ]", "{\"a\":1}")]
+        [DataRow("[[1,2],]", "[1,2]")]
+        public void GetStructuredRangesUnwrapsSingleElementArray(string json, string expected)
+        {
+            var source = "prefix " + json + " suffix";
+
+            var ranges = TextOperations.GetStructuredRanges(source);
+
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(expected, source.Substring(ranges[0].start, ranges[0].length));
+        }
+
+        [DataTestMethod]
+        [DataRow("[3,5]")]
+        [DataRow("[1,2,]")]
+        [DataRow("[[1,2],[3]]")]
+        [DataRow("[{\"id\":3},{\"id\":4}]")]
+        [DataRow("{\"tags\":[\"a\"],\"id\":[3]}")]
+        [DataRow("[]")]
+        public void GetStructuredRangesKeepsOtherArrays(string json)
+        {
+            var source = "prefix " + json + " suffix";
+
+            var ranges = TextOperations.GetStructuredRanges(source);
+
+            Assert.AreEqual(1, ranges.Count);
+            Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
+        }
+
+        [TestMethod]
+        public void SingleElementArrayInsideObjectKeepsFolding()
+        {
+            const string source = "data {\"id\":1,\"tags\":[\"a\"]}";
+
+            var formatted = TextOperations.FormatInlineJson(source);
+
+            StringAssert.Contains(formatted, "\"tags\": [");
+            StringAssert.Contains(formatted, "    \"a\"");
+        }
+
         [TestMethod]
         public void GetStructuredRangesPrefersOuterRange()
         {
