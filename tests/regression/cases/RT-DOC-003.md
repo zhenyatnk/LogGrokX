@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\tab-basic.log` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#123](https://github.com/zhenyatnk/LogGrokX/issues/123) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

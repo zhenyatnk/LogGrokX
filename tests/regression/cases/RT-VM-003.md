@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\mapping\vm-invalid.json`<br>`%RT%\testdata\mapping\vm-list.json`<br>`%RT%\testdata\mapping\vm-replace.json` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#125](https://github.com/zhenyatnk/LogGrokX/issues/125) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель
@@ -35,7 +35,7 @@
 | 2 | Импортировать `vm-list.json`, затем `vm-replace.json`. | `… 1 replaced by name. Save to apply.`; в `Reg-Types` одно значение `type 1 (replaced)`. |
 | 3 | Выбрать `Reg-Types` → `Export list...` в `%TEMP%\lgx-vm-one.json`. | `Exported "Reg-Types" to …`; файл — JSON со списком. |
 | 4 | `Export all...` в `%TEMP%\lgx-vm-all.json`. | `Exported N list(s) to …`; массив списков. |
-| 5 | Добавить элемент без значения и дубликат `0x00001`, Save. | Ошибки `Value mapping list "Reg-Types" has an item without a value.` и `… has duplicate values: 0x00001.`; диалог автоисправления с `Fix all and save`. |
+| 5 | Добавить элемент без значения и дубликат `0x00001`, Save. | Ошибки `Value mapping list "Reg-Types" has an item without a value.` и `… has duplicate values: 0x00001.`; диалог автоисправления с `Fix all and save`. Ошибка про пустой элемент показывается отдельно, а не подменяется ошибкой о дубликатах; до подтверждения пустой элемент не удаляется молча (#125). |
 | 6 | `Fix all and save`. | Пустой элемент удалён, дубликат удалён с сохранением первого. |
 | 7 | `Cancel` без Save после импорта. | Импорт не применён. |
 

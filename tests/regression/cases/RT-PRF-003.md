@@ -11,12 +11,12 @@
 | Конфигурация | `testdata/config/appsettings.badprofile.yaml` |
 | Данные | — |
 | Ориентировочная длительность | 10 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#114](https://github.com/zhenyatnk/LogGrokX/issues/114), [#115](https://github.com/zhenyatnk/LogGrokX/issues/115) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель
 
-Проверить ошибки профилей и совместимость.
+Проверить ошибки профилей и совместимость (#114, #115).
 
 ## Проверяемые требования
 
@@ -34,8 +34,8 @@
 | 1 | Закрыть приложение. Скопировать `appsettings.badprofile.yaml` → `%APP%\appsettings.yaml`, запустить, открыть `tab-basic.log`. | Аварии и диалога нет. Невалидный формат пропущен (`Skipping invalid log format: Profile 'Broken', log format 1: …` в логе). Селектор показывает реально применённый профиль `Default` (plain text), файл открыт как текст. |
 | 2 | Селектор → `Classic`, затем `Broken`, затем снова `Broken`. | При каждом выборе `Broken` показывается диалог `Profile change failed` с текстом `Cannot apply profile 'Broken': …` (не только в первый раз); отображение остаётся по `Classic`, селектор возвращается на `Classic`. |
 | 3 | Закрыть, применить `appsettings.legacy.yaml`, запустить. | В селекторе единственный профиль `Default` с legacy-форматами и цветами. |
-| 4 | Применить `appsettings.inherit.yaml`. | `Inherits` использует legacy-форматы и цвета; `ExplicitEmpty` — пустые цвета (явный пустой список); `NoInherit` — только собственные настройки. |
-| 5 | Восстановить `appsettings.regression.yaml`. | Профиль `Classic`. |
+| 4 | Не перезапуская приложение, заменить `%APP%\appsettings.yaml` на `appsettings.inherit.yaml`, подождать до 5 с и открыть селектор профилей. | Hot reload применил файл без перезапуска (#115): в селекторе появились профили из `appsettings.inherit.yaml`. `Inherits` использует legacy-форматы и цвета; `ExplicitEmpty` — пустые цвета (явный пустой список); `NoInherit` — только собственные настройки. |
+| 5 | Не перезапуская, восстановить `appsettings.regression.yaml`. | Через ≤ 5 с селектор показывает `Classic`, `Venn`, `Plain text`, `Regression`; активен `Classic`. |
 
 ## Критерии прохождения
 

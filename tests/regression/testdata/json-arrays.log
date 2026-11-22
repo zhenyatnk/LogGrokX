@@ -1,0 +1,12 @@
+2026-05-14 10:00:00.000 INF Thread-01 Json [A01] primitives [1,2,3] tail
+2026-05-14 10:00:00.250 INF Thread-01 Json [A02] strings ["alpha","beta","gamma"]
+2026-05-14 10:00:00.500 INF Thread-01 Json [A03] objects [{"id":1,"tags":["a","b"]},{"id":2,"tags":[]}]
+2026-05-14 10:00:00.750 INF Thread-01 Json [A04] nested [[1,2],[3,[4,5]]]
+2026-05-14 10:00:01.000 INF Thread-01 Json [A05] mixed {"list":[10,20]} and [true,false,null]
+2026-05-14 10:00:01.250 INF Thread-01 Json [A06] empty [] and {}
+2026-05-14 10:00:01.500 INF Thread-01 Json [A07] plain level [INFO] thread [T-1] marker [S01]
+2026-05-14 10:00:01.750 INF Thread-01 Json [A08] plain index retry [3] of [5]
+2026-05-14 10:00:02.000 INF Thread-01 Json [A09] broken [1,2
+2026-05-14 10:00:02.250 INF Thread-01 Json [A10] trailing comma [1,2,]
+2026-05-14 10:00:02.500 INF Thread-01 Json [A11] single [-1.5e3] [ 42 ] [7,] ["abc"] [true] [null] [[3]] vs [3,5]
+2026-05-14 10:00:02.750 INF Thread-01 Json [A12] unwrap [{"id":1,"name":"a"}] and [[1,2]] and [[[4,5]]] vs [[1,2],[3]]

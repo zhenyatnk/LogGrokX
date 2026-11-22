@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\mapping\mapping.log`<br>`%RT%\testdata\mapping\vm-*.json` |
 | Ориентировочная длительность | 10 мин |
-| Дефекты (регрессия) | [#58](https://github.com/zhenyatnk/LogGrokX/issues/58) |
+| Дефекты (регрессия) | [#58](https://github.com/zhenyatnk/LogGrokX/issues/58), [#119](https://github.com/zhenyatnk/LogGrokX/issues/119) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель
@@ -43,6 +43,11 @@
 | 8 | Выключить `Enabled` у `Reg-Phrase`, Save (без переоткрытия). | `[V04]`, `[V07]` сразу без маппинга `Reg-Phrase`; `[V07]` теперь `0x00003(second list)`. |
 | 9 | Включить `Ignore case` у `Reg-Case`, Save. | `type_a(upper A)`. |
 | 10 | В поле Preview ввести `code 0x00002 and disk full`. | `code 0x00002(type 2) and disk full(long wins)`. |
+| 11 | Включить `Enabled` у `Reg-Phrase`, выбрать в списке `Reg-Phrase`; текст Preview не менять. | Preview объединяет выбранный список с остальными включёнными: `code 0x00002(type 2) and disk full(long wins)`, значение из `Reg-Types` размечено (#119). |
+| 12 | Не меняя текст Preview, выключить `Enabled` у `Reg-Types`, затем включить обратно. | Preview обновляется сразу после каждого переключения: без `Reg-Types` — `code 0x00002 and disk full(long wins)`, после включения — снова с `(type 2)`. |
+| 13 | Выбрать `Reg-Types`, изменить маппинг `0x00002` на `type two`, вернуться к `Reg-Phrase`. | Preview показывает `code 0x00002(type two) …` без повторного ввода текста. |
+| 14 | Быстро набрать в Preview строку из 200 символов и удалить её `Backspace` с автоповтором. | Ввод без заметных задержек (≤ 100 мс на символ), UI не зависает; после остановки ввода Preview показывает результат для итогового текста (PR #150). |
+| 15 | Cancel. | Изменения `Reg-Types` не сохранены. |
 
 ## Критерии прохождения
 

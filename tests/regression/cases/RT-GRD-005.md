@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\biglines.log` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#135](https://github.com/zhenyatnk/LogGrokX/issues/135) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

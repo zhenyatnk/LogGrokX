@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\tab-basic.log`<br>`%RT%\testdata\formats\venn.log`<br>`%RT%\testdata\colors.log` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#113](https://github.com/zhenyatnk/LogGrokX/issues/113) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель
@@ -33,9 +33,10 @@
 |---|---|---|
 | 1 | Открыть `tab-basic.log` и `formats\venn.log`, пометить `[T05]`. | Classic активен. |
 | 2 | Селектор профиля в заголовке → `Plain text`. | Оба документа сразу перечитаны: одна колонка `Text`, цветов нет; метка `[T05]` сохранена. |
-| 3 | → `Venn`. | `venn.log` разобран форматом Venn с цветами `[CRIT]`/`[ERRO]`. |
-| 4 | → `Classic`, перезапуск. | Профиль `Classic` восстановлен (SelectedProfile). |
-| 5 | Открыть новый файл `colors.log`. | Разобран активным профилем. |
+| 3 | → `Venn`, перейти на вкладку `venn.log`. | `venn.log` полностью разобран форматом Venn: все 5 строк `[V01]`–`[V05]`, прогресс загрузки завершён (не застрял на 40%), цвета `[CRIT]`/`[ERRO]` (#113). В логе `%LOGS%` нет `ArgumentOutOfRangeException` из `IndexKey.GetHashCode`. |
+| 4 | Повторить цепочку `Classic` → `Plain text` → `Venn` → `Classic` ещё 2 раза без переоткрытия файлов. | Каждый раз оба документа перечитываются полностью, `tab-basic.log` — 16 строк в Classic; метка `[T05]` сохранена. |
+| 5 | → `Classic`, перезапуск. | Профиль `Classic` восстановлен (SelectedProfile). |
+| 6 | Открыть новый файл `colors.log`. | Разобран активным профилем. |
 
 ## Критерии прохождения
 

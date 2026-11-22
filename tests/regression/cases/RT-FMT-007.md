@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\formats\venn.log` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#113](https://github.com/zhenyatnk/LogGrokX/issues/113) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель
@@ -32,7 +32,7 @@
 | № | Действие | Ожидаемый результат |
 |---|---|---|
 | 1 | Открыть `formats\venn.log` в профиле `Classic`. | Строки подходят под формат 1 Classic (Time `2026-05-14 9:05:01.123`, Level `-`, Thread `[INFO]` и т.д.) — это ожидаемое следствие порядка форматов; фиксируется как наблюдение. |
-| 2 | Переключить профиль на `Venn`. | Колонки Venn: Time, Level, Context/Sid/Pid/Thread, Process, Source, Irql, Message (по фактическому набору групп). Строка `[V04]`: Level `CRIT`, Irql `2`; строка `[V05]`: Source `Core`, без Process. |
+| 2 | Переключить профиль на `Venn`. | Колонки Venn: Time, Level, Context/Sid/Pid/Thread, Process, Source, Irql, Message (по фактическому набору групп). Все 5 строк `[V01]`–`[V05]` разобраны, загрузка завершена (#113). Строка `[V04]`: Level `CRIT`, Irql `2`; строка `[V05]`: Source `Core`, без Process. |
 | 3 | Проверить цвета Venn. | `[V04]` (CRIT) — фон `#FFCD5C5C`; `[V02]` (ERRO) — красный текст; `[V03]` (WARN) — Chocolate; `[V05]` (TRAC) — серый. |
 | 4 | Переключить профиль на `Plain text`. | Одна колонка `Text` с целой строкой, без цветов. |
 

@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\formats\regression-*.log` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#109](https://github.com/zhenyatnk/LogGrokX/issues/109) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

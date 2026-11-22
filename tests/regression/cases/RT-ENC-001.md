@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\encoding\*` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#107](https://github.com/zhenyatnk/LogGrokX/issues/107) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

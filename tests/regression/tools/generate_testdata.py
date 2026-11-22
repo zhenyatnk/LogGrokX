@@ -220,6 +220,41 @@ def gen_json_xml():
     write("json-xml.log", lines)
 
 
+
+def gen_json_arrays():
+    """JSON-массивы верхнего уровня (#111) и текст в квадратных скобках, который не является JSON."""
+    m = [
+        '[A01] primitives [1,2,3] tail',
+        '[A02] strings ["alpha","beta","gamma"]',
+        '[A03] objects [{"id":1,"tags":["a","b"]},{"id":2,"tags":[]}]',
+        '[A04] nested [[1,2],[3,[4,5]]]',
+        '[A05] mixed {"list":[10,20]} and [true,false,null]',
+        '[A06] empty [] and {}',
+        '[A07] plain level [INFO] thread [T-1] marker [S01]',
+        '[A08] plain index retry [3] of [5]',
+        '[A09] broken [1,2',
+        '[A10] trailing comma [1,2,]',
+        '[A11] single [-1.5e3] [ 42 ] [7,] ["abc"] [true] [null] [[3]] vs [3,5]',
+        '[A12] unwrap [{"id":1,"name":"a"}] and [[1,2]] and [[[4,5]]] vs [[1,2],[3]]',
+    ]
+    write("json-arrays.log", [classic(i, "INF", "Thread-01", "Json", s) for i, s in enumerate(m)])
+
+
+def gen_unicode():
+    """Смешение письменностей в одной строке: font fallback (#108) и общая базовая линия (PR #149)."""
+    m = [
+        "[U01] latin baseline reference Hxgp 0123",
+        "[U02] 日本語のメッセージ mixed with Latin Hxgp",
+        "[U03] 中文日志 简体 繁體 mixed Hxgp",
+        "[U04] 한국어 로그 메시지 mixed Hxgp",
+        "[U05] Кириллица Ελληνικά Hxgp",
+        "[U06] हिन्दी देवनागरी mixed Hxgp",
+        "[U07] math ∑∫√∞≠≤≥ arrows ←↑→↓ box ┌─┐ check ✓✗",
+        "[U08] Hxgp日本語Hxgp한국어Hxgp中文Hxgp",
+    ]
+    write("unicode.log", [classic(i, "INF", "Thread-01", "Text", s) for i, s in enumerate(m)])
+
+
 def gen_binary(der, pem, key_pem, spki, blob, expected):
     jwt_header = b64url('{"alg":"HS256","typ":"JWT"}')
     jwt_payload = b64url('{"sub":"1234567890","name":"John Doe","iat":1516239022}')
@@ -589,7 +624,7 @@ def gen_configs():
 def main():
     der, pem, key_pem, spki, blob, expected = make_crypto()
     gen_basic_tab(); gen_threads(); gen_classic_multiline(); gen_search(); gen_many_matches()
-    gen_json_xml()
+    gen_json_xml(); gen_json_arrays(); gen_unicode()
     gen_binary(der, pem, key_pem, spki, blob, expected)
     gen_hex(der, pem)
     gen_colors(); gen_mapping(); gen_callstack(); gen_time(); gen_merge(); gen_transform()

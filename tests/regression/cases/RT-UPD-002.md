@@ -35,7 +35,7 @@
 | 1 | На предыдущей версии (режим check) дождаться диалога `Update available`. | Показаны `Version {0} is available.`, release notes (или `Release notes could not be loaded…`), кнопки `Update`, `Later`, `Skip this version`. |
 | 2 | `Skip this version`, удалить `last-update-check.settings`, перезапустить. | Диалог для этой версии не показывается; создан `skipped-update.settings`. |
 | 3 | Support → `Check for updates`. | Ручная проверка игнорирует пропуск и показывает диалог. |
-| 4 | `Update`. | Индикатор `Downloading N%`, затем `Restart: {0}`; установщик проверен по `SHA256SUMS.txt`. |
+| 4 | `Update`. | Индикатор `Downloading N%`: плашка в заголовке заполняется слева направо полупрозрачным акцентным цветом пропорционально проценту, текст плашки поверх заливки читаем; отдельной тонкой полосы под текстом нет (PR #141). Затем `Restart: {0}`; установщик проверен по `SHA256SUMS.txt`. |
 | 5 | Открыть 2 лога, нажать индикатор `Restart: {0}`. | Приложение сохраняет список файлов (`update-restart.json`), закрывается, тихо устанавливает обновление (UAC для Program Files) и запускается с `--restore-update`, открыв те же 2 файла. |
 | 6 | После запуска. | Окно `What's new` с заметками установленной версии и ссылкой на релиз; `pending-update.json` удалён; `--version` = новой версии. |
 
