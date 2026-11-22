@@ -102,7 +102,9 @@ namespace LogGrokX
         {
             var candidates = GetBracedGroups(source.AsSpan())
                 .Concat(GetBracketedGroups(source.AsSpan()))
-                .Where(interval => IsFoldableJson(source.Substring(interval.start, interval.length)))
+                .Select(interval => TryGetFoldableJsonRange(source, interval, out var range) ? range : ((int start, int length)?)null)
+                .Where(range => range.HasValue)
+                .Select(range => range!.Value)
                 .OrderBy(interval => interval.start)
                 .ThenByDescending(interval => interval.length);
 
@@ -483,8 +485,38 @@ namespace LogGrokX
             return string.Join(Environment.NewLine, parts);
         }
 
-        private static bool IsFoldableJson(string jsonString)
+        // Массив из одного элемента верхнего уровня ("retry [3] of [5]", "[\"abc\"]") — обычный текст.
+        // Если единственный элемент — объект или массив, сворачиваемым считается он сам, без внешних скобок.
+        // Правило касается только найденного в тексте фрагмента, вложенные массивы внутри JSON не меняются.
+        private static bool TryGetFoldableJsonRange(string source, (int start, int length) interval,
+            out (int start, int length) range)
         {
+            range = interval;
+            while (true)
+            {
+                if (!TryParseJson(source.Substring(range.start, range.length), out var isSingleElementArray))
+                    return false;
+
+                if (!isSingleElementArray)
+                    return true;
+
+                var inner = source.AsSpan(range.start + 1, range.length - 2);
+                var leading = inner.Length - inner.TrimStart().Length;
+                var element = inner.Trim();
+                if (!element.IsEmpty && element[^1] == ',')
+                    element = element[..^1].TrimEnd();
+
+                if (element.IsEmpty || element[0] is not ('{' or '[') ||
+                    element[^1] != (element[0] == '{' ? '}' : ']'))
+                    return false;
+
+                range = (range.start + 1 + leading, element.Length);
+            }
+        }
+
+        private static bool TryParseJson(string jsonString, out bool isSingleElementArray)
+        {
+            isSingleElementArray = false;
             var startSpan = jsonString.AsSpan().TrimStart();
             if (startSpan.IsEmpty || startSpan[0] is not ('{' or '['))
                 return false;
@@ -493,21 +525,14 @@ namespace LogGrokX
             {
                 using var doc = JsonDocument.Parse(jsonString,
                     new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
-                return !IsSingleNumberArray(doc.RootElement);
+                var root = doc.RootElement;
+                isSingleElementArray = root.ValueKind == JsonValueKind.Array && root.GetArrayLength() == 1;
+                return true;
             }
             catch (JsonException)
             {
                 return false;
             }
-        }
-
-        // Массив из одного числа ("retry [3] of [5]") чаще всего обычный текст, а не JSON.
-        private static bool IsSingleNumberArray(JsonElement root)
-        {
-            if (root.ValueKind != JsonValueKind.Array || root.GetArrayLength() != 1)
-                return false;
-
-            return root[0].ValueKind == JsonValueKind.Number;
         }
 
         private static string FormatJsonText(string jsonString) =>
