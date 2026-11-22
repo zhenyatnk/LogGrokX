@@ -32,7 +32,7 @@
 
 | № | Действие | Ожидаемый результат |
 |---|---|---|
-| 1 | Предыдущая версия, режим `Install updates automatically`. | Без диалога: индикатор `Downloading {0:0}%` → `Restart: {0}`; `LogGrokX {0} will be installed silently when you close the application.` |
+| 1 | Предыдущая версия, режим `Install updates automatically`. | Без диалога: индикатор `Downloading {0:0}%` с акцентной заливкой плашки (при смене Accent color и темы Dark заливка меняет цвет, текст читаем) → `Restart: {0}`; `LogGrokX {0} will be installed silently when you close the application.` |
 | 2 | Settings → View → выключить `Update indicator in title bar`. | Индикатор скрыт, загрузка/установка продолжается. |
 | 3 | Обычный выход из приложения. | Тихая установка после выхода; при следующем запуске `What's new`. |
 | 4 | Портативная сборка предыдущей версии (zip), режим check. | Диалог/индикатор предлагает `Open release page`/`Open download page`; самообновление не выполняется. |

@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\hex.log`<br>`%RT%\testdata\binary\EXPECTED.md` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | [#75](https://github.com/zhenyatnk/LogGrokX/issues/75), [#77](https://github.com/zhenyatnk/LogGrokX/issues/77) |
+| Дефекты (регрессия) | [#75](https://github.com/zhenyatnk/LogGrokX/issues/75), [#77](https://github.com/zhenyatnk/LogGrokX/issues/77), [#110](https://github.com/zhenyatnk/LogGrokX/issues/110) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

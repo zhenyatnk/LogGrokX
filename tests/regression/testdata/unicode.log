@@ -1,0 +1,8 @@
+2026-05-14 10:00:00.000 INF Thread-01 Text [U01] latin baseline reference Hxgp 0123
+2026-05-14 10:00:00.250 INF Thread-01 Text [U02] 日本語のメッセージ mixed with Latin Hxgp
+2026-05-14 10:00:00.500 INF Thread-01 Text [U03] 中文日志 简体 繁體 mixed Hxgp
+2026-05-14 10:00:00.750 INF Thread-01 Text [U04] 한국어 로그 메시지 mixed Hxgp
+2026-05-14 10:00:01.000 INF Thread-01 Text [U05] Кириллица Ελληνικά Hxgp
+2026-05-14 10:00:01.250 INF Thread-01 Text [U06] हिन्दी देवनागरी mixed Hxgp
+2026-05-14 10:00:01.500 INF Thread-01 Text [U07] math ∑∫√∞≠≤≥ arrows ←↑→↓ box ┌─┐ check ✓✗
+2026-05-14 10:00:01.750 INF Thread-01 Text [U08] Hxgp日本語Hxgp한국어Hxgp中文Hxgp

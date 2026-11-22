@@ -4,19 +4,19 @@
 
 ## Сводка
 
-- Тест-кейсов: **111** (P1: 63, P2: 42, P3: 6).
-- Требований: **163**, покрыто: **163** (100%).
-- Закрытых дефектов с регресс-кейсом: **29 из 29**.
+- Тест-кейсов: **115** (P1: 66, P2: 42, P3: 7).
+- Требований: **167**, покрыто: **167** (100%).
+- Закрытых дефектов с регресс-кейсом: **53 из 53**.
 - Кейсов с внешними ресурсами/ручными действиями: **7**.
-- По типам: Функциональный — 61, Краевой — 16, Негативный — 8, Регрессия дефекта — 21, Нефункциональный — 5.
+- По типам: Функциональный — 60, Краевой — 16, Негативный — 8, Регрессия дефекта — 25, Нефункциональный — 6.
 
 ## Области
 
 | Область | Описание | Требований | Кейсов | Кейсы |
 |---|---|---|---|---|
-| LCH | Запуск и единственный экземпляр | 8 | 7 | [RT-LCH-001](cases/RT-LCH-001.md), [RT-LCH-002](cases/RT-LCH-002.md), [RT-LCH-003](cases/RT-LCH-003.md), [RT-LCH-004](cases/RT-LCH-004.md), [RT-LCH-005](cases/RT-LCH-005.md), [RT-LCH-006](cases/RT-LCH-006.md), [RT-LCH-007](cases/RT-LCH-007.md) |
+| LCH | Запуск и единственный экземпляр | 9 | 8 | [RT-LCH-001](cases/RT-LCH-001.md), [RT-LCH-002](cases/RT-LCH-002.md), [RT-LCH-003](cases/RT-LCH-003.md), [RT-LCH-004](cases/RT-LCH-004.md), [RT-LCH-005](cases/RT-LCH-005.md), [RT-LCH-006](cases/RT-LCH-006.md), [RT-LCH-007](cases/RT-LCH-007.md), [RT-LCH-008](cases/RT-LCH-008.md) |
 | DOC | Открытие и управление документами | 7 | 5 | [RT-DOC-001](cases/RT-DOC-001.md), [RT-DOC-002](cases/RT-DOC-002.md), [RT-DOC-003](cases/RT-DOC-003.md), [RT-DOC-004](cases/RT-DOC-004.md), [RT-DOC-005](cases/RT-DOC-005.md) |
-| ENC | Кодировки и окончания строк | 5 | 4 | [RT-ENC-001](cases/RT-ENC-001.md), [RT-ENC-002](cases/RT-ENC-002.md), [RT-ENC-003](cases/RT-ENC-003.md), [RT-ENC-004](cases/RT-ENC-004.md) |
+| ENC | Кодировки и окончания строк | 6 | 5 | [RT-ENC-001](cases/RT-ENC-001.md), [RT-ENC-002](cases/RT-ENC-002.md), [RT-ENC-003](cases/RT-ENC-003.md), [RT-ENC-004](cases/RT-ENC-004.md), [RT-ENC-005](cases/RT-ENC-005.md) |
 | LRG | Большие и изменяющиеся файлы | 6 | 5 | [RT-LRG-001](cases/RT-LRG-001.md), [RT-LRG-002](cases/RT-LRG-002.md), [RT-LRG-003](cases/RT-LRG-003.md), [RT-LRG-004](cases/RT-LRG-004.md), [RT-LRG-005](cases/RT-LRG-005.md) |
 | FMT | Форматы логов и автоопределение | 8 | 7 | [RT-FMT-001](cases/RT-FMT-001.md), [RT-FMT-002](cases/RT-FMT-002.md), [RT-FMT-003](cases/RT-FMT-003.md), [RT-FMT-004](cases/RT-FMT-004.md), [RT-FMT-005](cases/RT-FMT-005.md), [RT-FMT-006](cases/RT-FMT-006.md), [RT-FMT-007](cases/RT-FMT-007.md) |
 | IDX | Колонки и индексация полей | 3 | 1 | [RT-IDX-001](cases/RT-IDX-001.md) |
@@ -27,8 +27,8 @@
 | ALT | Alt+клик: построение поиска | 5 | 3 | [RT-ALT-001](cases/RT-ALT-001.md), [RT-ALT-002](cases/RT-ALT-002.md), [RT-ALT-003](cases/RT-ALT-003.md) |
 | NAV | Навигация | 4 | 3 | [RT-NAV-001](cases/RT-NAV-001.md), [RT-NAV-002](cases/RT-NAV-002.md), [RT-NAV-003](cases/RT-NAV-003.md) |
 | ZM | Масштаб текста | 2 | 1 | [RT-ZM-001](cases/RT-ZM-001.md) |
-| MRK | Помеченные строки | 4 | 2 | [RT-MRK-001](cases/RT-MRK-001.md), [RT-MRK-002](cases/RT-MRK-002.md) |
-| JSN | JSON/XML: форматирование и сворачивание | 9 | 6 | [RT-JSN-001](cases/RT-JSN-001.md), [RT-JSN-002](cases/RT-JSN-002.md), [RT-JSN-003](cases/RT-JSN-003.md), [RT-JSN-004](cases/RT-JSN-004.md), [RT-JSN-005](cases/RT-JSN-005.md), [RT-JSN-006](cases/RT-JSN-006.md) |
+| MRK | Помеченные строки | 5 | 3 | [RT-MRK-001](cases/RT-MRK-001.md), [RT-MRK-002](cases/RT-MRK-002.md), [RT-MRK-003](cases/RT-MRK-003.md) |
+| JSN | JSON/XML: форматирование и сворачивание | 10 | 7 | [RT-JSN-001](cases/RT-JSN-001.md), [RT-JSN-002](cases/RT-JSN-002.md), [RT-JSN-003](cases/RT-JSN-003.md), [RT-JSN-004](cases/RT-JSN-004.md), [RT-JSN-005](cases/RT-JSN-005.md), [RT-JSN-006](cases/RT-JSN-006.md), [RT-JSN-007](cases/RT-JSN-007.md) |
 | B64 | Base64, PEM, сертификаты и ключи | 10 | 8 | [RT-B64-001](cases/RT-B64-001.md), [RT-B64-002](cases/RT-B64-002.md), [RT-B64-003](cases/RT-B64-003.md), [RT-B64-004](cases/RT-B64-004.md), [RT-B64-005](cases/RT-B64-005.md), [RT-B64-006](cases/RT-B64-006.md), [RT-B64-007](cases/RT-B64-007.md), [RT-B64-008](cases/RT-B64-008.md) |
 | HEX | HEX в текст | 4 | 2 | [RT-HEX-001](cases/RT-HEX-001.md), [RT-HEX-002](cases/RT-HEX-002.md) |
 | TRN | Трансформации | 2 | 1 | [RT-TRN-001](cases/RT-TRN-001.md) |
@@ -61,6 +61,7 @@
 | `REQ-LCH-06` | Ключ --version печатает версию и завершает процесс без открытия окна. | [RT-LCH-006](cases/RT-LCH-006.md) |
 | `REQ-LCH-07` | Сочетания клавиш поиска работают сразу после старта, до первого клика по окну (#65). | [RT-LCH-007](cases/RT-LCH-007.md) |
 | `REQ-LCH-08` | Повторный запуск без аргументов не открывает второе окно и не влияет на первое. | [RT-LCH-005](cases/RT-LCH-005.md) |
+| `REQ-LCH-09` | Штатное закрытие (крестик, Alt+F4, в том числе во время загрузки) завершает процесс с кодом 0, без диалога Fail Fast и событий WER (#131). | [RT-LCH-008](cases/RT-LCH-008.md) |
 | `REQ-DOC-01` | Открытие файлов через кнопку Open / Ctrl+O, мультивыбор в диалоге, фильтры диалога (All Files, Log files, Text files). | [RT-DOC-001](cases/RT-DOC-001.md) |
 | `REQ-DOC-02` | Drag & drop одного или нескольких файлов, а также папки (рекурсивно все файлы). | [RT-DOC-002](cases/RT-DOC-002.md) |
 | `REQ-DOC-03` | Повторное открытие уже открытого файла (сравнение полного пути без учёта регистра) активирует существующую вкладку. | [RT-LCH-005](cases/RT-LCH-005.md) |
@@ -73,6 +74,7 @@
 | `REQ-ENC-03` | Пустой файл и файл только из пустых строк открываются без ошибок. | [RT-ENC-003](cases/RT-ENC-003.md) |
 | `REQ-ENC-04` | Двоичный (не текстовый) файл открывается без аварии. | [RT-ENC-003](cases/RT-ENC-003.md) |
 | `REQ-ENC-05` | Пустой файл (0 байт) показывает страницу «This file is empty» вместо пустой записи и строки таймлайна; для непустых файлов страница не появляется (#122). | [RT-ENC-004](cases/RT-ENC-004.md) |
+| `REQ-ENC-06` | Текст любых письменностей (CJK, корейский, греческий, деванагари, символы) отображается через посимвольный font fallback без квадратов; фрагменты разных шрифтов в одной строке стоят на общей базовой линии, высота строки учитывает метрики всех шрифтов (#108). | [RT-ENC-005](cases/RT-ENC-005.md) |
 | `REQ-LRG-01` | Большие файлы (≥1 ГБ) открываются потоково: интерфейс отзывчив во время индексации, отображается прогресс. | [RT-LRG-001](cases/RT-LRG-001.md) |
 | `REQ-LRG-02` | Поиск и фильтрация работают на большом файле и могут быть прерваны/изменены во время выполнения. | [RT-LRG-002](cases/RT-LRG-002.md) |
 | `REQ-LRG-03` | Файл, открытый другим процессом на запись (FileShare.ReadWrite/Read), открывается для чтения. | [RT-LRG-003](cases/RT-LRG-003.md) |
@@ -136,14 +138,16 @@
 | `REQ-MRK-02` | Панель Marked lines: группы по файлам, Clear all для группы, Copy lines; навигация стрелками без Enter; переход центрирует строку. | [RT-MRK-001](cases/RT-MRK-001.md) |
 | `REQ-MRK-03` | Метки сохраняются при смене профиля/перечитывании документа и отображаются на таймлайне. | [RT-MRK-002](cases/RT-MRK-002.md) |
 | `REQ-MRK-04` | Точка-метка на таймлайне/булавке центрирована (#21). | [RT-MRK-002](cases/RT-MRK-002.md) |
+| `REQ-MRK-05` | Снятые метки (Space, Toggle marks, Clear all) освобождаются при открытом документе: повторные циклы пометки и очистки не увеличивают память процесса. | [RT-MRK-003](cases/RT-MRK-003.md) |
 | `REQ-JSN-01` | JSON-объекты и массивы в сообщении распознаются, форматируются с отступами и сворачиваются; в свёрнутом виде занимают одну строку. | [RT-JSN-001](cases/RT-JSN-001.md) |
 | `REQ-JSN-02` | Контекстное меню Folding: Expand All, Collapse All, Expand recursively, Collapse recursively. | [RT-JSN-001](cases/RT-JSN-001.md) |
 | `REQ-JSN-03` | Состояние сворачивания общее для сетки, результатов поиска и Marked lines одного документа. | [RT-JSN-002](cases/RT-JSN-002.md) |
 | `REQ-JSN-04` | Многострочный JSON в строках продолжения (в т.ч. с табуляцией) распознаётся как часть Message и форматируется (#31). | [RT-JSN-003](cases/RT-JSN-003.md) |
-| `REQ-JSN-05` | Некорректный JSON отображается как текст без аварии; текст до и после JSON сохраняется; несколько JSON в строке. | [RT-JSN-001](cases/RT-JSN-001.md) |
+| `REQ-JSN-05` | Некорректный JSON отображается как текст без аварии; текст до и после JSON сохраняется; несколько JSON в строке. | [RT-JSN-001](cases/RT-JSN-001.md), [RT-JSN-007](cases/RT-JSN-007.md) |
 | `REQ-JSN-06` | Производительность раскрытия больших и глубоких JSON (#38). | [RT-JSN-004](cases/RT-JSN-004.md) |
 | `REQ-JSN-07` | XML-фрагменты (с `<?xml ...?>` или без) форматируются и сворачиваются, если у корня есть дочерние элементы; обобщения `List<int>`, `<br/>`, элемент только с текстом — не XML (#49). | [RT-JSN-005](cases/RT-JSN-005.md) |
 | `REQ-JSN-08` | Unicode и escape-последовательности в JSON отображаются корректно; JSON внутри XML и XML внутри JSON. | [RT-JSN-005](cases/RT-JSN-005.md) |
+| `REQ-JSN-10` | JSON-массивы `[...]` (примитивы, объекты, вложенные массивы) распознаются целиком и по умолчанию свёрнуты, как и объекты, независимо от размера; текст в квадратных скобках, который не является валидным JSON, остаётся обычным текстом (#111). | [RT-JSN-007](cases/RT-JSN-007.md) |
 | `REQ-JSN-09` | UseMessageFoldingGutter по умолчанию резервирует фиксированный gutter для всех строк Message и текста Marked lines; другие колонки сохраняют отступ только у folding-строк; false восстанавливает прежнее поведение везде. | [RT-JSN-006](cases/RT-JSN-006.md), [RT-SET-005](cases/RT-SET-005.md) |
 | `REQ-B64-01` | Base64 всего значения ячейки (в т.ч. в кавычках) от 8 символов и фрагменты от 16 символов (в т.ч. JWT и «приклеенные» к тексту) декодируются кнопкой BIN. | [RT-B64-001](cases/RT-B64-001.md) |
 | `REQ-B64-02` | Кнопка BIN расположена у правого края колонки Component; без колонки Component и в Marked lines — под булавкой. | [RT-B64-001](cases/RT-B64-001.md), [RT-B64-006](cases/RT-B64-006.md) |
@@ -249,7 +253,31 @@
 | [#95](https://github.com/zhenyatnk/LogGrokX/issues/95) | Дефекты окна сохранённых поисков | [RT-SAV-002](cases/RT-SAV-002.md), [RT-SAV-003](cases/RT-SAV-003.md) |
 | [#97](https://github.com/zhenyatnk/LogGrokX/issues/97) | Добавление слова в строку поиска по клику | [RT-ALT-002](cases/RT-ALT-002.md) |
 | [#99](https://github.com/zhenyatnk/LogGrokX/issues/99) | Отображение в заголовке информации о новой версии | [RT-UPD-003](cases/RT-UPD-003.md) |
-| [#122](https://github.com/zhenyatnk/LogGrokX/issues/122) | Файл нулевой длины отображается как одна пустая запись и строка таймлайна | [RT-ENC-004](cases/RT-ENC-004.md) |
+| [#103](https://github.com/zhenyatnk/LogGrokX/issues/103) | Alt+клик не захватывает Windows-путь целиком | [RT-ALT-002](cases/RT-ALT-002.md) |
+| [#104](https://github.com/zhenyatnk/LogGrokX/issues/104) | Alt+клик по внешней квадратной скобке не создаёт поиск | [RT-ALT-002](cases/RT-ALT-002.md) |
+| [#106](https://github.com/zhenyatnk/LogGrokX/issues/106) | DetectHex=false из YAML не применяется к открытому hex.log | [RT-B64-008](cases/RT-B64-008.md), [RT-SET-002](cases/RT-SET-002.md) |
+| [#107](https://github.com/zhenyatnk/LogGrokX/issues/107) | UTF-16LE без BOM распознаётся как однобайтовый текст | [RT-ENC-001](cases/RT-ENC-001.md) |
+| [#108](https://github.com/zhenyatnk/LogGrokX/issues/108) | Японский текст отображается квадратами | [RT-ENC-005](cases/RT-ENC-005.md), [RT-FMT-002](cases/RT-FMT-002.md) |
+| [#109](https://github.com/zhenyatnk/LogGrokX/issues/109) | TimeField не учитывает регистр имени поля | [RT-FMT-005](cases/RT-FMT-005.md) |
+| [#110](https://github.com/zhenyatnk/LogGrokX/issues/110) | Decode HEX изменяет имя свойства JSON | [RT-HEX-002](cases/RT-HEX-002.md) |
+| [#111](https://github.com/zhenyatnk/LogGrokX/issues/111) | JSON открывается развёрнутым вместо исходного свёрнутого состояния | [RT-JSN-001](cases/RT-JSN-001.md), [RT-JSN-007](cases/RT-JSN-007.md) |
+| [#112](https://github.com/zhenyatnk/LogGrokX/issues/112) | Открытие файла 1 ГБ потребляет почти столько же памяти, сколько занимает файл | [RT-LRG-001](cases/RT-LRG-001.md) |
+| [#113](https://github.com/zhenyatnk/LogGrokX/issues/113) | Переключение на Venn останавливает загрузку venn.log | [RT-FMT-007](cases/RT-FMT-007.md), [RT-PRF-001](cases/RT-PRF-001.md) |
+| [#114](https://github.com/zhenyatnk/LogGrokX/issues/114) | Неприменимый профиль применяется как plain text без диалога и без сохранения Classic | [RT-PRF-003](cases/RT-PRF-003.md) |
+| [#115](https://github.com/zhenyatnk/LogGrokX/issues/115) | Hot reload не применяет ручные изменения appsettings.yaml | [RT-SET-002](cases/RT-SET-002.md), [RT-PRF-003](cases/RT-PRF-003.md) |
+| [#116](https://github.com/zhenyatnk/LogGrokX/issues/116) | Запуск с некорректным YAML завершается необработанным InvalidDataException | [RT-SET-003](cases/RT-SET-003.md) |
+| [#117](https://github.com/zhenyatnk/LogGrokX/issues/117) | Regex с якорем `$` не находит строки с CRLF | [RT-SRCH-002](cases/RT-SRCH-002.md) |
+| [#118](https://github.com/zhenyatnk/LogGrokX/issues/118) | Начальный поиск в Group by thread ограничен первой строкой | [RT-THR-002](cases/RT-THR-002.md) |
+| [#119](https://github.com/zhenyatnk/LogGrokX/issues/119) | Preview применяет только выбранный список маппинга | [RT-VM-001](cases/RT-VM-001.md) |
+| [#120](https://github.com/zhenyatnk/LogGrokX/issues/120) | Режим Wrap не разбивает длинные строки на визуальные строки | [RT-BIG-002](cases/RT-BIG-002.md) |
+| [#121](https://github.com/zhenyatnk/LogGrokX/issues/121) | Правило цвета в конце списка не применяется к открытому документу | [RT-CLR-002](cases/RT-CLR-002.md) |
+| [#122](https://github.com/zhenyatnk/LogGrokX/issues/122) | Файл нулевой длины отображается как одна пустая запись и строка таймлайна | [RT-ENC-003](cases/RT-ENC-003.md), [RT-ENC-004](cases/RT-ENC-004.md), [RT-TML-004](cases/RT-TML-004.md) |
+| [#123](https://github.com/zhenyatnk/LogGrokX/issues/123) | Copy Full Path возвращает относительный путь из командной строки | [RT-LCH-003](cases/RT-LCH-003.md), [RT-DOC-003](cases/RT-DOC-003.md) |
+| [#124](https://github.com/zhenyatnk/LogGrokX/issues/124) | В заголовке отсутствует кнопка Toggle light / dark theme (as designed) | [RT-THM-001](cases/RT-THM-001.md) |
+| [#125](https://github.com/zhenyatnk/LogGrokX/issues/125) | Пустой элемент value mapping не вызывает ошибку валидации | [RT-VM-003](cases/RT-VM-003.md) |
+| [#126](https://github.com/zhenyatnk/LogGrokX/issues/126) | Открытый лог блокируется для переименования и удаления (as designed) | [RT-LRG-005](cases/RT-LRG-005.md) |
+| [#131](https://github.com/zhenyatnk/LogGrokX/issues/131) | Аварийное завершение при выходе на Windows 10 (0xC0000602) | [RT-LCH-008](cases/RT-LCH-008.md) |
+| [#135](https://github.com/zhenyatnk/LogGrokX/issues/135) | Скрытие столбцов | [RT-GRD-004](cases/RT-GRD-004.md), [RT-GRD-005](cases/RT-GRD-005.md) |
 
 ## Список кейсов
 
@@ -269,7 +297,7 @@
 | [RT-BIG-001](cases/RT-BIG-001.md) | Большие строки: граница BigLineSize, Truncate | P1 | Краевой |
 | [RT-BIG-002](cases/RT-BIG-002.md) | Большие строки: Wrap и валидация размера | P2 | Краевой |
 | [RT-CLR-001](cases/RT-CLR-001.md) | Правила цвета Classic: первое совпадение | P1 | Функциональный |
-| [RT-CLR-002](cases/RT-CLR-002.md) | Пользовательское правило цвета | P2 | Функциональный |
+| [RT-CLR-002](cases/RT-CLR-002.md) | Пользовательское правило цвета: живое применение во всех представлениях | P2 | Регрессия дефекта |
 | [RT-DMP-001](cases/RT-DMP-001.md) | Аварийные дампы WER | P3 | Функциональный |
 | [RT-DOC-001](cases/RT-DOC-001.md) | Открытие файлов через Ctrl+O с мультивыбором | P1 | Функциональный |
 | [RT-DOC-002](cases/RT-DOC-002.md) | Drag & drop файлов и папки | P1 | Функциональный |
@@ -280,6 +308,7 @@
 | [RT-ENC-002](cases/RT-ENC-002.md) | Смешанные окончания строк и отсутствие финального перевода строки | P2 | Краевой |
 | [RT-ENC-003](cases/RT-ENC-003.md) | Пустой файл, файл из пустых строк, двоичный файл | P2 | Краевой |
 | [RT-ENC-004](cases/RT-ENC-004.md) | Пустой файл: страница «This file is empty» вместо пустой записи | P2 | Регрессия дефекта |
+| [RT-ENC-005](cases/RT-ENC-005.md) | Unicode разных письменностей: font fallback и общая базовая линия | P1 | Регрессия дефекта |
 | [RT-FLT-001](cases/RT-FLT-001.md) | Всплывающее окно фильтра колонки | P1 | Функциональный |
 | [RT-FLT-002](cases/RT-FLT-002.md) | Exclude / Exclude All But из контекстного меню и комбинирование фильтров | P1 | Функциональный |
 | [RT-FLT-003](cases/RT-FLT-003.md) | Исключение всех значений и взаимодействие с поиском/метками | P2 | Краевой |
@@ -305,6 +334,7 @@
 | [RT-JSN-004](cases/RT-JSN-004.md) | Большой и глубокий JSON | P2 | Нефункциональный |
 | [RT-JSN-005](cases/RT-JSN-005.md) | XML: распознавание и негативные случаи | P1 | Функциональный |
 | [RT-JSN-006](cases/RT-JSN-006.md) | Фиксированный folding gutter в Message и Marked lines | P1 | Функциональный |
+| [RT-JSN-007](cases/RT-JSN-007.md) | JSON-массивы верхнего уровня и текст в квадратных скобках | P1 | Регрессия дефекта |
 | [RT-LCH-001](cases/RT-LCH-001.md) | Первый запуск без аргументов: экран приветствия | P1 | Функциональный |
 | [RT-LCH-002](cases/RT-LCH-002.md) | Открытие нескольких файлов из командной строки | P1 | Функциональный |
 | [RT-LCH-003](cases/RT-LCH-003.md) | Относительный путь и путь с пробелами/кириллицей в командной строке | P2 | Краевой |
@@ -312,6 +342,7 @@
 | [RT-LCH-005](cases/RT-LCH-005.md) | Единственный экземпляр: передача путей в запущенное окно | P1 | Функциональный |
 | [RT-LCH-006](cases/RT-LCH-006.md) | Ключ --version | P3 | Функциональный |
 | [RT-LCH-007](cases/RT-LCH-007.md) | Ctrl+F сразу после старта без клика по окну | P1 | Регрессия дефекта |
+| [RT-LCH-008](cases/RT-LCH-008.md) | Штатное завершение без Fail Fast и с кодом 0 | P1 | Регрессия дефекта |
 | [RT-LNG-001](cases/RT-LNG-001.md) | Языки интерфейса | P2 | Функциональный |
 | [RT-LRG-001](cases/RT-LRG-001.md) | Открытие файла ~1 ГБ: потоковая загрузка и отзывчивость | P1 | Нефункциональный |
 | [RT-LRG-002](cases/RT-LRG-002.md) | Поиск и фильтрация на большом файле, отмена/смена поиска | P1 | Нефункциональный |
@@ -322,6 +353,7 @@
 | [RT-MRG-002](cases/RT-MRG-002.md) | Объединённый просмотр: поиск, фильтры, метки | P2 | Функциональный |
 | [RT-MRK-001](cases/RT-MRK-001.md) | Пометка строк: булавка, Space, групповое переключение | P1 | Функциональный |
 | [RT-MRK-002](cases/RT-MRK-002.md) | Метки при перечитывании и визуальная точка | P2 | Регрессия дефекта |
+| [RT-MRK-003](cases/RT-MRK-003.md) | Повторная пометка и Clear all в открытом документе: память освобождается | P3 | Нефункциональный |
 | [RT-NAV-001](cases/RT-NAV-001.md) | F3/Shift+F3: навигация, wrap-around, центрирование | P1 | Функциональный |
 | [RT-NAV-002](cases/RT-NAV-002.md) | Клавиатурная навигация и выделение | P2 | Функциональный |
 | [RT-NAV-003](cases/RT-NAV-003.md) | Горизонтальная прокрутка | P2 | Регрессия дефекта |

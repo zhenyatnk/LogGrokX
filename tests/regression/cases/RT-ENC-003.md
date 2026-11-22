@@ -11,7 +11,7 @@
 | Конфигурация | `testdata/config/appsettings.regression.yaml` |
 | Данные | `%RT%\testdata\encoding\empty.log`<br>`%RT%\testdata\encoding\only-newlines.log`<br>`%RT%\testdata\encoding\binary.bin` |
 | Ориентировочная длительность | 5 мин |
-| Дефекты (регрессия) | — |
+| Дефекты (регрессия) | [#122](https://github.com/zhenyatnk/LogGrokX/issues/122) |
 | Внешние ресурсы / ручные действия | Нет |
 
 ## Цель

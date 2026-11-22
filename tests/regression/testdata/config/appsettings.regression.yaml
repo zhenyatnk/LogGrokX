@@ -158,7 +158,7 @@ Settings:
     GroupByThread: false
     # Draw horizontal separators between thread groups
     ShowThreadGroupSeparators: true
-    # Reserve a fixed folding gutter in Message and marked lines
+    # Reserve a fixed folding gutter in Message; false restores collapsible-only margins
     UseMessageFoldingGutter: true
     # Binary data detection for the BIN toggle: DetectBinary turns it off completely,
     # DetectPem (PEM blocks and Base64 keys/certificates), DetectBase64 and DetectHex select the kinds
