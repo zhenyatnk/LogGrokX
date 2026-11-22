@@ -8,3 +8,4 @@
 2026-05-14 10:00:01.750 INF Thread-01 Json [A08] plain index retry [3] of [5]
 2026-05-14 10:00:02.000 INF Thread-01 Json [A09] broken [1,2
 2026-05-14 10:00:02.250 INF Thread-01 Json [A10] trailing comma [1,2,]
+2026-05-14 10:00:02.500 INF Thread-01 Json [A11] single number [-1.5e3] [ 42 ] [7,] vs ["3"] [[3]] [3,5]
