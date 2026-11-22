@@ -234,7 +234,8 @@ def gen_json_arrays():
         '[A08] plain index retry [3] of [5]',
         '[A09] broken [1,2',
         '[A10] trailing comma [1,2,]',
-        '[A11] single number [-1.5e3] [ 42 ] [7,] vs ["3"] [[3]] [3,5]',
+        '[A11] single [-1.5e3] [ 42 ] [7,] ["abc"] [true] [null] [[3]] vs [3,5]',
+        '[A12] unwrap [{"id":1,"name":"a"}] and [[1,2]] and [[[4,5]]] vs [[1,2],[3]]',
     ]
     write("json-arrays.log", [classic(i, "INF", "Thread-01", "Json", s) for i, s in enumerate(m)])
 
