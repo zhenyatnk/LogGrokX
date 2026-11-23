@@ -36,12 +36,9 @@ namespace LogGrokX.Search
         private double _progress;
         private Regex? _highlightRegex;
         private readonly FilterSettings _filterSettings;
-        private readonly CurrentThreadFilter _currentThreadFilter;
-        private readonly int _indexedThreadFieldIndex;
      
         private SubIndexer? _currentSearchIndexer;
         private IIndexedLinesProvider? _currentFilteredResults;
-        private int _excludedThreadsSnapshotCount = -1;
         private int? _currentItemIndex;
         private IEnumerable<object>? _selectedItems;
         private const int MaxSelectedMatchLines = 4096;
@@ -63,7 +60,7 @@ namespace LogGrokX.Search
             TransformationPerformer transformationPerformer,
             TimeIndex timeIndex,
             TextViewSharedFoldingState foldingState,
-            CurrentThreadFilter currentThreadFilter, DisplaySettingsMonitor displaySettings, BulkOperationService bulkOperations)
+            DisplaySettingsMonitor displaySettings, BulkOperationService bulkOperations)
         {
             
             _displaySettings = displaySettings;
@@ -78,12 +75,6 @@ namespace LogGrokX.Search
             _filterSettings.ExclusionsChanged += UpdateLines;
             _filterSettings.TimeRangeChanged += StartSearch;
             _filterSettings.LineRangeChanged += StartSearch;
-
-            var metaInformation = logModelFacade.MetaInformation;
-            _indexedThreadFieldIndex = metaInformation.GetIndexedFieldIndexByFieldIndex(
-                Array.IndexOf(metaInformation.FieldNames, "Thread"));
-            _currentThreadFilter = currentThreadFilter;
-            _currentThreadFilter.Changed += OnCurrentThreadChanged;
 
             _markedLines = markedLines;
             _transformationPerformer = transformationPerformer;
@@ -291,7 +282,6 @@ namespace LogGrokX.Search
             _filterSettings.ExclusionsChanged -= UpdateLines;
             _filterSettings.TimeRangeChanged -= StartSearch;
             _filterSettings.LineRangeChanged -= StartSearch;
-            _currentThreadFilter.Changed -= OnCurrentThreadChanged;
 
             lock (_cancellationTokenSourceLock)
             {
@@ -341,31 +331,6 @@ namespace LogGrokX.Search
             UpdateDocumentWhileLoading(progress, newCancellationTokenSource.Token);
             InvokePropertyChanged(nameof(Title));
         }
-
-        private void OnCurrentThreadChanged()
-        {
-            CurrentItemIndex = null;
-            UpdateLines();
-            InvokePropertyChanged(nameof(Title));
-        }
-
-        private IReadOnlyDictionary<int, IEnumerable<string>> GetExclusions()
-        {
-            var exclusions = _filterSettings.Exclusions;
-            if (_currentThreadFilter.Thread is not { } thread || _indexedThreadFieldIndex < 0)
-            {
-                _excludedThreadsSnapshotCount = -1;
-                return exclusions;
-            }
-
-            var allThreads = _logModelFacade.Indexer.GetAllComponents(_indexedThreadFieldIndex).ToList();
-            _excludedThreadsSnapshotCount = allThreads.Count;
-            return CurrentThreadFilter.AddThreadExclusions(exclusions, _indexedThreadFieldIndex, thread, allThreads);
-        }
-
-        private bool AreThreadExclusionsOutdated() =>
-            _excludedThreadsSnapshotCount >= 0 &&
-            _logModelFacade.Indexer.GetAllComponents(_indexedThreadFieldIndex).Count() != _excludedThreadsSnapshotCount;
 
         private int GetResultIndexByOriginalLine(int originalLine)
         {
@@ -485,8 +450,6 @@ namespace LogGrokX.Search
                 Lines?.UpdateCount();
                 SearchProgress = progress.Value * 100.0;
                 SetIsSearching(false);
-                if (AreThreadExclusionsOutdated())
-                    UpdateLines();
                 MatchBuckets = BuildBuckets();
                 InvokePropertyChanged(nameof(Title));
                 InvokePropertyChanged(nameof(MatchCounterText));
@@ -509,7 +472,7 @@ namespace LogGrokX.Search
             };
 
             var foundLines = GetLineCollection(
-                _currentSearchIndexer, _currentSearchLineIndex, GetExclusions());
+                _currentSearchIndexer, _currentSearchLineIndex, _filterSettings.Exclusions);
             
             Lines.Reset(new List<ItemViewModel>(), foundLines);
             MatchBuckets = BuildBuckets();
@@ -534,7 +497,7 @@ namespace LogGrokX.Search
                 return buckets;
 
             var filteredSearchResults =
-                _currentSearchIndexer.GetIndexedLinesProvider(GetExclusions());
+                _currentSearchIndexer.GetIndexedLinesProvider(_filterSettings.Exclusions);
             var originalLineNumbers = new ItemProviderMapper<int>(filteredSearchResults, _currentSearchLineIndex);
             var matchCount = originalLineNumbers.Count;
             if (matchCount == 0)
