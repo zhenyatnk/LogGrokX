@@ -455,10 +455,10 @@ are controlled separately by `ViewSettings.ShowThreadGroupSeparators` (default
 bottom group lines while keeping the dimmed thread value on continuation rows.
 
 While grouping is on, the thread of the current line is in focus: rows of all
-other threads are dimmed (`IsOtherThread`), and the search pane shows only the
-matches of that thread. Moving to a line of another thread switches the focus
-and re-filters the search results. In a single log the filter relies on the
-indexed `Thread` field (`IndexedFields`); the merged view works per source file.
+other threads are dimmed (`IsOtherThread`); moving to a line of another thread
+switches the focus. The search pane is not affected by the focus and always
+shows every match, in a single log and in the merged view alike (#154), so
+clicking a search result never hides the other results.
 
 ## 🔁 Text transformations
 

@@ -34,7 +34,6 @@ namespace LogGrokX
         private readonly Selection _markedLines;
         private readonly TimelinePlacementService _timelinePlacementService;
         private readonly ThreadGroupingService _threadGroupingService;
-        private readonly CurrentThreadFilter _currentThreadFilter;
         private readonly int _threadFieldIndex;
         private int _currentItemIndex = -1;
         private readonly IReadOnlyList<ItemViewModel> _headerCollection;
@@ -51,7 +50,6 @@ namespace LogGrokX
             Selection markedLines,
             TimelinePlacementService timelinePlacementService,
             ThreadGroupingService threadGroupingService,
-            CurrentThreadFilter currentThreadFilter,
             TextViewSharedFoldingState foldingState, IDesktopService desktop, BulkOperationService bulkOperations)
         {
             _desktop = desktop ?? throw new ArgumentNullException(nameof(desktop));
@@ -63,7 +61,6 @@ namespace LogGrokX
             _markedLines = markedLines;
             _timelinePlacementService = timelinePlacementService;
             _threadGroupingService = threadGroupingService;
-            _currentThreadFilter = currentThreadFilter;
             _threadFieldIndex = Array.IndexOf(logModelFacade.MetaInformation.FieldNames, "Thread");
             _timelinePlacementService.Changed += OnTimelinePlacementChanged;
             _threadGroupingService.Changed += OnThreadGroupingChanged;
@@ -223,18 +220,6 @@ namespace LogGrokX
         {
             InvokePropertyChanged(nameof(GroupByThread));
             InvokePropertyChanged(nameof(ShowGroupSeparators));
-            UpdateCurrentThread();
-        }
-
-        private void UpdateCurrentThread()
-        {
-            string? thread = null;
-            var index = CurrentItemIndex;
-            if (GroupByThread && _threadFieldIndex >= 0 && index >= 0 && index < Lines.Count
-                && Lines[index] is LineViewModel line)
-                thread = line.GetFieldText(_threadFieldIndex);
-
-            _currentThreadFilter.SetThread(thread);
         }
 
         public void Dispose()
@@ -308,7 +293,6 @@ namespace LogGrokX
 
                 _currentItemIndex = value;
                 InvokePropertyChanged();
-                UpdateCurrentThread();
             }
         }
 

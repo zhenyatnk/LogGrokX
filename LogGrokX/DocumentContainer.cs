@@ -110,7 +110,6 @@ namespace LogGrokX
                     .Type(request => request.Container.Resolve<LogHeaderCollection>()));
             
             _container.Register<FilterSettings>(Reuse.Singleton);
-            _container.Register<CurrentThreadFilter>(Reuse.Singleton);
             _container.Register<TextViewSharedFoldingState>(Reuse.Singleton);
             
             _container.Register<DocumentViewModel>();
@@ -137,10 +136,9 @@ namespace LogGrokX
                     var transofrmationPerformer = r.Resolve<TransformationPerformer>();
                     var timeIndex = r.Resolve<TimeIndex>();
                     var foldingState = r.Resolve<TextViewSharedFoldingState>();
-                    var currentThreadFilter = r.Resolve<CurrentThreadFilter>();
                     return pattern => new SearchDocumentViewModel(logModelFacade, filterSettings, gridModel, pattern,
                         markedLines, columnSettings, transofrmationPerformer, timeIndex, foldingState,
-                        currentThreadFilter, displaySettings, bulkOperations);
+                        displaySettings, bulkOperations);
                 });
             
             // view

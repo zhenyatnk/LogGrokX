@@ -226,7 +226,7 @@ public class MergedRebuildTests
     }
 
     [TestMethod]
-    public void SearchThreadGroupingRemainsScopedToSourceAfterFiltering()
+    public void SearchIsNotLimitedToCurrentThreadWhenGroupingByThread()
     {
         RunOnSta(() =>
         {
@@ -237,12 +237,14 @@ public class MergedRebuildTests
             merged.CurrentItemIndex = 0;
             using var search = new MergedSearchDocumentViewModel(merged, new SearchPattern("match", false, false));
             WaitFor(() => !search.IsSearching);
-            Assert.AreEqual(2, search.Lines.Count);
-            Assert.IsTrue(search.Lines.Cast<MergedLineViewModel>().All(line => line.Source.Document == fixture.Main.Documents[0]));
+            Assert.AreEqual(12, search.Lines.Count);
+            Assert.AreEqual(3, search.Lines.Cast<MergedLineViewModel>().Select(line => line.Source.Document).Distinct().Count());
+            merged.CurrentItemIndex = 5;
+            Assert.AreEqual(12, search.Lines.Count);
             fixture.Change(() => merged.TimeRangeFilter.LowerValue = merged.GetSearchSnapshot().Data.Lines[6].Ticks);
             WaitFor(() => !search.IsSearching);
-            Assert.AreEqual(1, search.Lines.Count);
-            Assert.IsTrue(search.Lines.Cast<MergedLineViewModel>().All(line => line.Source.Document == fixture.Main.Documents[0]));
+            Assert.AreEqual(6, search.Lines.Count);
+            Assert.AreEqual(3, search.Lines.Cast<MergedLineViewModel>().Select(line => line.Source.Document).Distinct().Count());
         });
     }
 
@@ -422,7 +424,7 @@ public class MergedRebuildTests
     }
 
     [TestMethod]
-    public void ThreadIdentityAndSearchSurviveSourceSnapshots()
+    public void ThreadIdentitySurvivesSourceSnapshotsAndSearchKeepsAllMatches()
     {
         RunOnSta(() =>
         {
@@ -432,18 +434,13 @@ public class MergedRebuildTests
             fixture.Main.IsGroupByThread = true;
             merged.CurrentItemIndex = 0;
             var previous = (MergedLineViewModel)merged.Lines[0];
-            var thread = merged.CurrentThread!.Value;
             fixture.Change(() => merged.AvailableDocuments[2].IsSelected = false);
             var current = (MergedLineViewModel)merged.Lines[0];
             Assert.AreNotSame(previous.Source, current.Source);
             Assert.IsTrue(previous.HasSameThread(current, merged.ThreadFieldIndex));
-            var currentThread = new MergedThread(current.Source, current.GetFieldText(merged.ThreadFieldIndex));
-            Assert.AreEqual(thread, currentThread);
-            Assert.AreEqual(thread.GetHashCode(), currentThread.GetHashCode());
             using var search = new MergedSearchDocumentViewModel(merged, new SearchPattern("match", false, false));
             WaitFor(() => !search.IsSearching);
-            Assert.AreEqual(2, search.Lines.Count);
-            Assert.IsTrue(search.Lines.Cast<MergedLineViewModel>().All(line => line.Source.Document == previous.Source.Document));
+            Assert.AreEqual(8, search.Lines.Count);
         });
     }
 

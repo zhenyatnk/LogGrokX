@@ -125,8 +125,8 @@ LogGrokX.exe C:\logs\app.log C:\logs\worker.log
   line centers the target row in the grid.
 - **Thread grouping** — group consecutive visible lines that share the same
   `Thread` field, separated by subtle dividers and with the thread value dimmed
-  on continuation rows. Rows of threads other than the current line are dimmed
-  and search results are limited to the current thread. Toggled from the
+  on continuation rows. Rows of threads other than the current line are dimmed;
+  search results always include every thread. Toggled from the
   title-bar **View** menu and persisted in `appsettings.yaml`.
 - **Text transformations** — rewrite matched fragments of a line before display
   (for example Base64/JSON decoding) via `Transformations`.

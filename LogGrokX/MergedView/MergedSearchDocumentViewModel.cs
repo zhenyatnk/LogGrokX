@@ -23,9 +23,7 @@ namespace LogGrokX.MergedView
         private readonly DecodedPartsState _decodedParts = new();
 
         private CancellationTokenSource? _cts;
-        private CancellationTokenSource? _threadFilterCts;
         private SearchPattern _searchPattern;
-        private int[] _allMatchedIndices = Array.Empty<int>();
         private int[] _matchedIndices = Array.Empty<int>();
         private MergedViewSnapshot _snapshot = MergedViewSnapshot.Empty;
         private SearchMatches? _cachedMatches;
@@ -53,7 +51,6 @@ namespace LogGrokX.MergedView
             });
 
             _merged.Rebuilt += OnMergedRebuilt;
-            _merged.CurrentThreadChanged += OnCurrentThreadChanged;
             StartSearch();
         }
 
@@ -183,16 +180,12 @@ namespace LogGrokX.MergedView
         {
             BulkOperations.Cancel(this);
             _merged.Rebuilt -= OnMergedRebuilt;
-            _merged.CurrentThreadChanged -= OnCurrentThreadChanged;
 
             lock (_ctsLock)
             {
                 _cts?.Cancel();
                 _cts?.Dispose();
                 _cts = null;
-                _threadFilterCts?.Cancel();
-                _threadFilterCts?.Dispose();
-                _threadFilterCts = null;
             }
         }
 
@@ -210,14 +203,12 @@ namespace LogGrokX.MergedView
                 _cts?.Cancel();
                 _cts?.Dispose();
                 _cts = newCts;
-                _threadFilterCts?.Cancel();
             }
 
             HighlightRegex = _searchPattern.IsEmpty ? null : _searchPattern.GetRegex(RegexOptions.None);
 
             if (_searchPattern.IsEmpty)
             {
-                _allMatchedIndices = Array.Empty<int>();
                 _matchedIndices = Array.Empty<int>();
                 _snapshot = MergedViewSnapshot.Empty;
                 _cachedMatches = null;
@@ -239,7 +230,6 @@ namespace LogGrokX.MergedView
 
             if (!ReferenceEquals(snapshot, _snapshot))
             {
-                _allMatchedIndices = Array.Empty<int>();
                 _matchedIndices = Array.Empty<int>();
                 Lines.Reset(Array.Empty<ItemViewModel>(), Array.Empty<ItemViewModel>());
                 SelectedItems = null;
@@ -290,8 +280,9 @@ namespace LogGrokX.MergedView
                     return;
 
                 _cachedMatches = matches;
-                _allMatchedIndices = matched.ToArray();
-                await ApplyThreadFilterAsync(_allMatchedIndices);
+                _matchedIndices = matched.ToArray();
+                CurrentItemIndex = null;
+                RebuildResults();
             }
             catch (OperationCanceledException)
             {
@@ -305,75 +296,6 @@ namespace LogGrokX.MergedView
                     SearchProgress = 100;
                 }
             }
-        }
-
-        private void OnCurrentThreadChanged()
-        {
-            if (_searchPattern.IsEmpty || IsSearching)
-                return;
-
-            _ = ApplyThreadFilterAsync(_allMatchedIndices);
-        }
-
-        private async Task ApplyThreadFilterAsync(int[] allMatched)
-        {
-            var cts = new CancellationTokenSource();
-            lock (_ctsLock)
-            {
-                _threadFilterCts?.Cancel();
-                _threadFilterCts?.Dispose();
-                _threadFilterCts = cts;
-            }
-
-            var token = cts.Token;
-            var buffer = _snapshot.Lines;
-            var sources = _snapshot.Sources;
-            var thread = _merged.CurrentThread;
-            var threadFieldIndex = _merged.ThreadFieldIndex;
-
-            try
-            {
-                var filtered = thread == null
-                    ? allMatched
-                    : await Task.Run(() => FilterByThread(allMatched, buffer, sources, thread, threadFieldIndex, token),
-                        token);
-
-                if (token.IsCancellationRequested || !ReferenceEquals(allMatched, _allMatchedIndices))
-                    return;
-
-                if (!Nullable.Equals(thread, _merged.CurrentThread))
-                {
-                    _ = ApplyThreadFilterAsync(allMatched);
-                    return;
-                }
-
-                _matchedIndices = filtered;
-                CurrentItemIndex = null;
-                RebuildResults();
-            }
-            catch (OperationCanceledException)
-            {
-            }
-        }
-
-        internal static int[] FilterByThread(int[] matched, MergedLineRef[] buffer, MergedDocumentItem[] sources,
-            MergedThread? thread, int threadFieldIndex, CancellationToken token)
-        {
-            if (thread is not { } current || threadFieldIndex < 0)
-                return matched;
-
-            var result = new List<int>();
-            foreach (var index in matched)
-            {
-                token.ThrowIfCancellationRequested();
-                var line = buffer[index];
-                var source = sources[line.SourceIndex];
-                if (source.HasSameSource(current.Source)
-                    && source.IsLineInThread(line.LineNumber, threadFieldIndex, current.Thread))
-                    result.Add(index);
-            }
-
-            return result.ToArray();
         }
 
         private void RebuildResults()
