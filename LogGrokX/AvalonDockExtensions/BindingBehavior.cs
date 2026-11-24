@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Input;
 using AvalonDock;
+using LogGrokX.Colors;
 
 namespace LogGrokX.AvalonDockExtensions;
 
@@ -115,9 +117,20 @@ public static class BindingBehavior
         void SetDocumentsSourceWithViewFactory(IList documentsSource, Func<object, UIElement> factory,
             Action<ContentControl, object> updateView)
         {
+            UIElement CreateView(object source)
+            {
+                var view = factory(source);
+                ((FrameworkElement)view).SetBinding(ColorSettings.ColorSettingsProperty, new Binding
+                {
+                    Source = dockingManager,
+                    Path = new PropertyPath(ColorSettings.ColorSettingsProperty)
+                });
+                return view;
+            }
+
             var targetCollection = new ObservableCollection<UIElement>();
             var documentToDocumentViewLink =
-                new ObservableCollectionFactoryLink<UIElement>(documentsSource, targetCollection, factory, (view, source) =>
+                new ObservableCollectionFactoryLink<UIElement>(documentsSource, targetCollection, CreateView, (view, source) =>
                 {
                     var control = (ContentControl)view;
                     var wasCurrent = ReferenceEquals(dockingManager.GetValue(CurrentDocumentProperty), control.Content);
