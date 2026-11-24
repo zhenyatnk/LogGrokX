@@ -11,8 +11,13 @@ namespace LogGrokX.Controls.TextRender;
 public class GlyphLine : IDisposable
 {
     private readonly List<GlyphRun> _runs = new();
-    private readonly PooledList<double> _advanceWidthForChar = new();
-    private readonly double _baselineOffset;
+    private PooledList<double>? _advanceWidthForChar;
+    private readonly GlyphTypeface _typeface;
+    private readonly double _fontSize;
+    private readonly float _pixelsPerDip;
+    private readonly double _constraintWidth;
+    private bool _isMaterialized;
+    private double _baselineOffset;
 
     private static readonly ConcurrentDictionary<(GlyphTypeface typeface, double fontSize, char ch), GlyphParameters>
         TypefaceCache = new();
@@ -25,13 +30,24 @@ public class GlyphLine : IDisposable
         ushort GlyphIndex,
         GlyphTypeface Typeface);
 
-    public Size Size { get; }
+    public Size Size { get; private set; }
 
     public double AdvanceHeight { get; private set; }
 
     public StringRange Text { get; }
 
-    internal int RunCount => _runs.Count;
+    internal bool HasWidthStorage => _advanceWidthForChar != null;
+
+    internal int MaterializedRunCount => _runs.Count;
+
+    internal int RunCount
+    {
+        get
+        {
+            EnsureMaterialized();
+            return _runs.Count;
+        }
+    }
 
     public int GetNearestTextPosition(double relativeHorizontalPosition)
     {
@@ -40,8 +56,9 @@ public class GlyphLine : IDisposable
             return 0;
         }
 
+        EnsureMaterialized();
         var currentOffset = 0.0;
-        for (var i = 0; i < _advanceWidthForChar.Count; i++)
+        for (var i = 0; i < _advanceWidthForChar!.Count; i++)
         {
             var currentCharWidth = _advanceWidthForChar[i];
             currentOffset += currentCharWidth;
@@ -50,15 +67,16 @@ public class GlyphLine : IDisposable
                 return i;
             return i + 1;
         }
-        return _advanceWidthForChar.Count;
+        return _advanceWidthForChar!.Count;
     }
 
     public int GetCharacterIndexAtPosition(double relativeHorizontalPosition)
     {
         if (relativeHorizontalPosition < 0) return -1;
 
+        EnsureMaterialized();
         var currentOffset = 0.0;
-        for (var i = 0; i < _advanceWidthForChar.Count; i++)
+        for (var i = 0; i < _advanceWidthForChar!.Count; i++)
         {
             currentOffset += _advanceWidthForChar[i];
             if (relativeHorizontalPosition < currentOffset) return i;
@@ -69,9 +87,10 @@ public class GlyphLine : IDisposable
 
     public Rect GetTextBounds(Point startPoint, int firstTextSourceCharacterIndex, int textLength)
     {
+        EnsureMaterialized();
         var height = Size.Height;
-        var start = _advanceWidthForChar.Take(firstTextSourceCharacterIndex).Sum();
-        var width = _advanceWidthForChar.Skip(firstTextSourceCharacterIndex).Take(textLength).Sum();
+        var start = _advanceWidthForChar!.Take(firstTextSourceCharacterIndex).Sum();
+        var width = _advanceWidthForChar!.Skip(firstTextSourceCharacterIndex).Take(textLength).Sum();
 
         return new Rect(start + startPoint.X, startPoint.Y, width, height);
     }
@@ -138,10 +157,89 @@ public class GlyphLine : IDisposable
         double constraintWidth)
     {
         Text = text;
+        _typeface = typeface;
+        _fontSize = fontSize;
+        _pixelsPerDip = pixelsPerDip;
+        _constraintWidth = constraintWidth;
+        Measure();
+    }
+
+    private void Measure()
+    {
+        var span = Text.Span;
+        if (Text.Length == 0)
+            return;
+
+        double totalWidth = 0;
+        var indexOfGlyph = 0;
+        GlyphTypeface? currentTypeface = null;
+        var baseline = Math.Round(_typeface.Baseline * _fontSize);
+        var height = _typeface.Height * _fontSize;
+        var ascent = baseline;
+        var descent = height - baseline;
+        var usesFallback = false;
+
+        void AddMeasurement(GlyphParameters parameters)
+        {
+            if (currentTypeface != parameters.Typeface)
+            {
+                currentTypeface = parameters.Typeface;
+                if (currentTypeface != _typeface)
+                {
+                    var runAscent = Math.Round(currentTypeface.Baseline * _fontSize);
+                    ascent = Math.Max(ascent, runAscent);
+                    descent = Math.Max(descent, currentTypeface.Height * _fontSize - runAscent);
+                    usesFallback = true;
+                }
+            }
+            AdvanceHeight = Math.Max(AdvanceHeight, parameters.AdvanceHeight);
+            totalWidth += parameters.AdvanceWidth;
+        }
+
+        for (var n = 0; n < Text.Length && totalWidth <= _constraintWidth; n++, indexOfGlyph++)
+        {
+            if (span[n] == '\t')
+            {
+                var spaceCount = indexOfGlyph % 8 == 0 ? 8 : 8 - indexOfGlyph % 8;
+                var space = TypefaceCache.GetOrAdd((_typeface, _fontSize, ' '), GetGlyphParametersForChar);
+                while (spaceCount > 0)
+                {
+                    AddMeasurement(space);
+                    indexOfGlyph++;
+                    spaceCount--;
+                }
+                continue;
+            }
+
+            var parameters = TypefaceCache.GetOrAdd((_typeface, _fontSize, span[n]), GetGlyphParametersForChar);
+            AddMeasurement(parameters);
+        }
+
+        if (usesFallback)
+        {
+            _baselineOffset = ascent - baseline;
+            height = Math.Max(AdvanceHeight, ascent + descent);
+            AdvanceHeight = height;
+        }
+        Size = new Size(totalWidth, height);
+    }
+
+    private void EnsureMaterialized()
+    {
+        if (_isMaterialized)
+            return;
+        _isMaterialized = true;
+
+        var text = Text;
+        var typeface = _typeface;
+        var fontSize = _fontSize;
+        var pixelsPerDip = _pixelsPerDip;
+        var constraintWidth = _constraintWidth;
         var span = text.Span;
         if (text.Length == 0)
             return;
 
+        _advanceWidthForChar ??= new PooledList<double>();
         double totalWidth = 0;
         var indexOfGlyph = 0;
         GlyphTypeface? runTypeface = null;
@@ -235,13 +333,14 @@ public class GlyphLine : IDisposable
 
     public void Render(Point position, Brush brush, DrawingContext drawingContext)
     {
+        EnsureMaterialized();
         drawingContext.PushTransform(new TranslateTransform(position.X, position.Y + _baselineOffset));
         foreach (var run in _runs)
             drawingContext.DrawGlyphRun(brush, run);
         drawingContext.Pop();
     }
 
-    public void Dispose() => _advanceWidthForChar.Dispose();
+    public void Dispose() => _advanceWidthForChar?.Dispose();
 
     public (int start, int length)? Selection { get; private set; }
 

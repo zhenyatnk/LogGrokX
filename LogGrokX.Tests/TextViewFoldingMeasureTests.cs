@@ -62,6 +62,20 @@ namespace LogGrokX.Tests
             Assert.AreSame(first.SourceString, second.SourceString);
         }
 
+        [TestMethod]
+        public void CollapsedPreviewIsBoundedButFullSubstitutionIsPreserved()
+        {
+            var model = new TextModel(1, "{\"value\":\"" + new string('x', 20_000) + "\"}");
+            var root = model.CollapsibleRanges!.OrderByDescending(r => r.length).First();
+
+            var preview = model.GetCollapsedTextPreview(root.start, 8192);
+            var full = model.GetCollapsedTextSubstitution(root.start);
+
+            Assert.AreEqual(8192, preview.Length);
+            StringAssert.EndsWith(preview.ToString(), "...");
+            Assert.AreEqual(20_000, full.ToString().Count(c => c == 'x'));
+        }
+
         private static TextView CreateTextView(TextViewSharedFoldingState state, string json)
         {
             var textView = new TextView();

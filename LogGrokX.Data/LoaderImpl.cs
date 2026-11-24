@@ -9,6 +9,7 @@ namespace LogGrokX.Data
 {
     public class LoaderImpl
     {
+        private const int MaxPooledBufferSize = 8 * 1024 * 1024;
         private readonly int _bufferSize;
         private readonly ILineDataConsumer _lineDataConsumer;
 
@@ -16,6 +17,12 @@ namespace LogGrokX.Data
         {
             _bufferSize = bufferSize;
             _lineDataConsumer = lineDataConsumer;
+        }
+
+        private static void ReturnBuffer(byte[] buffer)
+        {
+            if (buffer.Length <= MaxPooledBufferSize)
+                ArrayPool<byte>.Shared.Return(buffer);
         }
 
         public void Load(Stream stream, ReadOnlySpan<byte> cr, ReadOnlySpan<byte> lf, CancellationToken cancellationToken)
@@ -116,7 +123,7 @@ namespace LogGrokX.Data
                                 bufferSize = _bufferSize;
                                 bufferSpan = buffer.AsSpan();
                                 rest.CopyTo(bufferSpan);
-                                ArrayPool<byte>.Shared.Return(oldBuffer);
+                                ReturnBuffer(oldBuffer);
                             }
                             break;
                         }
@@ -124,7 +131,7 @@ namespace LogGrokX.Data
                         // did not found next line start, grow buffer
                         var newBuffer = ArrayPool<byte>.Shared.Rent(bufferSize * 2);
                         buffer.CopyTo(newBuffer.AsSpan());
-                        ArrayPool<byte>.Shared.Return(buffer);
+                        ReturnBuffer(buffer);
 
                         var lineOffsetFromBufferStart_ =
                             dataOffsetFromBufferStart + lineStartFromCurrentDataOffset;
@@ -160,7 +167,7 @@ namespace LogGrokX.Data
 
             finally
             {
-                ArrayPool<byte>.Shared.Return(buffer);
+                ReturnBuffer(buffer);
             }
         }
     }

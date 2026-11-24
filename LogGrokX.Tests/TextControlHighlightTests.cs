@@ -120,6 +120,36 @@ public class TextControlHighlightTests
     }
 
     [TestMethod]
+    public void HighlightGeometryCacheIncludesClippingRect()
+    {
+        RunOnSta(() =>
+        {
+            var state = new TextViewSharedFoldingState();
+            state.ExpandAll();
+            var textView = new TextView();
+            TextView.SetSharedFoldingState(textView, state);
+            textView.TextModel = new TextModel(1, "{\"alpha\":1,\"beta\":2}", true);
+            textView.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+            var control = (TextControl)VisualTreeHelper.GetChild(textView, 0);
+            var regex = new Regex("alpha|beta");
+            var lineHeight = control.TextLines![0].glyphLine.Size.Height;
+            Assert.IsGreaterThan(0, textView.GetHighlightRanges(1,
+                control.TextLines[1].glyphLine.Text.ToString(), regex).Count);
+
+            var first = (GeometryGroup)control.GetHighlightGeometries(control.TextLines, regex,
+                new Rect(0, lineHeight, 1000, 1))!;
+            var second = (GeometryGroup)control.GetHighlightGeometries(control.TextLines, regex,
+                new Rect(0, 2 * lineHeight + 1, 1000, 1))!;
+
+            Assert.AreNotSame(first, second);
+            Assert.IsGreaterThan(0, first.Children.Count);
+            Assert.IsGreaterThan(0, second.Children.Count);
+            Assert.AreEqual(lineHeight - 2, first.Bounds.Top, 0.001);
+            Assert.AreEqual(2 * lineHeight - 2, second.Bounds.Top, 0.001);
+        });
+    }
+
+    [TestMethod]
     public void PlainTextKeepsDirectRegexHighlight()
     {
         RunOnSta(() =>

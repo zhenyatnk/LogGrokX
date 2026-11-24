@@ -7,6 +7,7 @@ namespace LogGrokX.Data
     public class StringPool
     {
         private const int MaxPooledPerBucket = 64;
+        private const int MaxPooledStringSize = 1024 * 1024;
         private class StringPoolBucket
         {
             private readonly int _stringSize;
@@ -52,6 +53,8 @@ namespace LogGrokX.Data
 
         public void Return(string returned)
         {
+            if (returned.Length > MaxPooledStringSize)
+                return;
             if (!_buckets.TryGetValue(returned.Length, out var bucket)) 
                 throw new InvalidOperationException();
             

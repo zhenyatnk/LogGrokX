@@ -70,6 +70,47 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void GlyphRunsAreMaterializedOnDemand()
+        {
+            RunOnSta(() =>
+            {
+                var typeface = new Typeface("Segoe UI");
+                Assert.IsTrue(typeface.TryGetGlyphTypeface(out var glyphTypeface));
+                using var line = new GlyphLine(StringRange.FromString("A日本語B"), glyphTypeface, 12, 1f,
+                    double.PositiveInfinity);
+
+                var size = line.Size;
+                var advanceHeight = line.AdvanceHeight;
+                Assert.AreEqual(0, line.MaterializedRunCount);
+                Assert.IsFalse(line.HasWidthStorage);
+                Assert.IsGreaterThan(0, size.Width);
+                Assert.IsGreaterThan(0, line.RunCount);
+                Assert.IsGreaterThan(0, line.MaterializedRunCount);
+                Assert.IsTrue(line.HasWidthStorage);
+                Assert.AreEqual(size, line.Size);
+                Assert.AreEqual(advanceHeight, line.AdvanceHeight);
+            });
+        }
+
+        [TestMethod]
+        public void MaterializationPreservesMeasurementForTabsAndFiniteWidth()
+        {
+            RunOnSta(() =>
+            {
+                Assert.IsTrue(new Typeface("Consolas").TryGetGlyphTypeface(out var glyphTypeface));
+                using var line = new GlyphLine(StringRange.FromString("A\t日B"), glyphTypeface, 12, 1.5f, 40);
+                var size = line.Size;
+                var advanceHeight = line.AdvanceHeight;
+
+                Assert.IsFalse(line.HasWidthStorage);
+                Assert.IsGreaterThan(0, line.GetNearestTextPosition(20));
+                Assert.IsTrue(line.HasWidthStorage);
+                Assert.AreEqual(size, line.Size);
+                Assert.AreEqual(advanceHeight, line.AdvanceHeight);
+            });
+        }
+
+        [TestMethod]
         public void MissingGlyphsUseFallbackTypeface()
         {
             RunOnSta(() =>

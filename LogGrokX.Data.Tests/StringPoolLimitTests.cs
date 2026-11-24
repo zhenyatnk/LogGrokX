@@ -7,6 +7,17 @@ namespace LogGrokX.Data.Tests;
 public class StringPoolLimitTests
 {
     [TestMethod]
+    public void OversizedStringIsNotRetained()
+    {
+        var pool = new StringPool();
+        var large = pool.Rent(2 * 1024 * 1024);
+
+        pool.Return(large);
+
+        Assert.AreEqual(0, pool.GetPooledCount(large.Length));
+    }
+
+    [TestMethod]
     public void ReturnCapsEachBucketAndRentDecrementsCount()
     {
         var pool = new StringPool();

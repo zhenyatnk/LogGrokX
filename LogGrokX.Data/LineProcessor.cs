@@ -41,6 +41,7 @@ namespace LogGrokX.Data
             if (_currentString != null)
             {
                 _parsedBufferConsumer.AddParsedBuffer(_bufferOffset, _currentBufferLineCount, _currentString);
+                _currentString = null;
             }
             
             _parsedBufferConsumer.CompleteAdding(totalBytesRead);

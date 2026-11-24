@@ -80,6 +80,44 @@ public class TextModel : IReadOnlyList<StringRange>
         return collapsedText;
     }
 
+    public StringRange GetCollapsedTextPreview(int index, int maxLength)
+    {
+        if (maxLength <= 0)
+            return StringRange.Empty;
+        if (_textLines is not { } textLines || CollapsibleRanges is not { } collapsibleRanges)
+            throw new InvalidOperationException();
+
+        if (_substitutions?.TryGetValue(index, out var substitution) ?? false)
+            return LimitPreview(substitution, maxLength);
+        if (_collapsedTextCache?.TryGetValue(index, out var cached) ?? false)
+            return LimitPreview(cached, maxLength);
+
+        _indexedCollapsibleRanges ??= collapsibleRanges.ToDictionary(
+            static kv => kv.start, static kv => kv);
+        var (start, length) = _indexedCollapsibleRanges[index];
+        var end = Math.Min(start + length, textLines.Count);
+        var builder = new StringBuilder(Math.Min(maxLength + 1, 1024));
+        for (var i = start; i < end && builder.Length <= maxLength; i++)
+        {
+            var line = textLines[i].Span;
+            var trimmed = i == start ? line.TrimEnd() : line.Trim();
+            var remaining = maxLength + 1 - builder.Length;
+            builder.Append(trimmed[..Math.Min(trimmed.Length, remaining)]);
+        }
+
+        return LimitPreview(StringRange.FromString(builder.ToString()), maxLength);
+    }
+
+    private static StringRange LimitPreview(StringRange text, int maxLength)
+    {
+        if (text.Length <= maxLength)
+            return text;
+        var result = maxLength >= 3
+            ? text.Span[..(maxLength - 3)].ToString() + "..."
+            : new string('.', maxLength);
+        return StringRange.FromString(result);
+    }
+
     internal bool TryGetOriginalText(int lineIndex, int start, int length, bool isCollapsed,
         out string? text)
     {

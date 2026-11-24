@@ -206,11 +206,15 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   view must use `Document.FoldingState` and the same `TextModel.UniqueId` as the
   grid's JSON component, otherwise expansion falls out of sync.
 - **JSON folding performance**: `TextView` keeps one cached `GlyphLine` per
-  source line (`_textLines`, plus its collapsed state) and builds glyphs only
+  source line (`_textLines`, plus its collapsed state) and builds line objects only
   for lines visible under the current folding, so toggling a region re-creates
-  just the affected lines. `TextModel.GetCollapsedTextSubstitution` memoizes the
-  inlined text of collapsed regions. Avoid reintroducing full re-creation of all
-  lines on every folding change — it makes expanding large JSON sluggish (#38).
+  just the affected lines. `GlyphLine` measures without glyph runs or width arrays
+  and materializes them on rendering or hit-testing; `TextControl` clips rendering
+  and highlight geometry to the visible rectangle and keys highlight caches by it. `TextModel.GetCollapsedTextSubstitution`
+  memoizes the full inlined text for copy/search, while
+  `GetCollapsedTextPreview` builds only the bounded display prefix. Avoid
+  reintroducing full re-creation of all lines on every folding change — it makes
+  expanding large JSON sluggish (#38).
 - **Merged snapshots**: `MergedViewModel` builds merge order, time index, timeline
   segments and filtering on worker tasks, then publishes an immutable
   `MergedViewSnapshot` on the UI dispatcher. Source changes invalidate the full

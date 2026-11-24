@@ -439,7 +439,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
         return expander;
     }
 
-    private Rect? GetClippingRect()
+    internal Rect? GetClippingRect()
     {
         _clippingRectProvider ??= ClippingRectProviderBehavior.GetClippingRectProvider(this);
         if (_clippingRectProvider is not {} clippingRectProvider)
@@ -696,8 +696,8 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     private static StringRange GetCollapsedLineText(TextModel text, int index)
     {
-        if (text.GetCollapsedTextSubstitution(index) is { IsEmpty: false } substitution)
-            return substitution;
+        if (text.GetCollapsedTextPreview(index, MaxLineLength) is { IsEmpty: false } preview)
+            return preview;
 
         return StringRange.FromString(text[index].ToString().TrimEnd().TrimEnd('{') + "{...}");
     }
@@ -781,6 +781,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
 
     public void OnChildRectChanged(Rect rect)
     {
+        _textControl.InvalidateVisual();
         if (_outlineData == null)
             return;
         
