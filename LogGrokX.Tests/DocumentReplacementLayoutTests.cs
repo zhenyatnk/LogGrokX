@@ -7,11 +7,16 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AvalonDock;
 using AvalonDock.Layout;
 using LogGrokX.AvalonDockExtensions;
+using LogGrokX.Colors;
+using LogGrokX.Controls.ListControls;
+using LogGrokX.Platform.Colors;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MediaColors = System.Windows.Media.Colors;
 
 namespace LogGrokX.Tests;
 
@@ -55,6 +60,80 @@ public class DocumentReplacementLayoutTests
             foreach (var source in sources)
                 Assert.AreEqual(1, pane.Children.Count(document => document.Content is ContentControl view && ReferenceEquals(view.Content, source)));
         });
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void DetachedDocumentViewsKeepColorRulesAndGrayRows(bool useTemplateSelector)
+    {
+        RunOnSta(() =>
+        {
+            var sources = new ObservableCollection<object> { new() };
+            var manager = new DockingManager();
+            var template = new DataTemplate();
+            if (useTemplateSelector)
+                BindingBehavior.SetDocumentViewTemplateSelector(manager, new TestTemplateSelector(template));
+            else
+                BindingBehavior.SetDocumentViewTemplate(manager, template);
+            BindingBehavior.SetDocumentsSource(manager, sources);
+            var view = manager.DocumentsSource.Cast<ContentControl>().Single();
+            var row = new BaseLogListViewItem(new LogGrokX.Controls.ListControls.ListView())
+            {
+                Content = "10:00:00.000\t0x01\tDBG\tComponent\tMessage"
+            };
+            view.Content = row;
+            view.ContentTemplate = null;
+            var window = new Window
+            {
+                Content = view, Width = 400, Height = 100, Left = -10000, Top = -10000,
+                ShowInTaskbar = false, ShowActivated = false
+            };
+            try
+            {
+                var rules = CreateDebugColorRules(nameof(MediaColors.Gray));
+                ColorSettings.SetColorSettings(manager, rules);
+                window.Show();
+                PumpBindings();
+
+                Assert.AreSame(rules, ColorSettings.GetColorSettings(view));
+                Assert.AreEqual(MediaColors.Gray, ((SolidColorBrush)row.Foreground).Color);
+
+                var updatedRules = CreateDebugColorRules(nameof(MediaColors.DarkGray));
+                ColorSettings.SetColorSettings(manager, updatedRules);
+                PumpBindings();
+
+                Assert.AreSame(updatedRules, ColorSettings.GetColorSettings(view));
+                Assert.AreEqual(MediaColors.DarkGray, ((SolidColorBrush)row.Foreground).Color);
+
+                var restoredRules = CreateDebugColorRules(nameof(MediaColors.Gray));
+                ColorSettings.SetColorSettings(manager, restoredRules);
+                PumpBindings();
+
+                Assert.AreSame(restoredRules, ColorSettings.GetColorSettings(view));
+                Assert.AreEqual(MediaColors.Gray, ((SolidColorBrush)row.Foreground).Color);
+            }
+            finally { window.Close(); }
+        });
+    }
+
+    private static ColorRuleSet CreateDebugColorRules(string foregroundColor) => new(
+        new LogGrokX.Platform.Colors.Configuration.ColorSettings
+        {
+            Rules = [new LogGrokX.Platform.Colors.Configuration.ColorRule
+            {
+                RegexString = @"\tDBG\t", ForegroundColor = foregroundColor
+            }]
+        }, new LogGrokX.Platform.WpfColorValidator());
+
+    private sealed class TestTemplateSelector(DataTemplate template) : DataTemplateSelector
+    {
+        public override DataTemplate SelectTemplate(object item, DependencyObject container) => template;
+    }
+
+    private static void PumpBindings()
+    {
+        Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.ContextIdle);
     }
 
     private sealed class TestSelection : ViewModelBase
