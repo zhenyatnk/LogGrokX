@@ -61,6 +61,7 @@
                                     SnapsToDevicePixels="True">
                                 <Grid>
                                     <ProgressBar x:Name="DownloadProgress"
+                                                 Height="Auto" VerticalAlignment="Stretch"
                                                  Maximum="100" Value="{Binding UpdateProgress, Mode=OneWay}"
                                                  Foreground="{DynamicResource AccentFillColorDefaultBrush}"
                                                  Opacity="0.32"
