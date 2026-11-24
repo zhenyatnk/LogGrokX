@@ -164,7 +164,7 @@ namespace LogGrokX.Tests
             Assert.AreEqual(json, source.Substring(ranges[0].start, ranges[0].length));
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("retry [3] of [5]")]
         [DataRow("value [-1.5e3] end")]
         [DataRow("value [ 42 ] end")]
@@ -179,7 +179,7 @@ namespace LogGrokX.Tests
             Assert.AreEqual(source, TextOperations.FormatInlineJson(source));
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("[{\"id\":1,\"name\":\"a\"}]", "{\"id\":1,\"name\":\"a\"}")]
         [DataRow("[[1,2]]", "[1,2]")]
         [DataRow("[[[1,2]]]", "[1,2]")]
@@ -195,7 +195,7 @@ namespace LogGrokX.Tests
             Assert.AreEqual(expected, source.Substring(ranges[0].start, ranges[0].length));
         }
 
-        [DataTestMethod]
+        [TestMethod]
         [DataRow("[3,5]")]
         [DataRow("[1,2,]")]
         [DataRow("[[1,2],[3]]")]

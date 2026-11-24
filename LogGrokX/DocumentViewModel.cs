@@ -30,6 +30,7 @@ namespace LogGrokX
         private readonly TimeIndex _timeIndex;
         private Stream _fileHolder;
         private int _lastPublishedLineCount;
+        private Action? _restorePositionAfterLoading;
 
         public DocumentViewModel(
             LineProvider lineProvider,
@@ -120,6 +121,45 @@ namespace LogGrokX
         public void NavigateTo(int lineNumber)
         {
             LogViewModel.NavigateTo(lineNumber, true);
+        }
+
+        public UpdateRestartDocument CaptureRestartState()
+        {
+            SearchViewModel.CommitPendingSearchPattern();
+            var currentSearch = SearchViewModel.CurrentDocument;
+            return new UpdateRestartDocument(DocumentId)
+            {
+                Searches = SearchViewModel.Documents.Select(document => new UpdateRestartSearch(
+                    document.SearchPattern.Pattern, document.SearchPattern.IsCaseSensitive, document.SearchPattern.UseRegex)).ToArray(),
+                CurrentSearchIndex = currentSearch == null ? -1 : SearchViewModel.Documents.IndexOf(currentSearch),
+                MarkedLines = MarkedLines.Snapshot().ToArray(),
+                CurrentLine = LogViewModel.CurrentOriginalLine,
+                ScrollPosition = LogViewModel.ScrollPosition
+            };
+        }
+
+        public void RestoreRestartState(UpdateRestartDocument state)
+        {
+            SearchViewModel.RestoreSearches(state.Searches, state.CurrentSearchIndex);
+            using (MarkedLines.BeginBulkUpdate())
+            {
+                foreach (var line in state.MarkedLines.Where(line => line >= 0))
+                    MarkedLines.Add(line);
+            }
+
+            if (!LogViewModel.IsLoading)
+            {
+                LogViewModel.RestorePosition(state.CurrentLine, state.ScrollPosition);
+                return;
+            }
+
+            _restorePositionAfterLoading = () =>
+            {
+                LogViewModel.LoadingCompleted -= _restorePositionAfterLoading;
+                _restorePositionAfterLoading = null;
+                LogViewModel.RestorePosition(state.CurrentLine, state.ScrollPosition);
+            };
+            LogViewModel.LoadingCompleted += _restorePositionAfterLoading;
         }
 
         private void OnSearchViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -240,6 +280,11 @@ namespace LogGrokX
         
         public void CloseFile()
         {
+            if (_restorePositionAfterLoading != null)
+            {
+                LogViewModel.LoadingCompleted -= _restorePositionAfterLoading;
+                _restorePositionAfterLoading = null;
+            }
             LogViewModel.Lines.CollectionGrown -= OnLinesGrown;
             SearchViewModel.Dispose();
             _fileHolder.Dispose();

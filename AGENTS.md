@@ -268,12 +268,13 @@ Covered by `MergedLineOrderTests`/`TimeIndexTests` (`LogGrokX.Data.Tests`) and
   restored as `Available` after restart while it is still newer than the current
   build; skipping it or catching up to its version deletes the file. The pill's
   single command downloads the available release; when installation is ready,
-  it saves
-  all open `DocumentId`s to `update-restart.json` and shuts down through
+  it saves every open `DocumentId` with its search tabs, marked lines, current
+  line, first visible line and active-document marker to `update-restart.json` and shuts down through
   `IApplicationLifetime`; the installer script then waits for installation and
-  starts the app with `--restore-update`, which reads the list once and reopens
-  those files. Ordinary application exit keeps the original install-without-
-  restart behavior.
+  starts the app with `--restore-update`, which reads the state once, reopens
+  the files and restores navigation after loading. The legacy path-only JSON
+  format is still accepted. Ordinary application exit keeps the original
+  install-without-restart behavior.
 - **Search results selection**: the search pane's `VirtualizingStackPanel` sets
   `ReplaceSelectionOnCurrentPosition="True"` so F3/next/previous replace the
   selection. Mouse and Shift+arrow selection must change `CurrentPosition`

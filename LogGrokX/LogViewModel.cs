@@ -357,6 +357,8 @@ namespace LogGrokX
             set => SetAndRaiseIfChanged(ref _isLoading, value);
         }
 
+        public event Action? LoadingCompleted;
+
         public LogGridModel CustomView => _gridModel;
 
         public NavigateToLineRequest NavigateToLineRequest { get; } = new();
@@ -371,6 +373,14 @@ namespace LogGrokX
         public void NavigateToScrollIndex(int scrollIndex)
         {
             NavigateToLineRequest.Raise(scrollIndex);
+        }
+
+        public void RestorePosition(int currentLine, int scrollPosition)
+        {
+            int GetCollectionIndex(int line) => line >= 0 && line < _logModelFacade.LineCount
+                ? _getIndexByValue(line) + _headerCollection.Count
+                : -1;
+            NavigateToLineRequest.RaiseRestorePosition(GetCollectionIndex(currentLine), GetCollectionIndex(scrollPosition));
         }
         
         private async void ExcludeSelectedComponents(int componentIndex, bool excludeAllBut)
@@ -431,6 +441,7 @@ namespace LogGrokX
                 TimeRangeFilter.Refresh();
                 RefreshMarkers();
                 IsLoading = false;
+                LoadingCompleted?.Invoke();
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {

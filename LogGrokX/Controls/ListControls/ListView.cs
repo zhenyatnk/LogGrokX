@@ -33,6 +33,8 @@ namespace LogGrokX.Controls.ListControls
         private bool _contentFitDone;
 
         private VirtualizingStackPanel.VirtualizingStackPanel? _panel;
+        private (int current, int scroll)? _pendingRestorePosition;
+        private DispatcherOperation? _restorePositionOperation;
 
         private bool? _haveExternalColumnSettings;
 
@@ -99,6 +101,12 @@ namespace LogGrokX.Controls.ListControls
                 if (View is System.Windows.Controls.GridView gridView)
                     ApplyColumnVisibility(gridView);
                 ScheduleRemeasure(0);
+                ApplyPendingRestorePosition();
+                if (_pendingRestorePosition == null)
+                {
+                    _restorePositionOperation?.Abort();
+                    _restorePositionOperation = null;
+                }
             };
             IsVisibleChanged += (_, args) =>
             {
@@ -110,6 +118,8 @@ namespace LogGrokX.Controls.ListControls
             Unloaded += (_, _) =>
             {
                 _contentFitTimer.Stop();
+                _restorePositionOperation?.Abort();
+                _restorePositionOperation = null;
                 _panel = null;
                 SubscribeColumnSettings(null);
             };
@@ -274,6 +284,31 @@ namespace LogGrokX.Controls.ListControls
         public void BringIndexIntoView(in int lineNumber)
         {
             GetPanel()?.BringIndexIntoViewPublic(lineNumber);
+        }
+
+        public void RestorePosition(int currentLineNumber, int scrollLineNumber)
+        {
+            _pendingRestorePosition = (currentLineNumber, scrollLineNumber);
+            ApplyPendingRestorePosition();
+            if (_pendingRestorePosition != null && _restorePositionOperation == null)
+            {
+                _restorePositionOperation = Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    _restorePositionOperation = null;
+                    ApplyPendingRestorePosition();
+                }), DispatcherPriority.Loaded);
+            }
+        }
+
+        private void ApplyPendingRestorePosition()
+        {
+            if (_pendingRestorePosition is not { } pending || GetPanel() is not { } panel)
+                return;
+            _pendingRestorePosition = null;
+            if (pending.current >= 0)
+                panel.NavigateTo(pending.current);
+            if (pending.scroll >= 0)
+                panel.SetVerticalOffset(pending.scroll);
         }
 
         protected override void OnPreviewKeyDown(KeyEventArgs e)

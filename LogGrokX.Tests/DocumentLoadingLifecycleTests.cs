@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Threading;
 using LogGrokX.Data;
 using LogGrokX.MarkedLines;
+using LogGrokX.Platform;
 using LogGrokX.Search;
 using LogGrokX.Theming;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -121,6 +122,53 @@ public class DocumentLoadingLifecycleTests
 
                 Assert.AreEqual(0, document.LineCount);
                 Assert.IsTrue(document.IsFileEmpty);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void RestoringDocument_AppliesStateAndWaitsForLoadingBeforeNavigation()
+    {
+        RunOnDispatcher(() =>
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-restore-{Guid.NewGuid():N}.log");
+            File.WriteAllLines(fileName, Enumerable.Range(0, 8).Select(index => $"line {index}"));
+            try
+            {
+                using var viewModel = TestServices.CreateMain(new ApplicationSettings());
+                var state = new UpdateRestartDocument(fileName)
+                {
+                    Searches =
+                    [
+                        new UpdateRestartSearch("line 1", true, false),
+                        new UpdateRestartSearch("line [24]", false, true)
+                    ],
+                    CurrentSearchIndex = 1,
+                    MarkedLines = [1, 6],
+                    CurrentLine = 6,
+                    ScrollPosition = 2
+                };
+
+                viewModel.RestoreDocuments([state]);
+                var document = viewModel.CurrentDocument!;
+                var currentIndex = -2;
+                var scrollIndex = -2;
+                document.LogViewModel.NavigateToLineRequest.RestorePosition += (current, scroll) =>
+                    (currentIndex, scrollIndex) = (current, scroll);
+
+                Assert.IsTrue(PumpUntil(() => !document.LogViewModel.IsLoading && currentIndex != -2,
+                    TimeSpan.FromSeconds(10)));
+                Assert.AreEqual(2, document.SearchViewModel.Documents.Count);
+                Assert.AreEqual("line [24]", document.SearchViewModel.TextToSearch);
+                Assert.IsFalse(document.SearchViewModel.CurrentDocument!.SearchPattern.IsCaseSensitive);
+                Assert.IsTrue(document.SearchViewModel.CurrentDocument.SearchPattern.UseRegex);
+                CollectionAssert.AreEqual(new[] { 1, 6 }, document.MarkedLines.Snapshot().ToArray());
+                Assert.AreEqual(6, currentIndex);
+                Assert.AreEqual(2, scrollIndex);
             }
             finally
             {

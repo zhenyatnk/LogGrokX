@@ -13,7 +13,7 @@ public interface IUpdateService
     Task DownloadAvailableAsync();
     Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken);
     void SkipVersion(string tag);
-    bool RestartAndInstall(IEnumerable<string> openFiles);
+    bool RestartAndInstall(IEnumerable<UpdateRestartDocument> documents);
 }
 
 public interface IUpdatePresenter

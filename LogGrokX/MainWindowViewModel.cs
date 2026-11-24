@@ -394,7 +394,7 @@ namespace LogGrokX
 
         private void RestartUpdate()
         {
-            if (!_updates.RestartAndInstall(Documents.Select(document => document.DocumentId)))
+            if (!_updates.RestartAndInstall(CaptureRestartDocuments()))
                 _dialogs.ShowWarning(Strings.Get("UpdateRestartFailed"), Strings.Get("UpdateAvailable"));
         }
 
@@ -478,7 +478,25 @@ namespace LogGrokX
             }
         }
 
-        public void AddDocument(string fileName)
+        private IEnumerable<UpdateRestartDocument> CaptureRestartDocuments() => Documents.Select(document =>
+            document.CaptureRestartState() with { IsActive = ReferenceEquals(document, CurrentDocument) });
+
+        public void RestoreDocuments(IEnumerable<UpdateRestartDocument> documents)
+        {
+            var states = documents.ToArray();
+            foreach (var document in states)
+                AddDocument(document.DocumentId, document);
+
+            var activeState = states.LastOrDefault(document => document.IsActive);
+            if (activeState == null)
+                return;
+            CurrentDocument = Documents.FirstOrDefault(document => string.Equals(
+                document.DocumentId, activeState.DocumentId, StringComparison.OrdinalIgnoreCase)) ?? CurrentDocument;
+        }
+
+        public void AddDocument(string fileName) => AddDocument(fileName, null);
+
+        private void AddDocument(string fileName, UpdateRestartDocument? restartState)
         {
             if (!File.Exists(fileName))
             {
@@ -491,7 +509,10 @@ namespace LogGrokX
                 var fullPath = Path.GetFullPath(fileName);
                 var alreadyOpen = Documents.FirstOrDefault(document =>
                     string.Equals(document.DocumentId, fullPath, StringComparison.OrdinalIgnoreCase));
-                CurrentDocument = alreadyOpen ?? CreateDocument(fullPath);
+                var document = alreadyOpen ?? CreateDocument(fullPath);
+                if (restartState != null && alreadyOpen == null)
+                    document.RestoreRestartState(restartState);
+                CurrentDocument = document;
             }
             catch (Exception e) when (e is FormatException or ArgumentException)
             {

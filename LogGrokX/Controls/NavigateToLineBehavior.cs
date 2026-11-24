@@ -54,6 +54,7 @@ namespace LogGrokX.Controls
                 var request = (NavigateToLineRequest) (args.NewValue);
                 SubscribersMap[request] = listView;
                 request.Navigate += (i, center) => RequestNavigate(request, i, center);
+                request.RestorePosition += (current, scroll) => RequestRestorePosition(request, current, scroll);
             }
         }
 
@@ -64,6 +65,11 @@ namespace LogGrokX.Controls
                 listView.NavigateTo(lineNumber, center);
             else 
                 listView.BringIndexIntoView(lineNumber);
+        }
+
+        private static void RequestRestorePosition(NavigateToLineRequest request, int currentLineNumber, int scrollLineNumber)
+        {
+            SubscribersMap[request].RestorePosition(currentLineNumber, scrollLineNumber);
         }
 
         private static readonly Dictionary<NavigateToLineRequest, ListControls.ListView> SubscribersMap 
