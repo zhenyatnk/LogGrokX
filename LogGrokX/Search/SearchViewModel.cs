@@ -402,6 +402,31 @@ namespace LogGrokX.Search
             timer.Start();
         }
 
+        internal void CommitPendingSearchPattern()
+        {
+            _searchPatternThrottleTimer?.Dispose();
+            _searchPatternThrottleTimer = null;
+            CommitSearchPatternImmediately(TextToSearch, IsCaseSensitive, UseRegex);
+        }
+
+        public void RestoreSearches(IEnumerable<UpdateRestartSearch> searches, int currentSearchIndex)
+        {
+            ISearchDocument? currentDocument = null;
+            var index = 0;
+            foreach (var search in searches)
+            {
+                var pattern = new SearchPattern(search.Pattern, search.IsCaseSensitive, search.UseRegex);
+                if (pattern.IsEmpty || !pattern.IsValid)
+                    continue;
+                AddNewSearch(pattern);
+                if (index == currentSearchIndex)
+                    currentDocument = CurrentDocument;
+                index++;
+            }
+
+            CurrentDocument = currentDocument ?? Documents.LastOrDefault();
+        }
+
         public void Dispose()
         {
             if (_disposed) return;

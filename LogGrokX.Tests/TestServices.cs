@@ -52,7 +52,7 @@ internal static class TestServices
     internal sealed class UpdatesStub : IUpdateService
     {
         public UpdateStatus Status { get; private set; } = new(UpdateState.None, null, 0);
-        public List<string> RestartFiles { get; } = [];
+        public List<UpdateRestartDocument> RestartDocuments { get; } = [];
         public event Action? StatusChanged;
         public void SetStatus(UpdateStatus status)
         {
@@ -65,9 +65,9 @@ internal static class TestServices
         public Task DownloadInstallerAsync(ReleaseInfo release, IProgress<double> progress, CancellationToken cancellationToken) =>
             throw new InvalidOperationException("Unexpected download.");
         public void SkipVersion(string tag) { }
-        public bool RestartAndInstall(IEnumerable<string> openFiles)
+        public bool RestartAndInstall(IEnumerable<UpdateRestartDocument> documents)
         {
-            RestartFiles.AddRange(openFiles);
+            RestartDocuments.AddRange(documents);
             return true;
         }
     }

@@ -111,6 +111,153 @@ public sealed class ListViewSelectionTests
     }
 
     [TestMethod]
+    public void RestorePositionMakesSavedLineFirstVisibleAndSelectsCurrentLine()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var view = new LogGrokX.Controls.ListControls.ListView
+                {
+                    ItemsSource = Enumerable.Range(0, 100).Select(index => $"line {index}").ToArray(),
+                    ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(
+                        typeof(LogGrokX.Controls.ListControls.VirtualizingStackPanel.VirtualizingStackPanel)))
+                };
+                var window = new Window
+                {
+                    Content = view,
+                    Width = 400,
+                    Height = 200,
+                    Left = -10000,
+                    Top = -10000,
+                    ShowActivated = false,
+                    ShowInTaskbar = false
+                };
+                try
+                {
+                    window.Show();
+                    view.UpdateLayout();
+
+                    view.RestorePosition(20, 10);
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                    view.UpdateLayout();
+                    var panel = FindPanel(window);
+
+                    Assert.IsNotNull(panel);
+                    Assert.AreEqual(10, panel.VerticalOffset, 0.001);
+                    Assert.AreEqual(20, panel.CurrentPosition);
+                    CollectionAssert.AreEqual(new[] { 20 }, panel.SelectedIndices.ToArray());
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
+    public void RestorePositionRequestSurvivesAttachingBeforeTemplateIsCreated()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var request = new NavigateToLineRequest();
+                request.RaiseRestorePosition(20, 10);
+                var view = new LogGrokX.Controls.ListControls.ListView
+                {
+                    ItemsSource = Enumerable.Range(0, 100).Select(index => $"line {index}").ToArray(),
+                    ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(
+                        typeof(LogGrokX.Controls.ListControls.VirtualizingStackPanel.VirtualizingStackPanel)))
+                };
+                var window = new Window
+                {
+                    Content = view,
+                    Width = 400,
+                    Height = 200,
+                    Left = -10000,
+                    Top = -10000,
+                    ShowActivated = false,
+                    ShowInTaskbar = false
+                };
+                try
+                {
+                    NavigateToLineBehavior.SetNavigateToLineRequest(view, request);
+                    window.Show();
+                    Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                    view.UpdateLayout();
+                    var panel = FindPanel(window);
+
+                    Assert.IsNotNull(panel);
+                    Assert.AreEqual(10, panel.VerticalOffset, 0.001);
+                    Assert.AreEqual(20, panel.CurrentPosition);
+                }
+                finally
+                {
+                    window.Close();
+                }
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
+    public void PendingRestorePositionIsBoundedAndCancelledOnUnload()
+    {
+        Exception? error = null;
+        var thread = new Thread(() =>
+        {
+            try
+            {
+                var view = new LogGrokX.Controls.ListControls.ListView();
+                var operationField = typeof(LogGrokX.Controls.ListControls.ListView).GetField(
+                    "_restorePositionOperation", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+                view.RestorePosition(20, 10);
+                Assert.IsNotNull(operationField.GetValue(view));
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Assert.IsNull(operationField.GetValue(view));
+
+                view.RestorePosition(20, 10);
+                Assert.IsNotNull(operationField.GetValue(view));
+                view.RaiseEvent(new RoutedEventArgs(FrameworkElement.UnloadedEvent));
+                Assert.IsNull(operationField.GetValue(view));
+                Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+                Assert.IsNull(operationField.GetValue(view));
+            }
+            catch (Exception exception)
+            {
+                error = exception;
+            }
+        });
+        thread.SetApartmentState(ApartmentState.STA);
+        thread.Start();
+        thread.Join();
+        if (error != null)
+            ExceptionDispatchInfo.Capture(error).Throw();
+    }
+
+    [TestMethod]
     public void ResetDoesNotMaterializeSelectedRows()
     {
         Exception? error = null;

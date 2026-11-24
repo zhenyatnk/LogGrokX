@@ -135,11 +135,15 @@ namespace LogGrokX.Bootstrap
             var mainVm = _container.Resolve<MainWindowViewModel>();
             foreach (var item in commandLine)
             {
-                IEnumerable<string> files = item == UpdateCheckService.RestoreFilesArgument
-                    ? UpdateCheckService.TakeRestartFiles()
-                    : [item];
-                foreach (var file in files)
-                    Dispatcher.BeginInvoke(new Action(() => { mainVm.AddDocument(file); }));
+                if (item == UpdateCheckService.RestoreFilesArgument)
+                {
+                    var documents = UpdateCheckService.TakeRestartDocuments();
+                    Dispatcher.BeginInvoke(new Action(() => mainVm.RestoreDocuments(documents)));
+                }
+                else
+                {
+                    Dispatcher.BeginInvoke(new Action(() => mainVm.AddDocument(item)));
+                }
             }
         }
     }

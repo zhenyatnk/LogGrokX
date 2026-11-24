@@ -3,6 +3,7 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Windows;
@@ -58,7 +59,7 @@ public class MainWindowViewModelLifecycleTests
     }
 
     [TestMethod]
-    public void RestartUpdate_PassesAllOpenDocumentPaths()
+    public void RestartUpdate_PassesFullStateOfAllOpenDocuments()
     {
         RunOnSta(() =>
         {
@@ -72,11 +73,61 @@ public class MainWindowViewModelLifecycleTests
                 updates.SetStatus(new UpdateStatus(UpdateState.Ready, "v2.0", 100));
                 using var viewModel = CreateViewModel(updates: updates);
                 viewModel.AddDocument(firstFile);
+                var first = viewModel.CurrentDocument!;
+                WaitForLoading(first);
+                first.LogViewModel.CurrentItemIndex = 0;
+                first.LogViewModel.FirstVisibleIndex = 0;
+                first.SearchViewModel.AppendToSearchCommand.Execute("first search");
+                first.SearchViewModel.SearchTextCommand.Execute("second search");
+                first.SearchViewModel.TextToSearch = "updated second search";
+                first.MarkedLines.Add(0);
                 viewModel.AddDocument(secondFile);
+                WaitForLoading(viewModel.CurrentDocument!);
 
                 viewModel.UpdateCommand.Execute(null);
 
-                CollectionAssert.AreEqual(new[] { firstFile, secondFile }, updates.RestartFiles);
+                CollectionAssert.AreEqual(new[] { firstFile, secondFile },
+                    updates.RestartDocuments.Select(document => document.DocumentId).ToArray());
+                var state = updates.RestartDocuments[0];
+                CollectionAssert.AreEqual(new[] { "first search", "updated second search" },
+                    state.Searches.Select(search => search.Pattern).ToArray());
+                Assert.AreEqual(1, state.CurrentSearchIndex);
+                CollectionAssert.AreEqual(new[] { 0 }, state.MarkedLines);
+                Assert.AreEqual(0, state.CurrentLine);
+                Assert.AreEqual(0, state.ScrollPosition);
+                Assert.IsFalse(state.IsActive);
+                Assert.IsTrue(updates.RestartDocuments[1].IsActive);
+            }
+            finally
+            {
+                File.Delete(firstFile);
+                File.Delete(secondFile);
+            }
+        });
+    }
+
+    [TestMethod]
+    public void RestoreDocuments_ActivatesPreviouslyActiveDocument()
+    {
+        RunOnSta(() =>
+        {
+            var firstFile = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            var secondFile = Path.Combine(Path.GetTempPath(), $"loggrokx-{Guid.NewGuid():N}.log");
+            File.WriteAllText(firstFile, "first");
+            File.WriteAllText(secondFile, "second");
+            try
+            {
+                using var viewModel = CreateViewModel();
+
+                viewModel.RestoreDocuments([
+                    new UpdateRestartDocument(firstFile) { IsActive = true },
+                    new UpdateRestartDocument(secondFile)
+                ]);
+
+                Assert.IsNotNull(viewModel.CurrentDocument);
+                Assert.AreEqual(firstFile, viewModel.CurrentDocument.DocumentId);
+                Assert.IsTrue(viewModel.Documents[0].IsCurrentDocument);
+                Assert.IsFalse(viewModel.Documents[1].IsCurrentDocument);
             }
             finally
             {
@@ -300,6 +351,17 @@ public class MainWindowViewModelLifecycleTests
                 File.Delete(settingsPath);
             }
         });
+    }
+
+    private static void WaitForLoading(DocumentViewModel document)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (document.LogViewModel.IsLoading && DateTime.UtcNow < deadline)
+        {
+            Dispatcher.CurrentDispatcher.Invoke(() => { }, DispatcherPriority.Background);
+            Thread.Sleep(1);
+        }
+        Assert.IsFalse(document.LogViewModel.IsLoading, "Timed out waiting for document loading.");
     }
 
     private static MainWindowViewModel CreateViewModel(ApplicationSettings? settings = null,

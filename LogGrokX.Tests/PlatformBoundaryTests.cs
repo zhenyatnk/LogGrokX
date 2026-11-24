@@ -401,7 +401,7 @@ public sealed class PlatformBoundaryTests
         public string? SkippedVersion { get; private set; }
         public CancellationToken Token { get; private set; }
         public UpdateStatus Status { get; private set; } = new(UpdateState.None, null, 0);
-        public List<string> RestartFiles { get; } = [];
+        public List<UpdateRestartDocument> RestartDocuments { get; } = [];
         public event Action? StatusChanged;
         public void SetStatus(UpdateStatus status)
         {
@@ -418,9 +418,9 @@ public sealed class PlatformBoundaryTests
             return Download;
         }
         public void SkipVersion(string tag) => SkippedVersion = tag;
-        public bool RestartAndInstall(IEnumerable<string> openFiles)
+        public bool RestartAndInstall(IEnumerable<UpdateRestartDocument> documents)
         {
-            RestartFiles.AddRange(openFiles);
+            RestartDocuments.AddRange(documents);
             return true;
         }
     }

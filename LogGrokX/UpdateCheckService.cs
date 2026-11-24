@@ -411,11 +411,11 @@ public class UpdateCheckService : IUpdateService, IDisposable
 
     private static string RestartFilesFileName => HomeDirectoryPathProvider.GetDataFileFullPath("update-restart.json");
 
-    public bool RestartAndInstall(IEnumerable<string> openFiles)
+    public bool RestartAndInstall(IEnumerable<UpdateRestartDocument> documents)
     {
         if (Status.State != UpdateState.Ready || _pendingInstallerPath == null || !File.Exists(_pendingInstallerPath))
             return false;
-        if (!TrySaveRestartFiles(RestartFilesFileName, openFiles))
+        if (!TrySaveRestartDocuments(RestartFilesFileName, documents))
             return false;
 
         _restartAfterInstall = true;
@@ -434,6 +434,67 @@ public class UpdateCheckService : IUpdateService, IDisposable
         {
             Trace.TraceWarning($"Failed to save files for update restart: {e.Message}");
             return false;
+        }
+    }
+
+    internal static bool TrySaveRestartDocuments(string fileName, IEnumerable<UpdateRestartDocument> documents)
+    {
+        try
+        {
+            File.WriteAllText(fileName, JsonSerializer.Serialize(documents.ToArray()));
+            return true;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to save document state for update restart: {e.Message}");
+            return false;
+        }
+    }
+
+    public static IReadOnlyList<UpdateRestartDocument> TakeRestartDocuments() => TakeRestartDocuments(RestartFilesFileName);
+
+    internal static IReadOnlyList<UpdateRestartDocument> TakeRestartDocuments(string fileName)
+    {
+        try
+        {
+            if (!File.Exists(fileName))
+                return [];
+            var json = File.ReadAllText(fileName);
+            File.Delete(fileName);
+            using var document = JsonDocument.Parse(json);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                return [];
+
+            var states = new List<UpdateRestartDocument>();
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                try
+                {
+                    var state = element.ValueKind switch
+                    {
+                        JsonValueKind.String when element.GetString() is { } path => new UpdateRestartDocument(path),
+                        JsonValueKind.Object => element.Deserialize<UpdateRestartDocument>(),
+                        _ => null
+                    };
+                    if (state == null || string.IsNullOrWhiteSpace(state.DocumentId))
+                        continue;
+                    states.Add(state with
+                    {
+                        Searches = (state.Searches ?? []).Where(search => search is { Pattern: not null }).ToArray(),
+                        MarkedLines = state.MarkedLines ?? []
+                    });
+                }
+                catch (JsonException e)
+                {
+                    Trace.TraceWarning($"Failed to read one document for update restart: {e.Message}");
+                }
+            }
+            return states;
+        }
+        catch (Exception e)
+        {
+            Trace.TraceWarning($"Failed to read document state for update restart: {e.Message}");
+            return [];
         }
     }
 

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using LogGrokX.Platform;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests
@@ -129,6 +130,85 @@ namespace LogGrokX.Tests
                 Assert.IsTrue(UpdateCheckService.TrySaveRestartFiles(fileName, expected));
                 CollectionAssert.AreEqual(expected, UpdateCheckService.TakeRestartFiles(fileName).ToArray());
                 Assert.AreEqual(0, UpdateCheckService.TakeRestartFiles(fileName).Count);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        }
+
+        [TestMethod]
+        public void RestartDocumentStateRoundTripsAndLegacyFilesRemainReadable()
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-restart-state-{Guid.NewGuid():N}.json");
+            var expected = new UpdateRestartDocument(@"C:\Logs\first.log")
+            {
+                Searches =
+                [
+                    new UpdateRestartSearch("first", true, false),
+                    new UpdateRestartSearch("second.*", false, true)
+                ],
+                CurrentSearchIndex = 1,
+                MarkedLines = [1, 5, 9],
+                CurrentLine = 5,
+                ScrollPosition = 2,
+                IsActive = true
+            };
+            try
+            {
+                Assert.IsTrue(UpdateCheckService.TrySaveRestartDocuments(fileName, [expected]));
+                var restored = UpdateCheckService.TakeRestartDocuments(fileName).Single();
+                Assert.AreEqual(expected.DocumentId, restored.DocumentId);
+                CollectionAssert.AreEqual(expected.Searches, restored.Searches);
+                Assert.AreEqual(expected.CurrentSearchIndex, restored.CurrentSearchIndex);
+                CollectionAssert.AreEqual(expected.MarkedLines, restored.MarkedLines);
+                Assert.AreEqual(expected.CurrentLine, restored.CurrentLine);
+                Assert.AreEqual(expected.ScrollPosition, restored.ScrollPosition);
+                Assert.AreEqual(expected.IsActive, restored.IsActive);
+                Assert.AreEqual(0, UpdateCheckService.TakeRestartDocuments(fileName).Count);
+
+                File.WriteAllText(fileName, @"[""C:\\Logs\\legacy.log""]");
+                var legacy = UpdateCheckService.TakeRestartDocuments(fileName).Single();
+                Assert.AreEqual(@"C:\Logs\legacy.log", legacy.DocumentId);
+                Assert.AreEqual(0, legacy.Searches.Length);
+                Assert.AreEqual(-1, legacy.CurrentLine);
+            }
+            finally
+            {
+                File.Delete(fileName);
+            }
+        }
+
+        [TestMethod]
+        public void RestartDocumentsSkipInvalidEntriesAndNormalizeNullState()
+        {
+            var fileName = Path.Combine(Path.GetTempPath(), $"loggrokx-restart-invalid-{Guid.NewGuid():N}.json");
+            try
+            {
+                File.WriteAllText(fileName, """
+                    [
+                      null,
+                      "C:\\Logs\\legacy.log",
+                      {"DocumentId":"C:\\Logs\\valid.log","Searches":null,"MarkedLines":null},
+                      {"DocumentId":"C:\\Logs\\search.log","Searches":[null,{"Pattern":null},{"Pattern":"ok","IsCaseSensitive":true,"UseRegex":false}]},
+                      {"DocumentId":null},
+                      42,
+                      {"DocumentId":"C:\\Logs\\bad.log","MarkedLines":"wrong"}
+                    ]
+                    """);
+
+                var states = UpdateCheckService.TakeRestartDocuments(fileName);
+
+                Assert.AreEqual(3, states.Count);
+                Assert.AreEqual(@"C:\Logs\legacy.log", states[0].DocumentId);
+                Assert.AreEqual(@"C:\Logs\valid.log", states[1].DocumentId);
+                Assert.AreEqual(0, states[1].Searches.Length);
+                Assert.AreEqual(0, states[1].MarkedLines.Length);
+                Assert.AreEqual(@"C:\Logs\search.log", states[2].DocumentId);
+                var search = states[2].Searches.Single();
+                Assert.AreEqual("ok", search.Pattern);
+                Assert.IsTrue(search.IsCaseSensitive);
+                Assert.IsFalse(search.UseRegex);
             }
             finally
             {
