@@ -15,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Threading;
 using System.Xml.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Wpf.Ui.Markup;
 
 namespace LogGrokX.Tests;
 
@@ -146,6 +147,7 @@ public class ToolbarBindingTests
             new XAttribute(XNamespace.Xmlns + "ui", window.GetNamespaceOfPrefix("ui")!.NamespaceName),
             style);
         var resources = (ResourceDictionary)XamlReader.Parse(dictionary.ToString());
+        resources.MergedDictionaries.Add(new ControlsDictionary());
         var button = new Wpf.Ui.Controls.Button
         {
             Style = (Style)resources[styleKey],
@@ -153,6 +155,18 @@ public class ToolbarBindingTests
             Content = "Downloading 43%"
         };
         button.Resources["AccentFillColorDefaultBrush"] = Brushes.Blue;
+        var host = new Window
+        {
+            Content = button,
+            Width = 250,
+            Height = 80,
+            Left = -10000,
+            Top = -10000,
+            ShowActivated = false,
+            ShowInTaskbar = false
+        };
+        host.Resources.MergedDictionaries.Add(new ControlsDictionary());
+        host.Show();
         button.ApplyTemplate();
         var progress = (ProgressBar)button.Template.FindName("DownloadProgress", button);
         Assert.AreEqual(Visibility.Collapsed, progress.Visibility);
@@ -167,11 +181,14 @@ public class ToolbarBindingTests
             button.UpdateLayout();
 
             Assert.AreEqual(Visibility.Visible, progress.Visibility);
-            Assert.AreEqual(30, progress.ActualHeight, 0.01);
+            var progressHost = (FrameworkElement)progress.Parent;
+            Assert.AreEqual(progressHost.ActualHeight, progress.ActualHeight, 0.01);
             var track = (FrameworkElement)progress.Template.FindName("PART_Track", progress);
             var indicator = (Border)progress.Template.FindName("PART_Indicator", progress);
             Assert.AreEqual(track.ActualWidth * percent / 100, indicator.ActualWidth, 1);
             Assert.AreEqual(track.ActualWidth, ((Border)indicator.Child).ActualWidth, 1);
+            Assert.AreEqual(track.ActualHeight, indicator.ActualHeight, 0.01);
+            Assert.AreEqual(track.ActualHeight, ((Border)indicator.Child).ActualHeight, 0.01);
         }
 
         var fill = (Border)((Border)progress.Template.FindName("PART_Indicator", progress)).Child;
@@ -183,6 +200,7 @@ public class ToolbarBindingTests
         button.DataContext = new { IsUpdateDownloading = false, IsUpdateReady = true, UpdateProgress = 100d };
         FlushBindings();
         Assert.AreEqual(Visibility.Collapsed, progress.Visibility);
+        host.Close();
     }
 
     private static void FlushBindings() =>
