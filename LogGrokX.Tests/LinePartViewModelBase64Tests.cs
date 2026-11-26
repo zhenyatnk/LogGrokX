@@ -34,6 +34,22 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        public void OversizedSourceSkipsStructuredBase64Analysis()
+        {
+            var source = "{\"value\":\"" + new string('a', LogGrokX.Data.Base64Detector.MaxSourceLength + 1) + "\"}";
+            var part = new LinePartViewModel(1, source, TestServices.DisplaySettings,
+                detection: BinaryDetectionOptions.All);
+
+            Assert.IsFalse(part.IsBase64);
+
+            var spans = typeof(LinePartViewModel)
+                .GetField("_structuredSpans", System.Reflection.BindingFlags.Instance |
+                                              System.Reflection.BindingFlags.NonPublic)!
+                .GetValue(part);
+            Assert.IsNull(spans);
+        }
+
+        [TestMethod]
         public void DetectionCanBeDisabled()
         {
             var part = new LinePartViewModel(1, Encode("Hello, World!"), TestServices.DisplaySettings, detectBase64: false);

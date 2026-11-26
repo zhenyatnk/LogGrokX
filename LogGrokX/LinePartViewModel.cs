@@ -226,7 +226,8 @@ public class LinePartViewModel : ViewModelBase
         get
         {
             RefreshSettingsIfNeeded();
-            return _content ??= _detection.Base64Kinds != Base64Content.None
+            return _content ??= _detection.Base64Kinds != Base64Content.None &&
+                                OriginalText.Length <= Base64Detector.MaxSourceLength
                 ? Base64Detector.Detect(OriginalText, StructuredSpans) & _detection.Base64Kinds
                 : Base64Content.None;
         }

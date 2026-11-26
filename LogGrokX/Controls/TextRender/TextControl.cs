@@ -47,6 +47,7 @@ public class TextControl : Control
         ClearAltHover();
         _cachedStringRanges = null;
         _cachedRegex = null;
+        _cachedClippingRect = null;
         _cachedGeometry = null;
         _cachedWildcardGeometry = null;
     }
@@ -78,8 +79,9 @@ public class TextControl : Control
             return;
         }
 
+        var clippingRect = _textView.GetClippingRect();
         var (highlightGeometries, wildcardGeometries) =
-            GetHighlightGeometrySet(textLines, TextView.GetHighlightRegex(_textView));
+            GetHighlightGeometrySet(textLines, TextView.GetHighlightRegex(_textView), clippingRect);
 
         if (wildcardGeometries != null)
         {
@@ -97,7 +99,7 @@ public class TextControl : Control
                 highlightGeometries);
         }
 
-        var selectionGeometries = GetSelectionGeometries(textLines);
+        var selectionGeometries = GetSelectionGeometries(textLines, clippingRect);
         if (selectionGeometries != null)
         {
             var selectionBrush = _textView.SelectionBrush;
@@ -119,16 +121,24 @@ public class TextControl : Control
         var foreground = Foreground;
         foreach (var textLine in textLines)
         {
-            textLine.glyphLine.Render(
-                new Point(GetHorizontalOffset(textLine),
-                    Math.Round(verticalPosition * pixelsPerDip, MidpointRounding.ToEven) / pixelsPerDip),
-                foreground, drawingContext);
-            verticalPosition += textLine.glyphLine.AdvanceHeight;
+            var lineHeight = textLine.glyphLine.AdvanceHeight;
+            if (IsLineVisible(clippingRect, verticalPosition, lineHeight))
+            {
+                textLine.glyphLine.Render(
+                    new Point(GetHorizontalOffset(textLine),
+                        Math.Round(verticalPosition * pixelsPerDip, MidpointRounding.ToEven) / pixelsPerDip),
+                    foreground, drawingContext);
+            }
+            verticalPosition += lineHeight;
         }
 
         PerfProbe.RecordAlloc("textRender", allocStart, PerfProbe.AllocMark());
         PerfProbe.RecordRender(perfStart);
     }
+
+    private static bool IsLineVisible(Rect? clippingRect, double verticalPosition, double height) =>
+        clippingRect is not { } clip ||
+        verticalPosition + height >= clip.Top && verticalPosition <= clip.Bottom;
 
     private double GetHorizontalOffset(bool isCollapsible)
     {
@@ -146,19 +156,22 @@ public class TextControl : Control
 
     private List<StringRange>? _cachedStringRanges;
     private Regex? _cachedRegex;
+    private Rect? _cachedClippingRect;
     private Geometry? _cachedGeometry;
     private Geometry? _cachedWildcardGeometry;
     
-    internal Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex) =>
-        GetHighlightGeometrySet(text, regex).bright;
+    internal Geometry? GetHighlightGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex,
+        Rect? clippingRect = null) =>
+        GetHighlightGeometrySet(text, regex, clippingRect).bright;
 
     private (Geometry? bright, Geometry? wildcard) GetHighlightGeometrySet(
-        IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex)
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? text, Regex? regex, Rect? clippingRect = null)
     {
         if (text == null || regex == null)
         {
             _cachedStringRanges = null;
             _cachedRegex = null;
+            _cachedClippingRect = null;
             _cachedGeometry = null;
             _cachedWildcardGeometry = null;
             return (null, null);
@@ -166,7 +179,7 @@ public class TextControl : Control
 
         bool CanUseCachedGeometry(IList<(GlyphLine glyphLine, bool isCollapsible)> text, Regex regex)
         {
-            if (regex != _cachedRegex)
+            if (regex != _cachedRegex || clippingRect != _cachedClippingRect)
                 return false;
 
             if (text.Count != _cachedStringRanges?.Count)
@@ -178,8 +191,9 @@ public class TextControl : Control
         if (CanUseCachedGeometry(text, regex))
             return (_cachedGeometry, _cachedWildcardGeometry);
 
-        (_cachedGeometry, _cachedWildcardGeometry) = GetDrawingGeometriesUncached(text, regex);
+        (_cachedGeometry, _cachedWildcardGeometry) = GetDrawingGeometriesUncached(text, regex, clippingRect);
         _cachedRegex = regex;
+        _cachedClippingRect = clippingRect;
         _cachedStringRanges?.Clear();
         _cachedStringRanges ??= new List<StringRange>(text.Count);
         foreach (var (glyphLine, _) in text)
@@ -191,7 +205,7 @@ public class TextControl : Control
     }
 
     private (Geometry? bright, Geometry? wildcard) GetDrawingGeometriesUncached(
-        IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines, Regex? regex)
+        IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines, Regex? regex, Rect? clippingRect)
     {
         if (textLines == null || regex == null || textLines.Count == 0)
             return (null, null);
@@ -204,6 +218,12 @@ public class TextControl : Control
         {
             var textLine = textLines[lineIndex];
             var glyphLine = textLine.glyphLine;
+            var lineHeight = glyphLine.Size.Height;
+            if (!IsLineVisible(clippingRect, y, lineHeight))
+            {
+                y += lineHeight;
+                continue;
+            }
             var line = glyphLine.Text.ToString();
             var ranges = _textView.GetHighlightRanges(lineIndex, line, regex);
             foreach (var (start, length, isWildcard) in ranges)
@@ -214,7 +234,7 @@ public class TextControl : Control
                 (isWildcard ? wildcardGeometry : accumulatedGeometry).Children.Add(geometry);
             }
 
-            y += glyphLine.Size.Height;
+            y += lineHeight;
         }
 
         return (accumulatedGeometry, wildcardGeometry);
@@ -223,7 +243,8 @@ public class TextControl : Control
     private Geometry GeometryFromRect(Rect rect) => new RectangleGeometry(
         Rect.Inflate(rect, new Size(2, 2)), 3, 3);
 
-    private Geometry? GetSelectionGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines)
+    private Geometry? GetSelectionGeometries(IList<(GlyphLine glyphLine, bool isCollapsible)>? textLines,
+        Rect? clippingRect)
     {
         if (textLines == null) return null;
 
@@ -233,6 +254,12 @@ public class TextControl : Control
 
         foreach (var (glyphLine, isCollapsible) in textLines)
         {
+            var lineHeight = glyphLine.AdvanceHeight;
+            if (!IsLineVisible(clippingRect, verticalOffset, lineHeight))
+            {
+                verticalOffset += lineHeight;
+                continue;
+            }
             var selection = glyphLine.Selection;
             if (selection.HasValue)
             {
@@ -246,7 +273,7 @@ public class TextControl : Control
                 accumulatedGeometry.Children.Add(geometry);
             }
 
-            verticalOffset += glyphLine.AdvanceHeight;
+            verticalOffset += lineHeight;
         }
 
         return accumulatedGeometry;

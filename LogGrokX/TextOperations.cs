@@ -254,8 +254,8 @@ namespace LogGrokX
                 if (i != 0)
                     builder.Append(Environment.NewLine);
 
-                var text = source.Substring(start, length);
-                var formatted = kind == StructuredTextKind.Json ? FormatJsonText(text) : FormatXmlText(text);
+                var text = source.AsMemory(start, length);
+                var formatted = kind == StructuredTextKind.Json ? FormatJsonText(text) : FormatXmlText(text.ToString());
                 formattedRanges.Add((builder.Length, formatted.Length, kind));
                 builder.Append(formatted);
                 position = start + length;
@@ -494,7 +494,7 @@ namespace LogGrokX
             range = interval;
             while (true)
             {
-                if (!TryParseJson(source.Substring(range.start, range.length), out var isSingleElementArray))
+                if (!TryParseJson(source.AsMemory(range.start, range.length), out var isSingleElementArray))
                     return false;
 
                 if (!isSingleElementArray)
@@ -514,16 +514,16 @@ namespace LogGrokX
             }
         }
 
-        private static bool TryParseJson(string jsonString, out bool isSingleElementArray)
+        private static bool TryParseJson(ReadOnlyMemory<char> json, out bool isSingleElementArray)
         {
             isSingleElementArray = false;
-            var startSpan = jsonString.AsSpan().TrimStart();
+            var startSpan = json.Span.TrimStart();
             if (startSpan.IsEmpty || startSpan[0] is not ('{' or '['))
                 return false;
 
             try
             {
-                using var doc = JsonDocument.Parse(jsonString,
+                using var doc = JsonDocument.Parse(json,
                     new JsonDocumentOptions { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip });
                 var root = doc.RootElement;
                 isSingleElementArray = root.ValueKind == JsonValueKind.Array && root.GetArrayLength() == 1;
@@ -535,24 +535,25 @@ namespace LogGrokX
             }
         }
 
-        private static string FormatJsonText(string jsonString) =>
-            ContainsJsonComment(jsonString) ? FormatJsonWithComments(jsonString) : FormatJsonTextCore(jsonString);
+        private static string FormatJsonText(string jsonString) => FormatJsonText(jsonString.AsMemory());
 
-        private static string FormatJsonTextCore(string jsonString)
+        private static string FormatJsonText(ReadOnlyMemory<char> json) =>
+            ContainsJsonComment(json.Span) ? FormatJsonWithComments(json.ToString()) : FormatJsonTextCore(json);
+
+        private static string FormatJsonTextCore(ReadOnlyMemory<char> json)
         {
-            using var doc = JsonDocument.Parse(jsonString, new JsonDocumentOptions { AllowTrailingCommas = true });
+            using var doc = JsonDocument.Parse(json, new JsonDocumentOptions { AllowTrailingCommas = true });
             var memoryStream = new MemoryStream();
-            using (var writer = new Utf8JsonWriter(memoryStream, 
-                       new JsonWriterOptions { Indented = true, 
+            using (var writer = new Utf8JsonWriter(memoryStream,
+                       new JsonWriterOptions { Indented = true,
                                                Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
             {
                 doc.WriteTo(writer);
             }
-            return new UTF8Encoding()
-                .GetString(memoryStream.ToArray());
+            return Encoding.UTF8.GetString(memoryStream.GetBuffer(), 0, (int)memoryStream.Length);
         }
 
-        private static bool ContainsJsonComment(string json)
+        private static bool ContainsJsonComment(ReadOnlySpan<char> json)
         {
             var inString = false;
             for (var i = 0; i < json.Length; i++)
