@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -85,7 +86,7 @@ namespace LogGrokX.Controls.ListControls
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
-            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException or ExternalException)
             {
                 MessageBox.Show(Window.GetWindow(this), Strings.Format("SelectionSaveFailed", e.Message),
                     Strings.Get("SaveSelection"), MessageBoxButton.OK, MessageBoxImage.Warning);

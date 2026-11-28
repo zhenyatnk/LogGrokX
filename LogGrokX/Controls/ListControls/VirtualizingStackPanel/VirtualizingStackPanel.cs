@@ -39,22 +39,38 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
         private Point _offset;
         private double _viewPortHeightInPixels;
 
+        private IGrowingCollection? _growingCollection;
+        private Action<int>? _collectionGrownHandler;
+        private Action? _sourceChangedHandler;
+
         public VirtualizingStackPanel()
         {
-            IGrowingCollection? currentItems = null;
-
             void UpdateGrowingCollectionSubscription()
             {
                 if (ItemsControl.GetItemsOwner(this)?.ItemsSource is not IGrowingCollection newItems ||
-                    currentItems == newItems) return;
+                    _growingCollection == newItems) return;
 
-                currentItems = newItems;
-                currentItems.CollectionGrown += _ => InvalidateMeasure();
-                currentItems.SourceChanged += () =>
+                UnsubscribeGrowingCollection();
+
+                _growingCollection = newItems;
+                _collectionGrownHandler = _ => InvalidateMeasure();
+                _sourceChangedHandler = () =>
                 {
                     _selection.Clear();
                     InvalidateMeasure();
                 };
+                _growingCollection.CollectionGrown += _collectionGrownHandler;
+                _growingCollection.SourceChanged += _sourceChangedHandler;
+            }
+
+            void UnsubscribeGrowingCollection()
+            {
+                if (_growingCollection == null) return;
+                if (_collectionGrownHandler != null) _growingCollection.CollectionGrown -= _collectionGrownHandler;
+                if (_sourceChangedHandler != null) _growingCollection.SourceChanged -= _sourceChangedHandler;
+                _growingCollection = null;
+                _collectionGrownHandler = null;
+                _sourceChangedHandler = null;
             }
 
             Loaded += (_, _) =>
@@ -78,6 +94,8 @@ namespace LogGrokX.Controls.ListControls.VirtualizingStackPanel
 
                 UpdateGrowingCollectionSubscription();
             };
+
+            Unloaded += (_, _) => UnsubscribeGrowingCollection();
 
             _selection.Changed += () =>
             {
