@@ -98,6 +98,19 @@ public class IndexTreeLeafTests
     }
 
     [TestMethod]
+    public void IndexTreeFindByValueBelowFirstValueDoesNotThrow()
+    {
+        var tree = new IndexTree<int, SimpleLeaf<int>>(16, value => new SimpleLeaf<int>(value, 0));
+        for (var i = 100; i < 1200; i++)
+            tree.Add(i);
+
+        Assert.AreEqual(0, tree.FindIndexByValue(0));
+        Assert.AreEqual(0, tree.FindIndexByValue(99));
+        Assert.AreEqual(0, tree.FindIndexByValue(100));
+        Assert.AreEqual(1100, tree.FindIndexByValue(int.MaxValue));
+    }
+
+    [TestMethod]
     public void LongsLeafStoresDeltas()
     {
         var leaf = new LongsLeaf(1000, 0);
