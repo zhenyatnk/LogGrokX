@@ -1,4 +1,4 @@
-﻿using LogGrokX.Platform.Colors;
+using LogGrokX.Platform.Colors;
 using System;
 using System.Collections.Generic;
 using System.Windows;
@@ -27,6 +27,7 @@ namespace LogGrokX.Controls.ListControls
         private static bool _themeSubscribed;
 
         private readonly ItemsControl _itemsControl;
+        private readonly EventHandler _currentChangedHandler;
 
         private Brush? _overrideForeground;
 
@@ -37,13 +38,23 @@ namespace LogGrokX.Controls.ListControls
             _itemsControl = itemsControl;
             if (Environment.GetEnvironmentVariable("LOGGROKX_BITMAPCACHE") == "1")
                 CacheMode = new BitmapCache();
-            _itemsControl.Items.CurrentChanged += (_, _) =>
-            {
-                UpdateIsCurrentProperty();
-            };
+            _currentChangedHandler = (_, _) => UpdateIsCurrentProperty();
+            _itemsControl.Items.CurrentChanged += _currentChangedHandler;
 
             RegisteredItems.Add(new WeakReference<BaseLogListViewItem>(this));
             EnsureThemeSubscription();
+
+            Unloaded += (_, _) => Unregister();
+        }
+
+        private void Unregister()
+        {
+            _itemsControl.Items.CurrentChanged -= _currentChangedHandler;
+            for (var i = RegisteredItems.Count - 1; i >= 0; i--)
+            {
+                if (!RegisteredItems[i].TryGetTarget(out var registered) || ReferenceEquals(registered, this))
+                    RegisteredItems.RemoveAt(i);
+            }
         }
 
         private static void EnsureThemeSubscription()

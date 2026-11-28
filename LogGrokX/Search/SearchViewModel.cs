@@ -486,6 +486,7 @@ namespace LogGrokX.Search
         private void CloseDocument(ISearchDocument searchDocumentViewModel)
         {
             searchDocumentViewModel.Dispose();
+            Documents.Remove(searchDocumentViewModel);
             if (Documents.Count != 0) return;
             CommitSearchPatternImmediately(string.Empty, IsCaseSensitive, UseRegex);
             TextToSearch = string.Empty;

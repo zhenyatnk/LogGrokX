@@ -1,4 +1,4 @@
-﻿ using System;
+ using System;
 using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
@@ -71,7 +71,7 @@ using System.Linq;
 
         public bool Contains(object? value) => false;
 
-        public int IndexOf(object? value) => 0;
+        public int IndexOf(object? value) => -1;
         
         public void Insert(int index, object? value) => throw new NotSupportedException();
 

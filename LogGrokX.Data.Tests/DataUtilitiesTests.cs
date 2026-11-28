@@ -555,7 +555,7 @@ public class DataUtilitiesTests
 
         Assert.AreEqual("item-1", nonGeneric[1]);
         Assert.IsFalse(nonGeneric.Contains("anything"));
-        Assert.AreEqual(0, nonGeneric.IndexOf("anything"));
+        Assert.AreEqual(-1, nonGeneric.IndexOf("anything"));
         Assert.IsTrue(list.IsReadOnly);
         Assert.IsFalse(list.IsFixedSize);
         Assert.IsFalse(list.IsSynchronized);

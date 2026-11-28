@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -481,6 +482,9 @@ namespace LogGrokX
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
             }
+            catch (ExternalException)
+            {
+            }
             finally
             {
                 BulkOperations.Complete(cancellationToken);
@@ -500,7 +504,7 @@ namespace LogGrokX
             var (headerCollection, linesCollection, getIndexByValue) 
                 = await Task.Factory.StartNew(() => _lineViewModelCollectionProvider.GetLogLinesCollection(
                     _logModelFacade.Indexer,
-                    _filterSettings.Exclusions,
+                    exclusionsCopy,
                     timeRangeCopy,
                     lineRangeCopy));
 

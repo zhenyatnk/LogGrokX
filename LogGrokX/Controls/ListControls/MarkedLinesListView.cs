@@ -1,8 +1,9 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -77,7 +78,13 @@ namespace LogGrokX.Controls.ListControls
                 text.Append(line.GetDisplayText(foldingState).Replace("\0", string.Empty).TrimEnd());
             }
 
-            TextCopy.ClipboardService.SetText(text.ToString());
+            try
+            {
+                TextCopy.ClipboardService.SetText(text.ToString());
+            }
+            catch (ExternalException)
+            {
+            }
         }
 
         protected override void OnSelectionChanged(SelectionChangedEventArgs e)
