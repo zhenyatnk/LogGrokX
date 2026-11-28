@@ -530,6 +530,8 @@ namespace LogGrokX.MergedView
                 var range = CaptureRange();
                 if (data == null)
                 {
+                    _cachedData = null;
+                    _cachedSchema = null;
                     var sources = AvailableDocuments.Where(item => item.IsSelected).OrderBy(item => item.ColorIndex)
                         .Select(item => new MergedDocumentItem(item.Document, item.ColorIndex)).ToArray();
                     schema.ApplyTo(sources);
@@ -603,7 +605,7 @@ namespace LogGrokX.MergedView
         private static MergedDataSnapshot BuildData(MergedDocumentItem[] sources, MergeSource[] mergeSources,
             CancellationToken token)
         {
-            var lines = MergedLineOrder.Build(mergeSources, new List<MergedLineRef>(), token).ToArray();
+            var lines = MergedLineOrder.BuildArray(mergeSources, token);
             var timeIndex = MergedLineOrder.BuildTimeIndex(lines, new TimeIndex(), token);
             return new MergedDataSnapshot(lines, sources, timeIndex, BuildSegments(lines, sources, token),
                 mergeSources.All(source => source.HasTime));

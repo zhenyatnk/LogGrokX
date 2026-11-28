@@ -1,13 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace LogGrokX;
+namespace LogGrokX.Data;
 
-internal sealed class SearchHighlightPattern
+public sealed class SearchHighlightPattern
 {
+    private static readonly ConditionalWeakTable<Regex, SearchHighlightPattern> Cache = new();
+
     private readonly Regex? _wildcardRegex;
     private readonly string[] _wildcardGroups;
 
@@ -15,6 +18,9 @@ internal sealed class SearchHighlightPattern
     {
         _wildcardRegex = CreateWildcardRegex(regex, out _wildcardGroups);
     }
+
+    public static SearchHighlightPattern For(Regex regex) =>
+        Cache.GetValue(regex, static pattern => new SearchHighlightPattern(pattern));
 
     public IReadOnlyList<(int start, int length, bool isWildcard)> GetRanges(Match match)
     {

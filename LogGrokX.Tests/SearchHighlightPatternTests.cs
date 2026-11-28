@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Text.RegularExpressions;
+using LogGrokX.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace LogGrokX.Tests;

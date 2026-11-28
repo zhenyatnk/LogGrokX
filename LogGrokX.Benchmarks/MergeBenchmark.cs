@@ -59,6 +59,20 @@ namespace LogGrokX.Benchmarks
         }
 
         [Benchmark]
+        public int BuildAndToArray()
+        {
+            var lines = MergedLineOrder.Build(_sources).ToArray();
+            return lines.Length;
+        }
+
+        [Benchmark]
+        public int BuildArray()
+        {
+            var lines = MergedLineOrder.BuildArray(_sources);
+            return lines.Length;
+        }
+
+        [Benchmark]
         public int FindLineRange()
         {
             var range = _mergedTimeIndex.FindLineRange(_fromTicks, _toTicks);
