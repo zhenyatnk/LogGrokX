@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -713,7 +713,7 @@ public class TextView : Control, IClippingRectChangesAware, ITextFoldingClient
     {
         var result = new List<(int start, int length, bool isWildcard)>();
         var ranges = new HashSet<(int start, int length, bool isWildcard)>();
-        var highlightPattern = new SearchHighlightPattern(regex);
+        var highlightPattern = SearchHighlightPattern.For(regex);
         foreach (Match match in regex.Matches(displayedLine))
         {
             if (match.Length == 0) continue;
