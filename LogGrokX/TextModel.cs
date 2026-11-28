@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -456,7 +456,7 @@ public class TextModel : IReadOnlyList<StringRange>
         int PopChar(char ch)
         {
             if (!bracesStack.TryPeek(out var prev) || prev.brace != ch)
-                throw new InvalidOperationException();
+                return -1;
 
             bracesStack.Pop();
             return prev.position;
@@ -476,19 +476,40 @@ public class TextModel : IReadOnlyList<StringRange>
             var position = 0;
             while (position < length)
             {
-                position = span[position..].IndexOfAny("{}[]") + position;
-                if (position < 0)
-                    break;
-                switch (span[position])
+                var current = span[position];
+
+                if (current == '"')
+                {
+                    position = SkipString(span, position);
+                    continue;
+                }
+
+                if (current == '/' && position + 1 < length)
+                {
+                    if (span[position + 1] == '/')
+                    {
+                        position = SkipLineComment(span, position);
+                        continue;
+                    }
+
+                    if (span[position + 1] == '*')
+                    {
+                        position = SkipBlockComment(span, position);
+                        continue;
+                    }
+                }
+
+                switch (current)
                 {
                     case '{':
                     case '[':
-                        bracesStack.Push((span[position], position));
+                        bracesStack.Push((current, position));
                         break;
                     case '}':
                     case ']':
-                        var start = PopChar(span[position] == ']' ? '[' : '{');
-                        AddInterval(start + offset, position - start);
+                        var start = PopChar(current == ']' ? '[' : '{');
+                        if (start >= 0)
+                            AddInterval(start + offset, position - start);
                         break;
                 }
 
@@ -497,6 +518,38 @@ public class TextModel : IReadOnlyList<StringRange>
         }
 
         return (lines, result);
+
+        static int SkipString(ReadOnlySpan<char> span, int position)
+        {
+            position++;
+            while (position < span.Length)
+            {
+                if (span[position] == '\\')
+                {
+                    position += 2;
+                    continue;
+                }
+
+                if (span[position] == '"')
+                    return position + 1;
+
+                position++;
+            }
+
+            return span.Length;
+        }
+
+        static int SkipLineComment(ReadOnlySpan<char> span, int position)
+        {
+            var newline = span[position..].IndexOfAny('\r', '\n');
+            return newline < 0 ? span.Length : position + newline;
+        }
+
+        static int SkipBlockComment(ReadOnlySpan<char> span, int position)
+        {
+            var end = span[(position + 2)..].IndexOf("*/");
+            return end < 0 ? span.Length : position + 2 + end + 2;
+        }
     }
 
     public string GetDisplayedText(IReadOnlySet<int>? collapsedLines)

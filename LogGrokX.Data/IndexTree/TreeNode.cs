@@ -52,6 +52,8 @@ namespace LogGrokX.Data.IndexTree
             var index = _subNodes.BinarySearch(0, Volatile.Read(ref _count), value,
                 static (leafOrNode, t) => leafOrNode.FirstValue.CompareTo(t));
             var subNodeIndex = index >= 0 ? index : ~index - 1;
+            if (subNodeIndex < 0)
+                subNodeIndex = 0;
             return _subNodes[subNodeIndex].FindByValue(value);
         }
 

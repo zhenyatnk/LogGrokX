@@ -185,6 +185,17 @@ namespace LogGrokX.Tests
         }
 
         [TestMethod]
+        [DataRow("{\"error\":\"division by ] zero\"}")]
+        [DataRow("{\"arr\":\"a [ b\"}")]
+        public void JsonWithBracketsInsideStringValuesDoesNotThrow(string source)
+        {
+            var model = new TextModel(1, source);
+
+            Assert.IsNotNull(model.CollapsibleRanges);
+            Assert.AreEqual(1, model.CollapsibleRanges.Count);
+        }
+
+        [TestMethod]
         public void WholeLineAndMessageComponentHaveSameCollapsibleStarts()
         {
             const string prefix = "2024-01-01 10:00:00 INF app ";
