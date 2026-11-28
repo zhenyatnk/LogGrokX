@@ -5,9 +5,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace LogGrokX;
+namespace LogGrokX.Data;
 
-internal sealed class SearchHighlightPattern
+public sealed class SearchHighlightPattern
 {
     private static readonly ConditionalWeakTable<Regex, SearchHighlightPattern> Cache = new();
 
